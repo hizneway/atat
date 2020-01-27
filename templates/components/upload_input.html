@@ -24,7 +24,11 @@
         {{ field.label }}
       {% endif %}
       <p>
-        {{ field.description }}
+        <!-- TODO: fix this to use field.description -->
+        <!-- This was temporarily hard coded because we were unable to use
+        app.config['FILE_SIZE_LIMIT'] in TaskOrderForm field descriptions and labels -->
+        {% set size_limit = file_size_limit // 1000000 %}
+        {{ "task_orders.form.supporting_docs_size_limit" | translate({ "file_size_limit": size_limit }) }}
       </p>
       <div v-if="!hideInput" class="upload-widget">
         <label class="upload-label" :for="name">
