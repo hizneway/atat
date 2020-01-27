@@ -26,6 +26,7 @@ from atst.utils.localization import translate
 from flask import current_app as app
 
 MAX_CLIN_AMOUNT = 1_000_000_000
+FILE_SIZE_LIMIT = 64
 
 
 def coerce_enum(enum_inst):
@@ -164,8 +165,14 @@ class TaskOrderForm(BaseForm):
     )
     pdf = FormField(
         AttachmentForm,
-        label=translate("task_orders.form.supporting_docs_size_limit"),
-        description=translate("task_orders.form.supporting_docs_size_limit"),
+        label=translate(
+            "task_orders.form.supporting_docs_size_limit",
+            {"file_size_limit": FILE_SIZE_LIMIT},
+        ),
+        description=translate(
+            "task_orders.form.supporting_docs_size_limit",
+            {"file_size_limit": FILE_SIZE_LIMIT},
+        ),
     )
     clins = FieldList(FormField(CLINForm))
 
