@@ -104,6 +104,8 @@ def test_fsm_transition_start(mock_cloud_provider, portfolio: Portfolio):
         FSMStates.TASK_ORDER_BILLING_CREATION_CREATED,
         FSMStates.TASK_ORDER_BILLING_VERIFICATION_CREATED,
         FSMStates.BILLING_INSTRUCTION_CREATED,
+        FSMStates.PRODUCT_PURCHASE_CREATED,
+        FSMStates.PRODUCT_PURCHASE_VERIFICATION_CREATED,
     ]
 
     # Should source all creds for portfolio? might be easier to manage than per-step specific ones
