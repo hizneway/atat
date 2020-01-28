@@ -288,15 +288,7 @@ class MockCloudProvider(CloudProviderInterface):
         self._maybe_raise(self.UNAUTHORIZED_RATE, self.AUTHORIZATION_EXCEPTION)
 
         return ProductPurchaseCSPResult(
-            **{
-                "name": "TO1:CLIN001",
-                "properties": {
-                    "amount": 1000.0,
-                    "endDate": "2020-03-01T00:00:00+00:00",
-                    "startDate": "2020-01-01T00:00:00+00:00",
-                },
-                "type": "Microsoft.Billing/billingAccounts/billingProfiles/billingInstructions",
-            }
+            **{"Location": "https://somelocation", "Retry-After": "10"}
         )
 
     def create_product_purchase_verification(
