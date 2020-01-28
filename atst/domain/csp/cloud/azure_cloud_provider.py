@@ -24,6 +24,8 @@ from .models import (
     BillingProfileTenantAccessCSPResult,
     BillingProfileVerificationCSPPayload,
     BillingProfileVerificationCSPResult,
+    EnvironmentCSPPayload,
+    EnvironmentCSPResult,
     KeyVaultCredentials,
     ManagementGroupCSPResponse,
     ProductPurchaseCSPPayload,
@@ -135,24 +137,25 @@ class AzureCloudProvider(CloudProviderInterface):
                 exc_info=1,
             )
 
-    def create_environment(self, auth_credentials: Dict, user, environment):
-        # since this operation would only occur within a tenant, should we source the tenant
-        # via lookup from environment once we've created the portfolio csp data schema
-        # something like this:
-        # environment_tenant = environment.application.portfolio.csp_data.get('tenant_id', None)
-        # though we'd probably source the whole credentials for these calls from the portfolio csp
-        # data, as it would have to be where we store the creds for the at-at user within the portfolio tenant
-        # credentials = self._get_credential_obj(environment.application.portfolio.csp_data.get_creds())
-        credentials = self._get_credential_obj(self._root_creds)
-        display_name = f"{environment.application.name}_{environment.name}_{environment.id}"  # proposed format
-        management_group_id = "?"  # management group id chained from environment
-        parent_id = "?"  # from environment.application
-
-        management_group = self._create_management_group(
-            credentials, management_group_id, display_name, parent_id,
+    def create_environment(self, payload: EnvironmentCSPPayload):
+        creds = self._source_creds(payload.tenant_id)
+        credentials = self._get_credential_obj(
+            {
+                "client_id": creds.root_sp_client_id,
+                "secret_key": creds.root_sp_key,
+                "tenant_id": creds.root_tenant_id,
+            },
+            resource=AZURE_MANAGEMENT_API,
         )
 
-        return ManagementGroupCSPResponse(**management_group)
+        response = self._create_management_group(
+            credentials,
+            payload.management_group_name,
+            payload.display_name,
+            payload.parent_id,
+        )
+
+        return EnvironmentCSPResult(**response)
 
     def create_atat_admin_user(
         self, auth_credentials: Dict, csp_environment_id: str

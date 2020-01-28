@@ -12,7 +12,11 @@ from atst.domain.portfolios import Portfolios
 from atst.domain.application_roles import ApplicationRoles
 from atst.models.utils import claim_for_update, claim_many_for_update
 from atst.utils.localization import translate
-from atst.domain.csp.cloud.models import ApplicationCSPPayload, UserCSPPayload
+from atst.domain.csp.cloud.models import (
+    ApplicationCSPPayload,
+    EnvironmentCSPPayload,
+    UserCSPPayload,
+)
 
 
 class RecordFailure(celery.Task):
@@ -109,33 +113,19 @@ def do_create_environment(csp: CloudProviderInterface, environment_id=None):
     with claim_for_update(environment) as environment:
 
         if environment.cloud_id is not None:
-            # TODO: Return value for this?
             return
 
-        user = environment.creator
+        csp_details = environment.application.portfolio.csp_data
+        parent_id = environment.application.cloud_id
+        tenant_id = csp_details.get("tenant_id")
+        payload = EnvironmentCSPPayload(
+            tenant_id=tenant_id, display_name=application.name, parent_id=parent_id
+        )
 
-        # we'll need to do some checking in this job for cases where it's retrying
-        # when a failure occured after some successful steps
-        # (e.g. if environment.cloud_id is not None, then we can skip first step)
-
-        # credentials either from a given user or pulled from config?
-        # if using global creds, do we need to log what user authorized action?
-        atat_root_creds = csp.root_creds()
-
-        # user is needed because baseline root account in the environment will
-        # be assigned to the requesting user, open question how to handle duplicate
-        # email addresses across new environments
-        csp_environment_id = csp.create_environment(atat_root_creds, user, environment)
-        environment.cloud_id = csp_environment_id
+        env_result = csp.create_environment(payload)
+        environment.cloud_id = env_result.id
         db.session.add(environment)
         db.session.commit()
-
-        body = render_email(
-            "emails/application/environment_ready.txt", {"environment": environment}
-        )
-        app.mailer.send(
-            [environment.creator.email], translate("email.environment_ready"), body
-        )
 
 
 def do_create_atat_admin_user(csp: CloudProviderInterface, environment_id=None):

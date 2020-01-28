@@ -20,6 +20,8 @@ from atst.domain.csp.cloud.models import (
     BillingProfileTenantAccessCSPResult,
     BillingProfileVerificationCSPPayload,
     BillingProfileVerificationCSPResult,
+    EnvironmentCSPPayload,
+    EnvironmentCSPResult,
     ProductPurchaseCSPPayload,
     ProductPurchaseCSPResult,
     ProductPurchaseVerificationCSPPayload,
@@ -57,12 +59,14 @@ def mock_management_group_create(mock_azure, spec_dict):
 
 def test_create_environment_succeeds(mock_azure: AzureCloudProvider):
     environment = EnvironmentFactory.create()
-
     mock_management_group_create(mock_azure, {"id": "Test Id"})
 
-    result = mock_azure.create_environment(
-        AUTH_CREDENTIALS, environment.creator, environment
+    mock_azure = mock_get_secret(mock_azure, lambda *a, **k: json.dumps(MOCK_CREDS))
+
+    payload = EnvironmentCSPPayload(
+        tenant_id="1234", display_name=environment.name, parent_id=str(uuid4())
     )
+    result = mock_azure.create_environment(payload)
 
     assert result.id == "Test Id"
 
