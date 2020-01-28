@@ -17,6 +17,8 @@ class AzureStages(Enum):
     TASK_ORDER_BILLING_CREATION = "task order billing creation"
     TASK_ORDER_BILLING_VERIFICATION = "task order billing verification"
     BILLING_INSTRUCTION = "billing instruction"
+    PRODUCT_PURCHASE = "purchase aad premium product"
+    PRODUCT_PURCHASE_VERIFICATION = "purchase aad premium product verification"
 
 
 def _build_csp_states(csp_stages):

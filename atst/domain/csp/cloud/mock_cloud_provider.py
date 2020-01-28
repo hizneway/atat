@@ -26,6 +26,10 @@ from .models import (
     BillingProfileCreationCSPResult,
     BillingProfileVerificationCSPPayload,
     BillingProfileVerificationCSPResult,
+    ProductPurchaseCSPPayload,
+    ProductPurchaseCSPResult,
+    ProductPurchaseVerificationCSPPayload,
+    ProductPurchaseVerificationCSPResult,
     TaskOrderBillingCreationCSPPayload,
     TaskOrderBillingCreationCSPResult,
     TaskOrderBillingVerificationCSPPayload,
@@ -276,6 +280,37 @@ class MockCloudProvider(CloudProviderInterface):
                 "type": "Microsoft.Billing/billingAccounts/billingProfiles/billingInstructions",
             }
         )
+
+
+    def create_product_purchase(self, payload: ProductPurchaseCSPPayload):
+        self._maybe_raise(self.NETWORK_FAILURE_PCT, self.NETWORK_EXCEPTION)
+        self._maybe_raise(self.SERVER_FAILURE_PCT, self.SERVER_EXCEPTION)
+        self._maybe_raise(self.UNAUTHORIZED_RATE, self.AUTHORIZATION_EXCEPTION)
+
+        return ProductPurchaseCSPResult(
+            **{
+                "name": "TO1:CLIN001",
+                "properties": {
+                    "amount": 1000.0,
+                    "endDate": "2020-03-01T00:00:00+00:00",
+                    "startDate": "2020-01-01T00:00:00+00:00",
+                },
+                "type": "Microsoft.Billing/billingAccounts/billingProfiles/billingInstructions",
+            }
+        )
+
+    def create_product_purchase_verification(
+        self, payload: ProductPurchaseVerificationCSPPayload
+    ):
+        self._maybe_raise(self.NETWORK_FAILURE_PCT, self.NETWORK_EXCEPTION)
+        self._maybe_raise(self.SERVER_FAILURE_PCT, self.SERVER_EXCEPTION)
+        self._maybe_raise(self.UNAUTHORIZED_RATE, self.AUTHORIZATION_EXCEPTION)
+
+        return ProductPurchaseVerificationCSPResult(
+            **{
+            }
+        )
+
 
     def create_or_update_user(self, auth_credentials, user_info, csp_role_id):
         self._authorize(auth_credentials)

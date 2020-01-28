@@ -19,6 +19,10 @@ from .models import (
     BillingProfileVerificationCSPResult,
     KeyVaultCredentials,
     ManagementGroupCSPResponse,
+    ProductPurchaseCSPPayload,
+    ProductPurchaseCSPResult,
+    ProductPurchaseVerificationCSPPayload,
+    ProductPurchaseVerificationCSPResult,
     TaskOrderBillingCreationCSPPayload,
     TaskOrderBillingCreationCSPResult,
     TaskOrderBillingVerificationCSPPayload,
@@ -492,6 +496,64 @@ class AzureCloudProvider(CloudProviderInterface):
             return self._ok(BillingInstructionCSPResult(**result.json()))
         else:
             return self._error(result.json())
+
+    def create_product_purchase(
+        self, payload: ProductPurchaseCSPPayload
+    ):
+        sp_token = self._get_sp_token(payload.creds)
+        if sp_token is None:
+            raise AuthenticationException(
+                "Could not resolve token for aad premium product purchase"
+            )
+
+        create_product_purchase_body = payload.dict(by_alias=True)
+        create_product_purchase_headers = {
+            "Authorization": f"Bearer {sp_token}",
+        }
+
+        product_purchase_url = f"https://management.azure.com//providers/Microsoft.Billing/billingAccounts/{payload.billing_account_name}/billingProfiles/{payload.billing_profile_name}/products?api-version=2019-10-01-preview"
+
+        result = self.sdk.requests.post(
+            product_purchase_url,
+            json=create_product_purchase_body,
+            headers=create_product_purchase_headers,
+        )
+
+        if result.status_code == 202:
+            # 202 has location/retry after headers
+            return self._ok(ProductPurchaseCSPResult(**result.headers))
+        elif result.status_code == 200:
+            # NB: Swagger docs imply call can sometimes resolve immediately
+            return self._ok(ProductPurchaseCSPResult(**result.json()))
+        else:
+            return self._error(result.json())
+
+
+    def create_product_purchase_verification(
+        self, payload: ProductPurchaseVerificationCSPPayload
+    ):
+        sp_token = self._get_sp_token(payload.creds)
+        if sp_token is None:
+            raise AuthenticationException(
+                "Could not resolve token for task order billing validation"
+            )
+
+        auth_header = {
+            "Authorization": f"Bearer {sp_token}",
+        }
+
+        result = self.sdk.requests.get(
+            payload.product_purchase_verify_url, headers=auth_header
+        )
+
+        if result.status_code == 202:
+            # 202 has location/retry after headers
+            return self._ok(ProductPurchaseCSPResult(**result.headers))
+        elif result.status_code == 200:
+            return self._ok(ProductPurchaseVerificationCSPResult(**result.json()))
+        else:
+            return self._error(result.json())
+
 
     def create_remote_admin(self, creds, tenant_details):
         # create app/service principal within tenant, with name constructed from tenant details

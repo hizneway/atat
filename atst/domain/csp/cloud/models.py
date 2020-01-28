@@ -341,3 +341,50 @@ class KeyVaultCredentials(BaseModel):
             )
 
         return values
+
+class AadPremiumProductParameter(AliasModel):
+    type: str
+    sku: str
+    quantity: int
+    productProperties: Dict
+
+    #{
+    #  "type": "string",
+    #  "sku": "string",
+    #  "quantity": 0,
+    #  "productProperties": {
+    #    "beneficiaryTenantId": "string"
+    #  }
+    #}
+
+class ProductPurchaseCSPPayload(BaseCSPPayload):
+    billing_account_name: str
+    billing_profile_name: str
+    parameters: List[AadPremiumProductParameter]
+
+class ProductPurchaseCSPResult(AliasModel):
+    product_purchase_verify_url: str
+    product_purchase_retry_after: int
+
+    class Config:
+        fields = {
+            "product_purchase_verify_url": "Location",
+            "product_purchase_retry_after": "Retry-After",
+        }
+
+
+class ProductPurchaseVerificationCSPPayload(BaseCSPPayload):
+    product_purchase_verify_url: str
+
+
+class ProductPurchaseVerificationCSPResult(AliasModel):
+    billing_profile_id: str
+    billing_profile_name: str
+    billing_profile_enabled_plan_details: BillingProfileEnabledPlanDetails
+
+    class Config:
+        fields = {
+            "billing_profile_id": "id",
+            "billing_profile_name": "name",
+            "billing_profile_enabled_plan_details": "properties",
+        }
