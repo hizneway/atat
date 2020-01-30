@@ -281,10 +281,7 @@ class MockCloudProvider(CloudProviderInterface):
             }
         )
 
-
-    def create_product_purchase(
-        self, payload: ProductPurchaseCSPPayload
-    ):
+    def create_product_purchase(self, payload: ProductPurchaseCSPPayload):
         self._maybe_raise(self.NETWORK_FAILURE_PCT, self.NETWORK_EXCEPTION)
         self._maybe_raise(self.SERVER_FAILURE_PCT, self.SERVER_EXCEPTION)
         self._maybe_raise(self.UNAUTHORIZED_RATE, self.AUTHORIZATION_EXCEPTION)
@@ -295,8 +292,6 @@ class MockCloudProvider(CloudProviderInterface):
                 product_purchase_retry_after=10,
             )
         )
-
-
 
     def create_product_purchase_verification(
         self, payload: ProductPurchaseVerificationCSPPayload

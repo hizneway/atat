@@ -497,9 +497,7 @@ class AzureCloudProvider(CloudProviderInterface):
         else:
             return self._error(result.json())
 
-    def create_product_purchase(
-        self, payload: ProductPurchaseCSPPayload
-    ):
+    def create_product_purchase(self, payload: ProductPurchaseCSPPayload):
         sp_token = self._get_sp_token(payload.creds)
         if sp_token is None:
             raise AuthenticationException(
@@ -508,11 +506,13 @@ class AzureCloudProvider(CloudProviderInterface):
 
         payload_as_dict = payload.dict(by_alias=True)
 
-        create_product_purchase_body =  {
+        create_product_purchase_body = {
             "type": "AADPremium",
             "sku": "AADP1",
             "productProperties": {
-                "beneficiaryTenantId": payload_as_dict["productProperties"]["beneficiaryTenantId"],
+                "beneficiaryTenantId": payload_as_dict["productProperties"][
+                    "beneficiaryTenantId"
+                ],
             },
             "quantity": payload_as_dict.get("quantity"),
         }
@@ -537,7 +537,6 @@ class AzureCloudProvider(CloudProviderInterface):
         else:
             return self._error(result.json())
 
-
     def create_product_purchase_verification(
         self, payload: ProductPurchaseVerificationCSPPayload
     ):
@@ -560,10 +559,13 @@ class AzureCloudProvider(CloudProviderInterface):
             # 202 has location/retry after headers
             return self._ok(ProductPurchaseCSPResult(**result.headers))
         elif result.status_code == 200:
-            return self._ok(ProductPurchaseVerificationCSPResult(premium_purchase_date=premium_purchase_date))
+            return self._ok(
+                ProductPurchaseVerificationCSPResult(
+                    premium_purchase_date=premium_purchase_date
+                )
+            )
         else:
             return self._error(result.json())
-
 
     def create_remote_admin(self, creds, tenant_details):
         # create app/service principal within tenant, with name constructed from tenant details
