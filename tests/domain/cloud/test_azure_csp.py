@@ -445,6 +445,7 @@ def test_create_billing_instruction(mock_azure: AzureCloudProvider):
     body: BillingInstructionCSPResult = result.get("body")
     assert body.reported_clin_name == "TO1:CLIN001"
 
+
 def test_create_product_purchase(mock_azure: AzureCloudProvider):
     mock_azure.sdk.adal.AuthenticationContext.return_value.context.acquire_token_with_client_credentials.return_value = {
         "accessToken": "TOKEN"
@@ -464,9 +465,7 @@ def test_create_product_purchase(mock_azure: AzureCloudProvider):
             tenant_id="6d2d2d6c-a6d6-41e1-8bb1-73d11475f8f4",
             type="AADPremium",
             sku="AADP1",
-            productProperties={
-                "beneficiaryTenantId": str(uuid4()),
-            },
+            productProperties={"beneficiaryTenantId": str(uuid4()),},
             quantity=4,
             billing_account_name="7c89b735-b22b-55c0-ab5a-c624843e8bf6:de4416ce-acc6-44b1-8122-c87c4e903c91_2019-05-31",
             billing_profile_name="KQWI-W2SU-BG7-TGB",
@@ -476,8 +475,10 @@ def test_create_product_purchase(mock_azure: AzureCloudProvider):
     result = mock_azure.create_product_purchase(payload)
     body: ProductPurchaseCSPResult = result.get("body")
     assert (
-        body.product_purchase_verify_url == "https://management.azure.com/providers/Microsoft.Billing/billingAccounts/7c89b735-b22b-55c0-ab5a-c624843e8bf6:de4416ce-acc6-44b1-8122-c87c4e903c91_2019-05-31/operationResults/patchBillingProfile_KQWI-W2SU-BG7-TGB:02715576-4118-466c-bca7-b1cd3169ff46?api-version=2019-10-01-preview"
+        body.product_purchase_verify_url
+        == "https://management.azure.com/providers/Microsoft.Billing/billingAccounts/7c89b735-b22b-55c0-ab5a-c624843e8bf6:de4416ce-acc6-44b1-8122-c87c4e903c91_2019-05-31/operationResults/patchBillingProfile_KQWI-W2SU-BG7-TGB:02715576-4118-466c-bca7-b1cd3169ff46?api-version=2019-10-01-preview"
     )
+
 
 def test_create_product_purchase_verification(mock_azure):
     mock_azure.sdk.adal.AuthenticationContext.return_value.context.acquire_token_with_client_credentials.return_value = {
@@ -493,29 +494,26 @@ def test_create_product_purchase_verification(mock_azure):
             "name": "string",
             "type": "string",
             "properties": {
-            "displayName": "string",
-            "purchaseDate": "2020-01-30T18:57:05.981Z",
-            "productTypeId": "string",
-            "productType": "string",
-            "status": "Active",
-            "endDate": "2020-01-30T18:57:05.981Z",
-            "billingFrequency": "OneTime",
-            "lastCharge": {
-                "currency": "string",
-                "value": 0
+                "displayName": "string",
+                "purchaseDate": "2020-01-30T18:57:05.981Z",
+                "productTypeId": "string",
+                "productType": "string",
+                "status": "Active",
+                "endDate": "2020-01-30T18:57:05.981Z",
+                "billingFrequency": "OneTime",
+                "lastCharge": {"currency": "string", "value": 0},
+                "lastChargeDate": "2020-01-30T18:57:05.981Z",
+                "quantity": 0,
+                "skuId": "string",
+                "skuDescription": "string",
+                "availabilityId": "string",
+                "parentProductId": "string",
+                "invoiceSectionId": "string",
+                "invoiceSectionDisplayName": "string",
+                "billingProfileId": "string",
+                "billingProfileDisplayName": "string",
             },
-            "lastChargeDate": "2020-01-30T18:57:05.981Z",
-            "quantity": 0,
-            "skuId": "string",
-            "skuDescription": "string",
-            "availabilityId": "string",
-            "parentProductId": "string",
-            "invoiceSectionId": "string",
-            "invoiceSectionDisplayName": "string",
-            "billingProfileId": "string",
-            "billingProfileDisplayName": "string"
-            }
-        }
+        },
     }
 
     mock_azure.sdk.requests.get.return_value = mock_result
@@ -530,6 +528,7 @@ def test_create_product_purchase_verification(mock_azure):
     result = mock_azure.create_product_purchase_verification(payload)
     body: ProductPurchaseVerificationCSPResult = result.get("body")
     assert body.premium_purchase_date == "2020-01-30T18:57:05.981Z"
+
 
 def test_create_tenant_principal_app(mock_azure: AzureCloudProvider):
     with patch.object(

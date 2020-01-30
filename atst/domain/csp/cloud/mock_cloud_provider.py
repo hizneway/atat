@@ -321,7 +321,6 @@ class MockCloudProvider(CloudProviderInterface):
         self._maybe_raise(self.UNAUTHORIZED_RATE, self.AUTHORIZATION_EXCEPTION)
         return TenantAdminOwnershipCSPResult(**dict(id="admin_owner_assignment_id"))
 
-
     def create_tenant_principal_ownership(
         self, payload: TenantPrincipalOwnershipCSPPayload
     ):
