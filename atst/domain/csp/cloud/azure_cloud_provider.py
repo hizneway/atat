@@ -506,12 +506,21 @@ class AzureCloudProvider(CloudProviderInterface):
                 "Could not resolve token for aad premium product purchase"
             )
 
-        create_product_purchase_body = payload.dict(by_alias=True)
+        payload_as_dict = payload.dict(by_alias=True)
+
+        create_product_purchase_body =  {
+            "type": "AADPremium",
+            "sku": "AADP1",
+            "productProperties": {
+                "beneficiaryTenantId": payload_as_dict["productProperties"]["beneficiaryTenantId"],
+            },
+            "quantity": payload_as_dict.get("quantity"),
+        }
         create_product_purchase_headers = {
             "Authorization": f"Bearer {sp_token}",
         }
 
-        product_purchase_url = f"https://management.azure.com//providers/Microsoft.Billing/billingAccounts/{payload.billing_account_name}/billingProfiles/{payload.billing_profile_name}/products?api-version=2019-10-01-preview"
+        product_purchase_url = f"https://management.azure.com/providers/Microsoft.Billing/billingAccounts/{payload.billing_account_name}/billingProfiles/{payload.billing_profile_name}/products?api-version=2019-10-01-preview"
 
         result = self.sdk.requests.post(
             product_purchase_url,
@@ -524,7 +533,7 @@ class AzureCloudProvider(CloudProviderInterface):
             return self._ok(ProductPurchaseCSPResult(**result.headers))
         elif result.status_code == 200:
             # NB: Swagger docs imply call can sometimes resolve immediately
-            return self._ok(ProductPurchaseCSPResult(**result.json()))
+            return self._ok(ProductPurchaseVerificationCSPResult(**result.json()))
         else:
             return self._error(result.json())
 
@@ -535,7 +544,7 @@ class AzureCloudProvider(CloudProviderInterface):
         sp_token = self._get_sp_token(payload.creds)
         if sp_token is None:
             raise AuthenticationException(
-                "Could not resolve token for task order billing validation"
+                "Could not resolve token for aad premium product purchase validation"
             )
 
         auth_header = {
@@ -545,12 +554,13 @@ class AzureCloudProvider(CloudProviderInterface):
         result = self.sdk.requests.get(
             payload.product_purchase_verify_url, headers=auth_header
         )
+        premium_purchase_date = result.json()["product"]["properties"]["purchaseDate"]
 
         if result.status_code == 202:
             # 202 has location/retry after headers
             return self._ok(ProductPurchaseCSPResult(**result.headers))
         elif result.status_code == 200:
-            return self._ok(ProductPurchaseVerificationCSPResult(**result.json()))
+            return self._ok(ProductPurchaseVerificationCSPResult(premium_purchase_date=premium_purchase_date))
         else:
             return self._error(result.json())
 

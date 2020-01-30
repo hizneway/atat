@@ -282,14 +282,21 @@ class MockCloudProvider(CloudProviderInterface):
         )
 
 
-    def create_product_purchase(self, payload: ProductPurchaseCSPPayload):
+    def create_product_purchase(
+        self, payload: ProductPurchaseCSPPayload
+    ):
         self._maybe_raise(self.NETWORK_FAILURE_PCT, self.NETWORK_EXCEPTION)
         self._maybe_raise(self.SERVER_FAILURE_PCT, self.SERVER_EXCEPTION)
         self._maybe_raise(self.UNAUTHORIZED_RATE, self.AUTHORIZATION_EXCEPTION)
 
         return ProductPurchaseCSPResult(
-            **{"Location": "https://somelocation", "Retry-After": "10"}
+            **dict(
+                product_purchase_verify_url="https://zombo.com",
+                product_purchase_retry_after=10,
+            )
         )
+
+
 
     def create_product_purchase_verification(
         self, payload: ProductPurchaseVerificationCSPPayload
@@ -299,10 +306,8 @@ class MockCloudProvider(CloudProviderInterface):
         self._maybe_raise(self.UNAUTHORIZED_RATE, self.AUTHORIZATION_EXCEPTION)
 
         return ProductPurchaseVerificationCSPResult(
-            **{
-            }
+            **dict(premium_purchase_date="2020-01-30T18:57:05.981Z")
         )
-
 
     def create_or_update_user(self, auth_credentials, user_info, csp_role_id):
         self._authorize(auth_credentials)
