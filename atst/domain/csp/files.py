@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 from uuid import uuid4
 
 
-class Uploader:
+class FileService:
     def generate_token(self):
         raise NotImplementedError()
 
@@ -16,7 +16,7 @@ class Uploader:
         raise NotImplementedError()
 
 
-class MockUploader(Uploader):
+class MockFileService(FileService):
     def __init__(self, config):
         self.config = config
 
@@ -34,7 +34,7 @@ class MockUploader(Uploader):
             }
 
 
-class AzureUploader(Uploader):
+class AzureFileService(FileService):
     def __init__(self, config):
         self.account_name = config["AZURE_ACCOUNT_NAME"]
         self.storage_key = config["AZURE_STORAGE_KEY"]

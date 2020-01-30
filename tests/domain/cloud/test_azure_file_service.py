@@ -1,4 +1,4 @@
-from atst.domain.csp.file_uploads import AzureUploader
+from atst.domain.csp.files import AzureFileService
 from azure.storage.blob.models import Blob
 
 
@@ -14,9 +14,9 @@ class MockBlockBlobService(object):
 
 
 def test_download_task_order_success(app, monkeypatch):
-    uploader = AzureUploader(config=app.config)
-    uploader.BlockBlobService = MockBlockBlobService
+    file_service = AzureFileService(config=app.config)
+    file_service.BlockBlobService = MockBlockBlobService
 
-    task_order = uploader.download_task_order("test.pdf")
+    task_order = file_service.download_task_order("test.pdf")
     assert task_order["name"] == "test.pdf"
     assert task_order["content"] == b"mock content"
