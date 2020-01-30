@@ -27,6 +27,8 @@ from .models import (
     BillingProfileVerificationCSPResult,
     PrincipalAdminRoleCSPPayload,
     PrincipalAdminRoleCSPResult,
+    SubscriptionCreationCSPPayload,
+    SubscriptionVerificationCSPPayload,
     TaskOrderBillingCreationCSPPayload,
     TaskOrderBillingCreationCSPResult,
     TaskOrderBillingVerificationCSPPayload,
@@ -108,6 +110,17 @@ class MockCloudProvider(CloudProviderInterface):
         self._maybe_raise(self.UNAUTHORIZED_RATE, self.AUTHORIZATION_EXCEPTION)
 
         return csp_environment_id
+
+    def create_subscription(self, payload: SubscriptionCreationCSPPayload):
+        pass
+
+    def create_subscription_creation(self, payload: SubscriptionCreationCSPPayload):
+        pass
+
+    def create_subscription_verification(
+        self, payload: SubscriptionVerificationCSPPayload
+    ):
+        pass
 
     def create_atat_admin_user(self, auth_credentials, csp_environment_id):
         self._authorize(auth_credentials)
@@ -381,11 +394,6 @@ class MockCloudProvider(CloudProviderInterface):
         )
 
         return self._maybe(12)
-
-    def create_subscription(self, environment):
-        self._maybe_raise(self.UNAUTHORIZED_RATE, GeneralCSPException)
-
-        return True
 
     def get_calculator_url(self):
         return "https://www.rackspace.com/en-us/calculator"

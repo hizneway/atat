@@ -1,5 +1,4 @@
 import json
-import re
 from secrets import token_urlsafe
 from typing import Any, Dict
 from uuid import uuid4
@@ -9,6 +8,10 @@ from atst.utils import sha256_hex
 from .cloud_provider_interface import CloudProviderInterface
 from .exceptions import AuthenticationException
 from .models import (
+    SubscriptionCreationCSPPayload,
+    SubscriptionCreationCSPResult,
+    SubscriptionVerificationCSPPayload,
+    SuscriptionVerificationCSPResult,
     AdminRoleDefinitionCSPPayload,
     AdminRoleDefinitionCSPResult,
     ApplicationCSPPayload,
@@ -44,10 +47,6 @@ from .models import (
 )
 from .policy import AzurePolicyManager
 
-SUBSCRIPTION_ID_REGEX = re.compile(
-    "subscriptions\/([0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})",
-    re.I,
-)
 
 # This needs to be a fully pathed role definition identifier, not just a UUID
 # TODO: Extract these from sdk msrestazure.azure_cloud import AZURE_PUBLIC_CLOUD
@@ -230,49 +229,6 @@ class AzureCloudProvider(CloudProviderInterface):
         # response object? Will it always raise its own error
         # instead?
         return create_request.result()
-
-    def _create_subscription(
-        self,
-        credentials,
-        display_name,
-        billing_profile_id,
-        sku_id,
-        management_group_id,
-        billing_account_name,
-        invoice_section_name,
-    ):
-        sub_client = self.sdk.subscription.SubscriptionClient(credentials)
-
-        billing_profile_id = "?"  # where do we source this?
-        sku_id = AZURE_SKU_ID
-        # These 2 seem like something that might be worthwhile to allow tiebacks to
-        # TOs filed for the environment
-        billing_account_name = "?"  # from TO?
-        invoice_section_name = "?"  # from TO?
-
-        body = self.sdk.subscription.models.ModernSubscriptionCreationParameters(
-            display_name=display_name,
-            billing_profile_id=billing_profile_id,
-            sku_id=sku_id,
-            management_group_id=management_group_id,
-        )
-
-        # We may also want to create billing sections in the enrollment account
-        sub_creation_operation = sub_client.subscription_factory.create_subscription(
-            billing_account_name, invoice_section_name, body
-        )
-
-        # the resulting object from this process is a link to the new subscription
-        # not a subscription model, so we'll have to unpack the ID
-        new_sub = sub_creation_operation.result()
-
-        subscription_id = self._extract_subscription_id(new_sub.subscription_link)
-        if subscription_id:
-            return subscription_id
-        else:
-            # troublesome error, subscription should exist at this point
-            # but we just don't have a valid ID
-            pass
 
     def _create_policy_definition(
         self, credentials, subscription_id, management_group_id, properties,
@@ -514,6 +470,59 @@ class AzureCloudProvider(CloudProviderInterface):
 
         if result.status_code == 200:
             return self._ok(BillingInstructionCSPResult(**result.json()))
+        else:
+            return self._error(result.json())
+
+    def create_subscription(self, payload: SubscriptionCreationCSPPayload):
+        sp_token = self._get_tenant_principal_token(payload.tenant_id)
+        if sp_token is None:
+            raise AuthenticationException(
+                "Could not resolve token for subscription creation"
+            )
+
+        request_body = {
+            "displayName": "Test Sub 1",
+            "skuId": AZURE_SKU_ID,
+            "managementGroupId": payload.parent_group_id,
+        }
+
+        url = f"{self.sdk.cloud.endpoints.resource_manager}/providers/Microsoft.Billing/billingAccounts/{payload.billing_account_name}/billingProfiles/{payload.billing_profile_name}/invoiceSections/{payload.invoice_section_name}/providers/Microsoft.Subscription/createSubscription?api-version=2019-10-01-preview"
+
+        auth_header = {
+            "Authorization": f"Bearer {sp_token}",
+        }
+
+        result = self.sdk.requests.put(url, headers=auth_header, json=request_body)
+
+        if result.status_code in [200, 202]:
+            # 202 has location/retry after headers
+            return SubscriptionCreationCSPResult(**result.headers, **result.json())
+        else:
+            return self._error(result.json())
+
+    def create_subscription_creation(self, payload: SubscriptionCreationCSPPayload):
+        return self.create_subscription(payload)
+
+    def create_subscription_verification(
+        self, payload: SubscriptionVerificationCSPPayload
+    ):
+        sp_token = self._get_tenant_principal_token(payload.tenant_id)
+        if sp_token is None:
+            raise AuthenticationException(
+                "Could not resolve token for subscription verification"
+            )
+
+        auth_header = {
+            "Authorization": f"Bearer {sp_token}",
+        }
+
+        result = self.sdk.requests.get(
+            payload.subscription_verify_url, headers=auth_header
+        )
+
+        if result.ok:
+            # 202 has location/retry after headers
+            return SuscriptionVerificationCSPResult(**result.json())
         else:
             return self._error(result.json())
 
@@ -860,6 +869,12 @@ class AzureCloudProvider(CloudProviderInterface):
             "secret_key": self.secret_key,
             "tenant_id": self.tenant_id,
         }
+
+    def _get_tenant_principal_token(self, tenant_id):
+        creds = self._source_creds(tenant_id)
+        return self._get_sp_token(
+            creds.tenant_id, creds.tenant_sp_client_id, creds.tenant_sp_key
+        )
 
     def _get_elevated_management_token(self, tenant_id):
         mgmt_token = self._get_tenant_admin_token(
