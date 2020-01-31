@@ -24,6 +24,7 @@ def render_task_orders_edit(
 
     render_args["contract_start"] = app.config.get("CONTRACT_START_DATE")
     render_args["contract_end"] = app.config.get("CONTRACT_END_DATE")
+    render_args["file_size_limit"] = int(app.config.get("FILE_SIZE_LIMIT"))
 
     if task_order_id:
         task_order = TaskOrders.get(task_order_id)
