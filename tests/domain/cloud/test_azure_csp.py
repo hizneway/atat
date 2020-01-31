@@ -484,32 +484,24 @@ def test_create_product_purchase_verification(mock_azure):
     mock_result = Mock()
     mock_result.status_code = 200
     mock_result.json.return_value = {
-        "status": "string",
-        "product": {
-            "id": "string",
-            "name": "string",
-            "type": "string",
-            "properties": {
-                "displayName": "string",
-                "purchaseDate": "2020-01-30T18:57:05.981Z",
-                "productTypeId": "string",
-                "productType": "string",
-                "status": "Active",
-                "endDate": "2020-01-30T18:57:05.981Z",
-                "billingFrequency": "OneTime",
-                "lastCharge": {"currency": "string", "value": 0},
-                "lastChargeDate": "2020-01-30T18:57:05.981Z",
-                "quantity": 0,
-                "skuId": "string",
-                "skuDescription": "string",
-                "availabilityId": "string",
-                "parentProductId": "string",
-                "invoiceSectionId": "string",
-                "invoiceSectionDisplayName": "string",
-                "billingProfileId": "string",
-                "billingProfileDisplayName": "string",
-            },
+        "id": "/providers/Microsoft.Billing/billingAccounts/BILLINGACCOUNTNAME/billingProfiles/BILLINGPROFILENAME/invoiceSections/INVOICESECTION/products/29386e29-a025-faae-f70b-b1cbbc266600",
+        "name": "29386e29-a025-faae-f70b-b1cbbc266600",
+        "properties": {
+            "availabilityId": "C07TTFC7Q9XK",
+            "billingProfileId": "/providers/Microsoft.Billing/billingAccounts/BILLINGACCOUNTNAME/billingProfiles/BILLINGPROFILENAME",
+            "billingProfileDisplayName": "ATAT Billing Profile",
+            "endDate": "01/30/2021",
+            "invoiceSectionId": "/providers/Microsoft.Billing/billingAccounts/BILLINGACCOUNTNAME/billingProfiles/BILLINGPROFILENAME/invoiceSections/INVOICESECTION",
+            "invoiceSectionDisplayName": "ATAT Billing Profile",
+            "productType": "Azure Active Directory Premium P1",
+            "productTypeId": "C07TTFC7Q9XK",
+            "skuId": "0002",
+            "skuDescription": "Azure Active Directory Premium P1",
+            "purchaseDate": "01/31/2020",
+            "quantity": 5,
+            "status": "AutoRenew",
         },
+        "type": "Microsoft.Billing/billingAccounts/billingProfiles/invoiceSections/products",
     }
 
     mock_azure.sdk.requests.get.return_value = mock_result
@@ -523,7 +515,7 @@ def test_create_product_purchase_verification(mock_azure):
 
     result = mock_azure.create_product_purchase_verification(payload)
     body: ProductPurchaseVerificationCSPResult = result.get("body")
-    assert body.premium_purchase_date == "2020-01-30T18:57:05.981Z"
+    assert body.premium_purchase_date == "01/31/2020"
 
 
 def test_create_tenant_principal_app(mock_azure: AzureCloudProvider):

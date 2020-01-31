@@ -539,7 +539,7 @@ class AzureCloudProvider(CloudProviderInterface):
             "Authorization": f"Bearer {sp_token}",
         }
 
-        product_purchase_url = f"https://management.azure.com/providers/Microsoft.Billing/billingAccounts/{payload.billing_account_name}/billingProfiles/{payload.billing_profile_name}/products?api-version=2019-10-01-preview"
+        product_purchase_url = f"https://management.azure.com/providers/Microsoft.Billing/billingAccounts/{payload.billing_account_name}/billingProfiles/{payload.billing_profile_name}/purchaseProduct?api-version=2019-10-01-preview"
 
         result = self.sdk.requests.post(
             product_purchase_url,
@@ -577,9 +577,7 @@ class AzureCloudProvider(CloudProviderInterface):
             # 202 has location/retry after headers
             return self._ok(ProductPurchaseCSPResult(**result.headers))
         elif result.status_code == 200:
-            premium_purchase_date = result.json()["product"]["properties"][
-                "purchaseDate"
-            ]
+            premium_purchase_date = result.json()["properties"]["purchaseDate"]
             return self._ok(
                 ProductPurchaseVerificationCSPResult(
                     premium_purchase_date=premium_purchase_date
