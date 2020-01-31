@@ -418,7 +418,7 @@ class SubscriptionCreationCSPPayload(BaseCSPPayload):
 
 class SubscriptionCreationCSPResult(AliasModel):
     subscription_verify_url: str
-    subscription_retry_after: str
+    subscription_retry_after: int
 
     class Config:
         fields = {
