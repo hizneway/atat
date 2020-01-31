@@ -99,6 +99,7 @@ class AzureCloudProvider(CloudProviderInterface):
         self.ps_client_id = config["POWERSHELL_CLIENT_ID"]
         self.owner_role_def_id = config["AZURE_OWNER_ROLE_DEF_ID"]
         self.graph_resource = config["AZURE_GRAPH_RESOURCE"]
+        self.default_aadp_qty = config["AZURE_AADP_QTY"]
 
         if azure_sdk_provider is None:
             self.sdk = AzureSDKProvider()
@@ -528,17 +529,11 @@ class AzureCloudProvider(CloudProviderInterface):
                 "Could not resolve token for aad premium product purchase"
             )
 
-        payload_as_dict = payload.dict(by_alias=True)
-
         create_product_purchase_body = {
             "type": "AADPremium",
             "sku": "AADP1",
-            "productProperties": {
-                "beneficiaryTenantId": payload_as_dict["productProperties"][
-                    "beneficiaryTenantId"
-                ],
-            },
-            "quantity": payload_as_dict.get("quantity"),
+            "productProperties": {"beneficiaryTenantId": payload.tenant_id,},
+            "quantity": self.default_aadp_qty,
         }
         create_product_purchase_headers = {
             "Authorization": f"Bearer {sp_token}",

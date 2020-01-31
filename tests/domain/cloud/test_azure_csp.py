@@ -463,10 +463,6 @@ def test_create_product_purchase(mock_azure: AzureCloudProvider):
     payload = ProductPurchaseCSPPayload(
         **dict(
             tenant_id="6d2d2d6c-a6d6-41e1-8bb1-73d11475f8f4",
-            type="AADPremium",
-            sku="AADP1",
-            productProperties={"beneficiaryTenantId": str(uuid4()),},
-            quantity=4,
             billing_account_name="7c89b735-b22b-55c0-ab5a-c624843e8bf6:de4416ce-acc6-44b1-8122-c87c4e903c91_2019-05-31",
             billing_profile_name="KQWI-W2SU-BG7-TGB",
         )

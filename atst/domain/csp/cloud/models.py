@@ -409,10 +409,6 @@ class KeyVaultCredentials(BaseModel):
 
 
 class ProductPurchaseCSPPayload(BaseCSPPayload):
-    type: str
-    sku: str
-    quantity: int
-    productProperties: Dict
     billing_account_name: str
     billing_profile_name: str
 
