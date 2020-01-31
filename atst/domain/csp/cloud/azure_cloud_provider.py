@@ -23,6 +23,10 @@ from .models import (
     BillingProfileVerificationCSPResult,
     KeyVaultCredentials,
     ManagementGroupCSPResponse,
+    ProductPurchaseCSPPayload,
+    ProductPurchaseCSPResult,
+    ProductPurchaseVerificationCSPPayload,
+    ProductPurchaseVerificationCSPResult,
     PrincipalAdminRoleCSPPayload,
     PrincipalAdminRoleCSPResult,
     TaskOrderBillingCreationCSPPayload,
@@ -95,6 +99,7 @@ class AzureCloudProvider(CloudProviderInterface):
         self.ps_client_id = config["POWERSHELL_CLIENT_ID"]
         self.owner_role_def_id = config["AZURE_OWNER_ROLE_DEF_ID"]
         self.graph_resource = config["AZURE_GRAPH_RESOURCE"]
+        self.default_aadp_qty = config["AZURE_AADP_QTY"]
 
         if azure_sdk_provider is None:
             self.sdk = AzureSDKProvider()
@@ -517,6 +522,70 @@ class AzureCloudProvider(CloudProviderInterface):
         else:
             return self._error(result.json())
 
+    def create_product_purchase(self, payload: ProductPurchaseCSPPayload):
+        sp_token = self._get_root_provisioning_token()
+        if sp_token is None:
+            raise AuthenticationException(
+                "Could not resolve token for aad premium product purchase"
+            )
+
+        create_product_purchase_body = {
+            "type": "AADPremium",
+            "sku": "AADP1",
+            "productProperties": {"beneficiaryTenantId": payload.tenant_id,},
+            "quantity": self.default_aadp_qty,
+        }
+        create_product_purchase_headers = {
+            "Authorization": f"Bearer {sp_token}",
+        }
+
+        product_purchase_url = f"https://management.azure.com/providers/Microsoft.Billing/billingAccounts/{payload.billing_account_name}/billingProfiles/{payload.billing_profile_name}/purchaseProduct?api-version=2019-10-01-preview"
+
+        result = self.sdk.requests.post(
+            product_purchase_url,
+            json=create_product_purchase_body,
+            headers=create_product_purchase_headers,
+        )
+
+        if result.status_code == 202:
+            # 202 has location/retry after headers
+            return self._ok(ProductPurchaseCSPResult(**result.headers))
+        elif result.status_code == 200:
+            # NB: Swagger docs imply call can sometimes resolve immediately
+            return self._ok(ProductPurchaseVerificationCSPResult(**result.json()))
+        else:
+            return self._error(result.json())
+
+    def create_product_purchase_verification(
+        self, payload: ProductPurchaseVerificationCSPPayload
+    ):
+        sp_token = self._get_root_provisioning_token()
+        if sp_token is None:
+            raise AuthenticationException(
+                "Could not resolve token for aad premium product purchase validation"
+            )
+
+        auth_header = {
+            "Authorization": f"Bearer {sp_token}",
+        }
+
+        result = self.sdk.requests.get(
+            payload.product_purchase_verify_url, headers=auth_header
+        )
+
+        if result.status_code == 202:
+            # 202 has location/retry after headers
+            return self._ok(ProductPurchaseCSPResult(**result.headers))
+        elif result.status_code == 200:
+            premium_purchase_date = result.json()["properties"]["purchaseDate"]
+            return self._ok(
+                ProductPurchaseVerificationCSPResult(
+                    premium_purchase_date=premium_purchase_date
+                )
+            )
+        else:
+            return self._error(result.json())
+
     def create_tenant_admin_ownership(self, payload: TenantAdminOwnershipCSPPayload):
         mgmt_token = self._get_elevated_management_token(payload.tenant_id)
 
@@ -790,7 +859,7 @@ class AzureCloudProvider(CloudProviderInterface):
     def _get_root_provisioning_token(self):
         creds = self._source_creds()
         return self._get_sp_token(
-            creds.tenant_id, creds.root_sp_client_id, creds.root_sp_key
+            creds.root_tenant_id, creds.root_sp_client_id, creds.root_sp_key
         )
 
     def _get_sp_token(self, tenant_id, client_id, secret_key):

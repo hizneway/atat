@@ -406,3 +406,27 @@ class KeyVaultCredentials(BaseModel):
             )
 
         return values
+
+
+class ProductPurchaseCSPPayload(BaseCSPPayload):
+    billing_account_name: str
+    billing_profile_name: str
+
+
+class ProductPurchaseCSPResult(AliasModel):
+    product_purchase_verify_url: str
+    product_purchase_retry_after: int
+
+    class Config:
+        fields = {
+            "product_purchase_verify_url": "Location",
+            "product_purchase_retry_after": "Retry-After",
+        }
+
+
+class ProductPurchaseVerificationCSPPayload(BaseCSPPayload):
+    product_purchase_verify_url: str
+
+
+class ProductPurchaseVerificationCSPResult(AliasModel):
+    premium_purchase_date: str

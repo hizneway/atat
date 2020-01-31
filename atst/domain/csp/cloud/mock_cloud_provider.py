@@ -25,6 +25,10 @@ from .models import (
     BillingProfileTenantAccessCSPResult,
     BillingProfileVerificationCSPPayload,
     BillingProfileVerificationCSPResult,
+    ProductPurchaseCSPPayload,
+    ProductPurchaseCSPResult,
+    ProductPurchaseVerificationCSPPayload,
+    ProductPurchaseVerificationCSPResult,
     PrincipalAdminRoleCSPPayload,
     PrincipalAdminRoleCSPResult,
     TaskOrderBillingCreationCSPPayload,
@@ -288,11 +292,33 @@ class MockCloudProvider(CloudProviderInterface):
             }
         )
 
-    def create_tenant_admin_ownership(self, payload: TenantAdminOwnershipCSPPayload):
+    def create_product_purchase(self, payload: ProductPurchaseCSPPayload):
         self._maybe_raise(self.NETWORK_FAILURE_PCT, self.NETWORK_EXCEPTION)
         self._maybe_raise(self.SERVER_FAILURE_PCT, self.SERVER_EXCEPTION)
         self._maybe_raise(self.UNAUTHORIZED_RATE, self.AUTHORIZATION_EXCEPTION)
 
+        return ProductPurchaseCSPResult(
+            **dict(
+                product_purchase_verify_url="https://zombo.com",
+                product_purchase_retry_after=10,
+            )
+        )
+
+    def create_product_purchase_verification(
+        self, payload: ProductPurchaseVerificationCSPPayload
+    ):
+        self._maybe_raise(self.NETWORK_FAILURE_PCT, self.NETWORK_EXCEPTION)
+        self._maybe_raise(self.SERVER_FAILURE_PCT, self.SERVER_EXCEPTION)
+        self._maybe_raise(self.UNAUTHORIZED_RATE, self.AUTHORIZATION_EXCEPTION)
+
+        return ProductPurchaseVerificationCSPResult(
+            **dict(premium_purchase_date="2020-01-30T18:57:05.981Z")
+        )
+
+    def create_tenant_admin_ownership(self, payload: TenantAdminOwnershipCSPPayload):
+        self._maybe_raise(self.NETWORK_FAILURE_PCT, self.NETWORK_EXCEPTION)
+        self._maybe_raise(self.SERVER_FAILURE_PCT, self.SERVER_EXCEPTION)
+        self._maybe_raise(self.UNAUTHORIZED_RATE, self.AUTHORIZATION_EXCEPTION)
         return TenantAdminOwnershipCSPResult(**dict(id="admin_owner_assignment_id"))
 
     def create_tenant_principal_ownership(
