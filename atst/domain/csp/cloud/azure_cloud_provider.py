@@ -572,12 +572,14 @@ class AzureCloudProvider(CloudProviderInterface):
         result = self.sdk.requests.get(
             payload.product_purchase_verify_url, headers=auth_header
         )
-        premium_purchase_date = result.json()["product"]["properties"]["purchaseDate"]
 
         if result.status_code == 202:
             # 202 has location/retry after headers
             return self._ok(ProductPurchaseCSPResult(**result.headers))
         elif result.status_code == 200:
+            premium_purchase_date = result.json()["product"]["properties"][
+                "purchaseDate"
+            ]
             return self._ok(
                 ProductPurchaseVerificationCSPResult(
                     premium_purchase_date=premium_purchase_date
