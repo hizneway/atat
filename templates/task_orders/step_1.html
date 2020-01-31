@@ -19,5 +19,5 @@
     title='task_orders.form.step_1.title' | translate,
     description='task_orders.form.step_1.description' | translate,
   ) }}
-  {{ UploadInput(form.pdf, portfolio.id) }}
+  {{ UploadInput(form.pdf, portfolio.id, file_size_limit) }}
 {% endblock %}

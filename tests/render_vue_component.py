@@ -1,7 +1,7 @@
 import pytest
 
 from bs4 import BeautifulSoup
-from flask import Markup
+from flask import Markup, current_app as app
 from wtforms import Form, FormField
 from wtforms.fields import StringField
 from wtforms.validators import InputRequired
@@ -111,13 +111,17 @@ def test_make_multi_checkbox_input_template(
 
 
 def test_make_upload_input_template(upload_input_macro, task_order_form):
-    rendered_upload_macro = upload_input_macro(task_order_form.pdf)
+    rendered_upload_macro = upload_input_macro(
+        task_order_form.pdf, file_size_limit=int(app.config.get("FILE_SIZE_LIMIT")),
+    )
     write_template(rendered_upload_macro, "upload_input_template.html")
 
 
 def test_make_upload_input_error_template(upload_input_macro, task_order_form):
     task_order_form.validate()
-    rendered_upload_macro = upload_input_macro(task_order_form.pdf)
+    rendered_upload_macro = upload_input_macro(
+        task_order_form.pdf, file_size_limit=int(app.config.get("FILE_SIZE_LIMIT")),
+    )
     write_template(rendered_upload_macro, "upload_input_error_template.html")
 
 
