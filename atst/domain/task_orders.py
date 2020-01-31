@@ -1,4 +1,5 @@
 import datetime
+from sqlalchemy import or_
 
 from atst.database import db
 from atst.models.clin import CLIN
@@ -76,3 +77,17 @@ class TaskOrders(BaseDomainClass):
         task_order = TaskOrders.get(task_order_id)
         db.session.delete(task_order)
         db.session.commit()
+
+    @classmethod
+    def get_for_send_task_order_files(cls):
+        return (
+            db.session.query(TaskOrder)
+            .join(CLIN)
+            .filter(
+                or_(
+                    TaskOrder.pdf_last_sent_at < CLIN.last_sent_at,
+                    TaskOrder.pdf_last_sent_at.is_(None),
+                )
+            )
+            .all()
+        )
