@@ -409,6 +409,7 @@ class KeyVaultCredentials(BaseModel):
 
 
 class SubscriptionCreationCSPPayload(BaseCSPPayload):
+    display_name: str
     parent_group_id: str
     billing_account_name: str
     billing_profile_name: str

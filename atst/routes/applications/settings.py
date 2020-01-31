@@ -527,6 +527,25 @@ def resend_invite(application_id, application_role_id):
     )
 
 
+def build_subscription_payload(environment) -> SubscriptionCreationCSPPayload:
+    csp_data = environment.application.portfolio.csp_data
+    parent_group_id = environment.cloud_id
+    invoice_section_name = csp_data["billing_profile_properties"]["invoice_sections"][
+        0
+    ]["invoice_section_name"]
+
+    display_name = f"{environment.application.name}-{environment.name}"
+
+    return SubscriptionCreationCSPPayload(
+        tenant_id=csp_data.get("tenant_id"),
+        display_name=display_name,
+        parent_group_id=parent_group_id,
+        billing_account_name=csp_data.get("billing_account_name"),
+        billing_profile_name=csp_data.get("billing_profile_name"),
+        invoice_section_name=invoice_section_name,
+    )
+
+
 @applications_bp.route(
     "/environments/<environment_id>/add_subscription", methods=["POST"]
 )
@@ -535,19 +554,7 @@ def create_subscription(environment_id):
     environment = Environments.get(environment_id)
 
     try:
-        csp_data = environment.application.portfolio.csp_data
-        parent_group_id = environment.cloud_id
-        invoice_section_name = csp_data["billing_profile_properties"][
-            "invoice_sections"
-        ][0]["invoice_section_name"]
-
-        payload = SubscriptionCreationCSPPayload(
-            tenant_id=csp_data.get("tenant_id"),
-            parent_group_id=parent_group_id,
-            billing_account_name=csp_data.get("billing_account_name"),
-            billing_profile_name=csp_data.get("billing_profile_name"),
-            invoice_section_name=invoice_section_name,
-        )
+        payload = build_subscription_payload(environment)
         app.csp.cloud.create_subscription(payload)
         flash("environment_subscription_success", name=environment.displayname)
 

@@ -592,7 +592,7 @@ def test_create_subscription_creation(mock_azure: AzureCloudProvider):
         mock_result.status_code = 202
         mock_result.headers = {
             "Location": "https://verify.me",
-            "Retry-After": "10",
+            "Retry-After": 10,
         }
         mock_result.json.return_value = {}
         mock_azure.sdk.requests.put.return_value = mock_result
@@ -600,6 +600,7 @@ def test_create_subscription_creation(mock_azure: AzureCloudProvider):
         payload = SubscriptionCreationCSPPayload(
             **dict(
                 tenant_id="60ff9d34-82bf-4f21-b565-308ef0533435",
+                display_name="application_env_sub1",
                 parent_group_id=management_group_id,
                 billing_account_name="7c89b735-b22b-55c0-ab5a-c624843e8bf6:de4416ce-acc6-44b1-8122-c87c4e903c91_2019-05-31",
                 billing_profile_name="KQWI-W2SU-BG7-TGB",

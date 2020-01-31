@@ -481,7 +481,7 @@ class AzureCloudProvider(CloudProviderInterface):
             )
 
         request_body = {
-            "displayName": "Test Sub 1",
+            "displayName": payload.display_name,
             "skuId": AZURE_SKU_ID,
             "managementGroupId": payload.parent_group_id,
         }

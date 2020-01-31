@@ -802,7 +802,7 @@ def test_create_subscription_success(
         AzureCloudProvider, "create_subscription", wraps=mock_azure.create_subscription,
     ) as create_subscription:
         create_subscription.return_value = SubscriptionCreationCSPResult(
-            subscription_verify_url="", subscription_retry_after=""
+            subscription_verify_url="https://zombo.com", subscription_retry_after=10
         )
 
         response = client.post(
