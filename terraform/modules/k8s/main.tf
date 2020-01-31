@@ -81,3 +81,9 @@ resource "azurerm_monitor_diagnostic_setting" "k8s_diagnostic-1" {
     }
   }
 }
+
+resource "azurerm_role_assignment" "k8s_network_contrib" {
+  scope                = var.vnet_id
+  role_definition_name = "Network Contributor"
+  principal_id         = azurerm_kubernetes_cluster.k8s.identity[0].principal_id
+}
