@@ -861,7 +861,7 @@ class AzureCloudProvider(CloudProviderInterface):
     def _get_root_provisioning_token(self):
         creds = self._source_creds()
         return self._get_sp_token(
-            creds.tenant_id, creds.root_sp_client_id, creds.root_sp_key
+            creds.root_tenant_id, creds.root_sp_client_id, creds.root_sp_key
         )
 
     def _get_sp_token(self, tenant_id, client_id, secret_key):
