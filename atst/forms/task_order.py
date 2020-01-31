@@ -162,11 +162,7 @@ class TaskOrderForm(BaseForm):
         filters=[remove_empty_string, remove_dashes, coerce_upper],
         validators=[AlphaNumeric(), Length(min=13, max=17), Optional()],
     )
-    pdf = FormField(
-        AttachmentForm,
-        label=translate("task_orders.form.supporting_docs_size_limit"),
-        description=translate("task_orders.form.supporting_docs_size_limit"),
-    )
+    pdf = FormField(AttachmentForm)
     clins = FieldList(FormField(CLINForm))
 
 
