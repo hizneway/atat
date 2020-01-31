@@ -145,7 +145,7 @@ class AzureCloudProvider(CloudProviderInterface):
                 "secret_key": creds.root_sp_key,
                 "tenant_id": creds.root_tenant_id,
             },
-            resource=AZURE_MANAGEMENT_API,
+            resource=self.sdk.cloud.endpoints.resource_manager,
         )
 
         response = self._create_management_group(
@@ -154,6 +154,8 @@ class AzureCloudProvider(CloudProviderInterface):
             payload.display_name,
             payload.parent_id,
         )
+
+        if
 
         return EnvironmentCSPResult(**response)
 
