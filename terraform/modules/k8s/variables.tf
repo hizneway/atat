@@ -67,3 +67,8 @@ variable "workspace_id" {
   description = "Log Analytics workspace for this resource to log to"
   type        = string
 }
+
+variable "vnet_id" {
+  description = "The ID of the VNET that the AKS cluster app registration needs to provision load balancers in"
+  type        = string
+}
