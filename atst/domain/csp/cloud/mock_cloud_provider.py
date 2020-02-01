@@ -175,6 +175,7 @@ class MockCloudProvider(CloudProviderInterface):
                 "tenant_id": "",
                 "user_id": "",
                 "user_object_id": "",
+                "domain_name": "",
                 "tenant_admin_username": "test",
                 "tenant_admin_password": "test",
             }

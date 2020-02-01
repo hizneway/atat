@@ -39,6 +39,7 @@ class TenantCSPResult(AliasModel):
     user_id: str
     tenant_id: str
     user_object_id: str
+    domain_name: str
 
     tenant_admin_username: Optional[str]
     tenant_admin_password: Optional[str]
@@ -474,3 +475,25 @@ class ProductPurchaseVerificationCSPPayload(BaseCSPPayload):
 
 class ProductPurchaseVerificationCSPResult(AliasModel):
     premium_purchase_date: str
+
+
+class UserCSPPayload(BaseCSPPayload):
+    # userPrincipalName must be username + tenant
+    # display name should be full name
+    # mail nickname should be... email address?
+    display_name: str
+    tenant_host_name: str
+    email: str
+    password: str
+
+    @property
+    def user_principal_name(self):
+        return f"{self.mail_nickname}@{self.tenant_host_name}"
+
+    @property
+    def mail_nickname(self):
+        return self.display_name.replace(" ", ".").lower()
+
+
+class UserCSPResult(AliasModel):
+    id: str
