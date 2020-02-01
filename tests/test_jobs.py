@@ -2,7 +2,6 @@ import pendulum
 import pytest
 from uuid import uuid4
 from unittest.mock import Mock
-from threading import Thread
 
 from atst.domain.csp.cloud import MockCloudProvider
 from atst.domain.portfolios import Portfolios
@@ -21,8 +20,6 @@ from atst.jobs import (
     do_create_application,
     do_create_atat_admin_user,
 )
-from atst.models.utils import claim_for_update
-from atst.domain.exceptions import ClaimFailedException
 from tests.factories import (
     EnvironmentFactory,
     EnvironmentRoleFactory,
@@ -238,66 +235,6 @@ def test_create_environment_no_dupes(session, celery_app, celery_worker):
 
     # The environment's claim was released
     assert environment.claimed_until == None
-
-
-def test_claim_for_update(session):
-    portfolio = PortfolioFactory.create(
-        applications=[
-            {"environments": [{"cloud_id": uuid4().hex, "root_user_info": {}}]}
-        ],
-        task_orders=[
-            {
-                "create_clins": [
-                    {
-                        "start_date": pendulum.now().subtract(days=1),
-                        "end_date": pendulum.now().add(days=1),
-                    }
-                ]
-            }
-        ],
-    )
-    environment = portfolio.applications[0].environments[0]
-
-    satisfied_claims = []
-    exceptions = []
-
-    # Two threads race to do work on environment and check out the lock
-    class FirstThread(Thread):
-        def run(self):
-            try:
-                with claim_for_update(environment):
-                    satisfied_claims.append("FirstThread")
-            except ClaimFailedException:
-                exceptions.append("FirstThread")
-
-    class SecondThread(Thread):
-        def run(self):
-            try:
-                with claim_for_update(environment):
-                    satisfied_claims.append("SecondThread")
-            except ClaimFailedException:
-                exceptions.append("SecondThread")
-
-    t1 = FirstThread()
-    t2 = SecondThread()
-    t1.start()
-    t2.start()
-    t1.join()
-    t2.join()
-
-    session.refresh(environment)
-
-    assert len(satisfied_claims) == 1
-    assert len(exceptions) == 1
-
-    if satisfied_claims == ["FirstThread"]:
-        assert exceptions == ["SecondThread"]
-    else:
-        assert satisfied_claims == ["SecondThread"]
-        assert exceptions == ["FirstThread"]
-
-    # The claim is released
-    assert environment.claimed_until is None
 
 
 def test_dispatch_provision_user(csp, session, celery_app, celery_worker, monkeypatch):
