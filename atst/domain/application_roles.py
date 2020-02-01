@@ -1,8 +1,12 @@
+from itertools import groupby
+from typing import List
+from uuid import UUID
+
 from sqlalchemy.orm.exc import NoResultFound
 
 from atst.database import db
 from atst.domain.environment_roles import EnvironmentRoles
-from atst.models import ApplicationRole, ApplicationRoleStatus
+from atst.models import Application, ApplicationRole, ApplicationRoleStatus, Portfolio
 from .permission_sets import PermissionSets
 from .exceptions import NotFoundError
 
@@ -92,3 +96,29 @@ class ApplicationRoles(object):
 
         db.session.add(application_role)
         db.session.commit()
+
+    @classmethod
+    def get_pending_creation(cls) -> List[List[UUID]]:
+        """
+        Returns a list of lists of ApplicationRole IDs. The IDs
+        should be grouped by user and portfolio.
+        """
+        results = (
+            db.session.query(ApplicationRole.id, ApplicationRole.user_id, Portfolio.id)
+            .join(Application, Application.id == ApplicationRole.application_id)
+            .join(Portfolio, Portfolio.id == Application.portfolio_id)
+            .filter(Application.cloud_id.isnot(None))
+            .filter(ApplicationRole.deleted == False)
+            .filter(ApplicationRole.cloud_id.is_(None))
+            .filter(ApplicationRole.user_id.isnot(None))
+            .filter(ApplicationRole.status == ApplicationRoleStatus.ACTIVE)
+        ).all()
+
+        groups = []
+        keyfunc = lambda pair: (pair[1], pair[2])
+        sorted_results = sorted(results, key=keyfunc)
+        for _, g in groupby(sorted_results, keyfunc):
+            group = [pair[0] for pair in list(g)]
+            groups.append(group)
+
+        return groups
