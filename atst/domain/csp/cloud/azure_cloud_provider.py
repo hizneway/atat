@@ -193,12 +193,11 @@ class AzureCloudProvider(CloudProviderInterface):
 
     def create_application(self, payload: ApplicationCSPPayload):
         creds = self._source_creds(payload.tenant_id)
-        # TODO: these should be tenant_sp_client_id, etc
         credentials = self._get_credential_obj(
             {
-                "client_id": creds.root_sp_client_id,
-                "secret_key": creds.root_sp_key,
-                "tenant_id": creds.root_tenant_id,
+                "client_id": creds.tenant_sp_client_id,
+                "secret_key": creds.tenant_sp_key,
+                "tenant_id": creds.tenant_id,
             },
             resource=self.sdk.cloud.endpoints.resource_manager,
         )
