@@ -1,5 +1,5 @@
 from enum import Enum
-from sqlalchemy import Index, ForeignKey, Column, Enum as SQLAEnum, Table
+from sqlalchemy import Index, ForeignKey, Column, Enum as SQLAEnum, Table, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from sqlalchemy.event import listen
@@ -33,6 +33,7 @@ class ApplicationRole(
     mixins.AuditableMixin,
     mixins.PermissionsMixin,
     mixins.DeletableMixin,
+    mixins.ClaimableMixin,
 ):
     __tablename__ = "application_roles"
 
@@ -58,6 +59,8 @@ class ApplicationRole(
         "EnvironmentRole",
         primaryjoin="and_(EnvironmentRole.application_role_id == ApplicationRole.id, EnvironmentRole.deleted == False)",
     )
+
+    cloud_id = Column(String)
 
     @property
     def latest_invitation(self):
