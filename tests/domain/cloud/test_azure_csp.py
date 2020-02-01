@@ -12,7 +12,6 @@ from atst.domain.csp.cloud.models import (
     AdminRoleDefinitionCSPResult,
     ApplicationCSPPayload,
     ApplicationCSPResult,
-    BaseCSPPayload,
     BillingInstructionCSPPayload,
     BillingInstructionCSPResult,
     BillingProfileCreationCSPPayload,
@@ -25,6 +24,10 @@ from atst.domain.csp.cloud.models import (
     ProductPurchaseCSPResult,
     ProductPurchaseVerificationCSPPayload,
     ProductPurchaseVerificationCSPResult,
+    SubscriptionCreationCSPPayload,
+    SubscriptionCreationCSPResult,
+    SubscriptionVerificationCSPPayload,
+    SuscriptionVerificationCSPResult,
     TaskOrderBillingCreationCSPPayload,
     TaskOrderBillingCreationCSPResult,
     TaskOrderBillingVerificationCSPPayload,
@@ -44,40 +47,6 @@ from atst.domain.csp.cloud.models import (
 )
 
 BILLING_ACCOUNT_NAME = "52865e4c-52e8-5a6c-da6b-c58f0814f06f:7ea5de9d-b8ce-4901-b1c5-d864320c7b03_2019-05-31"
-
-
-def test_create_subscription_succeeds(mock_azure: AzureCloudProvider):
-    environment = EnvironmentFactory.create()
-
-    subscription_id = str(uuid4())
-
-    credentials = mock_azure._get_credential_obj(AUTH_CREDENTIALS)
-    display_name = "Test Subscription"
-    billing_profile_id = str(uuid4())
-    sku_id = str(uuid4())
-    management_group_id = (
-        environment.cloud_id  # environment.csp_details.management_group_id?
-    )
-    billing_account_name = (
-        "?"  # environment.application.portfilio.csp_details.billing_account.name?
-    )
-    invoice_section_name = "?"  # environment.name? or something specific to billing?
-
-    mock_azure.sdk.subscription.SubscriptionClient.return_value.subscription_factory.create_subscription.return_value.result.return_value.subscription_link = (
-        f"subscriptions/{subscription_id}"
-    )
-
-    result = mock_azure._create_subscription(
-        credentials,
-        display_name,
-        billing_profile_id,
-        sku_id,
-        management_group_id,
-        billing_account_name,
-        invoice_section_name,
-    )
-
-    assert result == subscription_id
 
 
 def mock_management_group_create(mock_azure, spec_dict):
@@ -123,7 +92,7 @@ def test_create_application_succeeds(mock_azure: AzureCloudProvider):
         tenant_id="1234", display_name=application.name, parent_id=str(uuid4())
     )
 
-    result = mock_azure.create_application(payload)
+    result: ApplicationCSPResult = mock_azure.create_application(payload)
 
     assert result.id == "Test Id"
 
@@ -686,3 +655,66 @@ def test_create_tenant_principal_ownership(mock_azure: AzureCloudProvider):
         )
 
         assert result.principal_owner_assignment_id == "id"
+
+
+def test_create_subscription_creation(mock_azure: AzureCloudProvider):
+    with patch.object(
+        AzureCloudProvider,
+        "_get_tenant_principal_token",
+        wraps=mock_azure._get_tenant_principal_token,
+    ) as _get_tenant_principal_token:
+        _get_tenant_principal_token.return_value = "my fake token"
+
+        mock_result = Mock()
+        mock_result.status_code = 202
+        mock_result.headers = {
+            "Location": "https://verify.me",
+            "Retry-After": 10,
+        }
+        mock_result.json.return_value = {}
+        mock_azure.sdk.requests.put.return_value = mock_result
+        management_group_id = str(uuid4())
+        payload = SubscriptionCreationCSPPayload(
+            **dict(
+                tenant_id="60ff9d34-82bf-4f21-b565-308ef0533435",
+                display_name="application_env_sub1",
+                parent_group_id=management_group_id,
+                billing_account_name="7c89b735-b22b-55c0-ab5a-c624843e8bf6:de4416ce-acc6-44b1-8122-c87c4e903c91_2019-05-31",
+                billing_profile_name="KQWI-W2SU-BG7-TGB",
+                invoice_section_name="6HMZ-2HLO-PJA-TGB",
+            )
+        )
+
+        result: SubscriptionCreationCSPResult = mock_azure.create_subscription_creation(
+            payload
+        )
+
+        assert result.subscription_verify_url == "https://verify.me"
+
+
+def test_create_subscription_verification(mock_azure: AzureCloudProvider):
+    with patch.object(
+        AzureCloudProvider,
+        "_get_tenant_principal_token",
+        wraps=mock_azure._get_tenant_principal_token,
+    ) as _get_tenant_principal_token:
+        _get_tenant_principal_token.return_value = "my fake token"
+
+        mock_result = Mock()
+        mock_result.ok = True
+        mock_result.json.return_value = {
+            "subscriptionLink": "/subscriptions/60fbbb72-0516-4253-ab18-c92432ba3230"
+        }
+        mock_azure.sdk.requests.get.return_value = mock_result
+
+        payload = SubscriptionVerificationCSPPayload(
+            **dict(
+                tenant_id="60ff9d34-82bf-4f21-b565-308ef0533435",
+                subscription_verify_url="https://verify.me",
+            )
+        )
+
+        result: SuscriptionVerificationCSPResult = mock_azure.create_subscription_verification(
+            payload
+        )
+        assert result.subscription_id == "60fbbb72-0516-4253-ab18-c92432ba3230"
