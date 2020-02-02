@@ -153,3 +153,12 @@ def test_get_pending_creation():
     expected_ids = [[role_one.id, role_two.id], [role_three.id], [role_four.id]]
     # Sort them to produce the same order.
     assert sorted(app_ids) == sorted(expected_ids)
+
+
+def test_get_many():
+    ar1 = ApplicationRoleFactory.create()
+    ar2 = ApplicationRoleFactory.create()
+    ApplicationRoleFactory.create()
+
+    result = ApplicationRoles.get_many([ar1.id, ar2.id])
+    assert result == [ar1, ar2]

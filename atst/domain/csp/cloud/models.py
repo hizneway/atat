@@ -1,6 +1,7 @@
+from secrets import token_urlsafe
 from typing import Dict, List, Optional
-import re
 from uuid import uuid4
+import re
 
 from pydantic import BaseModel, validator, root_validator
 
@@ -478,13 +479,10 @@ class ProductPurchaseVerificationCSPResult(AliasModel):
 
 
 class UserCSPPayload(BaseCSPPayload):
-    # userPrincipalName must be username + tenant
-    # display name should be full name
-    # mail nickname should be... email address?
     display_name: str
     tenant_host_name: str
     email: str
-    password: str
+    password: Optional[str]
 
     @property
     def user_principal_name(self):
@@ -493,6 +491,10 @@ class UserCSPPayload(BaseCSPPayload):
     @property
     def mail_nickname(self):
         return self.display_name.replace(" ", ".").lower()
+
+    @validator("password", pre=True, always=True)
+    def supply_password_default(cls, password):
+        return password or token_urlsafe(16)
 
 
 class UserCSPResult(AliasModel):

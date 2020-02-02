@@ -3,16 +3,16 @@ import pendulum
 
 from atst.database import db
 from atst.queue import celery
-from atst.models import EnvironmentRole, JobFailure
+from atst.models import JobFailure
 from atst.domain.csp.cloud.exceptions import GeneralCSPException
 from atst.domain.csp.cloud import CloudProviderInterface
 from atst.domain.applications import Applications
 from atst.domain.environments import Environments
 from atst.domain.portfolios import Portfolios
-from atst.domain.environment_roles import EnvironmentRoles
-from atst.models.utils import claim_for_update
+from atst.domain.application_roles import ApplicationRoles
+from atst.models.utils import claim_for_update, claim_many_for_update
 from atst.utils.localization import translate
-from atst.domain.csp.cloud.models import ApplicationCSPPayload
+from atst.domain.csp.cloud.models import ApplicationCSPPayload, UserCSPPayload
 
 
 class RecordFailure(celery.Task):
@@ -75,6 +75,34 @@ def do_create_application(csp: CloudProviderInterface, application_id=None):
         db.session.commit()
 
 
+def do_create_user(csp: CloudProviderInterface, application_role_ids=None):
+    if not application_role_ids:
+        return
+
+    app_roles = ApplicationRoles.get_many(application_role_ids)
+
+    with claim_many_for_update(app_roles) as app_roles:
+
+        if any([ar.cloud_id for ar in app_roles]):
+            return
+
+        csp_details = app_roles[0].application.portfolio.csp_data
+        user = app_roles[0].user
+
+        payload = UserCSPPayload(
+            tenant_id=csp_details.get("tenant_id"),
+            tenant_host_name=csp_details.get("domain_name"),
+            display_name=user.full_name,
+            email=user.email,
+        )
+        result = csp.create_user(payload)
+        for app_role in app_roles:
+            app_role.cloud_id = result.id
+            db.session.add(app_role)
+
+        db.session.commit()
+
+
 def do_create_environment(csp: CloudProviderInterface, environment_id=None):
     environment = Environments.get(environment_id)
 
@@ -128,21 +156,6 @@ def render_email(template_path, context):
     return app.jinja_env.get_template(template_path).render(context)
 
 
-def do_provision_user(csp: CloudProviderInterface, environment_role_id=None):
-    environment_role = EnvironmentRoles.get_by_id(environment_role_id)
-
-    with claim_for_update(environment_role) as environment_role:
-        credentials = environment_role.environment.csp_credentials
-
-        csp_user_id = csp.create_or_update_user(
-            credentials, environment_role, environment_role.role
-        )
-        environment_role.csp_user_id = csp_user_id
-        environment_role.status = EnvironmentRole.Status.COMPLETED
-        db.session.add(environment_role)
-        db.session.commit()
-
-
 def do_work(fn, task, csp, **kwargs):
     try:
         fn(csp, **kwargs)
@@ -167,6 +180,13 @@ def create_application(self, application_id=None):
 
 
 @celery.task(bind=True, base=RecordFailure)
+def create_user(self, application_role_ids=None):
+    do_work(
+        do_create_user, self, app.csp.cloud, application_role_ids=application_role_ids
+    )
+
+
+@celery.task(bind=True, base=RecordFailure)
 def create_environment(self, environment_id=None):
     do_work(do_create_environment, self, app.csp.cloud, environment_id=environment_id)
 
@@ -175,13 +195,6 @@ def create_environment(self, environment_id=None):
 def create_atat_admin_user(self, environment_id=None):
     do_work(
         do_create_atat_admin_user, self, app.csp.cloud, environment_id=environment_id
-    )
-
-
-@celery.task(bind=True)
-def provision_user(self, environment_role_id=None):
-    do_work(
-        do_provision_user, self, app.csp.cloud, environment_role_id=environment_role_id
     )
 
 
@@ -201,6 +214,12 @@ def dispatch_create_application(self):
 
 
 @celery.task(bind=True)
+def dispatch_create_user(self):
+    for application_role_ids in ApplicationRoles.get_pending_creation():
+        create_user.delay(application_role_ids=application_role_ids)
+
+
+@celery.task(bind=True)
 def dispatch_create_environment(self):
     for environment_id in Environments.get_environments_pending_creation(
         pendulum.now()
@@ -214,11 +233,3 @@ def dispatch_create_atat_admin_user(self):
         pendulum.now()
     ):
         create_atat_admin_user.delay(environment_id=environment_id)
-
-
-@celery.task(bind=True)
-def dispatch_provision_user(self):
-    for (
-        environment_role_id
-    ) in EnvironmentRoles.get_environment_roles_pending_creation():
-        provision_user.delay(environment_role_id=environment_role_id)

@@ -66,6 +66,15 @@ class ApplicationRoles(object):
             raise NotFoundError("application_role")
 
     @classmethod
+    def get_many(cls, ids):
+        return (
+            db.session.query(ApplicationRole)
+            .filter(ApplicationRole.id.in_(ids))
+            .filter(ApplicationRole.status != ApplicationRoleStatus.DISABLED)
+            .all()
+        )
+
+    @classmethod
     def update_permission_sets(cls, application_role, new_perm_sets_names):
         application_role.permission_sets = ApplicationRoles._permission_sets_for_names(
             new_perm_sets_names
