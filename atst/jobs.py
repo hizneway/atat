@@ -119,7 +119,7 @@ def do_create_environment(csp: CloudProviderInterface, environment_id=None):
         parent_id = environment.application.cloud_id
         tenant_id = csp_details.get("tenant_id")
         payload = EnvironmentCSPPayload(
-            tenant_id=tenant_id, display_name=application.name, parent_id=parent_id
+            tenant_id=tenant_id, display_name=environment.name, parent_id=parent_id
         )
 
         env_result = csp.create_environment(payload)
