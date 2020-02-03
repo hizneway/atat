@@ -1,4 +1,4 @@
-from sqlalchemy import and_, Column, ForeignKey, String, UniqueConstraint, TIMESTAMP
+from sqlalchemy import and_, Column, ForeignKey, String, UniqueConstraint
 from sqlalchemy.orm import relationship, synonym
 
 from atst.models.base import Base
@@ -9,7 +9,11 @@ from atst.models.types import Id
 
 
 class Application(
-    Base, mixins.TimestampsMixin, mixins.AuditableMixin, mixins.DeletableMixin
+    Base,
+    mixins.TimestampsMixin,
+    mixins.AuditableMixin,
+    mixins.DeletableMixin,
+    mixins.ClaimableMixin,
 ):
     __tablename__ = "applications"
 
@@ -41,7 +45,6 @@ class Application(
     )
 
     cloud_id = Column(String)
-    claimed_until = Column(TIMESTAMP(timezone=True))
 
     @property
     def users(self):

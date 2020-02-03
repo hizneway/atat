@@ -1,6 +1,7 @@
+from secrets import token_urlsafe
 from typing import Dict, List, Optional
-import re
 from uuid import uuid4
+import re
 
 from pydantic import BaseModel, validator, root_validator
 
@@ -39,6 +40,7 @@ class TenantCSPResult(AliasModel):
     user_id: str
     tenant_id: str
     user_object_id: str
+    domain_name: str
 
     tenant_admin_username: Optional[str]
     tenant_admin_password: Optional[str]
@@ -474,3 +476,26 @@ class ProductPurchaseVerificationCSPPayload(BaseCSPPayload):
 
 class ProductPurchaseVerificationCSPResult(AliasModel):
     premium_purchase_date: str
+
+
+class UserCSPPayload(BaseCSPPayload):
+    display_name: str
+    tenant_host_name: str
+    email: str
+    password: Optional[str]
+
+    @property
+    def user_principal_name(self):
+        return f"{self.mail_nickname}@{self.tenant_host_name}.onmicrosoft.com"
+
+    @property
+    def mail_nickname(self):
+        return self.display_name.replace(" ", ".").lower()
+
+    @validator("password", pre=True, always=True)
+    def supply_password_default(cls, password):
+        return password or token_urlsafe(16)
+
+
+class UserCSPResult(AliasModel):
+    id: str

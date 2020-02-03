@@ -2,27 +2,25 @@ import pendulum
 import pytest
 from uuid import uuid4
 from unittest.mock import Mock
-from threading import Thread
 
 from atst.domain.csp.cloud import MockCloudProvider
 from atst.domain.portfolios import Portfolios
+from atst.models import ApplicationRoleStatus
 
 from atst.jobs import (
     RecordFailure,
     dispatch_create_environment,
     dispatch_create_application,
+    dispatch_create_user,
     dispatch_create_atat_admin_user,
     dispatch_provision_portfolio,
-    dispatch_provision_user,
     create_environment,
-    do_provision_user,
+    do_create_user,
     do_provision_portfolio,
     do_create_environment,
     do_create_application,
     do_create_atat_admin_user,
 )
-from atst.models.utils import claim_for_update
-from atst.domain.exceptions import ClaimFailedException
 from tests.factories import (
     EnvironmentFactory,
     EnvironmentRoleFactory,
@@ -30,6 +28,7 @@ from tests.factories import (
     PortfolioStateMachineFactory,
     ApplicationFactory,
     ApplicationRoleFactory,
+    UserFactory,
 )
 from atst.models import CSPRole, EnvironmentRole, ApplicationRoleStatus, JobFailure
 
@@ -126,6 +125,30 @@ def test_create_application_job_is_idempotent(csp):
     csp.create_application.assert_not_called()
 
 
+def test_create_user_job(session, csp):
+    portfolio = PortfolioFactory.create(
+        csp_data={
+            "tenant_id": str(uuid4()),
+            "domain_name": "rebelalliance.onmicrosoft.com",
+        }
+    )
+    application = ApplicationFactory.create(portfolio=portfolio, cloud_id="321")
+    user = UserFactory.create(
+        first_name="Han", last_name="Solo", email="han@example.com"
+    )
+    app_role = ApplicationRoleFactory.create(
+        application=application,
+        user=user,
+        status=ApplicationRoleStatus.ACTIVE,
+        cloud_id=None,
+    )
+
+    do_create_user(csp, [app_role.id])
+    session.refresh(app_role)
+
+    assert app_role.cloud_id
+
+
 def test_create_atat_admin_user(csp, session):
     environment = EnvironmentFactory.create(cloud_id="something")
     do_create_atat_admin_user(csp, environment.id)
@@ -179,6 +202,29 @@ def test_dispatch_create_application(monkeypatch):
     # It should cause the create_application task to be called once
     # with the application id
     mock.delay.assert_called_once_with(application_id=app.id)
+
+
+def test_dispatch_create_user(monkeypatch):
+    application = ApplicationFactory.create(cloud_id="123")
+    user = UserFactory.create(
+        first_name="Han", last_name="Solo", email="han@example.com"
+    )
+    app_role = ApplicationRoleFactory.create(
+        application=application,
+        user=user,
+        status=ApplicationRoleStatus.ACTIVE,
+        cloud_id=None,
+    )
+
+    mock = Mock()
+    monkeypatch.setattr("atst.jobs.create_user", mock)
+
+    # When dispatch_create_user is called
+    dispatch_create_user.run()
+
+    # It should cause the create_user task to be called once
+    # with the application id
+    mock.delay.assert_called_once_with(application_role_ids=[app_role.id])
 
 
 def test_dispatch_create_atat_admin_user(session, monkeypatch):
@@ -238,128 +284,6 @@ def test_create_environment_no_dupes(session, celery_app, celery_worker):
 
     # The environment's claim was released
     assert environment.claimed_until == None
-
-
-def test_claim_for_update(session):
-    portfolio = PortfolioFactory.create(
-        applications=[
-            {"environments": [{"cloud_id": uuid4().hex, "root_user_info": {}}]}
-        ],
-        task_orders=[
-            {
-                "create_clins": [
-                    {
-                        "start_date": pendulum.now().subtract(days=1),
-                        "end_date": pendulum.now().add(days=1),
-                    }
-                ]
-            }
-        ],
-    )
-    environment = portfolio.applications[0].environments[0]
-
-    satisfied_claims = []
-    exceptions = []
-
-    # Two threads race to do work on environment and check out the lock
-    class FirstThread(Thread):
-        def run(self):
-            try:
-                with claim_for_update(environment):
-                    satisfied_claims.append("FirstThread")
-            except ClaimFailedException:
-                exceptions.append("FirstThread")
-
-    class SecondThread(Thread):
-        def run(self):
-            try:
-                with claim_for_update(environment):
-                    satisfied_claims.append("SecondThread")
-            except ClaimFailedException:
-                exceptions.append("SecondThread")
-
-    t1 = FirstThread()
-    t2 = SecondThread()
-    t1.start()
-    t2.start()
-    t1.join()
-    t2.join()
-
-    session.refresh(environment)
-
-    assert len(satisfied_claims) == 1
-    assert len(exceptions) == 1
-
-    if satisfied_claims == ["FirstThread"]:
-        assert exceptions == ["SecondThread"]
-    else:
-        assert satisfied_claims == ["SecondThread"]
-        assert exceptions == ["FirstThread"]
-
-    # The claim is released
-    assert environment.claimed_until is None
-
-
-def test_dispatch_provision_user(csp, session, celery_app, celery_worker, monkeypatch):
-
-    # Given that I have four environment roles:
-    #   (A) one of which has a completed status
-    #   (B) one of which has an environment that has not been provisioned
-    #   (C) one of which is pending, has a provisioned environment but an inactive application role
-    #   (D) one of which is pending, has a provisioned environment and has an active application role
-    provisioned_environment = EnvironmentFactory.create(
-        cloud_id="cloud_id", root_user_info={}
-    )
-    unprovisioned_environment = EnvironmentFactory.create()
-    _er_a = EnvironmentRoleFactory.create(
-        environment=provisioned_environment, status=EnvironmentRole.Status.COMPLETED
-    )
-    _er_b = EnvironmentRoleFactory.create(
-        environment=unprovisioned_environment, status=EnvironmentRole.Status.PENDING
-    )
-    _er_c = EnvironmentRoleFactory.create(
-        environment=unprovisioned_environment,
-        status=EnvironmentRole.Status.PENDING,
-        application_role=ApplicationRoleFactory(status=ApplicationRoleStatus.PENDING),
-    )
-    er_d = EnvironmentRoleFactory.create(
-        environment=provisioned_environment,
-        status=EnvironmentRole.Status.PENDING,
-        application_role=ApplicationRoleFactory(status=ApplicationRoleStatus.ACTIVE),
-    )
-
-    mock = Mock()
-    monkeypatch.setattr("atst.jobs.provision_user", mock)
-
-    # When I dispatch the user provisioning task
-    dispatch_provision_user.run()
-
-    # I expect it to dispatch only one call, to EnvironmentRole D
-    mock.delay.assert_called_once_with(environment_role_id=er_d.id)
-
-
-def test_do_provision_user(csp, session):
-    # Given that I have an EnvironmentRole with a provisioned environment
-    credentials = MockCloudProvider(())._auth_credentials
-    provisioned_environment = EnvironmentFactory.create(
-        cloud_id="cloud_id", root_user_info={"credentials": credentials}
-    )
-    environment_role = EnvironmentRoleFactory.create(
-        environment=provisioned_environment,
-        status=EnvironmentRole.Status.PENDING,
-        role="ADMIN",
-    )
-
-    # When I call the user provisoning task
-    do_provision_user(csp=csp, environment_role_id=environment_role.id)
-
-    session.refresh(environment_role)
-    # I expect that the CSP create_or_update_user method will be called
-    csp.create_or_update_user.assert_called_once_with(
-        credentials, environment_role, CSPRole.ADMIN
-    )
-    # I expect that the EnvironmentRole now has a csp_user_id
-    assert environment_role.csp_user_id
 
 
 def test_dispatch_provision_portfolio(

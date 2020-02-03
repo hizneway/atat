@@ -6,7 +6,7 @@ from uuid import uuid4
 from atst.utils import sha256_hex
 
 from .cloud_provider_interface import CloudProviderInterface
-from .exceptions import AuthenticationException
+from .exceptions import AuthenticationException, UserProvisioningException
 from .models import (
     SubscriptionCreationCSPPayload,
     SubscriptionCreationCSPResult,
@@ -48,6 +48,8 @@ from .models import (
     TenantPrincipalCSPResult,
     TenantPrincipalOwnershipCSPPayload,
     TenantPrincipalOwnershipCSPResult,
+    UserCSPPayload,
+    UserCSPResult,
 )
 from .policy import AzurePolicyManager
 
@@ -193,9 +195,9 @@ class AzureCloudProvider(CloudProviderInterface):
         creds = self._source_creds(payload.tenant_id)
         credentials = self._get_credential_obj(
             {
-                "client_id": creds.root_sp_client_id,
-                "secret_key": creds.root_sp_key,
-                "tenant_id": creds.root_tenant_id,
+                "client_id": creds.tenant_sp_client_id,
+                "secret_key": creds.tenant_sp_key,
+                "tenant_id": creds.tenant_id,
             },
             resource=self.sdk.cloud.endpoints.resource_manager,
         )
@@ -310,7 +312,9 @@ class AzureCloudProvider(CloudProviderInterface):
                     tenant_admin_password=payload.password,
                 ),
             )
-            return self._ok(TenantCSPResult(**result_dict))
+            return self._ok(
+                TenantCSPResult(domain_name=payload.domain_name, **result_dict)
+            )
         else:
             return self._error(result.json())
 
@@ -850,6 +854,80 @@ class AzureCloudProvider(CloudProviderInterface):
 
         return service_principal
 
+    def create_user(self, payload: UserCSPPayload) -> UserCSPResult:
+        """Create a user in an Azure Active Directory instance.
+        Unlike most of the methods on this interface, this requires
+        two API calls: one POST to create the user and one PATCH to
+        set the alternate email address. The email address cannot
+        be set on the first API call. The email address is
+        necessary so that users can do Self-Service Password
+        Recovery.
+
+        Arguments:
+            payload {UserCSPPayload} -- a payload object with the
+            data necessary for both calls
+
+        Returns:
+            UserCSPResult -- a result object containing the AAD ID.
+        """
+        graph_token = self._get_tenant_principal_token(
+            payload.tenant_id, resource=self.graph_resource
+        )
+        if graph_token is None:
+            raise AuthenticationException(
+                "Could not resolve graph token for tenant admin"
+            )
+
+        result = self._create_active_directory_user(graph_token, payload)
+        self._update_active_directory_user_email(graph_token, result.id, payload)
+
+        return result
+
+    def _create_active_directory_user(self, graph_token, payload: UserCSPPayload):
+        request_body = {
+            "accountEnabled": True,
+            "displayName": payload.display_name,
+            "mailNickname": payload.mail_nickname,
+            "userPrincipalName": payload.user_principal_name,
+            "passwordProfile": {
+                "forceChangePasswordNextSignIn": True,
+                "password": payload.password,
+            },
+        }
+
+        auth_header = {
+            "Authorization": f"Bearer {graph_token}",
+        }
+
+        url = f"{self.graph_resource}v1.0/users"
+
+        response = self.sdk.requests.post(url, headers=auth_header, json=request_body)
+
+        if response.ok:
+            return UserCSPResult(**response.json())
+        else:
+            raise UserProvisioningException(f"Failed to create user: {response.json()}")
+
+    def _update_active_directory_user_email(
+        self, graph_token, user_id, payload: UserCSPPayload
+    ):
+        request_body = {"otherMails": [payload.email]}
+
+        auth_header = {
+            "Authorization": f"Bearer {graph_token}",
+        }
+
+        url = f"{self.graph_resource}v1.0/users/{user_id}"
+
+        response = self.sdk.requests.patch(url, headers=auth_header, json=request_body)
+
+        if response.ok:
+            return True
+        else:
+            raise UserProvisioningException(
+                f"Failed update user email: {response.json()}"
+            )
+
     def _extract_subscription_id(self, subscription_url):
         sub_id_match = SUBSCRIPTION_ID_REGEX.match(subscription_url)
 
@@ -871,14 +949,15 @@ class AzureCloudProvider(CloudProviderInterface):
             creds.root_tenant_id, creds.root_sp_client_id, creds.root_sp_key
         )
 
-    def _get_sp_token(self, tenant_id, client_id, secret_key):
+    def _get_sp_token(self, tenant_id, client_id, secret_key, resource=None):
         context = self.sdk.adal.AuthenticationContext(
             f"{self.sdk.cloud.endpoints.active_directory}/{tenant_id}"
         )
 
+        resource = resource or self.sdk.cloud.endpoints.resource_manager
         # TODO: handle failure states here
         token_response = context.acquire_token_with_client_credentials(
-            self.sdk.cloud.endpoints.resource_manager, client_id, secret_key
+            resource, client_id, secret_key
         )
 
         return token_response.get("accessToken", None)
@@ -939,10 +1018,13 @@ class AzureCloudProvider(CloudProviderInterface):
             "tenant_id": self.tenant_id,
         }
 
-    def _get_tenant_principal_token(self, tenant_id):
+    def _get_tenant_principal_token(self, tenant_id, resource=None):
         creds = self._source_creds(tenant_id)
         return self._get_sp_token(
-            creds.tenant_id, creds.tenant_sp_client_id, creds.tenant_sp_key
+            creds.tenant_id,
+            creds.tenant_sp_client_id,
+            creds.tenant_sp_key,
+            resource=resource,
         )
 
     def _get_elevated_management_token(self, tenant_id):

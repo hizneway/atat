@@ -1,4 +1,4 @@
-from sqlalchemy import Column, ForeignKey, String, TIMESTAMP, UniqueConstraint
+from sqlalchemy import Column, ForeignKey, String, UniqueConstraint
 from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import JSONB
 from enum import Enum
@@ -9,7 +9,11 @@ import atst.models.types as types
 
 
 class Environment(
-    Base, mixins.TimestampsMixin, mixins.AuditableMixin, mixins.DeletableMixin
+    Base,
+    mixins.TimestampsMixin,
+    mixins.AuditableMixin,
+    mixins.DeletableMixin,
+    mixins.ClaimableMixin,
 ):
     __tablename__ = "environments"
 
@@ -27,8 +31,6 @@ class Environment(
 
     cloud_id = Column(String)
     root_user_info = Column(JSONB(none_as_null=True))
-
-    claimed_until = Column(TIMESTAMP(timezone=True))
 
     roles = relationship(
         "EnvironmentRole",

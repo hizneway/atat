@@ -51,6 +51,8 @@ from .models import (
     TenantPrincipalCSPResult,
     TenantPrincipalOwnershipCSPPayload,
     TenantPrincipalOwnershipCSPResult,
+    UserCSPPayload,
+    UserCSPResult,
 )
 
 
@@ -175,6 +177,7 @@ class MockCloudProvider(CloudProviderInterface):
                 "tenant_id": "",
                 "user_id": "",
                 "user_object_id": "",
+                "domain_name": "",
                 "tenant_admin_username": "test",
                 "tenant_admin_password": "test",
             }
@@ -473,6 +476,11 @@ class MockCloudProvider(CloudProviderInterface):
         return ApplicationCSPResult(
             id=f"{AZURE_MGMNT_PATH}{payload.management_group_name}"
         )
+
+    def create_user(self, payload: UserCSPPayload):
+        self._maybe_raise(self.UNAUTHORIZED_RATE, GeneralCSPException)
+
+        return UserCSPResult(id=str(uuid4()))
 
     def get_credentials(self, scope="portfolio", tenant_id=None):
         return self.root_creds()

@@ -1,5 +1,5 @@
 from enum import Enum
-from sqlalchemy import Index, ForeignKey, Column, String, TIMESTAMP, Enum as SQLAEnum
+from sqlalchemy import Index, ForeignKey, Column, String, Enum as SQLAEnum
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
@@ -15,7 +15,11 @@ class CSPRole(Enum):
 
 
 class EnvironmentRole(
-    Base, mixins.TimestampsMixin, mixins.AuditableMixin, mixins.DeletableMixin
+    Base,
+    mixins.TimestampsMixin,
+    mixins.AuditableMixin,
+    mixins.DeletableMixin,
+    mixins.ClaimableMixin,
 ):
     __tablename__ = "environment_roles"
 
@@ -33,7 +37,6 @@ class EnvironmentRole(
     application_role = relationship("ApplicationRole")
 
     csp_user_id = Column(String())
-    claimed_until = Column(TIMESTAMP(timezone=True))
 
     class Status(Enum):
         PENDING = "pending"

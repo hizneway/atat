@@ -86,3 +86,79 @@ def test_disable(session):
     session.refresh(environment_role)
     assert member_role.status == ApplicationRoleStatus.DISABLED
     assert environment_role.deleted
+
+
+def test_get_pending_creation():
+
+    # ready Applications belonging to the same Portfolio
+    portfolio_one = PortfolioFactory.create()
+    ready_app = ApplicationFactory.create(cloud_id="123", portfolio=portfolio_one)
+    ready_app2 = ApplicationFactory.create(cloud_id="321", portfolio=portfolio_one)
+
+    # ready Application belonging to a new Portfolio
+    ready_app3 = ApplicationFactory.create(cloud_id="567")
+    unready_app = ApplicationFactory.create()
+
+    # two distinct Users
+    user_one = UserFactory.create()
+    user_two = UserFactory.create()
+
+    # Two ApplicationRoles belonging to the same User and
+    # different Applications. These should sort together because
+    # they are all under the same portfolio (portfolio_one).
+    role_one = ApplicationRoleFactory.create(
+        user=user_one, application=ready_app, status=ApplicationRoleStatus.ACTIVE
+    )
+    role_two = ApplicationRoleFactory.create(
+        user=user_one, application=ready_app2, status=ApplicationRoleStatus.ACTIVE
+    )
+
+    # An ApplicationRole belonging to a different User. This will
+    # be included but sort separately because it belongs to a
+    # different user.
+    role_three = ApplicationRoleFactory.create(
+        user=user_two, application=ready_app, status=ApplicationRoleStatus.ACTIVE
+    )
+
+    # An ApplicationRole belonging to one of the existing users
+    # but under a different portfolio. It will sort separately.
+    role_four = ApplicationRoleFactory.create(
+        user=user_one, application=ready_app3, status=ApplicationRoleStatus.ACTIVE
+    )
+
+    # This ApplicationRole will not be in the results because its
+    # application is not ready (implicitly, its cloud_id is not
+    # set.)
+    ApplicationRoleFactory.create(
+        user=UserFactory.create(),
+        application=unready_app,
+        status=ApplicationRoleStatus.ACTIVE,
+    )
+
+    # This ApplicationRole will not be in the results because it
+    # does not have a user associated.
+    ApplicationRoleFactory.create(
+        user=None, application=ready_app, status=ApplicationRoleStatus.ACTIVE,
+    )
+
+    # This ApplicationRole will not be in the results because its
+    # status is not ACTIVE.
+    ApplicationRoleFactory.create(
+        user=UserFactory.create(),
+        application=unready_app,
+        status=ApplicationRoleStatus.DISABLED,
+    )
+
+    app_ids = ApplicationRoles.get_pending_creation()
+    expected_ids = [[role_one.id, role_two.id], [role_three.id], [role_four.id]]
+    # Sort them to produce the same order.
+    assert sorted(app_ids) == sorted(expected_ids)
+
+
+def test_get_many():
+    ar1 = ApplicationRoleFactory.create()
+    ar2 = ApplicationRoleFactory.create()
+    ApplicationRoleFactory.create()
+
+    result = ApplicationRoles.get_many([ar1.id, ar2.id])
+    assert result == [ar1, ar2]
