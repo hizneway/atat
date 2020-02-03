@@ -1,4 +1,4 @@
-import Azure from 'azure-storage'
+import { BlobServiceClient } from '@azure/storage-blob'
 import 'whatwg-fetch'
 
 class AzureUploader {
@@ -10,46 +10,22 @@ class AzureUploader {
   }
 
   async upload(file) {
-    const blobService = Azure.createBlobServiceWithSas(
-      `https://${this.accountName}.blob.core.windows.net`,
-      this.sasToken
+    const blobServiceClient = new BlobServiceClient(
+      `https://${this.accountName}.blob.core.windows.net?${this.sasToken}`
     )
-    const fileReader = new FileReader()
+    const containerClient = blobServiceClient.getContainerClient(
+      this.containerName
+    )
+    const blobClient = containerClient.getBlockBlobClient(this.objectName)
     const options = {
-      contentSettings: {
-        contentType: 'application/pdf',
+      blobHTTPHeaders: {
+        blobContentType: 'application/pdf',
       },
       metadata: {
         filename: file.name,
       },
     }
-
-    return new Promise((resolve, reject) => {
-      fileReader.addEventListener('load', f => {
-        blobService.createBlockBlobFromText(
-          this.containerName,
-          `${this.objectName}`,
-          f.target.result,
-          options,
-          (err, result) => {
-            if (err) {
-              resolve({ ok: false })
-            } else {
-              resolve({ ok: true, objectName: this.objectName })
-            }
-          }
-        )
-      })
-      fileReader.readAsText(file)
-    })
-  }
-
-  downloadUrl(objectName) {
-    const blobService = Azure.createBlobServiceWithSas(
-      `https://${this.accountName}.blob.core.windows.net`,
-      this.sasToken
-    )
-    return blobService.getUrl(this.containerName, objectName, this.sasToken)
+    return blobClient.uploadBrowserData(file, options)
   }
 }
 
@@ -60,7 +36,8 @@ export class MockUploader {
   }
 
   async upload(file, objectName) {
-    return Promise.resolve({ ok: true, objectName: this.objectName })
+    // mock BlobUploadCommonResponse structure: https://docs.microsoft.com/en-us/javascript/api/@azure/storage-blob/blobuploadcommonresponse?view=azure-node-latest
+    return Promise.resolve({ _response: { status: 201 } })
   }
 }
 
