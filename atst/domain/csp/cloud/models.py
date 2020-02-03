@@ -486,7 +486,7 @@ class UserCSPPayload(BaseCSPPayload):
 
     @property
     def user_principal_name(self):
-        return f"{self.mail_nickname}@{self.tenant_host_name}"
+        return f"{self.mail_nickname}@{self.tenant_host_name}.onmicrosoft.com"
 
     @property
     def mail_nickname(self):

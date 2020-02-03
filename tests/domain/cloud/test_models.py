@@ -103,7 +103,7 @@ def test_KeyVaultCredentials_enforce_root_creds():
 user_payload = {
     "tenant_id": "123",
     "display_name": "Han Solo",
-    "tenant_host_name": "rebelalliance.com",
+    "tenant_host_name": "rebelalliance",
     "email": "han@moseisley.cantina",
 }
 
@@ -115,7 +115,7 @@ def test_UserCSPPayload_mail_nickname():
 
 def test_UserCSPPayload_user_principal_name():
     payload = UserCSPPayload(**user_payload)
-    assert payload.user_principal_name == f"han.solo@rebelalliance.com"
+    assert payload.user_principal_name == f"han.solo@rebelalliance.onmicrosoft.com"
 
 
 def test_UserCSPPayload_password():
