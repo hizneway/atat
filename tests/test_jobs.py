@@ -13,6 +13,7 @@ from atst.jobs import (
     dispatch_create_application,
     dispatch_create_user,
     dispatch_provision_portfolio,
+    dispatch_send_task_order_files,
     create_environment,
     do_create_user,
     do_provision_portfolio,
@@ -20,15 +21,17 @@ from atst.jobs import (
     do_create_application,
 )
 from tests.factories import (
+    ApplicationFactory,
+    ApplicationRoleFactory,
     EnvironmentFactory,
     EnvironmentRoleFactory,
     PortfolioFactory,
     PortfolioStateMachineFactory,
-    ApplicationFactory,
-    ApplicationRoleFactory,
+    TaskOrderFactory,
     UserFactory,
 )
 from atst.models import CSPRole, EnvironmentRole, ApplicationRoleStatus, JobFailure
+from atst.utils.localization import translate
 
 
 @pytest.fixture(autouse=True, scope="function")
@@ -287,3 +290,52 @@ def test_provision_portfolio_create_tenant(
     # monkeypatch.setattr("atst.jobs.provision_portfolio", mock)
     # dispatch_provision_portfolio.run()
     # mock.delay.assert_called_once_with(portfolio_id=portfolio.id)
+
+
+def test_dispatch_send_task_order_files(
+    csp, session, celery_app, celery_worker, monkeypatch, app
+):
+    mock = Mock()
+    monkeypatch.setattr("atst.jobs.send_with_attachment", mock)
+
+    def _download_task_order(MockFileService, object_name):
+        return {"name": object_name}
+
+    monkeypatch.setattr(
+        "atst.domain.csp.files.MockFileService.download_task_order",
+        _download_task_order,
+    )
+
+    # Create 3 new Task Orders
+    for i in range(3):
+        TaskOrderFactory.create(create_clins=[{"number": "0001"}])
+
+    dispatch_send_task_order_files.run()
+
+    # Check that send_with_attachment was called once for each task order
+    assert mock.delay.call_count == 3
+    mock.reset_mock()
+
+    # Create new TO
+    task_order = TaskOrderFactory.create(create_clins=[{"number": "0001"}])
+    assert not task_order.pdf_last_sent_at
+
+    dispatch_send_task_order_files.run()
+
+    # Check that send_with_attachment was called with correct kwargs
+    mock.delay.assert_called_once_with(
+        recipients=app.config.get("MICROSOFT_TASK_ORDER_EMAIL_ADDRESS"),
+        subject=translate(
+            "email.task_order_sent.subject", {"to_number": task_order.number}
+        ),
+        body=translate("email.task_order_sent.body", {"to_number": task_order.number}),
+        attachments=[
+            {
+                "name": task_order.pdf.object_name,
+                "maintype": "application",
+                "subtype": "pdf",
+            }
+        ],
+    )
+
+    assert task_order.pdf_last_sent_at

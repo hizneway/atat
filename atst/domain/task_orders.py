@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime
 from sqlalchemy import or_
 
 from atst.database import db
@@ -41,7 +41,7 @@ class TaskOrders(BaseDomainClass):
     @classmethod
     def sign(cls, task_order, signer_dod_id):
         task_order.signer_dod_id = signer_dod_id
-        task_order.signed_at = datetime.datetime.now()
+        task_order.signed_at = datetime.now()
 
         db.session.add(task_order)
         db.session.commit()
@@ -91,3 +91,9 @@ class TaskOrders(BaseDomainClass):
             )
             .all()
         )
+
+    @classmethod
+    def update_pdf_last_sent_at(cls, task_order):
+        task_order.pdf_last_sent_at = datetime.now()
+        db.session.add(task_order)
+        db.session.commit()

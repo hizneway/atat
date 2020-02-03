@@ -14,8 +14,10 @@ from atst.domain.csp.cloud.models import (
 from atst.domain.environments import Environments
 from atst.domain.portfolios import Portfolios
 from atst.models import JobFailure
+from atst.domain.task_orders import TaskOrders
 from atst.models.utils import claim_for_update, claim_many_for_update
 from atst.queue import celery
+from atst.utils.localization import translate
 
 
 class RecordFailure(celery.Task):
@@ -144,6 +146,14 @@ def do_provision_portfolio(csp: CloudProviderInterface, portfolio_id=None):
     fsm.trigger_next_transition()
 
 
+def do_send_with_attachment(
+    csp: CloudProviderInterface, recipients, subject, body, attachments
+):
+    app.mailer.send(
+        recipients=recipients, subject=subject, body=body, attachments=attachments
+    )
+
+
 @celery.task(bind=True, base=RecordFailure)
 def provision_portfolio(self, portfolio_id=None):
     do_work(do_provision_portfolio, self, app.csp.cloud, portfolio_id=portfolio_id)
@@ -164,6 +174,32 @@ def create_user(self, application_role_ids=None):
 @celery.task(bind=True, base=RecordFailure)
 def create_environment(self, environment_id=None):
     do_work(do_create_environment, self, app.csp.cloud, environment_id=environment_id)
+
+
+@celery.task(bind=True)
+def send_with_attachment(self, recipients, subject, body, attachments):
+    do_work(
+        do_send_with_attachment,
+        self,
+        app.csp.cloud,
+        recipients=recipients,
+        subject=subject,
+        body=body,
+        attachments=attachments,
+    )
+
+
+@celery.task(bind=True)
+def send_with_attachment(self, recipients, subject, body, attachments):
+    do_work(
+        do_send_with_attachment,
+        self,
+        app.csp.cloud,
+        recipients=recipients,
+        subject=subject,
+        body=body,
+        attachments=attachments,
+    )
 
 
 @celery.task(bind=True)
@@ -193,3 +229,32 @@ def dispatch_create_environment(self):
         pendulum.now()
     ):
         create_environment.delay(environment_id=environment_id)
+
+
+@celery.task(bind=True)
+def dispatch_create_atat_admin_user(self):
+    for environment_id in Environments.get_environments_pending_atat_user_creation(
+        pendulum.now()
+    ):
+        create_atat_admin_user.delay(environment_id=environment_id)
+
+
+@celery.task(bind=True)
+def dispatch_send_task_order_files(self):
+    task_orders = TaskOrders.get_for_send_task_order_files()
+    recipients = app.config.get("MICROSOFT_TASK_ORDER_EMAIL_ADDRESS")
+
+    for task_order in task_orders:
+        subject = translate(
+            "email.task_order_sent.subject", {"to_number": task_order.number}
+        )
+        body = translate("email.task_order_sent.body", {"to_number": task_order.number})
+
+        file = app.csp.files.download_task_order(task_order.pdf.object_name)
+        file["maintype"] = "application"
+        file["subtype"] = "pdf"
+
+        send_with_attachment.delay(
+            recipients=recipients, subject=subject, body=body, attachments=[file]
+        )
+        TaskOrders.update_pdf_last_sent_at(task_order)
