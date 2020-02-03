@@ -2,6 +2,13 @@ import { buildUploader } from '../lib/upload'
 import { emitFieldChange } from '../lib/emitters'
 import inputValidations from '../lib/input_validations'
 
+function uploadResponseOkay(response) {
+  // check BlobUploadCommonResponse: https://docs.microsoft.com/en-us/javascript/api/@azure/storage-blob/blobuploadcommonresponse?view=azure-node-latest
+  // The upload operation is a PUT that should return a 201
+  // https://docs.microsoft.com/en-us/rest/api/storageservices/put-blob#status-code
+  return response._response.status === 201
+}
+
 export default {
   name: 'uploadinput',
 
@@ -21,7 +28,7 @@ export default {
       type: String,
     },
     sizeLimit: {
-      type: String,
+      type: Number,
     },
   },
 
@@ -34,7 +41,7 @@ export default {
       sizeError: false,
       filenameError: false,
       downloadLink: '',
-      fileSizeLimit: parseInt(this.sizeLimit),
+      fileSizeLimit: this.sizeLimit,
     }
   },
 
@@ -63,7 +70,7 @@ export default {
 
       const uploader = await this.getUploader()
       const response = await uploader.upload(file)
-      if (response.ok) {
+      if (uploadResponseOkay(response)) {
         this.attachment = e.target.value
         this.$refs.attachmentFilename.value = file.name
         this.$refs.attachmentObjectName.value = response.objectName
@@ -73,7 +80,7 @@ export default {
 
         this.downloadLink = await this.getDownloadLink(
           file.name,
-          response.objectName
+          uploader.objectName
         )
       } else {
         emitFieldChange(this)
