@@ -6,12 +6,8 @@ from uuid import uuid4
 from atst.utils import sha256_hex
 
 from .cloud_provider_interface import CloudProviderInterface
-from .exceptions import AuthenticationException, UserProvisioningException
+from .exceptions import AuthenticationException, UserProvisioningException, SecretException
 from .models import (
-    SubscriptionCreationCSPPayload,
-    SubscriptionCreationCSPResult,
-    SubscriptionVerificationCSPPayload,
-    SuscriptionVerificationCSPResult,
     AdminRoleDefinitionCSPPayload,
     AdminRoleDefinitionCSPResult,
     ApplicationCSPPayload,
@@ -27,12 +23,16 @@ from .models import (
     EnvironmentCSPPayload,
     EnvironmentCSPResult,
     KeyVaultCredentials,
+    PrincipalAdminRoleCSPPayload,
+    PrincipalAdminRoleCSPResult,
     ProductPurchaseCSPPayload,
     ProductPurchaseCSPResult,
     ProductPurchaseVerificationCSPPayload,
     ProductPurchaseVerificationCSPResult,
-    PrincipalAdminRoleCSPPayload,
-    PrincipalAdminRoleCSPResult,
+    SubscriptionCreationCSPPayload,
+    SubscriptionCreationCSPResult,
+    SubscriptionVerificationCSPPayload,
+    SuscriptionVerificationCSPResult,
     TaskOrderBillingCreationCSPPayload,
     TaskOrderBillingCreationCSPResult,
     TaskOrderBillingVerificationCSPPayload,
@@ -53,7 +53,6 @@ from .models import (
     UserCSPResult,
 )
 from .policy import AzurePolicyManager
-
 
 # This needs to be a fully pathed role definition identifier, not just a UUID
 # TODO: Extract these from sdk msrestazure.azure_cloud import AZURE_PUBLIC_CLOUD
@@ -117,10 +116,14 @@ class AzureCloudProvider(CloudProviderInterface):
         )
         try:
             return secret_client.set_secret(secret_key, secret_value)
-        except self.exceptions.HttpResponseError:
+        except self.sdk.exceptions.HttpResponseError as exc:
             app.logger.error(
                 f"Could not SET secret in Azure keyvault for key {secret_key}.",
                 exc_info=1,
+            )
+            raise SecretException(
+                f"Could not SET secret in Azure keyvault for key {secret_key}.",
+                exc.message,
             )
 
     def get_secret(self, secret_key):
@@ -130,10 +133,14 @@ class AzureCloudProvider(CloudProviderInterface):
         )
         try:
             return secret_client.get_secret(secret_key).value
-        except self.exceptions.HttpResponseError:
+        except self.sdk.exceptions.HttpResponseError:
             app.logger.error(
                 f"Could not GET secret in Azure keyvault for key {secret_key}.",
                 exc_info=1,
+            )
+            raise SecretException(
+                f"Could not GET secret in Azure keyvault for key {secret_key}.",
+                exc.message,
             )
 
     def create_environment(self, payload: EnvironmentCSPPayload):
