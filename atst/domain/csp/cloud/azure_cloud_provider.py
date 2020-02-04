@@ -97,10 +97,14 @@ class AzureCloudProvider(CloudProviderInterface):
         self.secret_key = config["AZURE_SECRET_KEY"]
         self.tenant_id = config["AZURE_TENANT_ID"]
         self.vault_url = config["AZURE_VAULT_URL"]
-        self.ps_client_id = config["POWERSHELL_CLIENT_ID"]
-        self.owner_role_def_id = config["AZURE_OWNER_ROLE_DEF_ID"]
+        self.ps_client_id = config["AZURE_POWERSHELL_CLIENT_ID"]
         self.graph_resource = config["AZURE_GRAPH_RESOURCE"]
         self.default_aadp_qty = config["AZURE_AADP_QTY"]
+        self.roles = {
+            "owner": config["AZURE_ROLE_DEF_ID_OWNER"],
+            "contributor": config["AZURE_ROLE_DEF_ID_CONTRIBUTOR"],
+            "billing": config["AZURE_ROLE_DEF_ID_BILLING_READER"],
+        }
 
         if azure_sdk_provider is None:
             self.sdk = AzureSDKProvider()
@@ -602,7 +606,7 @@ class AzureCloudProvider(CloudProviderInterface):
     def create_tenant_admin_ownership(self, payload: TenantAdminOwnershipCSPPayload):
         mgmt_token = self._get_elevated_management_token(payload.tenant_id)
 
-        role_definition_id = f"/providers/Microsoft.Management/managementGroups/{payload.tenant_id}/providers/Microsoft.Authorization/roleDefinitions/{self.owner_role_def_id}"
+        role_definition_id = f"/providers/Microsoft.Management/managementGroups/{payload.tenant_id}/providers/Microsoft.Authorization/roleDefinitions/{self.roles['owner']}"
 
         request_body = {
             "properties": {
@@ -630,7 +634,7 @@ class AzureCloudProvider(CloudProviderInterface):
         mgmt_token = self._get_elevated_management_token(payload.tenant_id)
 
         # NOTE: the tenant_id is also the id of the root management group, once it is created
-        role_definition_id = f"/providers/Microsoft.Management/managementGroups/{payload.tenant_id}/providers/Microsoft.Authorization/roleDefinitions/{self.owner_role_def_id}"
+        role_definition_id = f"/providers/Microsoft.Management/managementGroups/{payload.tenant_id}/providers/Microsoft.Authorization/roleDefinitions/{self.roles['owner']}"
 
         request_body = {
             "properties": {
