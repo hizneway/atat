@@ -499,3 +499,34 @@ class UserCSPPayload(BaseCSPPayload):
 
 class UserCSPResult(AliasModel):
     id: str
+
+
+class QueryColumn(AliasModel):
+    name: str
+    type: str
+
+
+class CostManagementQueryProperties(AliasModel):
+    columns: List[QueryColumn]
+    rows: List[Optional[list]]
+
+
+class CostManagementQueryCSPResult(AliasModel):
+    name: str
+    properties: CostManagementQueryProperties
+
+
+class ReportingCSPPayload(BaseCSPPayload):
+    invoice_section_id: str
+    from_date: str
+    to_date: str
+
+    @root_validator(pre=True)
+    def extract_invoice_section(cls, values):
+        try:
+            values["invoice_section_id"] = values["billing_profile_properties"][
+                "invoice_sections"
+            ][0]["invoice_section_id"]
+            return values
+        except (KeyError, IndexError):
+            raise ValueError("Invoice section ID not present in payload")
