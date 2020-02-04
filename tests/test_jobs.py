@@ -155,7 +155,7 @@ def test_dispatch_create_environment(session, monkeypatch):
     # Given that I have a portfolio with an active CLIN and two environments,
     # one of which is deleted
     portfolio = PortfolioFactory.create(
-        applications=[{"environments": [{}, {}]}],
+        applications=[{"environments": [{}, {}], "cloud_id": uuid4().hex}],
         task_orders=[
             {
                 "create_clins": [

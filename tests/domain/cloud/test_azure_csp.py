@@ -61,7 +61,7 @@ def test_create_environment_succeeds(mock_azure: AzureCloudProvider):
     environment = EnvironmentFactory.create()
     mock_management_group_create(mock_azure, {"id": "Test Id"})
 
-    mock_azure = mock_get_secret(mock_azure, lambda *a, **k: json.dumps(MOCK_CREDS))
+    mock_azure = mock_get_secret(mock_azure)
 
     payload = EnvironmentCSPPayload(
         tenant_id="1234", display_name=environment.name, parent_id=str(uuid4())

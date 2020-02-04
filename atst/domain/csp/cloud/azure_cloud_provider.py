@@ -27,7 +27,6 @@ from .models import (
     EnvironmentCSPPayload,
     EnvironmentCSPResult,
     KeyVaultCredentials,
-    ManagementGroupCSPResponse,
     ProductPurchaseCSPPayload,
     ProductPurchaseCSPResult,
     ProductPurchaseVerificationCSPPayload,
@@ -154,8 +153,6 @@ class AzureCloudProvider(CloudProviderInterface):
             payload.display_name,
             payload.parent_id,
         )
-
-        if
 
         return EnvironmentCSPResult(**response)
 
