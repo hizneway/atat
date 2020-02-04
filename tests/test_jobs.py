@@ -253,9 +253,19 @@ def test_create_environment_no_dupes(session, celery_app, celery_worker):
     assert environment.claimed_until == None
 
 
-def test_dispatch_provision_portfolio(
-    csp, session, portfolio, celery_app, celery_worker, monkeypatch
-):
+def test_dispatch_provision_portfolio(csp, monkeypatch):
+    portfolio = PortfolioFactory.create(
+        task_orders=[
+            {
+                "create_clins": [
+                    {
+                        "start_date": pendulum.now().subtract(days=1),
+                        "end_date": pendulum.now().add(days=1),
+                    }
+                ]
+            }
+        ],
+    )
     sm = PortfolioStateMachineFactory.create(portfolio=portfolio)
     mock = Mock()
     monkeypatch.setattr("atst.jobs.provision_portfolio", mock)

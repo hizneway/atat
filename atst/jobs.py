@@ -171,7 +171,7 @@ def dispatch_provision_portfolio(self):
     """
     Iterate over portfolios with a corresponding State Machine that have not completed.
     """
-    for portfolio_id in Portfolios.get_portfolios_pending_provisioning():
+    for portfolio_id in Portfolios.get_portfolios_pending_provisioning(pendulum.now()):
         provision_portfolio.delay(portfolio_id=portfolio_id)
 
 
