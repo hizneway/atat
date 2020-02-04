@@ -25,7 +25,10 @@ from .models import (
     BillingProfileVerificationCSPPayload,
     BillingProfileVerificationCSPResult,
     KeyVaultCredentials,
+    ManagementGroupCSPPayload,
     ManagementGroupCSPResponse,
+    ManagementGroupGetCSPPayload,
+    ManagementGroupGetCSPResponse,
     ProductPurchaseCSPPayload,
     ProductPurchaseCSPResult,
     ProductPurchaseVerificationCSPPayload,
@@ -209,6 +212,40 @@ class AzureCloudProvider(CloudProviderInterface):
 
         return ApplicationCSPResult(**response)
 
+    def create_initial_mgmt_group(self, payload: ManagementGroupCSPPayload):
+        creds = self._source_creds(payload.tenant_id)
+        credentials = self._get_credential_obj(
+            {
+                "client_id": creds.root_sp_client_id,
+                "secret_key": creds.root_sp_key,
+                "tenant_id": creds.root_tenant_id,
+            },
+            resource=self.sdk.cloud.endpoints.resource_manager,
+        )
+        response = self._create_management_group(
+            credentials, payload.management_group_name, payload.display_name,
+        )
+
+        return ManagementGroupCSPResponse(**response)
+
+    def create_initial_mgmt_group_verification(
+        self, payload: ManagementGroupGetCSPPayload
+    ):
+        creds = self._source_creds(payload.tenant_id)
+        credentials = self._get_credential_obj(
+            {
+                "client_id": creds.root_sp_client_id,
+                "secret_key": creds.root_sp_key,
+                "tenant_id": creds.root_tenant_id,
+            },
+            resource=self.sdk.cloud.endpoints.resource_manager,
+        )
+
+        response = self._get_management_group(
+            credentials, payload.management_group_name,
+        )
+        return ManagementGroupGetCSPResponse(**response.result())
+
     def _create_management_group(
         self, credentials, management_group_id, display_name, parent_id=None,
     ):
@@ -234,6 +271,11 @@ class AzureCloudProvider(CloudProviderInterface):
         # response object? Will it always raise its own error
         # instead?
         return create_request.result()
+
+    def _get_management_group(self, credentials, management_group_id):
+        mgmgt_group_client = self.sdk.managementgroups.ManagementGroupsAPI(credentials)
+        response = mgmgt_group_client.management_groups.get(management_group_id)
+        return response
 
     def _create_policy_definition(
         self, credentials, subscription_id, management_group_id, properties,
