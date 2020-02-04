@@ -1,5 +1,4 @@
 import pytest
-import pendulum
 from uuid import uuid4
 
 from atst.domain.environments import Environments
@@ -14,6 +13,7 @@ from tests.factories import (
     EnvironmentRoleFactory,
     ApplicationRoleFactory,
 )
+from tests.utils import EnvQueryTest
 
 
 def test_create_environments():
@@ -117,40 +117,6 @@ def test_update_does_not_duplicate_names_within_application():
 
     with pytest.raises(AlreadyExistsError):
         Environments.update(dupe_env, name)
-
-
-class EnvQueryTest:
-    @property
-    def NOW(self):
-        return pendulum.now()
-
-    @property
-    def YESTERDAY(self):
-        return self.NOW.subtract(days=1)
-
-    @property
-    def TOMORROW(self):
-        return self.NOW.add(days=1)
-
-    def create_portfolio_with_clins(self, start_and_end_dates, env_data=None):
-        env_data = env_data or {}
-        return PortfolioFactory.create(
-            applications=[
-                {
-                    "name": "Mos Eisley",
-                    "description": "Where Han shot first",
-                    "environments": [{"name": "thebar", **env_data}],
-                }
-            ],
-            task_orders=[
-                {
-                    "create_clins": [
-                        {"start_date": start_date, "end_date": end_date}
-                        for (start_date, end_date) in start_and_end_dates
-                    ]
-                }
-            ],
-        )
 
 
 class TestGetEnvironmentsPendingCreate(EnvQueryTest):
