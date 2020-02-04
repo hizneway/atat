@@ -242,7 +242,7 @@ class AzureCloudProvider(CloudProviderInterface):
         )
 
         response = self._get_management_group(
-            credentials, payload.management_group_name,
+            credentials, payload.tenant_id,
         )
         return ManagementGroupGetCSPResponse(**response.result())
 
