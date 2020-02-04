@@ -6,7 +6,13 @@ from uuid import uuid4
 from atst.utils import sha256_hex
 
 from .cloud_provider_interface import CloudProviderInterface
-from .exceptions import AuthenticationException, UserProvisioningException
+from .exceptions import (
+    AuthenticationException,
+    UserProvisioningException,
+    ConnectionException,
+    UnknownServerException,
+)
+
 from .models import (
     SubscriptionCreationCSPPayload,
     SubscriptionCreationCSPResult,
@@ -83,7 +89,8 @@ class AzureSDKProvider(object):
         self.graphrbac = graphrbac
         self.credentials = credentials
         self.identity = identity
-        self.exceptions = exceptions
+        self.azure_exceptions = exceptions
+        self.requests_exceptions = requests.exceptions
         self.secrets = secrets
         self.requests = requests
         self.cloud = AZURE_PUBLIC_CLOUD
@@ -116,7 +123,7 @@ class AzureCloudProvider(CloudProviderInterface):
         )
         try:
             return secret_client.set_secret(secret_key, secret_value)
-        except self.exceptions.HttpResponseError:
+        except self.azure_exceptions.HttpResponseError:
             app.logger.error(
                 f"Could not SET secret in Azure keyvault for key {secret_key}.",
                 exc_info=1,
@@ -129,7 +136,7 @@ class AzureCloudProvider(CloudProviderInterface):
         )
         try:
             return secret_client.get_secret(secret_key).value
-        except self.exceptions.HttpResponseError:
+        except self.azure_exceptions.HttpResponseError:
             app.logger.error(
                 f"Could not GET secret in Azure keyvault for key {secret_key}.",
                 exc_info=1,
@@ -292,11 +299,30 @@ class AzureCloudProvider(CloudProviderInterface):
             "Authorization": f"Bearer {sp_token}",
         }
 
-        result = self.sdk.requests.post(
-            f"{self.sdk.cloud.endpoints.resource_manager}/providers/Microsoft.SignUp/createTenant?api-version=2020-01-01-preview",
-            json=create_tenant_body,
-            headers=create_tenant_headers,
-        )
+        try:
+            result = self.sdk.requests.post(
+                f"{self.sdk.cloud.endpoints.resource_manager}/providers/Microsoft.SignUp/createTenant?api-version=2020-01-01-preview",
+                json=create_tenant_body,
+                headers=create_tenant_headers,
+                timeout=30,
+            )
+
+        except self.requests_exceptions.ConnectionError:
+            app.logger.error(
+                f"Could not create tenant. Connection Error", exc_info=1,
+            )
+            raise ConnectionException("connection error creating tenant")
+
+        except self.requests_exceptions.Timeout:
+            app.logger.error(
+                f"Could not create tenant. Request timed out.", exc_info=1,
+            )
+            raise ConnectionException("timout error creating tenant")
+
+        try:
+            response.raise_for_status()
+        except requests_exceptions.HTTPError:
+            raise UnknownServerException("azure application error creating tenant")
 
         if result.status_code == 200:
             result_dict = result.json()

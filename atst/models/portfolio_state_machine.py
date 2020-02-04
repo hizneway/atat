@@ -158,6 +158,7 @@ class PortfolioStateMachine(
         payload = event.kwargs.get("csp_data")
 
         payload_data_cls = get_stage_csp_class(stage, "payload")
+
         if not payload_data_cls:
             app.logger.info(f"could not resolve payload data class for stage {stage}")
             self.fail_stage(stage)
@@ -178,27 +179,34 @@ class PortfolioStateMachine(
         try:
             func_name = f"create_{stage}"
             response = getattr(self.csp, func_name)(payload_data)
-            if self.portfolio.csp_data is None:
-                self.portfolio.csp_data = {}
-            self.portfolio.csp_data.update(response.dict())
-            db.session.add(self.portfolio)
-            db.session.commit()
-        except PydanticValidationError as exc:
-            app.logger.error(
-                f"Failed to cast response to valid result class {self.__repr__()}:",
-                exc_info=1,
-            )
-            app.logger.info(exc.json())
-            print(exc.json())
-            app.logger.info(payload_data)
-            self.fail_stage(stage)
         except (ConnectionException, UnknownServerException) as exc:
             app.logger.error(
                 f"CSP api call. Caught exception for {self.__repr__()}.", exc_info=1,
             )
             self.fail_stage(stage)
 
-        self.finish_stage(stage)
+        if response.get("status") == "error":
+            self.fail_stage(stage)
+
+        elif response.get("status") == "ok":
+            try:
+
+                if self.portfolio.csp_data is None:
+                    self.portfolio.csp_data = {}
+                self.portfolio.csp_data.update(response.dict())
+                db.session.add(self.portfolio)
+                db.session.commit()
+            except PydanticValidationError as exc:
+                app.logger.error(
+                    f"Failed to cast response to valid result class {self.__repr__()}:",
+                    exc_info=1,
+                )
+                app.logger.info(exc.json())
+                print(exc.json())
+                app.logger.info(payload_data)
+                self.fail_stage(stage)
+
+            self.finish_stage(stage)
 
     def is_csp_data_valid(self, event):
         """
@@ -214,7 +222,7 @@ class PortfolioStateMachine(
 
     def is_ready_resume_progress(self, event):
         """
-        This function guards advancing states from *_FAILED to *_IN_PROGRESS.
+        This function guards advancing states from FAILED to *_IN_PROGRESS.
         """
 
         return True
