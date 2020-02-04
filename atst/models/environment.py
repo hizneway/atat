@@ -1,11 +1,11 @@
-from sqlalchemy import Column, ForeignKey, String, UniqueConstraint
-from sqlalchemy.orm import relationship
-from sqlalchemy.dialects.postgresql import JSONB
 from enum import Enum
 
-from atst.models.base import Base
+from sqlalchemy import Column, ForeignKey, String, UniqueConstraint
+from sqlalchemy.orm import relationship
+
 import atst.models.mixins as mixins
 import atst.models.types as types
+from atst.models.base import Base
 
 
 class Environment(
@@ -30,7 +30,6 @@ class Environment(
     creator = relationship("User")
 
     cloud_id = Column(String)
-    root_user_info = Column(JSONB(none_as_null=True))
 
     roles = relationship(
         "EnvironmentRole",
@@ -70,7 +69,7 @@ class Environment(
 
     @property
     def provisioning_status(self) -> ProvisioningStatus:
-        if self.cloud_id is None or self.root_user_info is None:
+        if self.cloud_id is None:
             return self.ProvisioningStatus.PENDING
         else:
             return self.ProvisioningStatus.COMPLETED
@@ -91,11 +90,3 @@ class Environment(
     @property
     def history(self):
         return self.get_changes()
-
-    @property
-    def csp_credentials(self):
-        return (
-            self.root_user_info.get("credentials")
-            if self.root_user_info is not None
-            else None
-        )

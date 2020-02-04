@@ -185,31 +185,3 @@ class TestGetEnvironmentsPendingCreate(EnvQueryTest):
             app_data={"cloud_id": uuid4().hex},
         )
         assert len(Environments.get_environments_pending_creation(self.NOW)) == 0
-
-
-class TestGetEnvironmentsPendingAtatUserCreation(EnvQueryTest):
-    def test_with_provisioned_environment(self):
-        self.create_portfolio_with_clins(
-            [(self.YESTERDAY, self.TOMORROW)],
-            {"cloud_id": uuid4().hex, "root_user_info": {}},
-        )
-        assert (
-            len(Environments.get_environments_pending_atat_user_creation(self.NOW)) == 0
-        )
-
-    def test_with_unprovisioned_environment(self):
-        self.create_portfolio_with_clins(
-            [(self.YESTERDAY, self.TOMORROW)], app_data={"cloud_id": uuid4().hex},
-        )
-        assert (
-            len(Environments.get_environments_pending_atat_user_creation(self.NOW)) == 0
-        )
-
-    def test_with_unprovisioned_expired_clins_environment(self):
-        self.create_portfolio_with_clins(
-            [(self.YESTERDAY, self.YESTERDAY)],
-            {"cloud_id": uuid4().hex, "root_user_info": None},
-        )
-        assert (
-            len(Environments.get_environments_pending_atat_user_creation(self.NOW)) == 0
-        )

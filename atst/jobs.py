@@ -127,20 +127,6 @@ def do_create_environment(csp: CloudProviderInterface, environment_id=None):
         db.session.commit()
 
 
-def do_create_atat_admin_user(csp: CloudProviderInterface, environment_id=None):
-    environment = Environments.get(environment_id)
-
-    with claim_for_update(environment) as environment:
-        atat_root_creds = csp.root_creds()
-
-        atat_remote_root_user = csp.create_atat_admin_user(
-            atat_root_creds, environment.cloud_id
-        )
-        environment.root_user_info = atat_remote_root_user
-        db.session.add(environment)
-        db.session.commit()
-
-
 def render_email(template_path, context):
     return app.jinja_env.get_template(template_path).render(context)
 
@@ -180,13 +166,6 @@ def create_environment(self, environment_id=None):
     do_work(do_create_environment, self, app.csp.cloud, environment_id=environment_id)
 
 
-@celery.task(bind=True, base=RecordFailure)
-def create_atat_admin_user(self, environment_id=None):
-    do_work(
-        do_create_atat_admin_user, self, app.csp.cloud, environment_id=environment_id
-    )
-
-
 @celery.task(bind=True)
 def dispatch_provision_portfolio(self):
     """
@@ -214,11 +193,3 @@ def dispatch_create_environment(self):
         pendulum.now()
     ):
         create_environment.delay(environment_id=environment_id)
-
-
-@celery.task(bind=True)
-def dispatch_create_atat_admin_user(self):
-    for environment_id in Environments.get_environments_pending_atat_user_creation(
-        pendulum.now()
-    ):
-        create_atat_admin_user.delay(environment_id=environment_id)
