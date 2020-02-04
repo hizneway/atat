@@ -94,6 +94,14 @@ def _build_transitions(csp_stages):
                         dest=compose_state(csp_stage, StageStates.FAILED),
                     )
                 )
+                transitions.append(
+                    dict(
+                        trigger="resume_progress_" + csp_stage.name.lower(),
+                        source=compose_state(csp_stage, StageStates.FAILED),
+                        dest=compose_state(csp_stage, StageStates.IN_PROGRESS),
+                        conditions=["is_ready_resume_progress"],
+                    )
+                )
     return states, transitions
 
 

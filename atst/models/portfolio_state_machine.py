@@ -122,6 +122,22 @@ class PortfolioStateMachine(
                     )
                     self.fail_stage(stage)
 
+            elif self.current_state == FSMStates.FAILED:
+                # get the first trigger that starts with 'create_'
+                resume_progress_trigger = next(
+                    filter(
+                        lambda trigger: trigger.startswith("resume_progress_"),
+                        self.machine.get_triggers(FSMStates.FAILED.name),
+                    ),
+                    None,
+                )
+                if resume_progress_trigger:
+                    self.trigger(resume_progress_trigger, **kwargs)
+                else:
+                    app.logger.info(
+                        f"could not locate 'resume progress trigger' for {self.__repr__()}"
+                    )
+
         elif state_obj.is_CREATED:
             # the create trigger for the next stage should be in the available
             # triggers for the current state
@@ -193,6 +209,13 @@ class PortfolioStateMachine(
         ):
             print("no csp data")
             return False
+
+        return True
+
+    def is_ready_resume_progress(self, event):
+        """
+        This function guards advancing states from *_FAILED to *_IN_PROGRESS.
+        """
 
         return True
 
