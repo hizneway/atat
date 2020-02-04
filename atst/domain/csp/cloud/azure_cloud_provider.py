@@ -6,7 +6,11 @@ from uuid import uuid4
 from atst.utils import sha256_hex
 
 from .cloud_provider_interface import CloudProviderInterface
-from .exceptions import AuthenticationException, UserProvisioningException, SecretException
+from .exceptions import (
+    AuthenticationException,
+    UserProvisioningException,
+    SecretException,
+)
 from .models import (
     AdminRoleDefinitionCSPPayload,
     AdminRoleDefinitionCSPResult,

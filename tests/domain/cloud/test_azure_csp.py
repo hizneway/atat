@@ -22,6 +22,8 @@ from atst.domain.csp.cloud.models import (
     BillingProfileVerificationCSPResult,
     EnvironmentCSPPayload,
     EnvironmentCSPResult,
+    PrincipalAdminRoleCSPPayload,
+    PrincipalAdminRoleCSPResult,
     ProductPurchaseCSPPayload,
     ProductPurchaseCSPResult,
     ProductPurchaseVerificationCSPPayload,
@@ -577,10 +579,10 @@ def test_create_tenant_principal_credential(mock_azure: AzureCloudProvider):
 def test_create_admin_role_definition(mock_azure: AzureCloudProvider):
     with patch.object(
         AzureCloudProvider,
-        "_get_elevated_management_token",
-        wraps=mock_azure._get_elevated_management_token,
-    ) as get_elevated_management_token:
-        get_elevated_management_token.return_value = "my fake token"
+        "_get_tenant_admin_token",
+        wraps=mock_azure._get_tenant_admin_token,
+    ) as get_tenant_admin_token:
+        get_tenant_admin_token.return_value = "my fake token"
 
         mock_result = Mock()
         mock_result.ok = True
@@ -659,6 +661,35 @@ def test_create_tenant_principal_ownership(mock_azure: AzureCloudProvider):
         )
 
         assert result.principal_owner_assignment_id == "id"
+
+
+def test_create_principal_admin_role(mock_azure: AzureCloudProvider):
+    with patch.object(
+        AzureCloudProvider,
+        "_get_tenant_admin_token",
+        wraps=mock_azure._get_tenant_admin_token,
+    ) as get_tenant_admin_token:
+        get_tenant_admin_token.return_value = "my fake token"
+
+        mock_result = Mock()
+        mock_result.ok = True
+        mock_result.json.return_value = {"id": "id"}
+
+        mock_azure.sdk.requests.post.return_value = mock_result
+
+        payload = PrincipalAdminRoleCSPPayload(
+            **{
+                "tenant_id": uuid4().hex,
+                "principal_id": "6d2d2d6c-a6d6-41e1-8bb1-73d11475f8f4",
+                "admin_role_def_id": uuid4().hex,
+            }
+        )
+
+        result: PrincipalAdminRoleCSPResult = mock_azure.create_principal_admin_role(
+            payload
+        )
+
+        assert result.principal_assignment_id == "id"
 
 
 def test_create_subscription_creation(mock_azure: AzureCloudProvider):
