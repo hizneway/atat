@@ -853,6 +853,7 @@ def test_get_reporting_data_malformed_payload(mock_azure: AzureCloudProvider):
                 )
             )
 
+
 def test_get_secret(mock_azure: AzureCloudProvider):
     with patch.object(
         AzureCloudProvider,
@@ -861,9 +862,12 @@ def test_get_secret(mock_azure: AzureCloudProvider):
     ) as _get_client_secret_credential_obj:
         _get_client_secret_credential_obj.return_value = {}
 
-        mock_azure.sdk.secrets.SecretClient.return_value.get_secret.return_value.value = "my secret"
+        mock_azure.sdk.secrets.SecretClient.return_value.get_secret.return_value.value = (
+            "my secret"
+        )
 
         assert mock_azure.get_secret("secret key") == "my secret"
+
 
 def test_set_secret(mock_azure: AzureCloudProvider):
     with patch.object(
@@ -873,6 +877,8 @@ def test_set_secret(mock_azure: AzureCloudProvider):
     ) as _get_client_secret_credential_obj:
         _get_client_secret_credential_obj.return_value = {}
 
-        mock_azure.sdk.secrets.SecretClient.return_value.set_secret.return_value = "my secret"
+        mock_azure.sdk.secrets.SecretClient.return_value.set_secret.return_value = (
+            "my secret"
+        )
 
         assert mock_azure.set_secret("secret key", "secret_value") == "my secret"

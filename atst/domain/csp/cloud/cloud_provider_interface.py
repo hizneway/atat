@@ -11,7 +11,7 @@ class CloudProviderInterface:
     def root_creds(self) -> Dict:
         raise NotImplementedError()
 
-    def create_environment(self, auth_credentials: Dict, user, environment) -> str:
+    def create_environment(self, payload):
         """Create a new environment in the CSP.
 
         Arguments:
