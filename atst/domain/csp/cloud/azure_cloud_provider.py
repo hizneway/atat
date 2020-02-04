@@ -813,17 +813,6 @@ class AzureCloudProvider(CloudProviderInterface):
 
         return self._ok()
 
-    def create_billing_alerts(self, TBD):
-        # TODO: Add azure-mgmt-consumption for Budget and Notification entities/operations
-        # TODO: Determine how to auth against that API using the SDK, doesn't seeem possible at the moment
-        # TODO: billing alerts are registered as Notifications on Budget objects, which have start/end dates
-        # TODO: determine what the keys in the Notifications dict are supposed to be
-        # we may need to rotate budget objects when new TOs/CLINs are reported?
-
-        # we likely only want the budget ID, can be updated or replaced?
-        response = {"id": "id"}
-        return self._ok({"budget_id": response["id"]})
-
     def _get_management_service_principal(self):
         # we really should be using graph.microsoft.com, but i'm getting
         # "expired token" errors for that

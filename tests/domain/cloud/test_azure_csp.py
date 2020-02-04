@@ -172,6 +172,27 @@ def test_create_tenant(mock_azure: AzureCloudProvider):
     assert body.tenant_id == "60ff9d34-82bf-4f21-b565-308ef0533435"
 
 
+def test_create_tenant_fails(mock_azure: AzureCloudProvider):
+    mock_result = Mock()
+    mock_result.json.return_value = {"error": "body"}
+    mock_result.status_code = 403
+    mock_azure.sdk.requests.post.return_value = mock_result
+    payload = TenantCSPPayload(
+        **dict(
+            user_id="admin",
+            password="JediJan13$coot",  # pragma: allowlist secret
+            domain_name="jediccpospawnedtenant2",
+            first_name="Tedry",
+            last_name="Tenet",
+            country_code="US",
+            password_recovery_email_address="thomas@promptworks.com",
+        )
+    )
+    mock_azure = mock_get_secret(mock_azure)
+    result = mock_azure.create_tenant(payload)
+    assert result.get("status") == "error"
+
+
 def test_create_billing_profile_creation(mock_azure: AzureCloudProvider):
     mock_azure.sdk.adal.AuthenticationContext.return_value.context.acquire_token_with_client_credentials.return_value = {
         "accessToken": "TOKEN"
@@ -831,3 +852,27 @@ def test_get_reporting_data_malformed_payload(mock_azure: AzureCloudProvider):
                     from_date="foo", to_date="bar", **malformed_payload,
                 )
             )
+
+def test_get_secret(mock_azure: AzureCloudProvider):
+    with patch.object(
+        AzureCloudProvider,
+        "_get_client_secret_credential_obj",
+        wraps=mock_azure._get_client_secret_credential_obj,
+    ) as _get_client_secret_credential_obj:
+        _get_client_secret_credential_obj.return_value = {}
+
+        mock_azure.sdk.secrets.SecretClient.return_value.get_secret.return_value.value = "my secret"
+
+        assert mock_azure.get_secret("secret key") == "my secret"
+
+def test_set_secret(mock_azure: AzureCloudProvider):
+    with patch.object(
+        AzureCloudProvider,
+        "_get_client_secret_credential_obj",
+        wraps=mock_azure._get_client_secret_credential_obj,
+    ) as _get_client_secret_credential_obj:
+        _get_client_secret_credential_obj.return_value = {}
+
+        mock_azure.sdk.secrets.SecretClient.return_value.set_secret.return_value = "my secret"
+
+        assert mock_azure.set_secret("secret key", "secret_value") == "my secret"
