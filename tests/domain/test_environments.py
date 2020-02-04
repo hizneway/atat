@@ -132,15 +132,19 @@ class EnvQueryTest:
     def TOMORROW(self):
         return self.NOW.add(days=1)
 
-    def create_portfolio_with_clins(self, start_and_end_dates, env_data=None):
+    def create_portfolio_with_clins(
+        self, start_and_end_dates, env_data=None, app_data=None
+    ):
         env_data = env_data or {}
+        app_data = app_data or {}
         return PortfolioFactory.create(
             applications=[
                 {
                     "name": "Mos Eisley",
                     "description": "Where Han shot first",
                     "environments": [{"name": "thebar", **env_data}],
-                }
+                    **app_data,
+                },
             ],
             task_orders=[
                 {
@@ -168,9 +172,17 @@ class TestGetEnvironmentsPendingCreate(EnvQueryTest):
         self.create_portfolio_with_clins([(self.TOMORROW, self.TOMORROW)])
         assert len(Environments.get_environments_pending_creation(self.NOW)) == 0
 
+    def test_with_already_provisioned_app(self, session):
+        self.create_portfolio_with_clins(
+            [(self.YESTERDAY, self.TOMORROW)], app_data={"cloud_id": uuid4().hex}
+        )
+        assert len(Environments.get_environments_pending_creation(self.NOW)) == 1
+
     def test_with_already_provisioned_env(self, session):
         self.create_portfolio_with_clins(
-            [(self.YESTERDAY, self.TOMORROW)], env_data={"cloud_id": uuid4().hex}
+            [(self.YESTERDAY, self.TOMORROW)],
+            env_data={"cloud_id": uuid4().hex},
+            app_data={"cloud_id": uuid4().hex},
         )
         assert len(Environments.get_environments_pending_creation(self.NOW)) == 0
 
@@ -187,11 +199,10 @@ class TestGetEnvironmentsPendingAtatUserCreation(EnvQueryTest):
 
     def test_with_unprovisioned_environment(self):
         self.create_portfolio_with_clins(
-            [(self.YESTERDAY, self.TOMORROW)],
-            {"cloud_id": uuid4().hex, "root_user_info": None},
+            [(self.YESTERDAY, self.TOMORROW)], app_data={"cloud_id": uuid4().hex},
         )
         assert (
-            len(Environments.get_environments_pending_atat_user_creation(self.NOW)) == 1
+            len(Environments.get_environments_pending_atat_user_creation(self.NOW)) == 0
         )
 
     def test_with_unprovisioned_expired_clins_environment(self):

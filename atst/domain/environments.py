@@ -124,7 +124,10 @@ class Environments(object):
         Any environment with an active CLIN that doesn't yet have a `cloud_id`.
         """
         results = (
-            cls.base_provision_query(now).filter(Application.cloud_id != None).all()
+            cls.base_provision_query(now)
+            .filter(Application.cloud_id != None)
+            .filter(Environment.cloud_id == None)
+            .all()
         )
         return [id_ for id_, in results]
 

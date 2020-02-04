@@ -11,13 +11,11 @@ from atst.domain.csp.cloud.models import (
     EnvironmentCSPPayload,
     UserCSPPayload,
 )
-from atst.domain.environment_roles import EnvironmentRoles
 from atst.domain.environments import Environments
 from atst.domain.portfolios import Portfolios
 from atst.models import JobFailure
 from atst.models.utils import claim_for_update, claim_many_for_update
 from atst.queue import celery
-from atst.utils.localization import translate
 
 
 class RecordFailure(celery.Task):
