@@ -72,7 +72,7 @@ class Mailer(object):
         msg = EmailMessage()
         msg.set_content(body)
         msg["From"] = self.sender
-        msg["To"] = ", ".join(recipients)
+        msg["To"] = ", ".join(recipients) if type(recipients) == list else recipients
         msg["Subject"] = subject
 
         return msg

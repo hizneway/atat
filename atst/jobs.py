@@ -1,5 +1,7 @@
 import pendulum
 from flask import current_app as app
+from smtplib import SMTPException
+from azure.core.exceptions import AzureError
 
 from atst.database import db
 from atst.domain.application_roles import ApplicationRoles
@@ -45,8 +47,8 @@ class RecordFailure(celery.Task):
 
 
 @celery.task(ignore_result=True)
-def send_mail(recipients, subject, body):
-    app.mailer.send(recipients, subject, body)
+def send_mail(recipients, subject, body, attachments=[]):
+    app.mailer.send(recipients, subject, body, attachments)
 
 
 @celery.task(ignore_result=True)
@@ -146,14 +148,6 @@ def do_provision_portfolio(csp: CloudProviderInterface, portfolio_id=None):
     fsm.trigger_next_transition()
 
 
-def do_send_with_attachment(
-    csp: CloudProviderInterface, recipients, subject, body, attachments
-):
-    app.mailer.send(
-        recipients=recipients, subject=subject, body=body, attachments=attachments
-    )
-
-
 @celery.task(bind=True, base=RecordFailure)
 def provision_portfolio(self, portfolio_id=None):
     do_work(do_provision_portfolio, self, app.csp.cloud, portfolio_id=portfolio_id)
@@ -174,32 +168,6 @@ def create_user(self, application_role_ids=None):
 @celery.task(bind=True, base=RecordFailure)
 def create_environment(self, environment_id=None):
     do_work(do_create_environment, self, app.csp.cloud, environment_id=environment_id)
-
-
-@celery.task(bind=True)
-def send_with_attachment(self, recipients, subject, body, attachments):
-    do_work(
-        do_send_with_attachment,
-        self,
-        app.csp.cloud,
-        recipients=recipients,
-        subject=subject,
-        body=body,
-        attachments=attachments,
-    )
-
-
-@celery.task(bind=True)
-def send_with_attachment(self, recipients, subject, body, attachments):
-    do_work(
-        do_send_with_attachment,
-        self,
-        app.csp.cloud,
-        recipients=recipients,
-        subject=subject,
-        body=body,
-        attachments=attachments,
-    )
 
 
 @celery.task(bind=True)
@@ -250,11 +218,17 @@ def dispatch_send_task_order_files(self):
         )
         body = translate("email.task_order_sent.body", {"to_number": task_order.number})
 
-        file = app.csp.files.download_task_order(task_order.pdf.object_name)
-        file["maintype"] = "application"
-        file["subtype"] = "pdf"
+        try:
+            file = app.csp.files.download_task_order(task_order.pdf.object_name)
+            file["maintype"] = "application"
+            file["subtype"] = "pdf"
+            send_mail(
+                recipients=recipients, subject=subject, body=body, attachments=[file]
+            )
+        except (AzureError, SMTPException):
+            continue
 
-        send_with_attachment.delay(
-            recipients=recipients, subject=subject, body=body, attachments=[file]
-        )
-        TaskOrders.update_pdf_last_sent_at(task_order)
+        task_order.pdf_last_sent_at = pendulum.now()
+        db.session.add(task_order)
+
+    db.session.commit()

@@ -2,6 +2,8 @@ import pendulum
 import pytest
 from uuid import uuid4
 from unittest.mock import Mock
+from smtplib import SMTPException
+from azure.core.exceptions import AzureError
 
 from atst.domain.csp.cloud import MockCloudProvider
 from atst.domain.portfolios import Portfolios
@@ -292,11 +294,9 @@ def test_provision_portfolio_create_tenant(
     # mock.delay.assert_called_once_with(portfolio_id=portfolio.id)
 
 
-def test_dispatch_send_task_order_files(
-    csp, session, celery_app, celery_worker, monkeypatch, app
-):
+def test_dispatch_send_task_order_files(monkeypatch, app):
     mock = Mock()
-    monkeypatch.setattr("atst.jobs.send_with_attachment", mock)
+    monkeypatch.setattr("atst.jobs.send_mail", mock)
 
     def _download_task_order(MockFileService, object_name):
         return {"name": object_name}
@@ -313,7 +313,7 @@ def test_dispatch_send_task_order_files(
     dispatch_send_task_order_files.run()
 
     # Check that send_with_attachment was called once for each task order
-    assert mock.delay.call_count == 3
+    assert mock.call_count == 3
     mock.reset_mock()
 
     # Create new TO
@@ -323,7 +323,7 @@ def test_dispatch_send_task_order_files(
     dispatch_send_task_order_files.run()
 
     # Check that send_with_attachment was called with correct kwargs
-    mock.delay.assert_called_once_with(
+    mock.assert_called_once_with(
         recipients=app.config.get("MICROSOFT_TASK_ORDER_EMAIL_ADDRESS"),
         subject=translate(
             "email.task_order_sent.subject", {"to_number": task_order.number}
@@ -339,3 +339,35 @@ def test_dispatch_send_task_order_files(
     )
 
     assert task_order.pdf_last_sent_at
+
+
+def test_dispatch_send_task_order_files_send_failure(monkeypatch):
+    def _raise_smtp_exception(**kwargs):
+        raise SMTPException
+
+    monkeypatch.setattr("atst.jobs.send_mail", _raise_smtp_exception)
+
+    task_order = TaskOrderFactory.create(create_clins=[{"number": "0001"}])
+    dispatch_send_task_order_files.run()
+
+    # Check that pdf_last_sent_at has not been updated
+    assert not task_order.pdf_last_sent_at
+
+
+def test_dispatch_send_task_order_files_download_failure(monkeypatch):
+    mock = Mock()
+    monkeypatch.setattr("atst.jobs.send_mail", mock)
+
+    def _download_task_order(MockFileService, object_name):
+        raise AzureError("something went wrong")
+
+    monkeypatch.setattr(
+        "atst.domain.csp.files.MockFileService.download_task_order",
+        _download_task_order,
+    )
+
+    task_order = TaskOrderFactory.create(create_clins=[{"number": "0002"}])
+    dispatch_send_task_order_files.run()
+
+    # Check that pdf_last_sent_at has not been updated
+    assert not task_order.pdf_last_sent_at

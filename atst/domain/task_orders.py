@@ -91,9 +91,3 @@ class TaskOrders(BaseDomainClass):
             )
             .all()
         )
-
-    @classmethod
-    def update_pdf_last_sent_at(cls, task_order):
-        task_order.pdf_last_sent_at = datetime.now()
-        db.session.add(task_order)
-        db.session.commit()
