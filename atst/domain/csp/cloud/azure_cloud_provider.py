@@ -50,6 +50,8 @@ from .models import (
     TenantPrincipalOwnershipCSPResult,
     UserCSPPayload,
     UserCSPResult,
+    UserRoleCSPPayload,
+    UserRoleCSPResult,
 )
 from .policy import AzurePolicyManager
 
@@ -930,6 +932,49 @@ class AzureCloudProvider(CloudProviderInterface):
         else:
             raise UserProvisioningException(
                 f"Failed update user email: {response.json()}"
+            )
+
+    def create_user_role(self, payload: UserRoleCSPPayload):
+        # creds TBD
+        graph_token = ""
+        # graph_token = self._get_up_token_for_resource(
+        #     username,
+        #     password,
+        #     payload.tenant_id,
+        #     self.sdk.cloud.endpoints.resource_manager
+        # )
+        # graph_token = self._get_tenant_principal_token(
+        #     payload.tenant_id
+        # )
+        if graph_token is None:
+            raise AuthenticationException(
+                "Could not resolve graph token for tenant admin"
+            )
+
+        role_definition_id = f"/providers/Microsoft.Management/managementGroups/{payload.management_group_id}/providers/Microsoft.Authorization/roleDefinitions/{self.roles[payload.role]}"
+
+        request_body = {
+            "properties": {
+                "roleDefinitionId": role_definition_id,
+                "principalId": payload.user_object_id,
+            }
+        }
+
+        auth_header = {
+            "Authorization": f"Bearer {graph_token}",
+        }
+
+        assignment_guid = str(uuid4())
+
+        url = f"{self.sdk.cloud.endpoints.resource_manager}/providers/Microsoft.Management/managementGroups/{payload.tenant_id}/providers/Microsoft.Authorization/roleAssignments/{assignment_guid}?api-version=2015-07-01"
+
+        response = self.sdk.requests.post(url, headers=auth_header, json=request_body)
+
+        if response.ok:
+            return UserRoleCSPResult(**response.json())
+        else:
+            raise UserProvisioningException(
+                f"Failed to create user role assignment: {response.json()}"
             )
 
     def _extract_subscription_id(self, subscription_url):
