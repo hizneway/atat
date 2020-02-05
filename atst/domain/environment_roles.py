@@ -90,14 +90,18 @@ class EnvironmentRoles(object):
         )
 
     @classmethod
-    def get_environment_roles_pending_creation(cls) -> List[UUID]:
+    def get_pending_creation(cls) -> List[UUID]:
         results = (
             db.session.query(EnvironmentRole.id)
             .join(Environment)
             .join(ApplicationRole)
             .filter(Environment.deleted == False)
-            .filter(EnvironmentRole.status == EnvironmentRole.Status.PENDING)
-            .filter(ApplicationRole.status == ApplicationRoleStatus.ACTIVE)
+            .filter(EnvironmentRole.deleted == False)
+            .filter(ApplicationRole.deleted == False)
+            .filter(ApplicationRole.cloud_id != None)
+            .filter(ApplicationRole.status != ApplicationRoleStatus.DISABLED)
+            .filter(EnvironmentRole.status != EnvironmentRole.Status.DISABLED)
+            .filter(EnvironmentRole.cloud_id.is_(None))
             .all()
         )
         return [id_ for id_, in results]
