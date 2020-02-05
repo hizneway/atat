@@ -5,6 +5,8 @@ from uuid import uuid4
 import pytest
 from tests.factories import ApplicationFactory, EnvironmentFactory
 from tests.mock_azure import AUTH_CREDENTIALS, mock_azure
+import pendulum
+import pydantic
 
 from atst.domain.csp.cloud import AzureCloudProvider
 from atst.domain.csp.cloud.models import (
@@ -20,10 +22,12 @@ from atst.domain.csp.cloud.models import (
     BillingProfileTenantAccessCSPResult,
     BillingProfileVerificationCSPPayload,
     BillingProfileVerificationCSPResult,
+    CostManagementQueryCSPResult,
     ProductPurchaseCSPPayload,
     ProductPurchaseCSPResult,
     ProductPurchaseVerificationCSPPayload,
     ProductPurchaseVerificationCSPResult,
+    ReportingCSPPayload,
     SubscriptionCreationCSPPayload,
     SubscriptionCreationCSPResult,
     SubscriptionVerificationCSPPayload,
@@ -718,3 +722,77 @@ def test_create_subscription_verification(mock_azure: AzureCloudProvider):
             payload
         )
         assert result.subscription_id == "60fbbb72-0516-4253-ab18-c92432ba3230"
+
+
+def test_get_reporting_data(mock_azure: AzureCloudProvider):
+    mock_result = Mock()
+    mock_result.json.return_value = {
+        "eTag": None,
+        "id": "providers/Microsoft.Billing/billingAccounts/52865e4c-52e8-5a6c-da6b-c58f0814f06f:7ea5de9d-b8ce-4901-b1c5-d864320c7b03_2019-05-31/billingProfiles/XQDJ-6LB4-BG7-TGB/invoiceSections/P73M-XC7J-PJA-TGB/providers/Microsoft.CostManagement/query/e82d0cda-2ffb-4476-a98a-425c83c216f9",
+        "location": None,
+        "name": "e82d0cda-2ffb-4476-a98a-425c83c216f9",
+        "properties": {
+            "columns": [
+                {"name": "PreTaxCost", "type": "Number"},
+                {"name": "UsageDate", "type": "Number"},
+                {"name": "InvoiceId", "type": "String"},
+                {"name": "Currency", "type": "String"},
+            ],
+            "nextLink": None,
+            "rows": [],
+        },
+        "sku": None,
+        "type": "Microsoft.CostManagement/query",
+    }
+    mock_result.ok = True
+    mock_azure.sdk.requests.post.return_value = mock_result
+    mock_azure = mock_get_secret(mock_azure)
+
+    # Subset of a profile's CSP data that we care about for reporting
+    csp_data = {
+        "tenant_id": "6d2d2d6c-a6d6-41e1-8bb1-73d11475f8f4",
+        "billing_profile_properties": {
+            "invoice_sections": [
+                {
+                    "invoice_section_id": "providers/Microsoft.Billing/billingAccounts/52865e4c-52e8-5a6c-da6b-c58f0814f06f:7ea5de9d-b8ce-4901-b1c5-d864320c7b03_2019-05-31/billingProfiles/XQDJ-6LB4-BG7-TGB/invoiceSections/P73M-XC7J-PJA-TGB",
+                }
+            ],
+        },
+    }
+
+    data: CostManagementQueryCSPResult = mock_azure.get_reporting_data(
+        ReportingCSPPayload(
+            from_date=pendulum.now().subtract(years=1).add(days=1).format("YYYY-MM-DD"),
+            to_date=pendulum.now().format("YYYY-MM-DD"),
+            **csp_data,
+        )
+    )
+
+    assert isinstance(data, CostManagementQueryCSPResult)
+    assert data.name == "e82d0cda-2ffb-4476-a98a-425c83c216f9"
+    assert len(data.properties.columns) == 4
+
+
+def test_get_reporting_data_malformed_payload(mock_azure: AzureCloudProvider):
+    mock_result = Mock()
+    mock_result.ok = True
+    mock_azure.sdk.requests.post.return_value = mock_result
+    mock_azure = mock_get_secret(mock_azure)
+
+    # Malformed csp_data payloads that should throw pydantic validation errors
+    index_error = {
+        "tenant_id": "6d2d2d6c-a6d6-41e1-8bb1-73d11475f8f4",
+        "billing_profile_properties": {"invoice_sections": [],},
+    }
+    key_error = {
+        "tenant_id": "6d2d2d6c-a6d6-41e1-8bb1-73d11475f8f4",
+        "billing_profile_properties": {"invoice_sections": [{}],},
+    }
+
+    for malformed_payload in [key_error, index_error]:
+        with pytest.raises(pydantic.ValidationError):
+            assert mock_azure.get_reporting_data(
+                ReportingCSPPayload(
+                    from_date="foo", to_date="bar", **malformed_payload,
+                )
+            )
