@@ -93,7 +93,7 @@ def test_disable_completed(application_role, environment):
 
 def test_disable_checks_env_provisioning_status(session):
     environment = EnvironmentFactory.create()
-    assert environment.is_pending
+    assert not environment.cloud_id
     env_role1 = EnvironmentRoleFactory.create(environment=environment)
     env_role1 = EnvironmentRoles.disable(env_role1.id)
     assert env_role1.disabled
@@ -103,7 +103,7 @@ def test_disable_checks_env_provisioning_status(session):
     session.commit()
     session.refresh(environment)
 
-    assert not environment.is_pending
+    assert environment.cloud_id
     env_role2 = EnvironmentRoleFactory.create(environment=environment)
     env_role2 = EnvironmentRoles.disable(env_role2.id)
     assert env_role2.disabled

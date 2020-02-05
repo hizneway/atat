@@ -28,17 +28,6 @@ def test_create_environment(mock_csp: MockCloudProvider):
     assert isinstance(result, EnvironmentCSPResult)
 
 
-def test_create_admin_user(mock_csp: MockCloudProvider):
-    admin_user = mock_csp.create_atat_admin_user(CREDENTIALS, "env_id")
-    assert isinstance(admin_user["id"], str)
-    assert isinstance(admin_user["credentials"], dict)
-
-
-def test_create_environment_baseline(mock_csp: MockCloudProvider):
-    baseline = mock_csp.create_atat_admin_user(CREDENTIALS, "env_id")
-    assert isinstance(baseline, dict)
-
-
 def test_create_or_update_user(mock_csp: MockCloudProvider):
     env_role = EnvironmentRoleFactory.create()
     csp_user_id = mock_csp.create_or_update_user(CREDENTIALS, env_role, "csp_role_id")

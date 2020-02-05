@@ -2,11 +2,11 @@ import json
 from unittest.mock import Mock, patch
 from uuid import uuid4
 
+import pendulum
+import pydantic
 import pytest
 from tests.factories import ApplicationFactory, EnvironmentFactory
 from tests.mock_azure import AUTH_CREDENTIALS, mock_azure
-import pendulum
-import pydantic
 
 from atst.domain.csp.cloud import AzureCloudProvider
 from atst.domain.csp.cloud.models import (
@@ -52,6 +52,7 @@ from atst.domain.csp.cloud.models import (
     TenantPrincipalCSPResult,
     TenantPrincipalOwnershipCSPPayload,
     TenantPrincipalOwnershipCSPResult,
+    UserCSPPayload,
 )
 
 BILLING_ACCOUNT_NAME = "52865e4c-52e8-5a6c-da6b-c58f0814f06f:7ea5de9d-b8ce-4901-b1c5-d864320c7b03_2019-05-31"
@@ -105,20 +106,6 @@ def test_create_application_succeeds(mock_azure: AzureCloudProvider):
     result: ApplicationCSPResult = mock_azure.create_application(payload)
 
     assert result.id == "Test Id"
-
-
-def test_create_atat_admin_user_succeeds(mock_azure: AzureCloudProvider):
-    environment_id = str(uuid4())
-
-    csp_user_id = str(uuid4)
-
-    mock_azure.sdk.graphrbac.GraphRbacManagementClient.return_value.service_principals.create.return_value.object_id = (
-        csp_user_id
-    )
-
-    result = mock_azure.create_atat_admin_user(AUTH_CREDENTIALS, environment_id)
-
-    assert result.get("csp_user_id") == csp_user_id
 
 
 def test_create_policy_definition_succeeds(mock_azure: AzureCloudProvider):
@@ -882,3 +869,72 @@ def test_set_secret(mock_azure: AzureCloudProvider):
         )
 
         assert mock_azure.set_secret("secret key", "secret_value") == "my secret"
+
+
+def test_create_active_directory_user(mock_azure: AzureCloudProvider):
+    mock_result = Mock()
+    mock_result.ok = True
+    mock_result.json.return_value = {"id": "id"}
+    mock_azure.sdk.requests.post.return_value = mock_result
+
+    payload = UserCSPPayload(
+        tenant_id=uuid4().hex,
+        display_name="Test Testerson",
+        tenant_host_name="testtenant",
+        email="test@testerson.test",
+        password="asdfghjkl",  # pragma: allowlist secret
+    )
+
+    result = mock_azure._create_active_directory_user("token", payload)
+
+    assert result.id == "id"
+
+
+def test_update_active_directory_user_email(mock_azure: AzureCloudProvider):
+    mock_result = Mock()
+    mock_result.ok = True
+    mock_azure.sdk.requests.patch.return_value = mock_result
+
+    payload = UserCSPPayload(
+        tenant_id=uuid4().hex,
+        display_name="Test Testerson",
+        tenant_host_name="testtenant",
+        email="test@testerson.test",
+        password="asdfghjkl",  # pragma: allowlist secret
+    )
+
+    result = mock_azure._update_active_directory_user_email(
+        "token", uuid4().hex, payload
+    )
+
+    assert result
+
+
+def test_create_user(mock_azure: AzureCloudProvider):
+    with patch.object(
+        AzureCloudProvider,
+        "_get_tenant_principal_token",
+        wraps=mock_azure._get_tenant_principal_token,
+    ) as _get_tenant_principal_token:
+        _get_tenant_principal_token.return_value = "token"
+
+        mock_result_create = Mock()
+        mock_result_create.ok = True
+        mock_result_create.json.return_value = {"id": "id"}
+        mock_azure.sdk.requests.post.return_value = mock_result_create
+
+        mock_result_update = Mock()
+        mock_result_update.ok = True
+        mock_azure.sdk.requests.patch.return_value = mock_result_update
+
+        payload = UserCSPPayload(
+            tenant_id=uuid4().hex,
+            display_name="Test Testerson",
+            tenant_host_name="testtenant",
+            email="test@testerson.test",
+            password="asdfghjkl",  # pragma: allowlist secret
+        )
+
+        result = mock_azure.create_user(payload)
+
+        assert result.id == "id"

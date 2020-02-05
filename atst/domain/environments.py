@@ -126,7 +126,7 @@ class Environments(object):
         results = (
             cls.base_provision_query(now)
             .filter(Application.cloud_id != None)
-            .filter(Environment.cloud_id == None)
+            .filter(Environment.cloud_id.is_(None))
             .all()
         )
         return [id_ for id_, in results]

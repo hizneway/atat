@@ -117,23 +117,6 @@ class MockCloudProvider(CloudProviderInterface):
             subscription_id="subscriptions/60fbbb72-0516-4253-ab18-c92432ba3230"
         )
 
-    def create_atat_admin_user(self, auth_credentials, csp_environment_id):
-        self._authorize(auth_credentials)
-
-        self._delay(1, 5)
-        self._maybe_raise(self.NETWORK_FAILURE_PCT, self.NETWORK_EXCEPTION)
-        self._maybe_raise(self.SERVER_FAILURE_PCT, self.SERVER_EXCEPTION)
-        self._maybe_raise(
-            self.ATAT_ADMIN_CREATE_FAILURE_PCT,
-            UserProvisioningException(
-                csp_environment_id, "atat_admin", "Could not create admin user."
-            ),
-        )
-
-        self._maybe_raise(self.UNAUTHORIZED_RATE, self.AUTHORIZATION_EXCEPTION)
-
-        return {"id": self._id(), "credentials": self._auth_credentials}
-
     def create_tenant(self, payload: TenantCSPPayload):
         """
         payload is an instance of TenantCSPPayload data class

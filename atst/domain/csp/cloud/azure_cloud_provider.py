@@ -153,9 +153,9 @@ class AzureCloudProvider(CloudProviderInterface):
         creds = self._source_creds(payload.tenant_id)
         credentials = self._get_credential_obj(
             {
-                "client_id": creds.root_sp_client_id,
-                "secret_key": creds.root_sp_key,
-                "tenant_id": creds.root_tenant_id,
+                "client_id": creds.tenant_sp_client_id,
+                "secret_key": creds.tenant_sp_key,
+                "tenant_id": creds.tenant_id,
             },
             resource=self.sdk.cloud.endpoints.resource_manager,
         )
@@ -168,43 +168,6 @@ class AzureCloudProvider(CloudProviderInterface):
         )
 
         return EnvironmentCSPResult(**response)
-
-    def create_atat_admin_user(
-        self, auth_credentials: Dict, csp_environment_id: str
-    ) -> Dict:
-        root_creds = self._root_creds
-        credentials = self._get_credential_obj(root_creds)
-
-        sub_client = self.sdk.subscription.SubscriptionClient(credentials)
-        subscription = sub_client.subscriptions.get(csp_environment_id)
-
-        managment_principal = self._get_management_service_principal()
-
-        auth_client = self.sdk.authorization.AuthorizationManagementClient(
-            credentials,
-            # TODO: Determine which subscription this needs to point at
-            # Once we're in a multi-sub environment
-            subscription.id,
-        )
-
-        # Create role assignment for
-        role_assignment_id = str(uuid4())
-        role_assignment_create_params = auth_client.role_assignments.models.RoleAssignmentCreateParameters(
-            role_definition_id=REMOTE_ROOT_ROLE_DEF_ID,
-            principal_id=managment_principal.id,
-        )
-
-        auth_client.role_assignments.create(
-            scope=f"/subscriptions/{subscription.id}/",
-            role_assignment_name=role_assignment_id,
-            parameters=role_assignment_create_params,
-        )
-
-        return {
-            "csp_user_id": managment_principal.object_id,
-            "credentials": managment_principal.password_credentials,
-            "role_name": role_assignment_id,
-        }
 
     def create_application(self, payload: ApplicationCSPPayload):
         creds = self._source_creds(payload.tenant_id)

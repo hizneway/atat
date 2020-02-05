@@ -1,5 +1,3 @@
-from enum import Enum
-
 from sqlalchemy import Column, ForeignKey, String, UniqueConstraint
 from sqlalchemy.orm import relationship
 
@@ -43,10 +41,6 @@ class Environment(
         ),
     )
 
-    class ProvisioningStatus(Enum):
-        PENDING = "pending"
-        COMPLETED = "completed"
-
     @property
     def users(self):
         return {r.application_role.user for r in self.roles}
@@ -66,17 +60,6 @@ class Environment(
     @property
     def portfolio_id(self):
         return self.application.portfolio_id
-
-    @property
-    def provisioning_status(self) -> ProvisioningStatus:
-        if self.cloud_id is None:
-            return self.ProvisioningStatus.PENDING
-        else:
-            return self.ProvisioningStatus.COMPLETED
-
-    @property
-    def is_pending(self):
-        return self.provisioning_status == self.ProvisioningStatus.PENDING
 
     def __repr__(self):
         return "<Environment(name='{}', num_users='{}', application='{}', portfolio='{}', id='{}')>".format(
