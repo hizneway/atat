@@ -338,7 +338,6 @@ class ManagementGroupCSPPayload(AliasModel):
     def enforce_display_name_length(cls, name):
         return name[0:90]
 
-
     @validator("parent_id", pre=True, always=True)
     def enforce_parent_id_pattern(cls, id_):
         if id_:

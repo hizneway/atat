@@ -245,9 +245,7 @@ class AzureCloudProvider(CloudProviderInterface):
             resource=self.sdk.cloud.endpoints.resource_manager,
         )
 
-        response = self._get_management_group(
-            credentials, payload.tenant_id,
-        )
+        response = self._get_management_group(credentials, payload.tenant_id,)
         return ManagementGroupGetCSPResponse(**response.result())
 
     def _create_management_group(
