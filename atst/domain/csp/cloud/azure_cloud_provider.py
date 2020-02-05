@@ -24,6 +24,7 @@ from .models import (
     BillingProfileTenantAccessCSPResult,
     BillingProfileVerificationCSPPayload,
     BillingProfileVerificationCSPResult,
+    CostManagementQueryCSPResult,
     KeyVaultCredentials,
     ManagementGroupCSPResponse,
     ProductPurchaseCSPPayload,
@@ -32,6 +33,7 @@ from .models import (
     ProductPurchaseVerificationCSPResult,
     PrincipalAdminRoleCSPPayload,
     PrincipalAdminRoleCSPResult,
+    ReportingCSPPayload,
     TaskOrderBillingCreationCSPPayload,
     TaskOrderBillingCreationCSPResult,
     TaskOrderBillingVerificationCSPPayload,
@@ -1070,3 +1072,41 @@ class AzureCloudProvider(CloudProviderInterface):
         hashed = sha256_hex(tenant_id)
         raw_creds = self.get_secret(hashed)
         return KeyVaultCredentials(**json.loads(raw_creds))
+
+    def get_reporting_data(self, payload: ReportingCSPPayload):
+        """
+        Queries the Cost Management API for an invoice section's raw reporting data
+        
+        We query at the invoiceSection scope. The full scope path is passed in
+        with the payload at the `invoice_section_id` key.
+        """
+        creds = self._source_tenant_creds(payload.tenant_id)
+        token = self._get_sp_token(
+            payload.tenant_id, creds.tenant_sp_client_id, creds.tenant_sp_key
+        )
+
+        if not token:
+            raise AuthenticationException("Could not retrieve tenant access token")
+
+        headers = {"Authorization": f"Bearer {token}"}
+
+        request_body = {
+            "type": "Usage",
+            "timeframe": "Custom",
+            "timePeriod": {"from": payload.from_date, "to": payload.to_date,},
+            "dataset": {
+                "granularity": "Daily",
+                "aggregation": {"totalCost": {"name": "PreTaxCost", "function": "Sum"}},
+                "grouping": [{"type": "Dimension", "name": "InvoiceId"}],
+            },
+        }
+        cost_mgmt_url = (
+            f"/providers/Microsoft.CostManagement/query?api-version=2019-11-01"
+        )
+        result = self.sdk.requests.post(
+            f"{self.sdk.cloud.endpoints.resource_manager}{payload.invoice_section_id}{cost_mgmt_url}",
+            json=request_body,
+            headers=headers,
+        )
+        if result.ok:
+            return CostManagementQueryCSPResult(**result.json())
