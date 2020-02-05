@@ -1,9 +1,10 @@
 import pendulum
 import pytest
 from uuid import uuid4
-from unittest.mock import Mock
+from unittest.mock import Mock, MagicMock
 
 from atst.domain.csp.cloud import MockCloudProvider
+from atst.domain.csp.cloud.models import UserRoleCSPResult
 from atst.domain.portfolios import Portfolios
 from atst.models import ApplicationRoleStatus
 
@@ -12,12 +13,14 @@ from atst.jobs import (
     dispatch_create_environment,
     dispatch_create_application,
     dispatch_create_user,
+    dispatch_create_environment_role,
     dispatch_create_atat_admin_user,
     dispatch_provision_portfolio,
     create_environment,
     do_create_user,
     do_provision_portfolio,
     do_create_environment,
+    do_create_environment_role,
     do_create_application,
     do_create_atat_admin_user,
 )
@@ -310,3 +313,39 @@ def test_provision_portfolio_create_tenant(
     # monkeypatch.setattr("atst.jobs.provision_portfolio", mock)
     # dispatch_provision_portfolio.run()
     # mock.delay.assert_called_once_with(portfolio_id=portfolio.id)
+
+
+def test_dispatch_create_environment_role(monkeypatch):
+    portfolio = PortfolioFactory.create(csp_data={"tenant_id": "123"})
+    app_role = ApplicationRoleFactory.create(
+        application=ApplicationFactory.create(portfolio=portfolio),
+        status=ApplicationRoleStatus.ACTIVE,
+        cloud_id="123",
+    )
+    env_role = EnvironmentRoleFactory.create(application_role=app_role)
+
+    mock = Mock()
+    monkeypatch.setattr("atst.jobs.create_environment_role", mock)
+
+    dispatch_create_environment_role.run()
+
+    mock.delay.assert_called_once_with(environment_role_id=env_role.id)
+
+
+def test_create_environment_role():
+    portfolio = PortfolioFactory.create(csp_data={"tenant_id": "123"})
+    app = ApplicationFactory.create(portfolio=portfolio)
+    app_role = ApplicationRoleFactory.create(
+        application=app, status=ApplicationRoleStatus.ACTIVE, cloud_id="123",
+    )
+    env = EnvironmentFactory.create(application=app, cloud_id="123")
+    env_role = EnvironmentRoleFactory.create(
+        environment=env, application_role=app_role, cloud_id=None
+    )
+
+    csp = Mock()
+    result = UserRoleCSPResult(id="a-cloud-id")
+    csp.create_user_role = MagicMock(return_value=result)
+    do_create_environment_role(csp, environment_role_id=env_role.id)
+
+    assert env_role.cloud_id == "a-cloud-id"

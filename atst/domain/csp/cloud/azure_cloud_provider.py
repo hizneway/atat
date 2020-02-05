@@ -935,17 +935,7 @@ class AzureCloudProvider(CloudProviderInterface):
             )
 
     def create_user_role(self, payload: UserRoleCSPPayload):
-        # creds TBD
-        graph_token = ""
-        # graph_token = self._get_up_token_for_resource(
-        #     username,
-        #     password,
-        #     payload.tenant_id,
-        #     self.sdk.cloud.endpoints.resource_manager
-        # )
-        # graph_token = self._get_tenant_principal_token(
-        #     payload.tenant_id
-        # )
+        graph_token = self._get_tenant_principal_token(payload.tenant_id)
         if graph_token is None:
             raise AuthenticationException(
                 "Could not resolve graph token for tenant admin"
@@ -968,7 +958,7 @@ class AzureCloudProvider(CloudProviderInterface):
 
         url = f"{self.sdk.cloud.endpoints.resource_manager}/providers/Microsoft.Management/managementGroups/{payload.tenant_id}/providers/Microsoft.Authorization/roleAssignments/{assignment_guid}?api-version=2015-07-01"
 
-        response = self.sdk.requests.post(url, headers=auth_header, json=request_body)
+        response = self.sdk.requests.put(url, headers=auth_header, json=request_body)
 
         if response.ok:
             return UserRoleCSPResult(**response.json())

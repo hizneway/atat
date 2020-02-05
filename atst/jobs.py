@@ -8,11 +8,17 @@ from atst.domain.csp.cloud.exceptions import GeneralCSPException
 from atst.domain.csp.cloud import CloudProviderInterface
 from atst.domain.applications import Applications
 from atst.domain.environments import Environments
+from atst.domain.environment_roles import EnvironmentRoles
 from atst.domain.portfolios import Portfolios
 from atst.domain.application_roles import ApplicationRoles
 from atst.models.utils import claim_for_update, claim_many_for_update
+from atst.models import CSPRole
 from atst.utils.localization import translate
-from atst.domain.csp.cloud.models import ApplicationCSPPayload, UserCSPPayload
+from atst.domain.csp.cloud.models import (
+    ApplicationCSPPayload,
+    UserCSPPayload,
+    UserRoleCSPPayload,
+)
 
 
 class RecordFailure(celery.Task):
@@ -138,6 +144,41 @@ def do_create_environment(csp: CloudProviderInterface, environment_id=None):
         )
 
 
+def do_create_environment_role(csp: CloudProviderInterface, environment_role_id=None):
+    env_role = EnvironmentRoles.get_by_id(environment_role_id)
+
+    with claim_for_update(env_role) as env_role:
+
+        if env_role.cloud_id is not None:
+            return
+
+        env = env_role.environment
+        csp_details = env.application.portfolio.csp_data
+        app_role = env_role.application_role
+
+        role = None
+        if env_role.role == CSPRole.ADMIN:
+            role = UserRoleCSPPayload.Roles.owner
+        elif env_role.role == CSPRole.BILLING_READ:
+            role = UserRoleCSPPayload.Roles.billing
+        elif env_role.role == CSPRole.CONTRIBUTOR:
+            role = UserRoleCSPPayload.Roles.contributor
+
+        # resolve role
+        payload = UserRoleCSPPayload(
+            tenant_id=csp_details.get("tenant_id"),
+            management_group_id=env.cloud_id,
+            user_object_id=app_role.cloud_id,
+            role=role,
+        )
+        result = csp.create_user_role(payload)
+
+        env_role.cloud_id = result.id
+        db.session.add(env_role)
+        db.session.commit()
+        # TODO: should send notification email to the user, maybe with their portal login name
+
+
 def do_create_atat_admin_user(csp: CloudProviderInterface, environment_id=None):
     environment = Environments.get(environment_id)
 
@@ -187,6 +228,16 @@ def create_user(self, application_role_ids=None):
 
 
 @celery.task(bind=True, base=RecordFailure)
+def create_environment_role(self, environment_role_id=None):
+    do_work(
+        do_create_environment_role,
+        self,
+        app.csp.cloud,
+        environment_role_id=environment_role_id,
+    )
+
+
+@celery.task(bind=True, base=RecordFailure)
 def create_environment(self, environment_id=None):
     do_work(do_create_environment, self, app.csp.cloud, environment_id=environment_id)
 
@@ -217,6 +268,12 @@ def dispatch_create_application(self):
 def dispatch_create_user(self):
     for application_role_ids in ApplicationRoles.get_pending_creation():
         create_user.delay(application_role_ids=application_role_ids)
+
+
+@celery.task(bind=True)
+def dispatch_create_environment_role(self):
+    for environment_role_id in EnvironmentRoles.get_pending_creation():
+        create_environment_role.delay(environment_role_id=environment_role_id)
 
 
 @celery.task(bind=True)

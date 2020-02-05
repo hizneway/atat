@@ -502,15 +502,14 @@ class UserCSPResult(AliasModel):
     id: str
 
 
-class UserRoles(str, Enum):
-    owner = "owner"
-    contributor = "contributor"
-    billing = "billing"
-
-
 class UserRoleCSPPayload(BaseCSPPayload):
+    class Roles(str, Enum):
+        owner = "owner"
+        contributor = "contributor"
+        billing = "billing"
+
     management_group_id: str
-    role: UserRoles
+    role: Roles
     user_object_id: str
 
 

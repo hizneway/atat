@@ -1,7 +1,7 @@
 from typing import Dict
 
 
-class CloudProviderInterface:
+class CloudProviderInterface:  # pragma: no cover
     def set_secret(self, secret_key: str, secret_value: str):
         raise NotImplementedError()
 

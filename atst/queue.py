@@ -27,6 +27,10 @@ def update_celery(celery, app):
             "task": "atst.jobs.dispatch_create_user",
             "schedule": 60,
         },
+        "beat-dispatch_create_environment_role": {
+            "task": "atst.jobs.dispatch_create_environment_role",
+            "schedule": 60,
+        },
     }
 
     class ContextTask(celery.Task):
