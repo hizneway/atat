@@ -463,7 +463,7 @@ class MockCloudProvider(CloudProviderInterface):
             **dict(
                 columns=[
                     {"name": "PreTaxCost", "type": "Number"},
-                    {"name": "UsageDate", "type": "Number"},
+                    {"name": "BillingMonth", "type": "Datetime"},
                     {"name": "InvoiceId", "type": "String"},
                     {"name": "Currency", "type": "String"},
                 ],
