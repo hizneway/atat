@@ -40,17 +40,11 @@ def reports(portfolio_id):
     if any(map(lambda clin: clin["remaining"] < 0, current_obligated_funds)):
         flash("insufficient_funds")
 
-    # wrapped in str() because the sum of obligated funds returns a Decimal object
-    total_portfolio_value = str(
-        sum(
-            task_order.total_obligated_funds
-            for task_order in portfolio.active_task_orders
-        )
-    )
     return render_template(
         "portfolios/reports/index.html",
         portfolio=portfolio,
-        total_portfolio_value=total_portfolio_value,
+        # wrapped in str() because the sum of obligated funds returns a Decimal object
+        total_portfolio_value=str(portfolio.total_obligated_funds),
         current_obligated_funds=current_obligated_funds,
         expired_task_orders=Reports.expired_task_orders(portfolio),
         monthly_spending=Reports.monthly_spending(portfolio),
