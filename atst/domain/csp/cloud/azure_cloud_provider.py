@@ -90,7 +90,6 @@ class AzureSDKProvider(object):
         self.credentials = credentials
         self.identity = identity
         self.azure_exceptions = exceptions
-        self.requests_exceptions = requests.exceptions
         self.secrets = secrets
         self.requests = requests
         self.cloud = AZURE_PUBLIC_CLOUD
@@ -306,22 +305,21 @@ class AzureCloudProvider(CloudProviderInterface):
                 headers=create_tenant_headers,
                 timeout=30,
             )
+            result.raise_for_status()
 
-        except self.requests_exceptions.ConnectionError:
+        except self.sdk.requests.ConnectionError:
             app.logger.error(
                 f"Could not create tenant. Connection Error", exc_info=1,
             )
             raise ConnectionException("connection error creating tenant")
 
-        except self.requests_exceptions.Timeout:
+        except self.sdk.requests.Timeout:
             app.logger.error(
                 f"Could not create tenant. Request timed out.", exc_info=1,
             )
             raise ConnectionException("timout error creating tenant")
 
-        try:
-            response.raise_for_status()
-        except requests_exceptions.HTTPError:
+        except self.sdk.requests.HTTPError:
             raise UnknownServerException("azure application error creating tenant")
 
         if result.status_code == 200:
