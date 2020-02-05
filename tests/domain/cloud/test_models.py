@@ -7,6 +7,7 @@ from atst.domain.csp.cloud.models import (
     KeyVaultCredentials,
     ManagementGroupCSPPayload,
     ManagementGroupCSPResponse,
+    UserCSPPayload,
 )
 
 
@@ -97,3 +98,26 @@ def test_KeyVaultCredentials_enforce_root_creds():
     assert KeyVaultCredentials(
         root_tenant_id="an id", root_sp_client_id="C3PO", root_sp_key="beep boop"
     )
+
+
+user_payload = {
+    "tenant_id": "123",
+    "display_name": "Han Solo",
+    "tenant_host_name": "rebelalliance",
+    "email": "han@moseisley.cantina",
+}
+
+
+def test_UserCSPPayload_mail_nickname():
+    payload = UserCSPPayload(**user_payload)
+    assert payload.mail_nickname == f"han.solo"
+
+
+def test_UserCSPPayload_user_principal_name():
+    payload = UserCSPPayload(**user_payload)
+    assert payload.user_principal_name == f"han.solo@rebelalliance.onmicrosoft.com"
+
+
+def test_UserCSPPayload_password():
+    payload = UserCSPPayload(**user_payload)
+    assert payload.password

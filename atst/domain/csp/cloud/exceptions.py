@@ -88,17 +88,6 @@ class UserProvisioningException(GeneralCSPException):
     """Failed to provision a user
     """
 
-    def __init__(self, env_identifier, user_identifier, reason):
-        self.env_identifier = env_identifier
-        self.user_identifier = user_identifier
-        self.reason = reason
-
-    @property
-    def message(self):
-        return "Failed to create user {} for environment {}: {}".format(
-            self.user_identifier, self.env_identifier, self.reason
-        )
-
 
 class UserRemovalException(GeneralCSPException):
     """Failed to remove a user

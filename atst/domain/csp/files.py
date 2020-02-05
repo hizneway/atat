@@ -79,7 +79,7 @@ class AzureFileService(FileService):
         sas_token = bbs.generate_blob_shared_access_signature(
             self.container_name,
             object_name,
-            permission=self.BlobPermissions.READ,
+            permission=self.BlobSasPermissions(read=True),
             expiry=datetime.utcnow() + self.timeout,
             content_disposition=f"attachment; filename={filename}",
             protocol="https",

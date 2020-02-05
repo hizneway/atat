@@ -29,12 +29,15 @@ from .models import (
     ManagementGroupCSPResponse,
     ManagementGroupGetCSPPayload,
     ManagementGroupGetCSPResponse,
+    CostManagementQueryCSPResult,
+    CostManagementQueryProperties,
     ProductPurchaseCSPPayload,
     ProductPurchaseCSPResult,
     ProductPurchaseVerificationCSPPayload,
     ProductPurchaseVerificationCSPResult,
     PrincipalAdminRoleCSPPayload,
     PrincipalAdminRoleCSPResult,
+    ReportingCSPPayload,
     SubscriptionCreationCSPPayload,
     SubscriptionCreationCSPResult,
     SubscriptionVerificationCSPPayload,
@@ -55,6 +58,8 @@ from .models import (
     TenantPrincipalCSPResult,
     TenantPrincipalOwnershipCSPPayload,
     TenantPrincipalOwnershipCSPResult,
+    UserCSPPayload,
+    UserCSPResult,
 )
 
 
@@ -179,6 +184,7 @@ class MockCloudProvider(CloudProviderInterface):
                 "tenant_id": "",
                 "user_id": "",
                 "user_object_id": "",
+                "domain_name": "",
                 "tenant_admin_username": "test",
                 "tenant_admin_password": "test",
             }
@@ -501,8 +507,35 @@ class MockCloudProvider(CloudProviderInterface):
             id=f"{AZURE_MGMNT_PATH}{payload.management_group_name}"
         )
 
+    def create_user(self, payload: UserCSPPayload):
+        self._maybe_raise(self.UNAUTHORIZED_RATE, GeneralCSPException)
+
+        return UserCSPResult(id=str(uuid4()))
+
     def get_credentials(self, scope="portfolio", tenant_id=None):
         return self.root_creds()
 
     def update_tenant_creds(self, tenant_id, secret):
         return secret
+
+    def get_reporting_data(self, payload: ReportingCSPPayload):
+        self._maybe_raise(self.NETWORK_FAILURE_PCT, self.NETWORK_EXCEPTION)
+        self._maybe_raise(self.SERVER_FAILURE_PCT, self.SERVER_EXCEPTION)
+        self._maybe_raise(self.UNAUTHORIZED_RATE, self.AUTHORIZATION_EXCEPTION)
+        object_id = str(uuid4())
+
+        properties = CostManagementQueryProperties(
+            **dict(
+                columns=[
+                    {"name": "PreTaxCost", "type": "Number"},
+                    {"name": "UsageDate", "type": "Number"},
+                    {"name": "InvoiceId", "type": "String"},
+                    {"name": "Currency", "type": "String"},
+                ],
+                rows=[],
+            )
+        )
+
+        return CostManagementQueryCSPResult(
+            **dict(name=object_id, properties=properties,)
+        )
