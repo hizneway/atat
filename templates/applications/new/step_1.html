@@ -39,14 +39,18 @@
       </div>
 
 
-      <span class="action-group-footer">
-        {% block next_button %}
-          {{ SaveButton(text=('portfolios.applications.new.step_1_button_text' | translate)) }}
-        {% endblock %}
-        <a href="{{ url_for('applications.portfolio_applications', portfolio_id=portfolio.id) }}">
-          Cancel
-        </a>
-      </span>
+      <div
+        class="action-group-footer"
+        v-bind:class="{'action-group-footer--expand-offset': this.$root.sidenavExpanded, 'action-group-footer--collapse-offset': !this.$root.sidenavExpanded}">
+        <div class="action-group-footer--container">
+          {% block next_button %}
+            {{ SaveButton(text=('portfolios.applications.new.step_1_button_text' | translate)) }}
+          {% endblock %}
+          <a href="{{ url_for('applications.portfolio_applications', portfolio_id=portfolio.id) }}">
+            Cancel
+          </a>
+        </div>
+      </div>
     </form>
   </base-form>
 
