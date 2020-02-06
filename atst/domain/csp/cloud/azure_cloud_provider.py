@@ -124,11 +124,7 @@ class AzureCloudProvider(CloudProviderInterface):
         )
         try:
             return secret_client.set_secret(secret_key, secret_value)
-<<<<<<< HEAD
         except self.azure_exceptions.HttpResponseError:
-=======
-        except self.sdk.exceptions.HttpResponseError as exc:
->>>>>>> staging
             app.logger.error(
                 f"Could not SET secret in Azure keyvault for key {secret_key}.",
                 exc_info=1,
@@ -145,11 +141,7 @@ class AzureCloudProvider(CloudProviderInterface):
         )
         try:
             return secret_client.get_secret(secret_key).value
-<<<<<<< HEAD
         except self.azure_exceptions.HttpResponseError:
-=======
-        except self.sdk.exceptions.HttpResponseError:
->>>>>>> staging
             app.logger.error(
                 f"Could not GET secret in Azure keyvault for key {secret_key}.",
                 exc_info=1,
@@ -288,23 +280,6 @@ class AzureCloudProvider(CloudProviderInterface):
                 timeout=30,
             )
             result.raise_for_status()
-
-        except self.sdk.requests.ConnectionError:
-            app.logger.error(
-                f"Could not create tenant. Connection Error", exc_info=1,
-            )
-            raise ConnectionException("connection error creating tenant")
-
-        except self.sdk.requests.Timeout:
-            app.logger.error(
-                f"Could not create tenant. Request timed out.", exc_info=1,
-            )
-            raise ConnectionException("timout error creating tenant")
-
-        except self.sdk.requests.HTTPError:
-            raise UnknownServerException("azure application error creating tenant")
-
-        if result.status_code == 200:
             result_dict = result.json()
             tenant_id = result_dict.get("tenantId")
             tenant_admin_username = (
@@ -318,11 +293,20 @@ class AzureCloudProvider(CloudProviderInterface):
                     tenant_admin_password=payload.password,
                 ),
             )
-            return self._ok(
-                TenantCSPResult(domain_name=payload.domain_name, **result_dict)
+            return TenantCSPResult(domain_name=payload.domain_name, **result_dict)
+
+        except self.sdk.requests.ConnectionError:
+            app.logger.error(
+                f"Could not create tenant. Connection Error", exc_info=1,
             )
-        else:
-            return self._error(result.json())
+            raise ConnectionException("connection error creating tenant")
+        except self.sdk.requests.Timeout:
+            app.logger.error(
+                f"Could not create tenant. Request timed out.", exc_info=1,
+            )
+            raise ConnectionException("timout error creating tenant")
+        except self.sdk.requests.HTTPError:
+            raise UnknownServerException("azure application error creating tenant")
 
     def create_billing_profile_creation(
         self, payload: BillingProfileCreationCSPPayload
@@ -341,20 +325,32 @@ class AzureCloudProvider(CloudProviderInterface):
 
         billing_account_create_url = f"{self.sdk.cloud.endpoints.resource_manager}/providers/Microsoft.Billing/billingAccounts/{payload.billing_account_name}/billingProfiles?api-version=2019-10-01-preview"
 
-        result = self.sdk.requests.post(
-            billing_account_create_url,
-            json=create_billing_account_body,
-            headers=create_billing_account_headers,
-        )
+        try:
+            result = self.sdk.requests.post(
+                billing_account_create_url,
+                json=create_billing_account_body,
+                headers=create_billing_account_headers,
+            )
+            result.raise_for_status()
+            if result.status_code == 202:
+                # 202 has location/retry after headers
+                return BillingProfileCreationCSPResult(**result.headers)
+            elif result.status_code == 200:
+                # NB: Swagger docs imply call can sometimes resolve immediately
+                return BillingProfileVerificationCSPResult(**result.json())
 
-        if result.status_code == 202:
-            # 202 has location/retry after headers
-            return self._ok(BillingProfileCreationCSPResult(**result.headers))
-        elif result.status_code == 200:
-            # NB: Swagger docs imply call can sometimes resolve immediately
-            return self._ok(BillingProfileVerificationCSPResult(**result.json()))
-        else:
-            return self._error(result.json())
+        except self.sdk.requests.ConnectionError:
+            app.logger.error(
+                f"Could not create tenant. Connection Error", exc_info=1,
+            )
+            raise ConnectionException("connection error creating tenant")
+        except self.sdk.requests.Timeout:
+            app.logger.error(
+                f"Could not create tenant. Request timed out.", exc_info=1,
+            )
+            raise ConnectionException("timout error creating tenant")
+        except self.sdk.requests.HTTPError:
+            raise UnknownServerException("azure application error creating tenant")
 
     def create_billing_profile_verification(
         self, payload: BillingProfileVerificationCSPPayload
@@ -368,18 +364,30 @@ class AzureCloudProvider(CloudProviderInterface):
         auth_header = {
             "Authorization": f"Bearer {sp_token}",
         }
+        try:
+            result = self.sdk.requests.get(
+                payload.billing_profile_verify_url, headers=auth_header
+            )
+            result.raise_for_status()
 
-        result = self.sdk.requests.get(
-            payload.billing_profile_verify_url, headers=auth_header
-        )
+            if result.status_code == 202:
+                # 202 has location/retry after headers
+                return BillingProfileCreationCSPResult(**result.headers)
+            elif result.status_code == 200:
+                return BillingProfileVerificationCSPResult(**result.json())
 
-        if result.status_code == 202:
-            # 202 has location/retry after headers
-            return self._ok(BillingProfileCreationCSPResult(**result.headers))
-        elif result.status_code == 200:
-            return self._ok(BillingProfileVerificationCSPResult(**result.json()))
-        else:
-            return self._error(result.json())
+        except self.sdk.requests.ConnectionError:
+            app.logger.error(
+                f"Could not create tenant. Connection Error", exc_info=1,
+            )
+            raise ConnectionException("connection error creating tenant")
+        except self.sdk.requests.Timeout:
+            app.logger.error(
+                f"Could not create tenant. Request timed out.", exc_info=1,
+            )
+            raise ConnectionException("timout error creating tenant")
+        except self.sdk.requests.HTTPError:
+            raise UnknownServerException("azure application error creating tenant")
 
     def create_billing_profile_tenant_access(
         self, payload: BillingProfileTenantAccessCSPPayload
@@ -398,12 +406,23 @@ class AzureCloudProvider(CloudProviderInterface):
         }
 
         url = f"{self.sdk.cloud.endpoints.resource_manager}/providers/Microsoft.Billing/billingAccounts/{payload.billing_account_name}/billingProfiles/{payload.billing_profile_name}/createBillingRoleAssignment?api-version=2019-10-01-preview"
+        try:
+            result = self.sdk.requests.post(url, headers=headers, json=request_body)
+            if result.status_code == 201:
+                return BillingProfileTenantAccessCSPResult(**result.json())
 
-        result = self.sdk.requests.post(url, headers=headers, json=request_body)
-        if result.status_code == 201:
-            return self._ok(BillingProfileTenantAccessCSPResult(**result.json()))
-        else:
-            return self._error(result.json())
+        except self.sdk.requests.ConnectionError:
+            app.logger.error(
+                f"Could not create tenant. Connection Error", exc_info=1,
+            )
+            raise ConnectionException("connection error creating tenant")
+        except self.sdk.requests.Timeout:
+            app.logger.error(
+                f"Could not create tenant. Request timed out.", exc_info=1,
+            )
+            raise ConnectionException("timout error creating tenant")
+        except self.sdk.requests.HTTPError:
+            raise UnknownServerException("azure application error creating tenant")
 
     def create_task_order_billing_creation(
         self, payload: TaskOrderBillingCreationCSPPayload
@@ -423,17 +442,30 @@ class AzureCloudProvider(CloudProviderInterface):
 
         url = f"{self.sdk.cloud.endpoints.resource_manager}/providers/Microsoft.Billing/billingAccounts/{payload.billing_account_name}/billingProfiles/{payload.billing_profile_name}?api-version=2019-10-01-preview"
 
-        result = self.sdk.requests.patch(
-            url, headers=request_headers, json=request_body
-        )
+        try:
+            result = self.sdk.requests.patch(
+                url, headers=request_headers, json=request_body
+            )
+            result.raise_for_status()
 
-        if result.status_code == 202:
-            # 202 has location/retry after headers
-            return self._ok(TaskOrderBillingCreationCSPResult(**result.headers))
-        elif result.status_code == 200:
-            return self._ok(TaskOrderBillingVerificationCSPResult(**result.json()))
-        else:
-            return self._error(result.json())
+            if result.status_code == 202:
+                # 202 has location/retry after headers
+                return TaskOrderBillingCreationCSPResult(**result.headers)
+            elif result.status_code == 200:
+                return TaskOrderBillingVerificationCSPResult(**result.json())
+
+        except self.sdk.requests.ConnectionError:
+            app.logger.error(
+                f"Could not create tenant. Connection Error", exc_info=1,
+            )
+            raise ConnectionException("connection error creating tenant")
+        except self.sdk.requests.Timeout:
+            app.logger.error(
+                f"Could not create tenant. Request timed out.", exc_info=1,
+            )
+            raise ConnectionException("timout error creating tenant")
+        except self.sdk.requests.HTTPError:
+            raise UnknownServerException("azure application error creating tenant")
 
     def create_task_order_billing_verification(
         self, payload: TaskOrderBillingVerificationCSPPayload
@@ -448,17 +480,30 @@ class AzureCloudProvider(CloudProviderInterface):
             "Authorization": f"Bearer {sp_token}",
         }
 
-        result = self.sdk.requests.get(
-            payload.task_order_billing_verify_url, headers=auth_header
-        )
+        try:
+            result = self.sdk.requests.get(
+                payload.task_order_billing_verify_url, headers=auth_header
+            )
+            result.raise_for_status()
 
-        if result.status_code == 202:
-            # 202 has location/retry after headers
-            return self._ok(TaskOrderBillingCreationCSPResult(**result.headers))
-        elif result.status_code == 200:
-            return self._ok(TaskOrderBillingVerificationCSPResult(**result.json()))
-        else:
-            return self._error(result.json())
+            if result.status_code == 202:
+                # 202 has location/retry after headers
+                return TaskOrderBillingCreationCSPResult(**result.headers)
+            elif result.status_code == 200:
+                return TaskOrderBillingVerificationCSPResult(**result.json())
+
+        except self.sdk.requests.ConnectionError:
+            app.logger.error(
+                f"Could not create tenant. Connection Error", exc_info=1,
+            )
+            raise ConnectionException("connection error creating tenant")
+        except self.sdk.requests.Timeout:
+            app.logger.error(
+                f"Could not create tenant. Request timed out.", exc_info=1,
+            )
+            raise ConnectionException("timout error creating tenant")
+        except self.sdk.requests.HTTPError:
+            raise UnknownServerException("azure application error creating tenant")
 
     def create_billing_instruction(self, payload: BillingInstructionCSPPayload):
         sp_token = self._get_root_provisioning_token()
@@ -481,12 +526,23 @@ class AzureCloudProvider(CloudProviderInterface):
             "Authorization": f"Bearer {sp_token}",
         }
 
-        result = self.sdk.requests.put(url, headers=auth_header, json=request_body)
+        try:
+            result = self.sdk.requests.put(url, headers=auth_header, json=request_body)
+            result.raise_for_status()
+            return BillingInstructionCSPResult(**result.json())
 
-        if result.status_code == 200:
-            return self._ok(BillingInstructionCSPResult(**result.json()))
-        else:
-            return self._error(result.json())
+        except self.sdk.requests.ConnectionError:
+            app.logger.error(
+                f"Could not create tenant. Connection Error", exc_info=1,
+            )
+            raise ConnectionException("connection error creating tenant")
+        except self.sdk.requests.Timeout:
+            app.logger.error(
+                f"Could not create tenant. Request timed out.", exc_info=1,
+            )
+            raise ConnectionException("timout error creating tenant")
+        except self.sdk.requests.HTTPError:
+            raise UnknownServerException("azure application error creating tenant")
 
     def create_subscription(self, payload: SubscriptionCreationCSPPayload):
         sp_token = self._get_tenant_principal_token(payload.tenant_id)
@@ -507,13 +563,24 @@ class AzureCloudProvider(CloudProviderInterface):
             "Authorization": f"Bearer {sp_token}",
         }
 
-        result = self.sdk.requests.put(url, headers=auth_header, json=request_body)
+        try:
+            result = self.sdk.requests.put(url, headers=auth_header, json=request_body)
+            if result.status_code in [200, 202]:
+                # 202 has location/retry after headers
+                return SubscriptionCreationCSPResult(**result.headers, **result.json())
 
-        if result.status_code in [200, 202]:
-            # 202 has location/retry after headers
-            return SubscriptionCreationCSPResult(**result.headers, **result.json())
-        else:
-            return self._error(result.json())
+        except self.sdk.requests.ConnectionError:
+            app.logger.error(
+                f"Could not create tenant. Connection Error", exc_info=1,
+            )
+            raise ConnectionException("connection error creating tenant")
+        except self.sdk.requests.Timeout:
+            app.logger.error(
+                f"Could not create tenant. Request timed out.", exc_info=1,
+            )
+            raise ConnectionException("timout error creating tenant")
+        except self.sdk.requests.HTTPError:
+            raise UnknownServerException("azure application error creating tenant")
 
     def create_subscription_creation(self, payload: SubscriptionCreationCSPPayload):
         return self.create_subscription(payload)
@@ -531,15 +598,27 @@ class AzureCloudProvider(CloudProviderInterface):
             "Authorization": f"Bearer {sp_token}",
         }
 
-        result = self.sdk.requests.get(
-            payload.subscription_verify_url, headers=auth_header
-        )
+        try:
+            result = self.sdk.requests.get(
+                payload.subscription_verify_url, headers=auth_header
+            )
+            result.raise_for_status()
 
-        if result.ok:
             # 202 has location/retry after headers
             return SuscriptionVerificationCSPResult(**result.json())
-        else:
-            return self._error(result.json())
+
+        except self.sdk.requests.ConnectionError:
+            app.logger.error(
+                f"Could not create tenant. Connection Error", exc_info=1,
+            )
+            raise ConnectionException("connection error creating tenant")
+        except self.sdk.requests.Timeout:
+            app.logger.error(
+                f"Could not create tenant. Request timed out.", exc_info=1,
+            )
+            raise ConnectionException("timout error creating tenant")
+        except self.sdk.requests.HTTPError:
+            raise UnknownServerException("azure application error creating tenant")
 
     def create_product_purchase(self, payload: ProductPurchaseCSPPayload):
         sp_token = self._get_root_provisioning_token()
@@ -559,21 +638,33 @@ class AzureCloudProvider(CloudProviderInterface):
         }
 
         product_purchase_url = f"https://management.azure.com/providers/Microsoft.Billing/billingAccounts/{payload.billing_account_name}/billingProfiles/{payload.billing_profile_name}/purchaseProduct?api-version=2019-10-01-preview"
+        try:
+            result = self.sdk.requests.post(
+                product_purchase_url,
+                json=create_product_purchase_body,
+                headers=create_product_purchase_headers,
+            )
+            result.raise_for_status()
 
-        result = self.sdk.requests.post(
-            product_purchase_url,
-            json=create_product_purchase_body,
-            headers=create_product_purchase_headers,
-        )
+            if result.status_code == 202:
+                # 202 has location/retry after headers
+                return ProductPurchaseCSPResult(**result.headers)
+            elif result.status_code == 200:
+                # NB: Swagger docs imply call can sometimes resolve immediately
+                return ProductPurchaseVerificationCSPResult(**result.json())
 
-        if result.status_code == 202:
-            # 202 has location/retry after headers
-            return self._ok(ProductPurchaseCSPResult(**result.headers))
-        elif result.status_code == 200:
-            # NB: Swagger docs imply call can sometimes resolve immediately
-            return self._ok(ProductPurchaseVerificationCSPResult(**result.json()))
-        else:
-            return self._error(result.json())
+        except self.sdk.requests.ConnectionError:
+            app.logger.error(
+                f"Could not create tenant. Connection Error", exc_info=1,
+            )
+            raise ConnectionException("connection error creating tenant")
+        except self.sdk.requests.Timeout:
+            app.logger.error(
+                f"Could not create tenant. Request timed out.", exc_info=1,
+            )
+            raise ConnectionException("timout error creating tenant")
+        except self.sdk.requests.HTTPError:
+            raise UnknownServerException("azure application error creating tenant")
 
     def create_product_purchase_verification(
         self, payload: ProductPurchaseVerificationCSPPayload
@@ -587,23 +678,33 @@ class AzureCloudProvider(CloudProviderInterface):
         auth_header = {
             "Authorization": f"Bearer {sp_token}",
         }
+        try:
+            result = self.sdk.requests.get(
+                payload.product_purchase_verify_url, headers=auth_header
+            )
+            result.raise_for_status()
 
-        result = self.sdk.requests.get(
-            payload.product_purchase_verify_url, headers=auth_header
-        )
-
-        if result.status_code == 202:
-            # 202 has location/retry after headers
-            return self._ok(ProductPurchaseCSPResult(**result.headers))
-        elif result.status_code == 200:
-            premium_purchase_date = result.json()["properties"]["purchaseDate"]
-            return self._ok(
-                ProductPurchaseVerificationCSPResult(
+            if result.status_code == 202:
+                # 202 has location/retry after headers
+                return ProductPurchaseCSPResult(**result.headers)
+            elif result.status_code == 200:
+                premium_purchase_date = result.json()["properties"]["purchaseDate"]
+                return ProductPurchaseVerificationCSPResult(
                     premium_purchase_date=premium_purchase_date
                 )
+
+        except self.sdk.requests.ConnectionError:
+            app.logger.error(
+                f"Could not create tenant. Connection Error", exc_info=1,
             )
-        else:
-            return self._error(result.json())
+            raise ConnectionException("connection error creating tenant")
+        except self.sdk.requests.Timeout:
+            app.logger.error(
+                f"Could not create tenant. Request timed out.", exc_info=1,
+            )
+            raise ConnectionException("timout error creating tenant")
+        except self.sdk.requests.HTTPError:
+            raise UnknownServerException("azure application error creating tenant")
 
     def create_tenant_admin_ownership(self, payload: TenantAdminOwnershipCSPPayload):
         mgmt_token = self._get_elevated_management_token(payload.tenant_id)
@@ -625,10 +726,26 @@ class AzureCloudProvider(CloudProviderInterface):
 
         url = f"{self.sdk.cloud.endpoints.resource_manager}/providers/Microsoft.Management/managementGroups/{payload.tenant_id}/providers/Microsoft.Authorization/roleAssignments/{assignment_guid}?api-version=2015-07-01"
 
-        response = self.sdk.requests.put(url, headers=auth_header, json=request_body)
+        try:
+            response = self.sdk.requests.put(
+                url, headers=auth_header, json=request_body
+            )
+            response.raise_for_status()
 
-        if response.ok:
             return TenantAdminOwnershipCSPResult(**response.json())
+
+        except self.sdk.requests.ConnectionError:
+            app.logger.error(
+                f"Could not create tenant. Connection Error", exc_info=1,
+            )
+            raise ConnectionException("connection error creating tenant")
+        except self.sdk.requests.Timeout:
+            app.logger.error(
+                f"Could not create tenant. Request timed out.", exc_info=1,
+            )
+            raise ConnectionException("timout error creating tenant")
+        except self.sdk.requests.HTTPError:
+            raise UnknownServerException("azure application error creating tenant")
 
     def create_tenant_principal_ownership(
         self, payload: TenantPrincipalOwnershipCSPPayload
@@ -653,10 +770,25 @@ class AzureCloudProvider(CloudProviderInterface):
 
         url = f"{self.sdk.cloud.endpoints.resource_manager}/providers/Microsoft.Management/managementGroups/{payload.tenant_id}/providers/Microsoft.Authorization/roleAssignments/{assignment_guid}?api-version=2015-07-01"
 
-        response = self.sdk.requests.put(url, headers=auth_header, json=request_body)
-
-        if response.ok:
+        try:
+            response = self.sdk.requests.put(
+                url, headers=auth_header, json=request_body
+            )
+            response.raise_for_status()
             return TenantPrincipalOwnershipCSPResult(**response.json())
+
+        except self.sdk.requests.ConnectionError:
+            app.logger.error(
+                f"Could not create tenant. Connection Error", exc_info=1,
+            )
+            raise ConnectionException("connection error creating tenant")
+        except self.sdk.requests.Timeout:
+            app.logger.error(
+                f"Could not create tenant. Request timed out.", exc_info=1,
+            )
+            raise ConnectionException("timout error creating tenant")
+        except self.sdk.requests.HTTPError:
+            raise UnknownServerException("azure application error creating tenant")
 
     def create_tenant_principal_app(self, payload: TenantPrincipalAppCSPPayload):
         graph_token = self._get_tenant_admin_token(
@@ -675,10 +807,25 @@ class AzureCloudProvider(CloudProviderInterface):
 
         url = f"{self.graph_resource}/v1.0/applications"
 
-        response = self.sdk.requests.post(url, json=request_body, headers=auth_header)
-
-        if response.ok:
+        try:
+            response = self.sdk.requests.post(
+                url, json=request_body, headers=auth_header
+            )
+            response.raise_for_status()
             return TenantPrincipalAppCSPResult(**response.json())
+
+        except self.sdk.requests.ConnectionError:
+            app.logger.error(
+                f"Could not create tenant. Connection Error", exc_info=1,
+            )
+            raise ConnectionException("connection error creating tenant")
+        except self.sdk.requests.Timeout:
+            app.logger.error(
+                f"Could not create tenant. Request timed out.", exc_info=1,
+            )
+            raise ConnectionException("timout error creating tenant")
+        except self.sdk.requests.HTTPError:
+            raise UnknownServerException("azure application error creating tenant")
 
     def create_tenant_principal(self, payload: TenantPrincipalCSPPayload):
         graph_token = self._get_tenant_admin_token(
@@ -697,10 +844,25 @@ class AzureCloudProvider(CloudProviderInterface):
 
         url = f"{self.graph_resource}/beta/servicePrincipals"
 
-        response = self.sdk.requests.post(url, json=request_body, headers=auth_header)
-
-        if response.ok:
+        try:
+            response = self.sdk.requests.post(
+                url, json=request_body, headers=auth_header
+            )
+            response.raise_for_status()
             return TenantPrincipalCSPResult(**response.json())
+
+        except self.sdk.requests.ConnectionError:
+            app.logger.error(
+                f"Could not create tenant. Connection Error", exc_info=1,
+            )
+            raise ConnectionException("connection error creating tenant")
+        except self.sdk.requests.Timeout:
+            app.logger.error(
+                f"Could not create tenant. Request timed out.", exc_info=1,
+            )
+            raise ConnectionException("timout error creating tenant")
+        except self.sdk.requests.HTTPError:
+            raise UnknownServerException("azure application error creating tenant")
 
     def create_tenant_principal_credential(
         self, payload: TenantPrincipalCredentialCSPPayload
@@ -723,9 +885,11 @@ class AzureCloudProvider(CloudProviderInterface):
 
         url = f"{self.graph_resource}/v1.0/applications/{payload.principal_app_object_id}/addPassword"
 
-        response = self.sdk.requests.post(url, json=request_body, headers=auth_header)
-
-        if response.ok:
+        try:
+            response = self.sdk.requests.post(
+                url, json=request_body, headers=auth_header
+            )
+            response.raise_for_status()
             result = response.json()
             self.update_tenant_creds(
                 payload.tenant_id,
@@ -739,6 +903,19 @@ class AzureCloudProvider(CloudProviderInterface):
                 principal_client_id=payload.principal_app_id,
                 principal_creds_established=True,
             )
+
+        except self.sdk.requests.ConnectionError:
+            app.logger.error(
+                f"Could not create tenant. Connection Error", exc_info=1,
+            )
+            raise ConnectionException("connection error creating tenant")
+        except self.sdk.requests.Timeout:
+            app.logger.error(
+                f"Could not create tenant. Request timed out.", exc_info=1,
+            )
+            raise ConnectionException("timout error creating tenant")
+        except self.sdk.requests.HTTPError:
+            raise UnknownServerException("azure application error creating tenant")
 
     def create_admin_role_definition(self, payload: AdminRoleDefinitionCSPPayload):
         graph_token = self._get_tenant_admin_token(
@@ -754,23 +931,37 @@ class AzureCloudProvider(CloudProviderInterface):
         }
 
         url = f"{self.graph_resource}/beta/roleManagement/directory/roleDefinitions"
+        try:
+            response = self.sdk.requests.get(url, headers=auth_header)
+            response.raise_for_status()
 
-        response = self.sdk.requests.get(url, headers=auth_header)
+            result = response.json()
+            roleList = result.get("value")
 
-        result = response.json()
-        roleList = result.get("value")
+            DEFAULT_ADMIN_RD_ID = "794bb258-3e31-42ff-9ee4-731a72f62851"
+            admin_role_def_id = next(
+                (
+                    role.get("id")
+                    for role in roleList
+                    if role.get("displayName") == "Company Administrator"
+                ),
+                DEFAULT_ADMIN_RD_ID,
+            )
 
-        DEFAULT_ADMIN_RD_ID = "794bb258-3e31-42ff-9ee4-731a72f62851"
-        admin_role_def_id = next(
-            (
-                role.get("id")
-                for role in roleList
-                if role.get("displayName") == "Company Administrator"
-            ),
-            DEFAULT_ADMIN_RD_ID,
-        )
+            return AdminRoleDefinitionCSPResult(admin_role_def_id=admin_role_def_id)
 
-        return AdminRoleDefinitionCSPResult(admin_role_def_id=admin_role_def_id)
+        except self.sdk.requests.ConnectionError:
+            app.logger.error(
+                f"Could not create tenant. Connection Error", exc_info=1,
+            )
+            raise ConnectionException("connection error creating tenant")
+        except self.sdk.requests.Timeout:
+            app.logger.error(
+                f"Could not create tenant. Request timed out.", exc_info=1,
+            )
+            raise ConnectionException("timout error creating tenant")
+        except self.sdk.requests.HTTPError:
+            raise UnknownServerException("azure application error creating tenant")
 
     def create_principal_admin_role(self, payload: PrincipalAdminRoleCSPPayload):
         graph_token = self._get_tenant_admin_token(
@@ -793,16 +984,31 @@ class AzureCloudProvider(CloudProviderInterface):
 
         url = f"{self.graph_resource}/beta/roleManagement/directory/roleAssignments"
 
-        response = self.sdk.requests.post(url, headers=auth_header, json=request_body)
-
-        if response.ok:
+        try:
+            response = self.sdk.requests.post(
+                url, headers=auth_header, json=request_body
+            )
+            response.raise_for_status()
             return PrincipalAdminRoleCSPResult(**response.json())
+
+        except self.sdk.requests.ConnectionError:
+            app.logger.error(
+                f"Could not create tenant. Connection Error", exc_info=1,
+            )
+            raise ConnectionException("connection error creating tenant")
+        except self.sdk.requests.Timeout:
+            app.logger.error(
+                f"Could not create tenant. Request timed out.", exc_info=1,
+            )
+            raise ConnectionException("timout error creating tenant")
+        except self.sdk.requests.HTTPError:
+            raise UnknownServerException("azure application error creating tenant")
 
     def force_tenant_admin_pw_update(self, creds, tenant_owner_id):
         # use creds to update to force password recovery?
         # not sure what the endpoint/method for this is, yet
 
-        return self._ok()
+        return {}
 
     def _get_management_service_principal(self):
         # we really should be using graph.microsoft.com, but i'm getting
@@ -896,12 +1102,28 @@ class AzureCloudProvider(CloudProviderInterface):
 
         url = f"{self.graph_resource}v1.0/users"
 
-        response = self.sdk.requests.post(url, headers=auth_header, json=request_body)
+        try:
+            response = self.sdk.requests.post(
+                url, headers=auth_header, json=request_body
+            )
+            response.raise_for_status()
 
-        if response.ok:
             return UserCSPResult(**response.json())
-        else:
-            raise UserProvisioningException(f"Failed to create user: {response.json()}")
+
+        # raise UserProvisioningException(f"Failed to create user: {response.json()}")
+
+        except self.sdk.requests.ConnectionError:
+            app.logger.error(
+                f"Could not create tenant. Connection Error", exc_info=1,
+            )
+            raise ConnectionException("connection error creating tenant")
+        except self.sdk.requests.Timeout:
+            app.logger.error(
+                f"Could not create tenant. Request timed out.", exc_info=1,
+            )
+            raise ConnectionException("timout error creating tenant")
+        except self.sdk.requests.HTTPError:
+            raise UnknownServerException("azure application error creating tenant")
 
     def _update_active_directory_user_email(
         self, graph_token, user_id, payload: UserCSPPayload
@@ -914,14 +1136,31 @@ class AzureCloudProvider(CloudProviderInterface):
 
         url = f"{self.graph_resource}v1.0/users/{user_id}"
 
-        response = self.sdk.requests.patch(url, headers=auth_header, json=request_body)
-
-        if response.ok:
-            return True
-        else:
-            raise UserProvisioningException(
-                f"Failed update user email: {response.json()}"
+        try:
+            response = self.sdk.requests.patch(
+                url, headers=auth_header, json=request_body
             )
+            response.raise_for_status()
+
+            if response.ok:
+                return True
+            else:
+                raise UserProvisioningException(
+                    f"Failed update user email: {response.json()}"
+                )
+
+        except self.sdk.requests.ConnectionError:
+            app.logger.error(
+                f"Could not create tenant. Connection Error", exc_info=1,
+            )
+            raise ConnectionException("connection error creating tenant")
+        except self.sdk.requests.Timeout:
+            app.logger.error(
+                f"Could not create tenant. Request timed out.", exc_info=1,
+            )
+            raise ConnectionException("timout error creating tenant")
+        except self.sdk.requests.HTTPError:
+            raise UnknownServerException("azure application error creating tenant")
 
     def _extract_subscription_id(self, subscription_url):
         sub_id_match = SUBSCRIPTION_ID_REGEX.match(subscription_url)
@@ -987,24 +1226,6 @@ class AzureCloudProvider(CloudProviderInterface):
             client_secret=creds.root_sp_key,
         )
 
-    def _ok(self, body=None):
-        return self._make_response("ok", body)
-
-    def _error(self, body=None):
-        return self._make_response("error", body)
-
-    def _make_response(self, status, body=dict()):
-        """Create body for responses from API
-
-        Arguments:
-            status {string} -- "ok" or "error"
-            body {dict} -- dict containing details of response or error, if applicable
-
-        Returns:
-            dict -- status of call with body containing details
-        """
-        return {"status": status, "body": body}
-
     @property
     def _root_creds(self):
         return {
@@ -1035,12 +1256,26 @@ class AzureCloudProvider(CloudProviderInterface):
             "Authorization": f"Bearer {mgmt_token}",
         }
         url = f"{self.sdk.cloud.endpoints.resource_manager}/providers/Microsoft.Authorization/elevateAccess?api-version=2016-07-01"
-        result = self.sdk.requests.post(url, headers=auth_header)
+        try:
+            result = self.sdk.requests.post(url, headers=auth_header)
+            result.raise_for_status()
+            if not result.ok:
+                raise AuthenticationException("Failed to elevate access")
 
-        if not result.ok:
-            raise AuthenticationException("Failed to elevate access")
+            return mgmt_token
 
-        return mgmt_token
+        except self.sdk.requests.ConnectionError:
+            app.logger.error(
+                f"Could not create tenant. Connection Error", exc_info=1,
+            )
+            raise ConnectionException("connection error creating tenant")
+        except self.sdk.requests.Timeout:
+            app.logger.error(
+                f"Could not create tenant. Request timed out.", exc_info=1,
+            )
+            raise ConnectionException("timout error creating tenant")
+        except self.sdk.requests.HTTPError:
+            raise UnknownServerException("azure application error creating tenant")
 
     def _source_creds(self, tenant_id=None) -> KeyVaultCredentials:
         if tenant_id:
@@ -1096,10 +1331,26 @@ class AzureCloudProvider(CloudProviderInterface):
         cost_mgmt_url = (
             f"/providers/Microsoft.CostManagement/query?api-version=2019-11-01"
         )
-        result = self.sdk.requests.post(
-            f"{self.sdk.cloud.endpoints.resource_manager}{payload.invoice_section_id}{cost_mgmt_url}",
-            json=request_body,
-            headers=headers,
-        )
-        if result.ok:
-            return CostManagementQueryCSPResult(**result.json())
+
+        try:
+            result = self.sdk.requests.post(
+                f"{self.sdk.cloud.endpoints.resource_manager}{payload.invoice_section_id}{cost_mgmt_url}",
+                json=request_body,
+                headers=headers,
+            )
+            result.raise_for_status()
+            if result.ok:
+                return CostManagementQueryCSPResult(**result.json())
+
+        except self.sdk.requests.ConnectionError:
+            app.logger.error(
+                f"Could not create tenant. Connection Error", exc_info=1,
+            )
+            raise ConnectionException("connection error creating tenant")
+        except self.sdk.requests.Timeout:
+            app.logger.error(
+                f"Could not create tenant. Request timed out.", exc_info=1,
+            )
+            raise ConnectionException("timout error creating tenant")
+        except self.sdk.requests.HTTPError:
+            raise UnknownServerException("azure application error creating tenant")

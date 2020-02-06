@@ -63,6 +63,7 @@ def mock_policy():
 
     return Mock(spec=policy)
 
+
 def mock_azure_exceptions():
     from azure.core import exceptions
 
