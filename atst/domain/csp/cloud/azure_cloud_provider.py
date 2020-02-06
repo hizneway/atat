@@ -924,7 +924,7 @@ class AzureCloudProvider(CloudProviderInterface):
 
         assignment_guid = str(uuid4())
 
-        url = f"{self.sdk.cloud.endpoints.resource_manager}/providers/Microsoft.Management/managementGroups/{payload.tenant_id}/providers/Microsoft.Authorization/roleAssignments/{assignment_guid}?api-version=2015-07-01"
+        url = f"{self.sdk.cloud.endpoints.resource_manager}/providers/Microsoft.Management/managementGroups/{payload.management_group_id}/providers/Microsoft.Authorization/roleAssignments/{assignment_guid}?api-version=2015-07-01"
 
         response = self.sdk.requests.put(url, headers=auth_header, json=request_body)
 
