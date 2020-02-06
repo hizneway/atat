@@ -383,6 +383,14 @@ class InitialMgmtGroupVerificationCSPResponse(ManagementGroupGetCSPResponse):
     pass
 
 
+class EnvironmentCSPPayload(ManagementGroupCSPPayload):
+    pass
+
+
+class EnvironmentCSPResult(ManagementGroupCSPResponse):
+    pass
+
+
 class KeyVaultCredentials(BaseModel):
     root_sp_client_id: Optional[str]
     root_sp_key: Optional[str]

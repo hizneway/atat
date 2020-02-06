@@ -180,7 +180,8 @@ class PortfolioStateMachine(
             # TODO: catch and handle general CSP exception here
             except (ConnectionException, UnknownServerException) as exc:
                 app.logger.error(
-                    f"CSP api call. Caught exception for {self.__repr__()}.", exc_info=1,
+                    f"CSP api call. Caught exception for {self.__repr__()}.",
+                    exc_info=1,
                 )
                 # TODO: Ensure that failing the stage does not preclude a Celery retry
                 self.fail_stage(stage)

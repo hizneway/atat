@@ -133,8 +133,8 @@ def test_fsm_transition_start(mock_cloud_provider, portfolio: Portfolio):
         "user_id": user_id,
         "password": "jklfsdNCVD83nklds2#202",  # pragma: allowlist secret
         "domain_name": domain_name,
-        "display_name" : "mgmt group display name",
-        "management_group_name" : "mgmt-group-uuid",
+        "display_name": "mgmt group display name",
+        "management_group_name": "mgmt-group-uuid",
         "first_name": ppoc.first_name,
         "last_name": ppoc.last_name,
         "country_code": "US",
