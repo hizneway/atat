@@ -12,14 +12,12 @@ from atst.jobs import (
     dispatch_create_environment,
     dispatch_create_application,
     dispatch_create_user,
-    dispatch_create_atat_admin_user,
     dispatch_provision_portfolio,
     create_environment,
     do_create_user,
     do_provision_portfolio,
     do_create_environment,
     do_create_application,
-    do_create_atat_admin_user,
 )
 from tests.factories import (
     EnvironmentFactory,
@@ -94,6 +92,10 @@ tomorrow = now.add(days=1)
 
 def test_create_environment_job(session, csp):
     environment = EnvironmentFactory.create()
+    environment.application.cloud_id = "parentId"
+    environment.application.portfolio.csp_data = {"tenant_id": "fake"}
+    session.add(environment)
+    session.commit()
     do_create_environment(csp, environment.id)
     session.refresh(environment)
 
@@ -149,19 +151,11 @@ def test_create_user_job(session, csp):
     assert app_role.cloud_id
 
 
-def test_create_atat_admin_user(csp, session):
-    environment = EnvironmentFactory.create(cloud_id="something")
-    do_create_atat_admin_user(csp, environment.id)
-    session.refresh(environment)
-
-    assert environment.root_user_info
-
-
 def test_dispatch_create_environment(session, monkeypatch):
     # Given that I have a portfolio with an active CLIN and two environments,
     # one of which is deleted
     portfolio = PortfolioFactory.create(
-        applications=[{"environments": [{}, {}]}],
+        applications=[{"environments": [{}, {}], "cloud_id": uuid4().hex}],
         task_orders=[
             {
                 "create_clins": [
@@ -227,36 +221,9 @@ def test_dispatch_create_user(monkeypatch):
     mock.delay.assert_called_once_with(application_role_ids=[app_role.id])
 
 
-def test_dispatch_create_atat_admin_user(session, monkeypatch):
-    portfolio = PortfolioFactory.create(
-        applications=[
-            {"environments": [{"cloud_id": uuid4().hex, "root_user_info": None}]}
-        ],
-        task_orders=[
-            {
-                "create_clins": [
-                    {
-                        "start_date": pendulum.now().subtract(days=1),
-                        "end_date": pendulum.now().add(days=1),
-                    }
-                ]
-            }
-        ],
-    )
-    mock = Mock()
-    monkeypatch.setattr("atst.jobs.create_atat_admin_user", mock)
-    environment = portfolio.applications[0].environments[0]
-
-    dispatch_create_atat_admin_user.run()
-
-    mock.delay.assert_called_once_with(environment_id=environment.id)
-
-
 def test_create_environment_no_dupes(session, celery_app, celery_worker):
     portfolio = PortfolioFactory.create(
-        applications=[
-            {"environments": [{"cloud_id": uuid4().hex, "root_user_info": {}}]}
-        ],
+        applications=[{"environments": [{"cloud_id": uuid4().hex}]}],
         task_orders=[
             {
                 "create_clins": [

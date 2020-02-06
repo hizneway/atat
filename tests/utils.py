@@ -81,9 +81,14 @@ class EnvQueryTest:
         return self.NOW.add(days=1)
 
     def create_portfolio_with_clins(
-        self, start_and_end_dates, env_data=None, state_machine_status=None
+        self,
+        start_and_end_dates,
+        env_data=None,
+        app_data=None,
+        state_machine_status=None,
     ):
         env_data = env_data or {}
+        app_data = app_data or {}
         return factories.PortfolioFactory.create(
             state=state_machine_status,
             applications=[
@@ -91,6 +96,7 @@ class EnvQueryTest:
                     "name": "Mos Eisley",
                     "description": "Where Han shot first",
                     "environments": [{"name": "thebar", **env_data}],
+                    **app_data,
                 }
             ],
             task_orders=[
