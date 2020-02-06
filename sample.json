@@ -1,0 +1,42 @@
+{
+    "creds": {
+        "root_sp_client_id": "FILL",
+        "root_sp_key": "ME",
+        "root_tenant_id": "IN"
+    },
+    "config": {
+        "AZURE_POLICY_LOCATION": "UNUSED BUT REQUIRED",
+        "AZURE_CLIENT_ID": "UNUSED BUT REQUIRED",
+        "AZURE_SECRET_KEY": "UNUSED BUT REQUIRED",
+        "AZURE_TENANT_ID": "UNUSED BUT REQUIRED",
+        "AZURE_VAULT_URL": "UNUSED BUT REQUIRED",
+        "POWERSHELL_CLIENT_ID": "1950a258-227b-4e31-a9cf-717495945fc2",
+        "AZURE_OWNER_ROLE_DEF_ID": "8e3af657-a8ff-443c-a75c-2fe8c4bcb635",
+        "AZURE_GRAPH_RESOURCE": "https://graph.microsoft.com",
+        "AZURE_AADP_QTY": 1
+    },
+    "initial_inputs": {
+        "user_id": "admin",
+        "password": "insert secure password here",
+        "domain_name": "someuniquedomain",
+        "country_code": "US",
+        "first_name": "First",
+        "last_name": "Last",
+        "password_recovery_email_address": "first_last@example.com",
+        "address": {
+            "address_line_1": "FILL",
+            "company_name": "US",
+            "city": "Washington",
+            "region": "DC",
+            "country": "US",
+            "postal_code": "IN"
+        },
+        "billing_account_name": "FILL ME IN",
+        "amount": 1000.00,
+        "start_date": "YYYY/MM/DD",
+        "end_date": "YYYY/MM/DD",
+        "clin_type": "1",
+        "task_order_id": "TO ID (only alphanumerics, ignore dashes)"
+    },
+    "csp_data": {}
+}
