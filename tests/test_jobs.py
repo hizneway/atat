@@ -294,6 +294,8 @@ def test_provision_portfolio_create_tenant(
     # mock.delay.assert_called_once_with(portfolio_id=portfolio.id)
 
 
+# TODO: Refactor the tests related to dispatch_send_task_order_files() into a class
+# and separate the success test into two tests
 def test_dispatch_send_task_order_files(monkeypatch, app):
     mock = Mock()
     monkeypatch.setattr("atst.jobs.send_mail", mock)
