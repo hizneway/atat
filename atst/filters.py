@@ -5,7 +5,7 @@ from flask import render_template
 from jinja2 import contextfilter
 from jinja2.exceptions import TemplateNotFound
 from urllib.parse import urlparse, urlunparse, parse_qs, urlencode
-from decimal import DivisionByZero as DivisionByZeroException
+from decimal import DivisionByZero as DivisionByZeroException, InvalidOperation
 
 
 def iconSvg(name):
@@ -43,7 +43,7 @@ def obligatedFundingGraphWidth(values):
     numerator, denominator = values
     try:
         return (numerator / denominator) * 100
-    except DivisionByZeroException:
+    except (DivisionByZeroException, InvalidOperation):
         return 0
 
 
