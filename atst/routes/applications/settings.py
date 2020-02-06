@@ -39,6 +39,7 @@ def get_environments_obj_for_app(application):
             {
                 "id": env.id,
                 "name": env.name,
+                "pending": env.is_pending,
                 "edit_form": EditEnvironmentForm(obj=env),
                 "member_count": len(env.roles),
                 "members": sorted(
