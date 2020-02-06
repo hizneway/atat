@@ -123,7 +123,7 @@ def test_fsm_transition_start(mock_cloud_provider, portfolio: Portfolio):
         csp_data = {}
 
     ppoc = portfolio.owner
-    user_id = "johndoe"#f"{ppoc.first_name[0]}{ppoc.last_name}".lower()
+    user_id = "johndoe"  # f"{ppoc.first_name[0]}{ppoc.last_name}".lower()
     domain_name = re.sub("[^0-9a-zA-Z]+", "", portfolio.name).lower()
 
     initial_task_order: TaskOrder = portfolio.task_orders[0]
@@ -135,10 +135,10 @@ def test_fsm_transition_start(mock_cloud_provider, portfolio: Portfolio):
         "domain_name": domain_name,
         "display_name": "mgmt group display name",
         "management_group_name": "mgmt-group-uuid",
-        "first_name": "123",#ppoc.first_name,
-        "last_name": "123",#ppoc.last_name,
+        "first_name": "123",  # ppoc.first_name,
+        "last_name": "123",  # ppoc.last_name,
         "country_code": "US",
-        "password_recovery_email_address": "email@example.com",#ppoc.email,
+        "password_recovery_email_address": "email@example.com",  # ppoc.email,
         "address": {  # TODO: TBD if we're sourcing this from data or config
             "company_name": "",
             "address_line_1": "",
