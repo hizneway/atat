@@ -23,9 +23,9 @@ from atst.domain.csp.cloud.models import (
     BillingProfileVerificationCSPPayload,
     BillingProfileVerificationCSPResult,
     InitialMgmtGroupCSPPayload,
-    InitialMgmtGroupCSPResponse,
+    InitialMgmtGroupCSPResult,
     InitialMgmtGroupVerificationCSPPayload,
-    InitialMgmtGroupVerificationCSPResponse,
+    InitialMgmtGroupVerificationCSPResult,
     CostManagementQueryCSPResult,
     EnvironmentCSPPayload,
     EnvironmentCSPResult,
@@ -128,7 +128,7 @@ def test_create_initial_mgmt_group_succeeds(mock_azure: AzureCloudProvider):
         display_name=application.name,
         management_group_name=str(uuid4()),
     )
-    result: InitialMgmtGroupCSPResponse = mock_azure.create_initial_mgmt_group(payload)
+    result: InitialMgmtGroupCSPResult = mock_azure.create_initial_mgmt_group(payload)
 
     assert result.id == "Test Id"
 
@@ -145,7 +145,7 @@ def test_create_initial_mgmt_group_verification_succeeds(
     payload = InitialMgmtGroupVerificationCSPPayload(
         tenant_id="1234", management_group_name=management_group_name
     )
-    result: InitialMgmtGroupVerificationCSPResponse = mock_azure.create_initial_mgmt_group_verification(
+    result: InitialMgmtGroupVerificationCSPResult = mock_azure.create_initial_mgmt_group_verification(
         payload
     )
 
