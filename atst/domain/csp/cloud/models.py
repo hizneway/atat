@@ -371,7 +371,7 @@ class InitialMgmtGroupCSPPayload(ManagementGroupCSPPayload):
     pass
 
 
-class InitialMgmtGroupCSPResponse(ManagementGroupCSPResponse):
+class InitialMgmtGroupCSPResult(ManagementGroupCSPResponse):
     pass
 
 
@@ -379,7 +379,7 @@ class InitialMgmtGroupVerificationCSPPayload(ManagementGroupGetCSPPayload):
     pass
 
 
-class InitialMgmtGroupVerificationCSPResponse(ManagementGroupGetCSPResponse):
+class InitialMgmtGroupVerificationCSPResult(ManagementGroupGetCSPResponse):
     pass
 
 

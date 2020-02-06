@@ -26,9 +26,9 @@ from .models import (
     BillingProfileVerificationCSPResult,
     CostManagementQueryCSPResult,
     InitialMgmtGroupCSPPayload,
-    InitialMgmtGroupCSPResponse,
+    InitialMgmtGroupCSPResult,
     InitialMgmtGroupVerificationCSPPayload,
-    InitialMgmtGroupVerificationCSPResponse,
+    InitialMgmtGroupVerificationCSPResult,
     EnvironmentCSPPayload,
     EnvironmentCSPResult,
     KeyVaultCredentials,
@@ -207,7 +207,7 @@ class AzureCloudProvider(CloudProviderInterface):
             credentials, payload.management_group_name, payload.display_name,
         )
 
-        return InitialMgmtGroupCSPResponse(**response)
+        return InitialMgmtGroupCSPResult(**response)
 
     def create_initial_mgmt_group_verification(
         self, payload: InitialMgmtGroupVerificationCSPPayload
@@ -223,7 +223,7 @@ class AzureCloudProvider(CloudProviderInterface):
         )
 
         response = self._get_management_group(credentials, payload.tenant_id,)
-        return InitialMgmtGroupVerificationCSPResponse(**response.result())
+        return InitialMgmtGroupVerificationCSPResult(**response.result())
 
     def _create_management_group(
         self, credentials, management_group_id, display_name, parent_id=None,

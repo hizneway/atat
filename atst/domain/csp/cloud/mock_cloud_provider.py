@@ -24,9 +24,9 @@ from .models import (
     BillingProfileVerificationCSPPayload,
     BillingProfileVerificationCSPResult,
     InitialMgmtGroupCSPPayload,
-    InitialMgmtGroupCSPResponse,
+    InitialMgmtGroupCSPResult,
     InitialMgmtGroupVerificationCSPPayload,
-    InitialMgmtGroupVerificationCSPResponse,
+    InitialMgmtGroupVerificationCSPResult,
     CostManagementQueryCSPResult,
     CostManagementQueryProperties,
     ProductPurchaseCSPPayload,
@@ -289,7 +289,7 @@ class MockCloudProvider(CloudProviderInterface):
         self._maybe_raise(self.SERVER_FAILURE_PCT, self.SERVER_EXCEPTION)
         self._maybe_raise(self.UNAUTHORIZED_RATE, self.AUTHORIZATION_EXCEPTION)
 
-        return InitialMgmtGroupCSPResponse(
+        return InitialMgmtGroupCSPResult(
             id=f"{AZURE_MGMNT_PATH}{payload.management_group_name}",
         )
 
@@ -300,7 +300,7 @@ class MockCloudProvider(CloudProviderInterface):
         self._maybe_raise(self.SERVER_FAILURE_PCT, self.SERVER_EXCEPTION)
         self._maybe_raise(self.UNAUTHORIZED_RATE, self.AUTHORIZATION_EXCEPTION)
 
-        return InitialMgmtGroupVerificationCSPResponse(
+        return InitialMgmtGroupVerificationCSPResult(
             **dict(
                 id="Test Id"
                 # id=f"{AZURE_MGMNT_PATH}{payload.management_group_name}"
