@@ -15,6 +15,7 @@
       <p>{{ "portfolios.header" | translate }}</p>
       <h1>{{ 'portfolios.new.title' | translate }}</h1>
     </div>
+  </div>
   {{ StickyCTA(text="portfolios.new.cta_step_1"|translate, context=("portfolios.new.sticky_header_context"|translate({"step": "1"}) )) }}
   <base-form inline-template>
     <div class="row">
@@ -38,13 +39,18 @@
             {{ "forms.portfolio.defense_component.help_text" | translate | safe }}
           </div>
         </div>
-        <div class='action-group-footer'>
-        {% block next_button %}
-          {{ SaveButton(text=('portfolios.new.save' | translate), form="portfolio-create", element="input") }}
-        {% endblock %}
-        <a class="usa-button usa-button-secondary" href="{{ url_for('atst.home') }}">
-          Cancel
-        </a>
+        <div
+          class='action-group-footer'
+          v-bind:class="{'action-group-footer--expand-offset': this.$root.sidenavExpanded, 'action-group-footer--collapse-offset': !this.$root.sidenavExpanded}">
+          <div class="action-group-footer--container">
+            {% block next_button %}
+              {{ SaveButton(text=('portfolios.new.save' | translate), form="portfolio-create", element="input") }}
+            {% endblock %}
+            <a class="usa-button usa-button-secondary" href="{{ url_for('atst.home') }}">
+              Cancel
+            </a>
+          </div>
+        </div>
       </form>
     </div>
   </base-form>

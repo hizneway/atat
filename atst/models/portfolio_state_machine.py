@@ -179,34 +179,30 @@ class PortfolioStateMachine(
         try:
             func_name = f"create_{stage}"
             response = getattr(self.csp, func_name)(payload_data)
+            if self.portfolio.csp_data is None:
+                self.portfolio.csp_data = {}
+            self.portfolio.csp_data.update(response.dict())
+            db.session.add(self.portfolio)
+            db.session.commit()
+        except PydanticValidationError as exc:
+            app.logger.error(
+                f"Failed to cast response to valid result class {self.__repr__()}:",
+                exc_info=1,
+            )
+            app.logger.info(exc.json())
+            print(exc.json())
+            app.logger.info(payload_data)
+            # TODO: Ensure that failing the stage does not preclude a Celery retry
+            self.fail_stage(stage)
+        # TODO: catch and handle general CSP exception here
         except (ConnectionException, UnknownServerException) as exc:
             app.logger.error(
                 f"CSP api call. Caught exception for {self.__repr__()}.", exc_info=1,
             )
+            # TODO: Ensure that failing the stage does not preclude a Celery retry
             self.fail_stage(stage)
 
-        if response.get("status") == "error":
-            self.fail_stage(stage)
-
-        elif response.get("status") == "ok":
-            try:
-
-                if self.portfolio.csp_data is None:
-                    self.portfolio.csp_data = {}
-                self.portfolio.csp_data.update(response.dict())
-                db.session.add(self.portfolio)
-                db.session.commit()
-            except PydanticValidationError as exc:
-                app.logger.error(
-                    f"Failed to cast response to valid result class {self.__repr__()}:",
-                    exc_info=1,
-                )
-                app.logger.info(exc.json())
-                print(exc.json())
-                app.logger.info(payload_data)
-                self.fail_stage(stage)
-
-            self.finish_stage(stage)
+        self.finish_stage(stage)
 
     def is_csp_data_valid(self, event):
         """
