@@ -30,7 +30,8 @@ class PermissionSets(object):
         try:
             role = db.session.query(PermissionSet).filter_by(name=perms_set_name).one()
         except NoResultFound:
-            raise NotFoundError("permission_set")
+            #raise NotFoundError("permission_set")
+            pass
 
         return role
 
@@ -47,7 +48,8 @@ class PermissionSets(object):
         )
 
         if len(permission_sets) != len(perms_set_names):
-            raise NotFoundError("permission_set")
+            #raise NotFoundError("permission_set")
+            pass
 
         return permission_sets
 
