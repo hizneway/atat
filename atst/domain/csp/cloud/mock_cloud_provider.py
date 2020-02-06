@@ -25,10 +25,10 @@ from .models import (
     BillingProfileTenantAccessCSPResult,
     BillingProfileVerificationCSPPayload,
     BillingProfileVerificationCSPResult,
-    ManagementGroupCSPPayload,
-    ManagementGroupCSPResponse,
-    ManagementGroupGetCSPPayload,
-    ManagementGroupGetCSPResponse,
+    InitialMgmtGroupCSPPayload,
+    InitialMgmtGroupCSPResponse,
+    InitialMgmtGroupVerificationCSPPayload,
+    InitialMgmtGroupVerificationCSPResponse,
     CostManagementQueryCSPResult,
     CostManagementQueryProperties,
     ProductPurchaseCSPPayload,
@@ -329,23 +329,23 @@ class MockCloudProvider(CloudProviderInterface):
             }
         )
 
-    def create_initial_mgmt_group(self, payload: ManagementGroupCSPPayload):
+    def create_initial_mgmt_group(self, payload: InitialMgmtGroupCSPPayload):
         self._maybe_raise(self.NETWORK_FAILURE_PCT, self.NETWORK_EXCEPTION)
         self._maybe_raise(self.SERVER_FAILURE_PCT, self.SERVER_EXCEPTION)
         self._maybe_raise(self.UNAUTHORIZED_RATE, self.AUTHORIZATION_EXCEPTION)
 
-        return ManagementGroupCSPResponse(
-            id=f"{AZURE_MGMNT_PATH}{payload.management_group_name}"
+        return InitialMgmtGroupCSPResponse(
+            id=f"{AZURE_MGMNT_PATH}{payload.management_group_name}",
         )
 
     def create_initial_mgmt_group_verification(
-        self, payload: ManagementGroupGetCSPPayload
+        self, payload: InitialMgmtGroupVerificationCSPPayload
     ):
         self._maybe_raise(self.NETWORK_FAILURE_PCT, self.NETWORK_EXCEPTION)
         self._maybe_raise(self.SERVER_FAILURE_PCT, self.SERVER_EXCEPTION)
         self._maybe_raise(self.UNAUTHORIZED_RATE, self.AUTHORIZATION_EXCEPTION)
 
-        return ManagementGroupGetCSPResponse(
+        return InitialMgmtGroupVerificationCSPResponse(
             **dict(
                 id="Test Id"
                 # id=f"{AZURE_MGMNT_PATH}{payload.management_group_name}"
