@@ -210,7 +210,7 @@ def dispatch_create_atat_admin_user(self):
 @celery.task(bind=True)
 def dispatch_send_task_order_files(self):
     task_orders = TaskOrders.get_for_send_task_order_files()
-    recipients = app.config.get("MICROSOFT_TASK_ORDER_EMAIL_ADDRESS")
+    recipients = [app.config.get("MICROSOFT_TASK_ORDER_EMAIL_ADDRESS")]
 
     for task_order in task_orders:
         subject = translate(
@@ -225,7 +225,8 @@ def dispatch_send_task_order_files(self):
             send_mail(
                 recipients=recipients, subject=subject, body=body, attachments=[file]
             )
-        except (AzureError, SMTPException):
+        except (AzureError, SMTPException) as err:
+            app.logger.exception(err)
             continue
 
         task_order.pdf_last_sent_at = pendulum.now()

@@ -324,7 +324,7 @@ def test_dispatch_send_task_order_files(monkeypatch, app):
 
     # Check that send_with_attachment was called with correct kwargs
     mock.assert_called_once_with(
-        recipients=app.config.get("MICROSOFT_TASK_ORDER_EMAIL_ADDRESS"),
+        recipients=[app.config.get("MICROSOFT_TASK_ORDER_EMAIL_ADDRESS")],
         subject=translate(
             "email.task_order_sent.subject", {"to_number": task_order.number}
         ),
