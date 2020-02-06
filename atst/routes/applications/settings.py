@@ -39,7 +39,6 @@ def get_environments_obj_for_app(application):
             {
                 "id": env.id,
                 "name": env.name,
-                "pending": env.is_pending,
                 "edit_form": EditEnvironmentForm(obj=env),
                 "member_count": len(env.roles),
                 "members": sorted(
@@ -467,9 +466,10 @@ def revoke_invite(application_id, application_role_id):
     if invite.is_pending:
         ApplicationInvitations.revoke(invite.token)
         flash(
-            "application_invite_revoked",
+            "invite_revoked",
+            resource="Application",
             user_name=app_role.user_name,
-            application_name=g.application.name,
+            resource_name=g.application.name,
         )
     else:
         flash(

@@ -1,7 +1,7 @@
 """change to environment_roles.cloud_Id
 
 Revision ID: 418b52c1cedf
-Revises: 17da2a475429
+Revises: 0039308c6351
 Create Date: 2020-02-05 13:40:37.870183
 
 """
@@ -11,7 +11,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = '418b52c1cedf' # pragma: allowlist secret
-down_revision = '17da2a475429' # pragma: allowlist secret
+down_revision = '0039308c6351' # pragma: allowlist secret
 branch_labels = None
 depends_on = None
 
