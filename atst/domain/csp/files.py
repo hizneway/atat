@@ -1,5 +1,5 @@
-from datetime import datetime, timedelta
 from uuid import uuid4
+import pendulum
 
 
 class FileService:
@@ -39,7 +39,7 @@ class AzureFileService(FileService):
         self.account_name = config["AZURE_ACCOUNT_NAME"]
         self.storage_key = config["AZURE_STORAGE_KEY"]
         self.container_name = config["AZURE_TO_BUCKET_NAME"]
-        self.timeout = timedelta(seconds=config["PERMANENT_SESSION_LIFETIME"])
+        self.timeout = config["PERMANENT_SESSION_LIFETIME"]
 
         from azure.storage.common import CloudStorageAccount
         from azure.storage.blob import BlobSasPermissions
@@ -68,7 +68,7 @@ class AzureFileService(FileService):
             self.container_name,
             object_name,
             permission=self.BlobSasPermissions(create=True),
-            expiry=datetime.utcnow() + self.timeout,
+            expiry=pendulum.now(tz="utc").add(self.timeout),
             protocol="https",
         )
         return ({"token": sas_token}, object_name)
@@ -81,7 +81,7 @@ class AzureFileService(FileService):
             container_name=self.container_name,
             blob_name=object_name,
             permission=self.BlobPermissions(read=True),
-            expiry=datetime.utcnow() + self.timeout,
+            expiry=pendulum.now(tz="utc").add(self.timeout),
             content_disposition=f"attachment; filename={filename}",
             protocol="https",
         )

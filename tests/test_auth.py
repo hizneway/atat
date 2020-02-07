@@ -3,11 +3,11 @@ from urllib.parse import urlparse
 
 import pytest
 from datetime import datetime
+import pendulum
 from flask import session, url_for
 from cryptography.hazmat.primitives.serialization import Encoding
 
 from atst.domain.users import Users
-from atst.domain.permission_sets import PermissionSets
 from atst.domain.exceptions import NotFoundError
 from atst.domain.authnid.crl import CRLInvalidException
 from atst.domain.auth import UNPROTECTED_ROUTES
@@ -262,7 +262,7 @@ def test_error_on_invalid_crl(client, monkeypatch):
 
 
 def test_last_login_set_when_user_logs_in(client, monkeypatch):
-    last_login = datetime.now()
+    last_login = pendulum.now(tz="utc")
     user = UserFactory.create(last_login=last_login)
     monkeypatch.setattr(
         "atst.domain.authnid.AuthenticationContext.authenticate", lambda *args: True
@@ -270,7 +270,7 @@ def test_last_login_set_when_user_logs_in(client, monkeypatch):
     monkeypatch.setattr(
         "atst.domain.authnid.AuthenticationContext.get_user", lambda *args: user
     )
-    response = _login(client)
+    _login(client)
     assert session["last_login"]
     assert user.last_login > session["last_login"]
     assert isinstance(session["last_login"], datetime)

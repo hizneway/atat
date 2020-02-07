@@ -1,4 +1,5 @@
 import pytest
+import pendulum
 
 from atst.domain.permission_sets import PermissionSets
 from atst.domain.environment_roles import EnvironmentRoles
@@ -61,7 +62,7 @@ def test_environment_roles():
 
 
 def test_display_status():
-    yesterday = datetime.date.today() - datetime.timedelta(days=1)
+    yesterday = pendulum.today().subtract(days=1)
     expired_invite = ApplicationInvitationFactory.create(expiration_time=yesterday)
     assert expired_invite.role.display_status == "invite_expired"
 

@@ -1,7 +1,7 @@
 import os
 import re
 from configparser import ConfigParser
-from datetime import datetime
+import pendulum
 from flask import Flask, request, g, session, url_for as flask_url_for
 from flask_session import Session
 import redis
@@ -187,11 +187,11 @@ def map_config(config):
         "CELERY_RESULT_EXPIRES": 0,
         "CELERY_RESULT_EXTENDED": True,
         "OFFICE_365_DOMAIN": "onmicrosoft.com",
-        "CONTRACT_START_DATE": datetime.strptime(
-            config.get("default", "CONTRACT_START_DATE"), "%Y-%m-%d"
+        "CONTRACT_START_DATE": pendulum.from_format(
+            config.get("default", "CONTRACT_START_DATE"), "YYYY-MM-DD"
         ).date(),
-        "CONTRACT_END_DATE": datetime.strptime(
-            config.get("default", "CONTRACT_END_DATE"), "%Y-%m-%d"
+        "CONTRACT_END_DATE": pendulum.from_format(
+            config.get("default", "CONTRACT_END_DATE"), "YYYY-MM-DD"
         ).date(),
         "SESSION_COOKIE_SECURE": config.getboolean("default", "SESSION_COOKIE_SECURE"),
     }

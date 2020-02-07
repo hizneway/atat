@@ -1,5 +1,5 @@
 import pytest
-import datetime
+import pendulum
 
 from atst.domain.environments import Environments
 from atst.domain.portfolios import Portfolios
@@ -204,7 +204,7 @@ def test_status_when_invitation_is_expired():
     PortfolioInvitationFactory.create(
         role=portfolio_role,
         status=InvitationStatus.PENDING,
-        expiration_time=datetime.datetime.now() - datetime.timedelta(seconds=1),
+        expiration_time=pendulum.now(tz="utc").subtract(seconds=1),
     )
     assert portfolio_role.display_status == "invite_expired"
 

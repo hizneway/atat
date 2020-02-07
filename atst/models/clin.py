@@ -9,7 +9,7 @@ from sqlalchemy import (
     String,
 )
 from sqlalchemy.orm import relationship
-from datetime import date
+import pendulum
 
 from atst.models.base import Base
 import atst.models.mixins as mixins
@@ -75,5 +75,5 @@ class CLIN(Base, mixins.TimestampsMixin):
     @property
     def is_active(self):
         return (
-            self.start_date <= date.today() <= self.end_date
+            self.start_date <= pendulum.today() <= self.end_date
         ) and self.task_order.signed_at

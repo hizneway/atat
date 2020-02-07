@@ -1,4 +1,4 @@
-import datetime
+import pendulum
 from unittest.mock import Mock
 
 from flask import url_for
@@ -123,7 +123,7 @@ def test_user_accepts_expired_invite(client, user_session):
         user_id=user.id,
         role=ws_role,
         status=InvitationStatus.REJECTED_EXPIRED,
-        expiration_time=datetime.datetime.now() - datetime.timedelta(seconds=1),
+        expiration_time=pendulum.now(tz="utc").subtract(seconds=1),
     )
     user_session(user)
     response = client.get(
@@ -143,7 +143,7 @@ def test_revoke_invitation(client, user_session):
         user_id=user.id,
         role=ws_role,
         status=InvitationStatus.REJECTED_EXPIRED,
-        expiration_time=datetime.datetime.now() - datetime.timedelta(seconds=1),
+        expiration_time=pendulum.now(tz="utc").subtract(seconds=1),
     )
     user_session(portfolio.owner)
     response = client.post(
@@ -169,7 +169,7 @@ def test_user_can_only_revoke_invites_in_their_portfolio(client, user_session):
         user_id=user.id,
         role=portfolio_role,
         status=InvitationStatus.REJECTED_EXPIRED,
-        expiration_time=datetime.datetime.now() - datetime.timedelta(seconds=1),
+        expiration_time=pendulum.now(tz="utc").subtract(seconds=1),
     )
     user_session(portfolio.owner)
     response = client.post(
@@ -199,7 +199,7 @@ def test_user_can_only_resend_invites_in_their_portfolio(
         user_id=user.id,
         role=portfolio_role,
         status=InvitationStatus.REJECTED_EXPIRED,
-        expiration_time=datetime.datetime.now() - datetime.timedelta(seconds=1),
+        expiration_time=pendulum.now(tz="utc").subtract(seconds=1),
     )
     user_session(portfolio.owner)
     response = client.post(

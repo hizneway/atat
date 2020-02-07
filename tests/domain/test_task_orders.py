@@ -1,5 +1,5 @@
 import pytest
-from datetime import date, datetime, timedelta
+import pendulum
 from decimal import Decimal
 
 from atst.domain.exceptions import AlreadyExistsError
@@ -15,16 +15,16 @@ def test_create_adds_clins():
         {
             "jedi_clin_type": "JEDI_CLIN_1",
             "number": "12312",
-            "start_date": date(2020, 1, 1),
-            "end_date": date(2021, 1, 1),
+            "start_date": pendulum.date(2020, 1, 1),
+            "end_date": pendulum.date(2021, 1, 1),
             "obligated_amount": Decimal("5000"),
             "total_amount": Decimal("10000"),
         },
         {
             "jedi_clin_type": "JEDI_CLIN_1",
             "number": "12312",
-            "start_date": date(2020, 1, 1),
-            "end_date": date(2021, 1, 1),
+            "start_date": pendulum.date(2020, 1, 1),
+            "end_date": pendulum.date(2021, 1, 1),
             "obligated_amount": Decimal("5000"),
             "total_amount": Decimal("10000"),
         },
@@ -45,16 +45,16 @@ def test_update_adds_clins():
         {
             "jedi_clin_type": "JEDI_CLIN_1",
             "number": "12312",
-            "start_date": date(2020, 1, 1),
-            "end_date": date(2021, 1, 1),
+            "start_date": pendulum.date(2020, 1, 1),
+            "end_date": pendulum.date(2021, 1, 1),
             "obligated_amount": Decimal("5000"),
             "total_amount": Decimal("10000"),
         },
         {
             "jedi_clin_type": "JEDI_CLIN_1",
             "number": "12312",
-            "start_date": date(2020, 1, 1),
-            "end_date": date(2021, 1, 1),
+            "start_date": pendulum.date(2020, 1, 1),
+            "end_date": pendulum.date(2021, 1, 1),
             "obligated_amount": Decimal("5000"),
             "total_amount": Decimal("10000"),
         },
@@ -77,16 +77,16 @@ def test_update_does_not_duplicate_clins():
         {
             "jedi_clin_type": "JEDI_CLIN_1",
             "number": "123",
-            "start_date": date(2020, 1, 1),
-            "end_date": date(2021, 1, 1),
+            "start_date": pendulum.date(2020, 1, 1),
+            "end_date": pendulum.date(2021, 1, 1),
             "obligated_amount": Decimal("5000"),
             "total_amount": Decimal("10000"),
         },
         {
             "jedi_clin_type": "JEDI_CLIN_1",
             "number": "111",
-            "start_date": date(2020, 1, 1),
-            "end_date": date(2021, 1, 1),
+            "start_date": pendulum.date(2020, 1, 1),
+            "end_date": pendulum.date(2021, 1, 1),
             "obligated_amount": Decimal("5000"),
             "total_amount": Decimal("10000"),
         },
@@ -114,9 +114,9 @@ def test_delete_task_order_with_clins(session):
 
 
 def test_task_order_sort_by_status():
-    today = date.today()
-    yesterday = today - timedelta(days=1)
-    future = today + timedelta(days=100)
+    today = pendulum.today()
+    yesterday = today.subtract(days=1)
+    future = today.add(days=100)
 
     initial_to_list = [
         # Draft
@@ -184,12 +184,12 @@ def test_allows_alphanumeric_number():
 def test_get_for_send_task_order_files():
     new_to = TaskOrderFactory.create(create_clins=[{}])
     updated_to = TaskOrderFactory.create(
-        create_clins=[{"last_sent_at": datetime(2020, 2, 1)}],
-        pdf_last_sent_at=datetime(2020, 1, 1),
+        create_clins=[{"last_sent_at": pendulum.datetime(2020, 2, 1)}],
+        pdf_last_sent_at=pendulum.datetime(2020, 1, 1),
     )
     sent_to = TaskOrderFactory.create(
-        create_clins=[{"last_sent_at": datetime(2020, 1, 1)}],
-        pdf_last_sent_at=datetime(2020, 1, 1),
+        create_clins=[{"last_sent_at": pendulum.datetime(2020, 1, 1)}],
+        pdf_last_sent_at=pendulum.datetime(2020, 1, 1),
     )
 
     updated_and_new_task_orders = TaskOrders.get_for_send_task_order_files()

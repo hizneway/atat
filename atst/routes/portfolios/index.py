@@ -1,5 +1,4 @@
-from datetime import datetime
-
+import pendulum
 from flask import redirect, render_template, url_for, request as http_request, g
 
 from .blueprint import portfolios_bp
@@ -56,5 +55,5 @@ def reports(portfolio_id):
         ),
         current_obligated_funds=current_obligated_funds,
         expired_task_orders=Reports.expired_task_orders(portfolio),
-        retrieved=datetime.now(),  # mocked datetime of reporting data retrival
+        retrieved=pendulum.now(),  # mocked datetime of reporting data retrival
     )

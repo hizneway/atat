@@ -1,4 +1,4 @@
-import datetime
+import pendulum
 from enum import Enum
 import secrets
 
@@ -90,7 +90,7 @@ class InvitesMixin(object):
     @property
     def is_expired(self):
         return (
-            datetime.datetime.now(self.expiration_time.tzinfo) > self.expiration_time
+            pendulum.now(tz=self.expiration_time.tzinfo) > self.expiration_time
             and not self.status == Status.ACCEPTED
         )
 
