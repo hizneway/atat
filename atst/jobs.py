@@ -1,5 +1,7 @@
 import pendulum
 from flask import current_app as app
+from smtplib import SMTPException
+from azure.core.exceptions import AzureError
 
 from atst.database import db
 from atst.domain.application_roles import ApplicationRoles
@@ -14,8 +16,10 @@ from atst.domain.csp.cloud.models import (
 from atst.domain.environments import Environments
 from atst.domain.portfolios import Portfolios
 from atst.models import JobFailure
+from atst.domain.task_orders import TaskOrders
 from atst.models.utils import claim_for_update, claim_many_for_update
 from atst.queue import celery
+from atst.utils.localization import translate
 
 
 class RecordFailure(celery.Task):
@@ -43,8 +47,8 @@ class RecordFailure(celery.Task):
 
 
 @celery.task(ignore_result=True)
-def send_mail(recipients, subject, body):
-    app.mailer.send(recipients, subject, body)
+def send_mail(recipients, subject, body, attachments=[]):
+    app.mailer.send(recipients, subject, body, attachments)
 
 
 @celery.task(ignore_result=True)
@@ -193,3 +197,39 @@ def dispatch_create_environment(self):
         pendulum.now()
     ):
         create_environment.delay(environment_id=environment_id)
+
+
+@celery.task(bind=True)
+def dispatch_create_atat_admin_user(self):
+    for environment_id in Environments.get_environments_pending_atat_user_creation(
+        pendulum.now()
+    ):
+        create_atat_admin_user.delay(environment_id=environment_id)
+
+
+@celery.task(bind=True)
+def dispatch_send_task_order_files(self):
+    task_orders = TaskOrders.get_for_send_task_order_files()
+    recipients = [app.config.get("MICROSOFT_TASK_ORDER_EMAIL_ADDRESS")]
+
+    for task_order in task_orders:
+        subject = translate(
+            "email.task_order_sent.subject", {"to_number": task_order.number}
+        )
+        body = translate("email.task_order_sent.body", {"to_number": task_order.number})
+
+        try:
+            file = app.csp.files.download_task_order(task_order.pdf.object_name)
+            file["maintype"] = "application"
+            file["subtype"] = "pdf"
+            send_mail(
+                recipients=recipients, subject=subject, body=body, attachments=[file]
+            )
+        except (AzureError, SMTPException) as err:
+            app.logger.exception(err)
+            continue
+
+        task_order.pdf_last_sent_at = pendulum.now()
+        db.session.add(task_order)
+
+    db.session.commit()
