@@ -5,6 +5,13 @@ export default {
 
   mixins: [ToggleMixin],
 
+  props: {
+    defaultVisible: {
+      type: Boolean,
+      default: false,
+    },
+  },
+
   methods: {
     toggle: function(e) {
       if (this.$el.contains(e.target)) {
