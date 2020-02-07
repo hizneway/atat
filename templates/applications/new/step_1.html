@@ -26,7 +26,7 @@
       {{ form.csrf_token }}
       <div class="form-row">
         <div class="form-col">
-          {{ TextInput(form.name, validation="name", optional=False) }}
+          {{ TextInput(form.name, validation="applicationName", optional=False) }}
           {{ ('portfolios.applications.new.step_1_form_help_text.name' | translate | safe) }}
         </div>
       </div>
