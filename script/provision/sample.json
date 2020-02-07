@@ -2,7 +2,10 @@
     "creds": {
         "root_sp_client_id": "FILL",
         "root_sp_key": "ME",
-        "root_tenant_id": "IN"
+        "root_tenant_id": "IN",
+        "tenant_id": "",
+        "tenant_admin_username": "",
+        "tenant_admin_password": ""
     },
     "config": {
         "AZURE_POLICY_LOCATION": "UNUSED BUT REQUIRED",
@@ -24,19 +27,17 @@
         "last_name": "Last",
         "password_recovery_email_address": "first_last@example.com",
         "address": {
-            "address_line_1": "FILL",
-            "company_name": "US",
             "city": "Washington",
             "region": "DC",
             "country": "US",
-            "postal_code": "IN"
         },
         "billing_account_name": "FILL ME IN",
-        "amount": 1000.00,
-        "start_date": "YYYY/MM/DD",
-        "end_date": "YYYY/MM/DD",
-        "clin_type": "1",
-        "task_order_id": "TO ID (only alphanumerics, ignore dashes)"
+        "billing_profile_display_name": "ATAT Billing Profile",
+        "initial_clin_amounnt": 1000.0,
+        "initial_clin_start_date": "YYYY/MM/DD",
+        "initial_clin_end_date": "YYYY/MM/DD",
+        "initial_clin_type": "1",
+        "initial_task_order_id": "FAKE"
     },
     "csp_data": {}
 }

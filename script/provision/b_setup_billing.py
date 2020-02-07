@@ -2,14 +2,14 @@ import os
 import sys
 import time
 
+parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+sys.path.append(parent_dir)
+
 from atst.domain.csp.cloud.models import (
     BillingProfileCreationCSPPayload,
     BillingProfileVerificationCSPPayload,
 )
 from script.provision.provision_base import handle
-
-parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
-sys.path.append(parent_dir)
 
 
 def poll_billing(csp, inputs, csp_response):
@@ -21,7 +21,7 @@ def poll_billing(csp, inputs, csp_response):
         result = csp.create_billing_profile_verification(get_billing_profile)
         if result.get("status") == "ok":
             csp_response = result.get("body").dict()
-            poll_billing(csp, inputs, csp_response)
+            return poll_billing(csp, inputs, csp_response)
         else:
             return result.get("body").dict()
     else:
@@ -29,6 +29,9 @@ def poll_billing(csp, inputs, csp_response):
 
 
 def setup_billing(csp, inputs):
+    import ipdb
+
+    ipdb.set_trace()
     create_billing_profile = BillingProfileCreationCSPPayload(
         **{**inputs.get("initial_inputs"), **inputs.get("csp_data")}
     )
@@ -36,7 +39,7 @@ def setup_billing(csp, inputs):
     result = csp.create_billing_profile_creation(create_billing_profile)
     if result.get("status") == "ok":
         csp_response = result.get("body").dict()
-        poll_billing(csp, inputs, csp_response)
+        return poll_billing(csp, inputs, csp_response)
     else:
         print("there was an error during the request:")
         print(result.get("body"))

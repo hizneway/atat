@@ -1,14 +1,15 @@
 import os
 import sys
+import time
+
+parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+sys.path.append(parent_dir)
 
 from atst.domain.csp.cloud.models import (
     TaskOrderBillingCreationCSPPayload,
     TaskOrderBillingVerificationCSPPayload,
 )
 from script.provision.provision_base import handle
-
-parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
-sys.path.append(parent_dir)
 
 
 def poll_billing(csp, inputs, csp_response):
@@ -20,7 +21,7 @@ def poll_billing(csp, inputs, csp_response):
         result = csp.create_task_order_billing_verification(enable_to_billing)
         if result.get("status") == "ok":
             csp_response = result.get("body").dict()
-            poll_billing(csp, inputs, csp_response)
+            return poll_billing(csp, inputs, csp_response)
         else:
             return result.get("body").dict()
     else:
@@ -35,7 +36,7 @@ def setup_to_billing(csp, inputs):
     result = csp.create_task_order_billing_creation(enable_to_billing)
     if result.get("status") == "ok":
         csp_response = result.get("body").dict()
-        poll_billing(csp, inputs, csp_response)
+        return poll_billing(csp, inputs, csp_response)
     else:
         print("there was an error during the request:")
         print(result.get("body"))

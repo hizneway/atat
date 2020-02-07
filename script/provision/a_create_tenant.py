@@ -14,9 +14,19 @@ def create_tenant(csp, inputs):
         **{**inputs.get("initial_inputs"), **inputs.get("csp_data")}
     )
 
-    csp.update_tenant_creds = lambda a, b: None
+    creds = None
+
+    def get_creds(tenant_id, new_creds):
+        nonlocal creds
+        creds = new_creds
+
+    csp.update_tenant_creds = get_creds
     result = csp.create_tenant(create_tenant_payload)
     if result.get("status") == "ok":
+        import ipdb
+
+        ipdb.set_trace()
+        inputs.get("creds").update({k: v for k, v in creds.dict().items() if v})
         return result.get("body").dict()
     else:
         print("there was an error during the request:")

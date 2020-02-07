@@ -1,11 +1,11 @@
 import os
 import sys
 
-from atst.domain.csp.cloud.models import BillingProfileTenantAccessCSPPayload
-from script.provision.provision_base import handle
-
 parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
 sys.path.append(parent_dir)
+
+from atst.domain.csp.cloud.models import BillingProfileTenantAccessCSPPayload
+from script.provision.provision_base import handle
 
 
 def grant_access(csp, inputs):
