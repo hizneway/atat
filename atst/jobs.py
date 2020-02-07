@@ -145,7 +145,7 @@ def do_work(fn, task, csp, **kwargs):
 def do_provision_portfolio(csp: CloudProviderInterface, portfolio_id=None):
     portfolio = Portfolios.get_for_update(portfolio_id)
     fsm = Portfolios.get_or_create_state_machine(portfolio)
-    fsm.trigger_next_transition()
+    fsm.trigger_next_transition(csp_data=portfolio.to_dictionary())
 
 
 @celery.task(bind=True, base=RecordFailure)

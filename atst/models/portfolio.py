@@ -1,3 +1,5 @@
+import re
+
 from sqlalchemy import Column, String
 from sqlalchemy.orm import relationship
 from sqlalchemy.types import ARRAY
@@ -6,6 +8,7 @@ from itertools import chain
 from atst.models.base import Base
 import atst.models.types as types
 import atst.models.mixins as mixins
+from atst.models.task_order import TaskOrder
 from atst.models.portfolio_role import PortfolioRole, Status as PortfolioRoleStatus
 from atst.domain.permission_sets import PermissionSets
 from atst.utils import first_or_none
@@ -152,6 +155,48 @@ class Portfolio(
     @property
     def application_id(self):
         return None
+
+    def to_dictionary(self):
+        ppoc = self.owner
+        user_id = f"{ppoc.first_name[0]}{ppoc.last_name}".lower()
+        domain_name = re.sub("[^0-9a-zA-Z]+", "", self.name).lower()
+        portfolio_data = {
+            "user_id": user_id,
+            "password": "jklfsdNCVD83nklds2#202",  # pragma: allowlist secret
+            "domain_name": domain_name,
+            "first_name": ppoc.first_name,
+            "last_name": ppoc.last_name,
+            "country_code": "US",
+            "password_recovery_email_address": ppoc.email,
+            "address": {  # TODO: TBD if we're sourcing this from data or config
+                "company_name": "",
+                "address_line_1": "",
+                "city": "",
+                "region": "",
+                "country": "",
+                "postal_code": "",
+            },
+            "billing_profile_display_name": "My Billing Profile",
+        }
+
+        try:
+            initial_task_order: TaskOrder = self.task_orders[0]
+            initial_clin = initial_task_order.sorted_clins[0]
+            portfolio_data.update(
+                {
+                    "initial_clin_amount": initial_clin.obligated_amount,
+                    "initial_clin_start_date": initial_clin.start_date.strftime(
+                        "%Y/%m/%d"
+                    ),
+                    "initial_clin_end_date": initial_clin.end_date.strftime("%Y/%m/%d"),
+                    "initial_clin_type": initial_clin.number,
+                    "initial_task_order_id": initial_task_order.number,
+                }
+            )
+        except IndexError:
+            pass
+
+        return portfolio_data
 
     def __repr__(self):
         return "<Portfolio(name='{}', user_count='{}', id='{}')>".format(
