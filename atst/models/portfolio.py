@@ -1,9 +1,11 @@
 import re
+from string import  ascii_lowercase, digits
+from random import choices
+from itertools import chain
 
 from sqlalchemy import Column, String
 from sqlalchemy.orm import relationship
 from sqlalchemy.types import ARRAY
-from itertools import chain
 
 from atst.models.base import Base
 import atst.models.types as types
@@ -159,10 +161,12 @@ class Portfolio(
     def to_dictionary(self):
         ppoc = self.owner
         user_id = f"{ppoc.first_name[0]}{ppoc.last_name}".lower()
-        domain_name = re.sub("[^0-9a-zA-Z]+", "", self.name).lower()
+
+        domain_name = re.sub("[^0-9a-zA-Z]+", "", self.name).lower() + \
+                ''.join(choices(ascii_lowercase + digits, k=4))
         portfolio_data = {
             "user_id": user_id,
-            "password": "jklfsdNCVD83nklds2#202",  # pragma: allowlist secret
+            "password": "",
             "domain_name": domain_name,
             "first_name": ppoc.first_name,
             "last_name": ppoc.last_name,
@@ -176,7 +180,7 @@ class Portfolio(
                 "country": "",
                 "postal_code": "",
             },
-            "billing_profile_display_name": "My Billing Profile",
+            "billing_profile_display_name": "ATAT Billing Profile",
         }
 
         try:
