@@ -22,7 +22,7 @@
   {% include "fragments/flash.html" %}
 
   <base-form inline-template :enable-save="true">
-    <form method="POST" action="{{ action }}" v-on:submit="handleSubmit">
+    <form method="POST" action="{{ action }}" v-on:submit="handleSubmit" class="form">
       {{ form.csrf_token }}
       <div class="form-row">
         <div class="form-col">
