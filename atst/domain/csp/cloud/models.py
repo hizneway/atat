@@ -566,14 +566,9 @@ class BillingOwnerCSPPayload(BaseCSPPayload, UserMixin):
     needed for user provisioning.
     """
 
-    first_name: str
-    last_name: str
+    display_name = "billing_admin"
     domain_name: str
     password_recovery_email_address: str
-
-    @property
-    def display_name(self):
-        return f"{self.first_name} {self.last_name}"
 
     @property
     def tenant_host_name(self):

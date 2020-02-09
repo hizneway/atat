@@ -127,15 +127,13 @@ def test_UserCSPPayload_password():
 class TestBillingOwnerCSPPayload:
     user_payload = {
         "tenant_id": "123",
-        "first_name": "Han",
-        "last_name": "Solo",
         "domain_name": "rebelalliance",
         "password_recovery_email_address": "han@moseisley.cantina",
     }
 
     def test_display_name(self):
         payload = BillingOwnerCSPPayload(**self.user_payload)
-        assert payload.display_name == "Han Solo"
+        assert payload.display_name == "billing_admin"
 
     def test_tenant_host_name(self):
         payload = BillingOwnerCSPPayload(**self.user_payload)
@@ -143,7 +141,7 @@ class TestBillingOwnerCSPPayload:
 
     def test_mail_nickname(self):
         payload = BillingOwnerCSPPayload(**self.user_payload)
-        assert payload.mail_nickname == "han.solo"
+        assert payload.mail_nickname == "billing_admin"
 
     def test_password(self):
         payload = BillingOwnerCSPPayload(**self.user_payload)
@@ -151,7 +149,10 @@ class TestBillingOwnerCSPPayload:
 
     def test_user_principal_name(self):
         payload = BillingOwnerCSPPayload(**self.user_payload)
-        assert payload.user_principal_name == f"han.solo@rebelalliance.onmicrosoft.com"
+        assert (
+            payload.user_principal_name
+            == f"billing_admin@rebelalliance.onmicrosoft.com"
+        )
 
     def test_email(self):
         payload = BillingOwnerCSPPayload(**self.user_payload)
