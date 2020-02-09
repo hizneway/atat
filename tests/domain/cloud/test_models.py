@@ -8,6 +8,7 @@ from atst.domain.csp.cloud.models import (
     ManagementGroupCSPPayload,
     ManagementGroupCSPResponse,
     UserCSPPayload,
+    BillingOwnerCSPPayload,
 )
 
 
@@ -121,3 +122,37 @@ def test_UserCSPPayload_user_principal_name():
 def test_UserCSPPayload_password():
     payload = UserCSPPayload(**user_payload)
     assert payload.password
+
+
+class TestBillingOwnerCSPPayload:
+    user_payload = {
+        "tenant_id": "123",
+        "first_name": "Han",
+        "last_name": "Solo",
+        "domain_name": "rebelalliance",
+        "password_recovery_email_address": "han@moseisley.cantina",
+    }
+
+    def test_display_name(self):
+        payload = BillingOwnerCSPPayload(**self.user_payload)
+        assert payload.display_name == "Han Solo"
+
+    def test_tenant_host_name(self):
+        payload = BillingOwnerCSPPayload(**self.user_payload)
+        assert payload.tenant_host_name == self.user_payload["domain_name"]
+
+    def test_mail_nickname(self):
+        payload = BillingOwnerCSPPayload(**self.user_payload)
+        assert payload.mail_nickname == "han.solo"
+
+    def test_password(self):
+        payload = BillingOwnerCSPPayload(**self.user_payload)
+        assert payload.password
+
+    def test_user_principal_name(self):
+        payload = BillingOwnerCSPPayload(**self.user_payload)
+        assert payload.user_principal_name == f"han.solo@rebelalliance.onmicrosoft.com"
+
+    def test_email(self):
+        payload = BillingOwnerCSPPayload(**self.user_payload)
+        assert payload.email == self.user_payload["password_recovery_email_address"]

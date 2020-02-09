@@ -18,6 +18,8 @@ from .models import (
     ApplicationCSPResult,
     BillingInstructionCSPPayload,
     BillingInstructionCSPResult,
+    BillingOwnerCSPPayload,
+    BillingOwnerCSPResult,
     BillingProfileCreationCSPPayload,
     BillingProfileCreationCSPResult,
     BillingProfileTenantAccessCSPPayload,
@@ -775,6 +777,9 @@ class AzureCloudProvider(CloudProviderInterface):
 
         if response.ok:
             return PrincipalAdminRoleCSPResult(**response.json())
+
+    def create_billing_owner(self, payload: BillingOwnerCSPPayload):
+        pass
 
     def force_tenant_admin_pw_update(self, creds, tenant_owner_id):
         # use creds to update to force password recovery?
