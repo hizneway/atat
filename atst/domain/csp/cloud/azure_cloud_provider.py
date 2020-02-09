@@ -798,7 +798,7 @@ class AzureCloudProvider(CloudProviderInterface):
             graph_token, billing_admin_role_id, user_result.id
         )
 
-        return BillingOwnerCSPResult(id=user_result.id)
+        return BillingOwnerCSPResult(billing_owner_id=user_result.id)
 
     def _assign_billing_owner_role(self, graph_token, billing_admin_role_id, user_id):
         request_body = {

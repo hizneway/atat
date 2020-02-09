@@ -580,4 +580,4 @@ class BillingOwnerCSPPayload(BaseCSPPayload, UserMixin):
 
 
 class BillingOwnerCSPResult(AliasModel):
-    id: str
+    billing_owner_id: str

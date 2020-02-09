@@ -113,6 +113,7 @@ def test_fsm_transition_start(mock_cloud_provider, portfolio: Portfolio):
         FSMStates.PRINCIPAL_ADMIN_ROLE_CREATED,
         FSMStates.TENANT_ADMIN_OWNERSHIP_CREATED,
         FSMStates.TENANT_PRINCIPAL_OWNERSHIP_CREATED,
+        FSMStates.BILLING_OWNER_CREATED,
     ]
 
     if portfolio.csp_data is not None:
