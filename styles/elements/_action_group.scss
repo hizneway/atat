@@ -42,6 +42,7 @@
   border-top: 1px solid $color-gray-lighter;
   z-index: 1;
   width: 100%;
+  height: $action-footer-height;
 
   &.action-group-footer--expand-offset {
     padding-left: $sidenav-expanded-width;
