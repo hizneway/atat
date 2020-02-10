@@ -95,4 +95,9 @@
   .icon {
     @include icon-size(16);
   }
+
+  &--tight {
+    margin: 0;
+    padding: 0;
+  }
 }
