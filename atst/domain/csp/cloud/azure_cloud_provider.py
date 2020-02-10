@@ -1060,7 +1060,7 @@ class AzureCloudProvider(CloudProviderInterface):
             "timeframe": "Custom",
             "timePeriod": {"from": payload.from_date, "to": payload.to_date,},
             "dataset": {
-                "granularity": "Daily",
+                "granularity": "Monthly",
                 "aggregation": {"totalCost": {"name": "PreTaxCost", "function": "Sum"}},
                 "grouping": [{"type": "Dimension", "name": "InvoiceId"}],
             },

@@ -7,61 +7,56 @@
   </header>
   <div class='panel'>
     <div class='panel__content jedi-clin-funding'>
-      {% for JEDI_clin in current_obligated_funds | sort(attribute='name')%}
-        <div class="jedi-clin-funding__clin-wrapper">
-          <h3 class="h5 jedi-clin-funding__header">
-            {{ "JEDICLINType.{}".format(JEDI_clin.name) | translate }}
-          </h3>
-          <p class="jedi-clin-funding__subheader">Total obligated amount: {{ JEDI_clin.obligated | dollars }}</p>
-          <div class="jedi-clin-funding__graph">
-            {% if JEDI_clin.remaining < 0  %}
-              <span style="width:100%" class="jedi-clin-funding__graph-bar jedi-clin-funding__graph-bar--insufficient"></span>
-            {% else %}
-              {% set invoiced_width = (JEDI_clin.invoiced, JEDI_clin.obligated) | obligatedFundingGraphWidth %}
-              {% if invoiced_width %}
-                <span style="width:{{ invoiced_width }}%" 
-                      class="jedi-clin-funding__graph-bar jedi-clin-funding__graph-bar--invoiced">
-                </span>
-              {% endif %}
-              
-              {% set estimated_width = (JEDI_clin.estimated, JEDI_clin.obligated) | obligatedFundingGraphWidth %}
-              {% if estimated_width %}
-                <span style="width:{{ (JEDI_clin.estimated, JEDI_clin.obligated) | obligatedFundingGraphWidth }}%" 
-                      class="jedi-clin-funding__graph-bar jedi-clin-funding__graph-bar--estimated">
-                </span>
-              {% endif %}
-              <span style="width:{{ (JEDI_clin.remaining, JEDI_clin.obligated) | obligatedFundingGraphWidth }}%" 
-                class="jedi-clin-funding__graph-bar jedi-clin-funding__graph-bar--remaining">
+      <div class="jedi-clin-funding__clin-wrapper">
+        <h3 class="h5 jedi-clin-funding__header">
+          Total obligated amount: {{ current_obligated_funds.obligated | dollars }}
+        </h3>
+        <div class="jedi-clin-funding__graph">
+          {% if current_obligated_funds.remaining < 0  %}
+            <span style="width:100%" class="jedi-clin-funding__graph-bar jedi-clin-funding__graph-bar--insufficient"></span>
+          {% else %}
+            {% set invoiced_width = (current_obligated_funds.invoiced, current_obligated_funds.obligated) | obligatedFundingGraphWidth %}
+            {% if invoiced_width %}
+              <span style="width:{{ invoiced_width }}%" 
+                    class="jedi-clin-funding__graph-bar jedi-clin-funding__graph-bar--invoiced">
               </span>
             {% endif %}
             
-            
+            {% set estimated_width = (current_obligated_funds.estimated, current_obligated_funds.obligated) | obligatedFundingGraphWidth %}
+            {% if estimated_width %}
+              <span style="width:{{ (current_obligated_funds.estimated, current_obligated_funds.obligated) | obligatedFundingGraphWidth }}%" 
+                    class="jedi-clin-funding__graph-bar jedi-clin-funding__graph-bar--estimated">
+              </span>
+            {% endif %}
+            <span style="width:{{ (current_obligated_funds.remaining, current_obligated_funds.obligated) | obligatedFundingGraphWidth }}%" 
+              class="jedi-clin-funding__graph-bar jedi-clin-funding__graph-bar--remaining">
+            </span>
+          {% endif %}
+        </div>
+        <div class="jedi-clin-funding__graph-values">
+          <div class="jedi-clin-funding__meta">
+            <p class="jedi-clin-funding__meta-header">
+              <span class="jedi-clin-funding__meta-key jedi-clin-funding__meta-key--invoiced"></span>
+              Invoiced expended funds:
+            </p>
+            <p class="h3 jedi-clin-funding__meta-value">{{ current_obligated_funds.invoiced | dollars }}</p>
           </div>
-          <div class="jedi-clin-funding__graph-values">
-            <div class="jedi-clin-funding__meta">
-              <p class="jedi-clin-funding__meta-header">
-                <span class="jedi-clin-funding__meta-key jedi-clin-funding__meta-key--invoiced"></span>
-                Invoiced expended funds:
-              </p>
-              <p class="h3 jedi-clin-funding__meta-value">{{ JEDI_clin.invoiced | dollars }}</p>
-            </div>
-            <div class="jedi-clin-funding__meta">
-              <p class="jedi-clin-funding__meta-header">
-                <span class="jedi-clin-funding__meta-key jedi-clin-funding__meta-key--estimated"></span>
-                Estimated expended funds:
-              </p>
-              <p class="h3 jedi-clin-funding__meta-value">{{ JEDI_clin.estimated | dollars }}</p>
-            </div>
-            <div class="jedi-clin-funding__meta">
-              <p class="jedi-clin-funding__meta-header">
-                <span class="jedi-clin-funding__meta-key jedi-clin-funding__meta-key--{{"remaining" if JEDI_clin.remaining > 0 else "insufficient"}}"></span>
-                Remaining funds:
-              </p>
-              <p class="h3 jedi-clin-funding__meta-value {% if JEDI_clin.remaining < 0 %}text-danger{% endif %}">{{ JEDI_clin.remaining | dollars }}</p>
-            </div>
+          <div class="jedi-clin-funding__meta">
+            <p class="jedi-clin-funding__meta-header">
+              <span class="jedi-clin-funding__meta-key jedi-clin-funding__meta-key--estimated"></span>
+              Estimated expended funds:
+            </p>
+            <p class="h3 jedi-clin-funding__meta-value">{{ current_obligated_funds.estimated | dollars }}</p>
+          </div>
+          <div class="jedi-clin-funding__meta">
+            <p class="jedi-clin-funding__meta-header">
+              <span class="jedi-clin-funding__meta-key jedi-clin-funding__meta-key--{{"remaining" if current_obligated_funds.remaining > 0 else "insufficient"}}"></span>
+              Remaining funds:
+            </p>
+            <p class="h3 jedi-clin-funding__meta-value {% if current_obligated_funds.remaining < 0 %}text-danger{% endif %}">{{ current_obligated_funds.remaining | dollars }}</p>
           </div>
         </div>
-      {% endfor %}
+      </div>
       <div class="jedi-clin-funding__active-task-orders">
         <h3 class="h4">
           Active Task Orders
