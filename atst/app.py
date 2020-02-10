@@ -233,12 +233,18 @@ def make_config(direct_config=None):
     config.set("default", "DATABASE_URI", database_uri)
 
     # Assemble REDIS_URI value
+    redis_use_tls = config["default"].getboolean("REDIS_TLS")
     redis_uri = "redis{}://{}:{}@{}".format(  # pragma: allowlist secret
-        ("s" if config["default"].getboolean("REDIS_TLS") else ""),
+        ("s" if redis_use_tls else ""),
         (config.get("default", "REDIS_USER") or ""),
         (config.get("default", "REDIS_PASSWORD") or ""),
         config.get("default", "REDIS_HOST"),
     )
+    if redis_use_tls:
+        tls_mode = config.get("default", "REDIS_SSLMODE")
+        tls_mode_str = tls_mode.lower() if tls_mode else "none"
+        redis_uri = f"{redis_uri}/?ssl_cert_reqs={tls_mode_str}"
+
     config.set("default", "REDIS_URI", redis_uri)
 
     return map_config(config)
