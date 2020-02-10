@@ -29,6 +29,7 @@ from atst.domain.csp.cloud.models import (
     CostManagementQueryCSPResult,
     EnvironmentCSPPayload,
     EnvironmentCSPResult,
+    KeyVaultCredentials,
     PrincipalAdminRoleCSPPayload,
     PrincipalAdminRoleCSPResult,
     ProductPurchaseCSPPayload,
@@ -983,3 +984,23 @@ def test_create_user(mock_azure: AzureCloudProvider):
         result = mock_azure.create_user(payload)
 
         assert result.id == "id"
+
+
+def test_update_tenant_creds(mock_azure: AzureCloudProvider):
+    with patch.object(
+        AzureCloudProvider, "set_secret", wraps=mock_azure.set_secret,
+    ) as set_secret:
+        set_secret.return_value = None
+        existing_secrets = {
+            "tenant_id": "mytenant",
+            "tenant_admin_username": "admin",
+            "tenant_admin_password": "foo",  # pragma: allowlist secret
+        }
+        mock_azure = mock_get_secret(mock_azure, json.dumps(existing_secrets))
+
+        mock_new_secrets = KeyVaultCredentials(**MOCK_CREDS)
+        updated_secret = mock_azure.update_tenant_creds("mytenant", mock_new_secrets)
+
+        assert updated_secret == KeyVaultCredentials(
+            **{**existing_secrets, **MOCK_CREDS}
+        )

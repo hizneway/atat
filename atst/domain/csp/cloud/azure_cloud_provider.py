@@ -1,6 +1,5 @@
 import json
 from secrets import token_urlsafe
-from typing import Any, Dict
 from uuid import uuid4
 
 from atst.utils import sha256_hex
@@ -1067,12 +1066,10 @@ class AzureCloudProvider(CloudProviderInterface):
 
     def update_tenant_creds(self, tenant_id, secret: KeyVaultCredentials):
         hashed = sha256_hex(tenant_id)
-        new_secrets = secret.dict()
         curr_secrets = self._source_tenant_creds(tenant_id)
-        updated_secrets: Dict[str, Any] = {**curr_secrets.dict(), **new_secrets}
-        us = KeyVaultCredentials(**updated_secrets)
-        self.set_secret(hashed, json.dumps(us.dict()))
-        return us
+        updated_secrets = curr_secrets.merge_credentials(secret)
+        self.set_secret(hashed, json.dumps(updated_secrets.dict()))
+        return updated_secrets
 
     def _source_tenant_creds(self, tenant_id) -> KeyVaultCredentials:
         hashed = sha256_hex(tenant_id)
@@ -1101,7 +1098,7 @@ class AzureCloudProvider(CloudProviderInterface):
             "timeframe": "Custom",
             "timePeriod": {"from": payload.from_date, "to": payload.to_date,},
             "dataset": {
-                "granularity": "Daily",
+                "granularity": "Monthly",
                 "aggregation": {"totalCost": {"name": "PreTaxCost", "function": "Sum"}},
                 "grouping": [{"type": "Dimension", "name": "InvoiceId"}],
             },

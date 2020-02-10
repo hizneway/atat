@@ -15,6 +15,7 @@ export default {
     return {
       changed: this.hasChanges,
       valid: false,
+      submitted: false,
     }
   },
 
@@ -36,15 +37,16 @@ export default {
     handleSubmit: function(event) {
       if (!this.valid) {
         event.preventDefault()
+        this.submitted = true
       }
     },
   },
 
   computed: {
     canSave: function() {
-      if (this.changed && this.valid) {
+      if (this.changed && this.valid && !this.submitted) {
         return true
-      } else if (this.enableSave && this.valid) {
+      } else if (this.enableSave && this.valid && !this.submitted) {
         return true
       } else {
         return false
