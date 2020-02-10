@@ -23,9 +23,6 @@ def create_tenant(csp, inputs):
     csp.update_tenant_creds = get_creds
     result = csp.create_tenant(create_tenant_payload)
     if result.get("status") == "ok":
-        import ipdb
-
-        ipdb.set_trace()
         inputs.get("creds").update({k: v for k, v in creds.dict().items() if v})
         return result.get("body").dict()
     else:

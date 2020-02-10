@@ -46,8 +46,10 @@ def handle(f):
             update_and_write(inputs, result, output_path)
         else:
             print("no result")
-    except Exception as exc:
-        print("Failed to create tenant")
+    except Exception:
+        print("Failed]")
         print(f"Inputs: {inputs}")
         print("Exception:")
-        print(exc)
+        import traceback
+
+        traceback.print_exc()

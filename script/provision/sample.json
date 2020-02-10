@@ -2,10 +2,7 @@
     "creds": {
         "root_sp_client_id": "FILL",
         "root_sp_key": "ME",
-        "root_tenant_id": "IN",
-        "tenant_id": "",
-        "tenant_admin_username": "",
-        "tenant_admin_password": ""
+        "root_tenant_id": "IN"
     },
     "config": {
         "AZURE_POLICY_LOCATION": "UNUSED BUT REQUIRED",
@@ -20,20 +17,22 @@
     },
     "initial_inputs": {
         "user_id": "admin",
-        "password": "insert secure password here",
         "domain_name": "someuniquedomain",
         "country_code": "US",
         "first_name": "First",
         "last_name": "Last",
         "password_recovery_email_address": "first_last@example.com",
         "address": {
+            "address_line_1": "FILL ME IN",
+            "company_name": "FILL ME IN",
             "city": "Washington",
             "region": "DC",
             "country": "US",
+            "postal_code": "FILL ME IN"
         },
         "billing_account_name": "FILL ME IN",
         "billing_profile_display_name": "ATAT Billing Profile",
-        "initial_clin_amounnt": 1000.0,
+        "initial_clin_amount": 1000.0,
         "initial_clin_start_date": "YYYY/MM/DD",
         "initial_clin_end_date": "YYYY/MM/DD",
         "initial_clin_type": "1",
