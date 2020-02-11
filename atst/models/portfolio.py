@@ -1,5 +1,5 @@
 import re
-from string import  ascii_lowercase, digits
+from string import ascii_lowercase, digits
 from random import choices
 from itertools import chain
 
@@ -168,8 +168,9 @@ class Portfolio(
         ppoc = self.owner
         user_id = f"{ppoc.first_name[0]}{ppoc.last_name}".lower()
 
-        domain_name = re.sub("[^0-9a-zA-Z]+", "", self.name).lower() + \
-                ''.join(choices(ascii_lowercase + digits, k=4))
+        domain_name = re.sub("[^0-9a-zA-Z]+", "", self.name).lower() + "".join(
+            choices(ascii_lowercase + digits, k=4)
+        )
         portfolio_data = {
             "user_id": user_id,
             "password": "",
