@@ -246,6 +246,7 @@ forms:
       description: Add, remove and edit applications in this Portfolio.
     dod_id_label: DoD ID
     dod_help: How do I find out the DoD ID?
+    dod_text: "An individual's DOD ID (formerly known as EDIPI) number can be found on the back of their CAC. Access to this system requires a valid CAC and DOD ID."
     email_label: Email address
     first_name_label: First name
     funding:
