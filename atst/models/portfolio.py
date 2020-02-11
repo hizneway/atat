@@ -95,6 +95,12 @@ class Portfolio(
         return [task_order for task_order in self.task_orders if task_order.is_active]
 
     @property
+    def total_obligated_funds(self):
+        return sum(
+            (task_order.total_obligated_funds for task_order in self.active_task_orders)
+        )
+
+    @property
     def funding_duration(self):
         """
         Return the earliest period of performance start date and latest period

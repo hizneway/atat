@@ -36,7 +36,7 @@ class EnvironmentRole(
     )
     application_role = relationship("ApplicationRole")
 
-    csp_user_id = Column(String())
+    cloud_id = Column(String())
 
     class Status(Enum):
         PENDING = "pending"
