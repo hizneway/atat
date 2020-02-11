@@ -1,7 +1,6 @@
 import json
 from secrets import token_urlsafe
 from uuid import uuid4
-import pydantic
 from flask import current_app as app
 
 from atst.utils import sha256_hex
