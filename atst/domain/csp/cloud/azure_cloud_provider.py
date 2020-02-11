@@ -60,6 +60,8 @@ from .models import (
     TenantPrincipalOwnershipCSPResult,
     UserCSPPayload,
     UserCSPResult,
+    UserRoleCSPPayload,
+    UserRoleCSPResult,
 )
 from .policy import AzurePolicyManager
 
@@ -106,10 +108,14 @@ class AzureCloudProvider(CloudProviderInterface):
         self.secret_key = config["AZURE_SECRET_KEY"]
         self.tenant_id = config["AZURE_TENANT_ID"]
         self.vault_url = config["AZURE_VAULT_URL"]
-        self.ps_client_id = config["POWERSHELL_CLIENT_ID"]
-        self.owner_role_def_id = config["AZURE_OWNER_ROLE_DEF_ID"]
+        self.ps_client_id = config["AZURE_POWERSHELL_CLIENT_ID"]
         self.graph_resource = config["AZURE_GRAPH_RESOURCE"]
         self.default_aadp_qty = config["AZURE_AADP_QTY"]
+        self.roles = {
+            "owner": config["AZURE_ROLE_DEF_ID_OWNER"],
+            "contributor": config["AZURE_ROLE_DEF_ID_CONTRIBUTOR"],
+            "billing": config["AZURE_ROLE_DEF_ID_BILLING_READER"],
+        }
 
         if azure_sdk_provider is None:
             self.sdk = AzureSDKProvider()
@@ -620,7 +626,7 @@ class AzureCloudProvider(CloudProviderInterface):
     def create_tenant_admin_ownership(self, payload: TenantAdminOwnershipCSPPayload):
         mgmt_token = self._get_elevated_management_token(payload.tenant_id)
 
-        role_definition_id = f"/providers/Microsoft.Management/managementGroups/{payload.tenant_id}/providers/Microsoft.Authorization/roleDefinitions/{self.owner_role_def_id}"
+        role_definition_id = f"/providers/Microsoft.Management/managementGroups/{payload.tenant_id}/providers/Microsoft.Authorization/roleDefinitions/{self.roles['owner']}"
 
         request_body = {
             "properties": {
@@ -648,7 +654,7 @@ class AzureCloudProvider(CloudProviderInterface):
         mgmt_token = self._get_elevated_management_token(payload.tenant_id)
 
         # NOTE: the tenant_id is also the id of the root management group, once it is created
-        role_definition_id = f"/providers/Microsoft.Management/managementGroups/{payload.tenant_id}/providers/Microsoft.Authorization/roleDefinitions/{self.owner_role_def_id}"
+        role_definition_id = f"/providers/Microsoft.Management/managementGroups/{payload.tenant_id}/providers/Microsoft.Authorization/roleDefinitions/{self.roles['owner']}"
 
         request_body = {
             "properties": {
@@ -933,6 +939,40 @@ class AzureCloudProvider(CloudProviderInterface):
         else:
             raise UserProvisioningException(
                 f"Failed update user email: {response.json()}"
+            )
+
+    def create_user_role(self, payload: UserRoleCSPPayload):
+        graph_token = self._get_tenant_principal_token(payload.tenant_id)
+        if graph_token is None:
+            raise AuthenticationException(
+                "Could not resolve graph token for tenant admin"
+            )
+
+        role_guid = self.roles[payload.role]
+        role_definition_id = f"/providers/Microsoft.Management/managementGroups/{payload.management_group_id}/providers/Microsoft.Authorization/roleDefinitions/{role_guid}"
+
+        request_body = {
+            "properties": {
+                "roleDefinitionId": role_definition_id,
+                "principalId": payload.user_object_id,
+            }
+        }
+
+        auth_header = {
+            "Authorization": f"Bearer {graph_token}",
+        }
+
+        assignment_guid = str(uuid4())
+
+        url = f"{self.sdk.cloud.endpoints.resource_manager}/providers/Microsoft.Management/managementGroups/{payload.management_group_id}/providers/Microsoft.Authorization/roleAssignments/{assignment_guid}?api-version=2015-07-01"
+
+        response = self.sdk.requests.put(url, headers=auth_header, json=request_body)
+
+        if response.ok:
+            return UserRoleCSPResult(**response.json())
+        else:
+            raise UserProvisioningException(
+                f"Failed to create user role assignment: {response.json()}"
             )
 
     def _extract_subscription_id(self, subscription_url):

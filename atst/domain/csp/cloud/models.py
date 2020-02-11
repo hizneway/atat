@@ -1,3 +1,4 @@
+from enum import Enum
 from secrets import token_urlsafe
 from typing import Dict, List, Optional
 from uuid import uuid4
@@ -540,6 +541,21 @@ class UserCSPPayload(BaseCSPPayload):
 
 
 class UserCSPResult(AliasModel):
+    id: str
+
+
+class UserRoleCSPPayload(BaseCSPPayload):
+    class Roles(str, Enum):
+        owner = "owner"
+        contributor = "contributor"
+        billing = "billing"
+
+    management_group_id: str
+    role: Roles
+    user_object_id: str
+
+
+class UserRoleCSPResult(AliasModel):
     id: str
 
 

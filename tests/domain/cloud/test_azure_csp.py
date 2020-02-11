@@ -58,7 +58,9 @@ from atst.domain.csp.cloud.models import (
     TenantPrincipalOwnershipCSPPayload,
     TenantPrincipalOwnershipCSPResult,
     UserCSPPayload,
+    UserRoleCSPPayload,
 )
+from atst.domain.csp.cloud.exceptions import UserProvisioningException
 
 BILLING_ACCOUNT_NAME = "52865e4c-52e8-5a6c-da6b-c58f0814f06f:7ea5de9d-b8ce-4901-b1c5-d864320c7b03_2019-05-31"
 
@@ -984,6 +986,54 @@ def test_create_user(mock_azure: AzureCloudProvider):
         result = mock_azure.create_user(payload)
 
         assert result.id == "id"
+
+
+def test_create_user_role(mock_azure: AzureCloudProvider):
+    with patch.object(
+        AzureCloudProvider,
+        "_get_tenant_principal_token",
+        wraps=mock_azure._get_tenant_principal_token,
+    ) as _get_tenant_principal_token:
+        _get_tenant_principal_token.return_value = "token"
+
+        mock_result_create = Mock()
+        mock_result_create.ok = True
+        mock_result_create.json.return_value = {"id": "id"}
+        mock_azure.sdk.requests.put.return_value = mock_result_create
+
+        payload = UserRoleCSPPayload(
+            tenant_id=uuid4().hex,
+            user_object_id=str(uuid4()),
+            management_group_id=str(uuid4()),
+            role="owner",
+        )
+
+        result = mock_azure.create_user_role(payload)
+
+        assert result.id == "id"
+
+
+def test_create_user_role_failure(mock_azure: AzureCloudProvider):
+    with patch.object(
+        AzureCloudProvider,
+        "_get_tenant_principal_token",
+        wraps=mock_azure._get_tenant_principal_token,
+    ) as _get_tenant_principal_token:
+        _get_tenant_principal_token.return_value = "token"
+
+        mock_result_create = Mock()
+        mock_result_create.ok = False
+        mock_azure.sdk.requests.put.return_value = mock_result_create
+
+        payload = UserRoleCSPPayload(
+            tenant_id=uuid4().hex,
+            user_object_id=str(uuid4()),
+            management_group_id=str(uuid4()),
+            role="owner",
+        )
+
+        with pytest.raises(UserProvisioningException):
+            mock_azure.create_user_role(payload)
 
 
 def test_update_tenant_creds(mock_azure: AzureCloudProvider):
