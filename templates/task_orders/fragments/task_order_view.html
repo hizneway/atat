@@ -12,7 +12,7 @@
       <div class='col col--grow summary-item'>
         <h4 class="summary-item__header">
           <span class="summary-item__header-text">{{ 'task_orders.summary.total' | translate }}</span>
-          {{ Tooltip(("task_orders.review.tooltip.total_value" | translate), title="", classes="summary-item__header-icon") }}
+          {{ Tooltip(("task_orders.review.tooltip.total_value" | translate), title="", classes="icon-tooltip--tight") }}
         </h4>
         <p class="summary-item__value--large">
           {{ contract_amount | dollars }}
@@ -21,7 +21,7 @@
       <div class='col col--grow summary-item'>
         <h4 class="summary-item__header">
           <span class="summary-item__header-text">{{ 'task_orders.summary.obligated' | translate }}</span>
-          {{ Tooltip(("task_orders.review.tooltip.obligated_funds" | translate), title="", classes="summary-item__header-icon") }}
+          {{ Tooltip(("task_orders.review.tooltip.obligated_funds" | translate), title="", classes="icon-tooltip--tight") }}
         </h4>
         <p class="summary-item__value--large">
           {{ obligated_funds | dollars }}
@@ -30,7 +30,7 @@
       <div class='col col--grow summary-item'>
         <h4 class="summary-item__header">
           <span class="summary-item__header-text">{{ 'task_orders.summary.expended' | translate }}</span>
-          {{ Tooltip(("task_orders.review.tooltip.expended_funds" | translate), title="", classes="summary-item__header-icon") }}
+          {{ Tooltip(("task_orders.review.tooltip.expended_funds" | translate), title="", classes="icon-tooltip--tight") }}
         </h4>
         <p class="summary-item__value--large">
           {{ expended_funds | dollars }}
