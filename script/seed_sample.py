@@ -195,7 +195,7 @@ def add_task_orders_to_portfolio(portfolio):
             task_order=unsigned_to, start_date=(today - five_days), end_date=today
         ),
         CLINFactory.build(
-            task_order=upcoming_to, start_date=future, end_date=(today + five_days)
+            task_order=upcoming_to, start_date=(today + five_days), end_date=future
         ),
         CLINFactory.build(
             task_order=expired_to, start_date=(today - five_days), end_date=yesterday
