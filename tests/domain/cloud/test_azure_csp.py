@@ -16,6 +16,7 @@ from atst.domain.csp.cloud.models import (
     ApplicationCSPResult,
     BillingInstructionCSPPayload,
     BillingInstructionCSPResult,
+    BillingOwnerCSPPayload,
     BillingProfileCreationCSPPayload,
     BillingProfileCreationCSPResult,
     BillingProfileTenantAccessCSPPayload,
@@ -1034,6 +1035,49 @@ def test_create_user_role_failure(mock_azure: AzureCloudProvider):
 
         with pytest.raises(UserProvisioningException):
             mock_azure.create_user_role(payload)
+
+
+def test_create_billing_owner(mock_azure: AzureCloudProvider):
+    with patch.object(
+        AzureCloudProvider,
+        "_get_tenant_principal_token",
+        wraps=mock_azure._get_tenant_principal_token,
+    ) as _get_tenant_principal_token:
+        _get_tenant_principal_token.return_value = "token"
+
+        final_result = "1-2-3"
+
+        # create_billing_owner does: POST, PATCH, GET, POST
+
+        def make_mock_result(return_value=None):
+            mock_result_create = Mock()
+            mock_result_create.ok = True
+            mock_result_create.json.return_value = return_value
+
+            return mock_result_create
+
+        post_results = [make_mock_result({"id": final_result}), make_mock_result()]
+
+        mock_post = lambda *a, **k: post_results.pop(0)
+
+        # mock POST so that it pops off results in the order we want
+        mock_azure.sdk.requests.post = mock_post
+        # return value for PATCH doesn't matter much
+        mock_azure.sdk.requests.patch.return_value = make_mock_result()
+        # return value for GET needs to be a JSON object with a list of role definitions
+        mock_azure.sdk.requests.get.return_value = make_mock_result(
+            {"value": [{"displayName": "Billing Administrator", "id": "4567"}]}
+        )
+
+        payload = BillingOwnerCSPPayload(
+            tenant_id=uuid4().hex,
+            domain_name="rebelalliance",
+            password_recovery_email_address="many@bothans.org",
+        )
+
+        result = mock_azure.create_billing_owner(payload)
+
+        assert result.billing_owner_id == final_result
 
 
 def test_update_tenant_creds(mock_azure: AzureCloudProvider):

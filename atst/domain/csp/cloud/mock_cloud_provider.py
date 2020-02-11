@@ -19,6 +19,8 @@ from .models import (
     ApplicationCSPResult,
     BillingInstructionCSPPayload,
     BillingInstructionCSPResult,
+    BillingOwnerCSPPayload,
+    BillingOwnerCSPResult,
     BillingProfileCreationCSPPayload,
     BillingProfileCreationCSPResult,
     BillingProfileTenantAccessCSPResult,
@@ -393,6 +395,13 @@ class MockCloudProvider(CloudProviderInterface):
         self._maybe_raise(self.UNAUTHORIZED_RATE, self.AUTHORIZATION_EXCEPTION)
 
         return PrincipalAdminRoleCSPResult(**dict(id="principal_assignment_id"))
+
+    def create_billing_owner(self, payload: BillingOwnerCSPPayload):
+        self._maybe_raise(self.NETWORK_FAILURE_PCT, self.NETWORK_EXCEPTION)
+        self._maybe_raise(self.SERVER_FAILURE_PCT, self.SERVER_EXCEPTION)
+        self._maybe_raise(self.UNAUTHORIZED_RATE, self.AUTHORIZATION_EXCEPTION)
+
+        return BillingOwnerCSPResult(billing_owner_id="foo")
 
     def create_or_update_user(self, auth_credentials, user_info, csp_role_id):
         self._authorize(auth_credentials)
