@@ -135,7 +135,6 @@ class FSMMixin:
                 f"could not locate fail trigger '{fail_trigger}' for '{self.__repr__()}'"
             )
 
-
     def finish_stage(self, stage):
         finish_trigger = f"finish_{stage}"
         if finish_trigger in self.machine.get_triggers(self.current_state.name):

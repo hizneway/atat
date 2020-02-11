@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "dcc985866bfecd1e2abcd40722a657f0da223c3c9c11aee32fd4b532eca31cb8"
+            "sha256": "44296f145fcb42cff5fadf14a706ec9598f4436ccbdf05e1d69fcd8316c89e8d"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -62,11 +62,11 @@
         },
         "azure-identity": {
             "hashes": [
-                "sha256:4ce65058461c277991763ed3f121efc6b9eb9c2edefb62c414dfa85c814690d3",
-                "sha256:b32acd1cdb6202bfe10d9a0858dc463d8960295da70ae18097eb3b85ab12cb91"
+                "sha256:17fa904e0447fd2a2dc19909379edb769b05656dbaf4863b8c4fdfb2bb54350c",
+                "sha256:7e9c85e3f82f1e29e5edfc7beb3030b25e8b8fd02b65d5ea1c67f13cde01da0f"
             ],
             "index": "pypi",
-            "version": "==1.2.0"
+            "version": "==1.3.0"
         },
         "azure-keyvault": {
             "hashes": [
@@ -78,17 +78,17 @@
         },
         "azure-keyvault-keys": {
             "hashes": [
-                "sha256:2983fa42e20a0e6bf6b87976716129c108e613e0292d34c5b0f0c8dc1d488e89",
-                "sha256:38c27322637a2c52620a8b96da1942ad6a8d22d09b5a01f6fa257f7a51e52ed0"
+                "sha256:1c230c052b9f0b9ecaee97347fe4ebf3fcc798f92edbfd618ea264efc61ad554",
+                "sha256:711af402a0000ac329406253470c1198cc452adc8638608461ae54c8dce92afc"
             ],
-            "version": "==4.0.0"
+            "version": "==4.0.1"
         },
         "azure-keyvault-secrets": {
             "hashes": [
-                "sha256:2eae9264a8f6f59277e1a9bfdbc8b0a15969ee5a80d8efe403d7744805b4a481",
-                "sha256:97a602406a833e8f117c540c66059c818f4321a35168dd17365fab1e4527d718"
+                "sha256:0afd85eaa94962fc8ad9e71348ba0873d723d531163894ee3175f138c3180fe4",
+                "sha256:0f92705444f55ca0d5a892172eda898f42678602834f03fa8012e9979e5fe619"
             ],
-            "version": "==4.0.0"
+            "version": "==4.0.1"
         },
         "azure-mgmt-authorization": {
             "hashes": [
@@ -1216,14 +1216,6 @@
             ],
             "index": "pypi",
             "version": "==2.22.0"
-        },
-        "requests-mock": {
-            "hashes": [
-                "sha256:510df890afe08d36eca5bb16b4aa6308a6f85e3159ad3013bac8b9de7bd5a010",
-                "sha256:88d3402dd8b3c69a9e4f9d3a73ad11b15920c6efd36bc27bf1f701cf4a8e4646"
-            ],
-            "index": "pypi",
-            "version": "==1.7.0"
         },
         "rope": {
             "hashes": [

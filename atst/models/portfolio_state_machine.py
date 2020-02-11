@@ -19,7 +19,7 @@ from atst.models.mixins.state_machines import (
     FSMStates,
     AzureStages,
     StageStates,
-    _build_transitions
+    _build_transitions,
 )
 
 
@@ -52,7 +52,9 @@ def get_stage_csp_class(stage, class_type):
             importlib.import_module("atst.domain.csp.cloud.models"), cls_name
         )
     except AttributeError:
-        raise StateMachineMisconfiguredError(f"could not import CSP Payload/Result class {cls_name}")
+        raise StateMachineMisconfiguredError(
+            f"could not import CSP Payload/Result class {cls_name}"
+        )
 
 
 @add_state_features(Tags)
@@ -138,7 +140,7 @@ class PortfolioStateMachine(
                     app.logger.info(
                         f"could not locate 'create trigger' for {self.__repr__()}"
                     )
-                    self.trigger('fail')
+                    self.trigger("fail")
 
             elif self.current_state == FSMStates.FAILED:
                 # get the first trigger that starts with 'create_'
@@ -169,15 +171,18 @@ class PortfolioStateMachine(
             if create_trigger is not None:
                 self.trigger(create_trigger, **kwargs)
 
-
     def after_in_progress_callback(self, event):
         # Accumulate payload w/ creds
         payload = event.kwargs.get("csp_data")
-        current_stage = _stage_state_to_stage_name(self.current_state, StageStates.IN_PROGRESS)
+        current_stage = _stage_state_to_stage_name(
+            self.current_state, StageStates.IN_PROGRESS
+        )
         payload_data_cls = get_stage_csp_class(current_stage, "payload")
 
         if not payload_data_cls:
-            app.logger.info(f"could not resolve payload data class for stage {current_stage}")
+            app.logger.info(
+                f"could not resolve payload data class for stage {current_stage}"
+            )
             self.fail_stage(current_stage)
         try:
             payload_data = payload_data_cls(**payload)

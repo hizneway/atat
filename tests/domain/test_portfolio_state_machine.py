@@ -34,6 +34,7 @@ from atst.models.portfolio_state_machine import (
 class AzureStagesTest(Enum):
     TENANT = "tenant"
 
+
 @pytest.fixture(scope="function")
 def portfolio():
     # TODO: setup clin/to as active/funded/ready
@@ -62,27 +63,56 @@ def test_state_machine_compose_state():
         == FSMStates.TENANT_CREATED
     )
 
+
 def test_stage_to_classname():
-    assert (_stage_to_classname(AzureStages.BILLING_PROFILE_CREATION.name) == "BillingProfileCreation")
+    assert (
+        _stage_to_classname(AzureStages.BILLING_PROFILE_CREATION.name)
+        == "BillingProfileCreation"
+    )
+
 
 def test_get_stage_csp_class():
     csp_class = get_stage_csp_class(list(AzureStages)[0].name.lower(), "payload")
     assert isinstance(csp_class, pydantic.main.ModelMetaclass)
 
+
 def test_get_stage_csp_class_import_fail():
     with pytest.raises(StateMachineMisconfiguredError):
         csp_class = get_stage_csp_class("doesnotexist", "payload")
 
+
 def test_build_transitions():
     states, transitions = _build_transitions(AzureStagesTest)
-    assert [s.get('name').name for s in states]  == ['TENANT_CREATED', 'TENANT_IN_PROGRESS', 'TENANT_FAILED']
-    assert [s.get('tags') for s in states] == [['TENANT', 'CREATED'], ['TENANT', 'IN_PROGRESS'], ['TENANT', 'FAILED']]
-    assert [t.get('trigger') for t in transitions] == ['create_tenant', 'finish_tenant', 'fail_tenant', 'resume_progress_tenant']
+    assert [s.get("name").name for s in states] == [
+        "TENANT_CREATED",
+        "TENANT_IN_PROGRESS",
+        "TENANT_FAILED",
+    ]
+    assert [s.get("tags") for s in states] == [
+        ["TENANT", "CREATED"],
+        ["TENANT", "IN_PROGRESS"],
+        ["TENANT", "FAILED"],
+    ]
+    assert [t.get("trigger") for t in transitions] == [
+        "create_tenant",
+        "finish_tenant",
+        "fail_tenant",
+        "resume_progress_tenant",
+    ]
+
 
 def test_build_csp_states():
     states = _build_csp_states(AzureStagesTest)
-    assert list(states) == ['UNSTARTED', 'STARTING', 'STARTED', 'COMPLETED', 'FAILED', 'TENANT_CREATED', 'TENANT_IN_PROGRESS', 'TENANT_FAILED']
-
+    assert list(states) == [
+        "UNSTARTED",
+        "STARTING",
+        "STARTED",
+        "COMPLETED",
+        "FAILED",
+        "TENANT_CREATED",
+        "TENANT_IN_PROGRESS",
+        "TENANT_FAILED",
+    ]
 
 
 def test_state_machine_valid_data_classes_for_stages(portfolio):
@@ -96,20 +126,33 @@ def test_attach_machine(portfolio):
     sm = PortfolioStateMachineFactory.create(portfolio=portfolio)
     sm.machine = None
     sm.attach_machine(stages=AzureStagesTest)
-    assert list(sm.machine.events) == ['init', 'start', 'reset', 'fail', 'create_tenant', 'finish_tenant', 'fail_tenant', 'resume_progress_tenant']
+    assert list(sm.machine.events) == [
+        "init",
+        "start",
+        "reset",
+        "fail",
+        "create_tenant",
+        "finish_tenant",
+        "fail_tenant",
+        "resume_progress_tenant",
+    ]
 
 
 def test_fail_stage(portfolio):
     sm = PortfolioStateMachineFactory.create(portfolio=portfolio)
     sm.state = FSMStates.TENANT_IN_PROGRESS
-    sm.fail_stage('tenant')
+    sm.fail_stage("tenant")
     assert sm.state == FSMStates.TENANT_FAILED
-    #import ipdb;ipdb.set_trace()
+    # import ipdb;ipdb.set_trace()
+
 
 def test_stage_state_to_stage_name():
-    #sm = PortfolioStateMachineFactory.create(portfolio=portfolio)
-    stage = _stage_state_to_stage_name(FSMStates.TENANT_IN_PROGRESS, StageStates.IN_PROGRESS)
+    # sm = PortfolioStateMachineFactory.create(portfolio=portfolio)
+    stage = _stage_state_to_stage_name(
+        FSMStates.TENANT_IN_PROGRESS, StageStates.IN_PROGRESS
+    )
     assert stage == "tenant"
+
 
 def test_state_machine_initialization(portfolio):
 
@@ -180,7 +223,7 @@ def test_fsm_transition_start(mock_cloud_provider, portfolio: Portfolio):
         csp_data = {}
 
     ppoc = portfolio.owner
-    user_id = "johndoe"  # f"{ppoc.first_name[0]}{ppoc.last_name}".lower()
+    user_id = f"{ppoc.first_name[0]}{ppoc.last_name}".lower()
     domain_name = re.sub("[^0-9a-zA-Z]+", "", portfolio.name).lower()
 
     initial_task_order: TaskOrder = portfolio.task_orders[0]
@@ -190,10 +233,10 @@ def test_fsm_transition_start(mock_cloud_provider, portfolio: Portfolio):
         "user_id": user_id,
         "password": "jklfsdNCVD83nklds2#202",  # pragma: allowlist secret
         "domain_name": domain_name,
-        "first_name": "123",  # ppoc.first_name,
-        "last_name": "123",  # ppoc.last_name,
+        "first_name": ppoc.first_name,
+        "last_name": ppoc.last_name,
         "country_code": "US",
-        "password_recovery_email_address": "email@example.com",  # ppoc.email,
+        "password_recovery_email_address": ppoc.email,
         "address": {  # TODO: TBD if we're sourcing this from data or config
             "company_name": "",
             "address_line_1": "",
@@ -222,4 +265,3 @@ def test_fsm_transition_start(mock_cloud_provider, portfolio: Portfolio):
             csp_data = portfolio.csp_data
         else:
             csp_data = {}
-

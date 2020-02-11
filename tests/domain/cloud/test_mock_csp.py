@@ -45,7 +45,6 @@ def test_create_tenant(mock_csp: MockCloudProvider):
             last_name="Tenet",
             country_code="US",
             password_recovery_email_address="thomas@promptworks.com",
-
         )
     )
     result = mock_csp.create_tenant(payload)

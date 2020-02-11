@@ -79,7 +79,9 @@ def mock_adal():
 def mock_requests():
     import requests
 
-    return Mock(wraps=requests)
+    mock_requests = Mock(wraps=requests)
+    mock_requests.exceptions = requests.exceptions
+    return mock_requests
 
 
 def mock_secrets():
