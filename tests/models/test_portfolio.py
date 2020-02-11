@@ -132,6 +132,31 @@ def test_active_task_orders(session):
     assert len(portfolio.active_task_orders) == 1
 
 
+class TestCurrentObligatedFunds:
+    """
+    Tests the current_obligated_funds property
+    """
+
+    def test_no_task_orders(self):
+        portfolio = PortfolioFactory()
+        assert portfolio.total_obligated_funds == Decimal(0)
+
+    def test_with_current(self, current_task_order):
+        portfolio = PortfolioFactory(
+            task_orders=[current_task_order, current_task_order]
+        )
+        assert portfolio.total_obligated_funds == Decimal(2000.0)
+
+    def test_with_others(
+        self, past_task_order, current_task_order, upcoming_task_order
+    ):
+        portfolio = PortfolioFactory(
+            task_orders=[past_task_order, current_task_order, upcoming_task_order,]
+        )
+        # Only sums the current task order
+        assert portfolio.total_obligated_funds == Decimal(1000.0)
+
+
 class TestUpcomingObligatedFunds:
     """
     Tests the upcoming_obligated_funds property
