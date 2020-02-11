@@ -88,6 +88,10 @@ class TaskOrder(Base, mixins.TimestampsMixin):
         return self.status == Status.EXPIRED
 
     @property
+    def is_upcoming(self):
+        return self.status == Status.UPCOMING
+
+    @property
     def clins_are_completed(self):
         return all([len(self.clins), (clin.is_completed for clin in self.clins)])
 
