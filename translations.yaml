@@ -297,6 +297,9 @@ forms:
         marine_corps: Marine Corps
         navy: Navy
         space_force: Space Force
+        ccmd_js: Combatant Command / Joint Staff (CCMD/JS)
+        dafa: Defense Agency and Field Activity (DAFA)
+        osd_psas: Office of the Secretary of Defense (OSD) / Principal Staff Assistants (PSAs)
         other: Other
       title: Select DoD component(s) funding your Portfolio
       validation_message: You must select at least one defense component.
