@@ -157,7 +157,6 @@ def map_config(config):
         **config["default"],
         "USE_AUDIT_LOG": config["default"].getboolean("USE_AUDIT_LOG"),
         "ENV": config["default"]["ENVIRONMENT"],
-        "BROKER_URL": config["default"]["REDIS_URI"],
         "DEBUG": config["default"].getboolean("DEBUG"),
         "DEBUG_MAILER": config["default"].getboolean("DEBUG_MAILER"),
         "SQLALCHEMY_ECHO": config["default"].getboolean("SQLALCHEMY_ECHO"),
@@ -240,12 +239,27 @@ def make_config(direct_config=None):
         (config.get("default", "REDIS_PASSWORD") or ""),
         config.get("default", "REDIS_HOST"),
     )
+    celery_uri = redis_uri
     if redis_use_tls:
         tls_mode = config.get("default", "REDIS_SSLMODE")
         tls_mode_str = tls_mode.lower() if tls_mode else "none"
         redis_uri = f"{redis_uri}/?ssl_cert_reqs={tls_mode_str}"
 
+        # TODO: Kombu, one of Celery's dependencies, still requires
+        # that ssl_cert_reqs be passed as the string version of an
+        # option on the ssl module. We can clean this up and use
+        # the REDIS_URI for both when this PR to Kombu is released:
+        # https://github.com/celery/kombu/pull/1139
+        kombu_modes = {
+            "none": "CERT_NONE",
+            "required": "CERT_REQUIRED",
+            "optional": "CERT_OPTIONAL",
+        }
+        celery_tls_mode_str = kombu_modes[tls_mode_str]
+        celery_uri = f"{celery_uri}/?ssl_cert_reqs={celery_tls_mode_str}"
+
     config.set("default", "REDIS_URI", redis_uri)
+    config.set("default", "BROKER_URL", celery_uri)
 
     return map_config(config)
 
