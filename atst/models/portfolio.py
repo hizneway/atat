@@ -101,6 +101,16 @@ class Portfolio(
         )
 
     @property
+    def upcoming_obligated_funds(self):
+        return sum(
+            (
+                task_order.total_obligated_funds
+                for task_order in self.task_orders
+                if task_order.is_upcoming
+            )
+        )
+
+    @property
     def funding_duration(self):
         """
         Return the earliest period of performance start date and latest period
