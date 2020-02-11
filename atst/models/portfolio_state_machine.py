@@ -99,7 +99,7 @@ class PortfolioStateMachine(
     def trigger_next_transition(self, **kwargs):
         state_obj = self.machine.get_state(self.state)
 
-        csp_data = kwargs.get("csp_data", {})
+        kwargs["csp_data"] = kwargs.get("csp_data", {})
 
         if state_obj.is_system:
             if self.current_state in (FSMStates.UNSTARTED, FSMStates.STARTING):
