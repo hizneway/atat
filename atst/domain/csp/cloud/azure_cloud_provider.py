@@ -1,6 +1,5 @@
 import json
 from secrets import token_urlsafe
-from typing import Any, Dict
 from uuid import uuid4
 
 from atst.utils import sha256_hex
@@ -25,6 +24,10 @@ from .models import (
     BillingProfileVerificationCSPPayload,
     BillingProfileVerificationCSPResult,
     CostManagementQueryCSPResult,
+    InitialMgmtGroupCSPPayload,
+    InitialMgmtGroupCSPResult,
+    InitialMgmtGroupVerificationCSPPayload,
+    InitialMgmtGroupVerificationCSPResult,
     EnvironmentCSPPayload,
     EnvironmentCSPResult,
     KeyVaultCredentials,
@@ -195,6 +198,38 @@ class AzureCloudProvider(CloudProviderInterface):
 
         return ApplicationCSPResult(**response)
 
+    def create_initial_mgmt_group(self, payload: InitialMgmtGroupCSPPayload):
+        creds = self._source_creds(payload.tenant_id)
+        credentials = self._get_credential_obj(
+            {
+                "client_id": creds.root_sp_client_id,
+                "secret_key": creds.root_sp_key,
+                "tenant_id": creds.root_tenant_id,
+            },
+            resource=self.sdk.cloud.endpoints.resource_manager,
+        )
+        response = self._create_management_group(
+            credentials, payload.management_group_name, payload.display_name,
+        )
+
+        return InitialMgmtGroupCSPResult(**response)
+
+    def create_initial_mgmt_group_verification(
+        self, payload: InitialMgmtGroupVerificationCSPPayload
+    ):
+        creds = self._source_creds(payload.tenant_id)
+        credentials = self._get_credential_obj(
+            {
+                "client_id": creds.root_sp_client_id,
+                "secret_key": creds.root_sp_key,
+                "tenant_id": creds.root_tenant_id,
+            },
+            resource=self.sdk.cloud.endpoints.resource_manager,
+        )
+
+        response = self._get_management_group(credentials, payload.tenant_id,)
+        return InitialMgmtGroupVerificationCSPResult(**response.result())
+
     def _create_management_group(
         self, credentials, management_group_id, display_name, parent_id=None,
     ):
@@ -220,6 +255,11 @@ class AzureCloudProvider(CloudProviderInterface):
         # response object? Will it always raise its own error
         # instead?
         return create_request.result()
+
+    def _get_management_group(self, credentials, management_group_id):
+        mgmgt_group_client = self.sdk.managementgroups.ManagementGroupsAPI(credentials)
+        response = mgmgt_group_client.management_groups.get(management_group_id)
+        return response
 
     def _create_policy_definition(
         self, credentials, subscription_id, management_group_id, properties,
@@ -1066,12 +1106,10 @@ class AzureCloudProvider(CloudProviderInterface):
 
     def update_tenant_creds(self, tenant_id, secret: KeyVaultCredentials):
         hashed = sha256_hex(tenant_id)
-        new_secrets = secret.dict()
         curr_secrets = self._source_tenant_creds(tenant_id)
-        updated_secrets: Dict[str, Any] = {**curr_secrets.dict(), **new_secrets}
-        us = KeyVaultCredentials(**updated_secrets)
-        self.set_secret(hashed, json.dumps(us.dict()))
-        return us
+        updated_secrets = curr_secrets.merge_credentials(secret)
+        self.set_secret(hashed, json.dumps(updated_secrets.dict()))
+        return updated_secrets
 
     def _source_tenant_creds(self, tenant_id) -> KeyVaultCredentials:
         hashed = sha256_hex(tenant_id)
@@ -1100,7 +1138,7 @@ class AzureCloudProvider(CloudProviderInterface):
             "timeframe": "Custom",
             "timePeriod": {"from": payload.from_date, "to": payload.to_date,},
             "dataset": {
-                "granularity": "Daily",
+                "granularity": "Monthly",
                 "aggregation": {"totalCost": {"name": "PreTaxCost", "function": "Sum"}},
                 "grouping": [{"type": "Dimension", "name": "InvoiceId"}],
             },
