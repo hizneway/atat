@@ -1,7 +1,7 @@
-"""state machine stage added. 
+"""state machine stage added.
 
 Revision ID: 542bd3215dec
-Revises: 0039308c6351
+Revises: 567bfb019a87
 Create Date: 2020-02-06 12:01:58.077840
 
 """
@@ -10,8 +10,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '542bd3215dec' # pragma: allowlist secret
-down_revision = '0039308c6351' # pragma: allowlist secret
+revision = "542bd3215dec"  # pragma: allowlist secret
+down_revision = "567bfb019a87"  # pragma: allowlist secret
 branch_labels = None
 depends_on = None
 
