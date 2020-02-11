@@ -122,10 +122,6 @@ class MockCloudProvider(CloudProviderInterface):
         payload is an instance of TenantCSPPayload data class
         """
 
-        self._authorize("admin")
-
-        self._delay(1, 5)
-
         self._maybe_raise(self.NETWORK_FAILURE_PCT, self.NETWORK_EXCEPTION)
         self._maybe_raise(self.SERVER_FAILURE_PCT, self.SERVER_EXCEPTION)
         self._maybe_raise(self.UNAUTHORIZED_RATE, self.AUTHORIZATION_EXCEPTION)

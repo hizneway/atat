@@ -2,6 +2,7 @@ import json
 from secrets import token_urlsafe
 from typing import Any, Dict
 from uuid import uuid4
+import pydantic
 
 from atst.utils import sha256_hex
 
@@ -274,31 +275,17 @@ class AzureCloudProvider(CloudProviderInterface):
 
         try:
             result = self.sdk.requests.post(
-                f"{self.sdk.cloud.endpoints.resource_manager}/providers/Microsoft.SignUp/createTenant?api-version=2020-01-01-preview",
+                f"{self.sdk.cloud.endpoints.resource_manager}providers/Microsoft.SignUp/createTenant?api-version=2020-01-01-preview",
                 json=create_tenant_body,
                 headers=create_tenant_headers,
                 timeout=30,
             )
             result.raise_for_status()
-            result_dict = result.json()
-            tenant_id = result_dict.get("tenantId")
-            tenant_admin_username = (
-                f"{payload.user_id}@{payload.domain_name}.onmicrosoft.com"
-            )
-            self.update_tenant_creds(
-                tenant_id,
-                KeyVaultCredentials(
-                    tenant_id=tenant_id,
-                    tenant_admin_username=tenant_admin_username,
-                    tenant_admin_password=payload.password,
-                ),
-            )
-            return TenantCSPResult(domain_name=payload.domain_name, **result_dict)
 
         except self.sdk.requests.ConnectionError:
-            app.logger.error(
-                f"Could not create tenant. Connection Error", exc_info=1,
-            )
+            #app.logger.error(
+            #    f"Could not create tenant. Connection Error", exc_info=1,
+            #)
             raise ConnectionException("connection error creating tenant")
         except self.sdk.requests.Timeout:
             app.logger.error(
@@ -307,6 +294,27 @@ class AzureCloudProvider(CloudProviderInterface):
             raise ConnectionException("timout error creating tenant")
         except self.sdk.requests.HTTPError:
             raise UnknownServerException("azure application error creating tenant")
+
+        result_dict = result.json()
+        tenant_id = result_dict.get("tenantId")
+        tenant_admin_username = (
+            f"{payload.user_id}@{payload.domain_name}.onmicrosoft.com"
+        )
+        try:
+            creds = KeyVaultCredentials(
+                    tenant_id=tenant_id,
+                    tenant_admin_username=tenant_admin_username,
+                    tenant_admin_password=payload.password,
+                )
+        except pydantic.ValidationError as val_exc:
+            return
+
+        self.update_tenant_creds(
+            tenant_id,
+            creds,
+        )
+        return TenantCSPResult(domain_name=payload.domain_name, **result_dict)
+
 
     def create_billing_profile_creation(
         self, payload: BillingProfileCreationCSPPayload
@@ -330,6 +338,7 @@ class AzureCloudProvider(CloudProviderInterface):
                 billing_account_create_url,
                 json=create_billing_account_body,
                 headers=create_billing_account_headers,
+                timeout=30,
             )
             result.raise_for_status()
             if result.status_code == 202:
@@ -366,7 +375,9 @@ class AzureCloudProvider(CloudProviderInterface):
         }
         try:
             result = self.sdk.requests.get(
-                payload.billing_profile_verify_url, headers=auth_header
+                payload.billing_profile_verify_url,
+                headers=auth_header,
+                timeout=30,
             )
             result.raise_for_status()
 
@@ -407,7 +418,12 @@ class AzureCloudProvider(CloudProviderInterface):
 
         url = f"{self.sdk.cloud.endpoints.resource_manager}/providers/Microsoft.Billing/billingAccounts/{payload.billing_account_name}/billingProfiles/{payload.billing_profile_name}/createBillingRoleAssignment?api-version=2019-10-01-preview"
         try:
-            result = self.sdk.requests.post(url, headers=headers, json=request_body)
+            result = self.sdk.requests.post(
+                    url,
+                    headers=headers,
+                    json=request_body,
+                    timeout=30,
+            )
             if result.status_code == 201:
                 return BillingProfileTenantAccessCSPResult(**result.json())
 
@@ -444,7 +460,7 @@ class AzureCloudProvider(CloudProviderInterface):
 
         try:
             result = self.sdk.requests.patch(
-                url, headers=request_headers, json=request_body
+                url, headers=request_headers, json=request_body, timeout=30,
             )
             result.raise_for_status()
 
@@ -482,7 +498,7 @@ class AzureCloudProvider(CloudProviderInterface):
 
         try:
             result = self.sdk.requests.get(
-                payload.task_order_billing_verify_url, headers=auth_header
+                payload.task_order_billing_verify_url, headers=auth_header, timeout=30,
             )
             result.raise_for_status()
 
@@ -527,7 +543,7 @@ class AzureCloudProvider(CloudProviderInterface):
         }
 
         try:
-            result = self.sdk.requests.put(url, headers=auth_header, json=request_body)
+            result = self.sdk.requests.put(url, headers=auth_header, json=request_body, timeout=30)
             result.raise_for_status()
             return BillingInstructionCSPResult(**result.json())
 
@@ -564,7 +580,7 @@ class AzureCloudProvider(CloudProviderInterface):
         }
 
         try:
-            result = self.sdk.requests.put(url, headers=auth_header, json=request_body)
+            result = self.sdk.requests.put(url, headers=auth_header, json=request_body, timeout=30)
             if result.status_code in [200, 202]:
                 # 202 has location/retry after headers
                 return SubscriptionCreationCSPResult(**result.headers, **result.json())
@@ -600,7 +616,7 @@ class AzureCloudProvider(CloudProviderInterface):
 
         try:
             result = self.sdk.requests.get(
-                payload.subscription_verify_url, headers=auth_header
+                payload.subscription_verify_url, headers=auth_header, timeout=30
             )
             result.raise_for_status()
 
@@ -643,6 +659,7 @@ class AzureCloudProvider(CloudProviderInterface):
                 product_purchase_url,
                 json=create_product_purchase_body,
                 headers=create_product_purchase_headers,
+                timeout=30,
             )
             result.raise_for_status()
 
@@ -680,7 +697,7 @@ class AzureCloudProvider(CloudProviderInterface):
         }
         try:
             result = self.sdk.requests.get(
-                payload.product_purchase_verify_url, headers=auth_header
+                payload.product_purchase_verify_url, headers=auth_header, timeout=30
             )
             result.raise_for_status()
 
@@ -728,7 +745,7 @@ class AzureCloudProvider(CloudProviderInterface):
 
         try:
             response = self.sdk.requests.put(
-                url, headers=auth_header, json=request_body
+                url, headers=auth_header, json=request_body, timeout=30
             )
             response.raise_for_status()
 
@@ -772,7 +789,7 @@ class AzureCloudProvider(CloudProviderInterface):
 
         try:
             response = self.sdk.requests.put(
-                url, headers=auth_header, json=request_body
+                url, headers=auth_header, json=request_body, timeout=30,
             )
             response.raise_for_status()
             return TenantPrincipalOwnershipCSPResult(**response.json())
@@ -809,7 +826,7 @@ class AzureCloudProvider(CloudProviderInterface):
 
         try:
             response = self.sdk.requests.post(
-                url, json=request_body, headers=auth_header
+                url, json=request_body, headers=auth_header, timeout=30
             )
             response.raise_for_status()
             return TenantPrincipalAppCSPResult(**response.json())
@@ -846,7 +863,7 @@ class AzureCloudProvider(CloudProviderInterface):
 
         try:
             response = self.sdk.requests.post(
-                url, json=request_body, headers=auth_header
+                url, json=request_body, headers=auth_header, timeout=30
             )
             response.raise_for_status()
             return TenantPrincipalCSPResult(**response.json())
@@ -887,7 +904,7 @@ class AzureCloudProvider(CloudProviderInterface):
 
         try:
             response = self.sdk.requests.post(
-                url, json=request_body, headers=auth_header
+                url, json=request_body, headers=auth_header, timeout=30
             )
             response.raise_for_status()
             result = response.json()
@@ -932,7 +949,7 @@ class AzureCloudProvider(CloudProviderInterface):
 
         url = f"{self.graph_resource}/beta/roleManagement/directory/roleDefinitions"
         try:
-            response = self.sdk.requests.get(url, headers=auth_header)
+            response = self.sdk.requests.get(url, headers=auth_header, timeout=30)
             response.raise_for_status()
 
             result = response.json()
@@ -986,7 +1003,7 @@ class AzureCloudProvider(CloudProviderInterface):
 
         try:
             response = self.sdk.requests.post(
-                url, headers=auth_header, json=request_body
+                url, headers=auth_header, json=request_body, timeout=30
             )
             response.raise_for_status()
             return PrincipalAdminRoleCSPResult(**response.json())
@@ -1104,7 +1121,7 @@ class AzureCloudProvider(CloudProviderInterface):
 
         try:
             response = self.sdk.requests.post(
-                url, headers=auth_header, json=request_body
+                url, headers=auth_header, json=request_body, timeout=30
             )
             response.raise_for_status()
 
@@ -1138,7 +1155,7 @@ class AzureCloudProvider(CloudProviderInterface):
 
         try:
             response = self.sdk.requests.patch(
-                url, headers=auth_header, json=request_body
+                url, headers=auth_header, json=request_body, timeout=30
             )
             response.raise_for_status()
 
@@ -1257,7 +1274,7 @@ class AzureCloudProvider(CloudProviderInterface):
         }
         url = f"{self.sdk.cloud.endpoints.resource_manager}/providers/Microsoft.Authorization/elevateAccess?api-version=2016-07-01"
         try:
-            result = self.sdk.requests.post(url, headers=auth_header)
+            result = self.sdk.requests.post(url, headers=auth_header, timeout=30)
             result.raise_for_status()
             if not result.ok:
                 raise AuthenticationException("Failed to elevate access")
@@ -1337,6 +1354,7 @@ class AzureCloudProvider(CloudProviderInterface):
                 f"{self.sdk.cloud.endpoints.resource_manager}{payload.invoice_section_id}{cost_mgmt_url}",
                 json=request_body,
                 headers=headers,
+                timeout=30,
             )
             result.raise_for_status()
             if result.ok:

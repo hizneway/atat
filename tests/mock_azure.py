@@ -79,7 +79,7 @@ def mock_adal():
 def mock_requests():
     import requests
 
-    return Mock(spec=requests)
+    return Mock(wraps=requests)
 
 
 def mock_secrets():

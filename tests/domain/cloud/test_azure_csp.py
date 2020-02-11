@@ -1,13 +1,22 @@
 import json
 from unittest.mock import Mock, patch
 from uuid import uuid4
-
 import pendulum
 import pydantic
 import pytest
+#import requests
+from secrets import token_urlsafe
+
 from tests.factories import ApplicationFactory, EnvironmentFactory
 from tests.mock_azure import AUTH_CREDENTIALS, mock_azure
 
+from atst.domain.csp.cloud.exceptions import (
+    AuthenticationException,
+    UserProvisioningException,
+    ConnectionException,
+    UnknownServerException,
+    SecretException,
+)
 from atst.domain.csp.cloud import AzureCloudProvider
 from atst.domain.csp.cloud.models import (
     AdminRoleDefinitionCSPPayload,
@@ -58,6 +67,7 @@ from atst.domain.csp.cloud.models import (
 BILLING_ACCOUNT_NAME = "52865e4c-52e8-5a6c-da6b-c58f0814f06f:7ea5de9d-b8ce-4901-b1c5-d864320c7b03_2019-05-31"
 
 
+
 def mock_management_group_create(mock_azure, spec_dict):
     mock_azure.sdk.managementgroups.ManagementGroupsAPI.return_value.management_groups.create_or_update.return_value.result.return_value = (
         spec_dict
@@ -92,7 +102,6 @@ def mock_get_secret(azure, val=None):
     azure.get_secret = lambda *a, **k: val
 
     return azure
-
 
 def test_create_application_succeeds(mock_azure: AzureCloudProvider):
     application = ApplicationFactory.create()
@@ -132,8 +141,8 @@ def test_create_policy_definition_succeeds(mock_azure: AzureCloudProvider):
         parameters=mock_policy_definition,
     )
 
-
 def test_create_tenant(mock_azure: AzureCloudProvider):
+
     mock_result = Mock()
     mock_result.json.return_value = {
         "objectId": "0a5f4926-e3ee-4f47-a6e3-8b0a30a40e3d",
@@ -141,7 +150,13 @@ def test_create_tenant(mock_azure: AzureCloudProvider):
         "userId": "1153801116406515559",
     }
     mock_result.status_code = 200
+
     mock_azure.sdk.requests.post.return_value = mock_result
+    mock_azure.sdk.requests.post.side_effect = [
+        mock_azure.sdk.requests.exceptions.ConnectionError,
+        mock_result
+    ]
+
     payload = TenantCSPPayload(
         **dict(
             user_id="admin",
@@ -154,8 +169,61 @@ def test_create_tenant(mock_azure: AzureCloudProvider):
         )
     )
     mock_azure = mock_get_secret(mock_azure)
+
+    with pytest.raises(ConnectionException):
+        mock_azure.create_tenant(payload)
+
     result: TenantCSPResult = mock_azure.create_tenant(payload)
     assert result.tenant_id == "60ff9d34-82bf-4f21-b565-308ef0533435"
+
+
+def test_create_tenant_req_mock(mock_azure: AzureCloudProvider, requests_mock):
+    url = f"{mock_azure.sdk.cloud.endpoints.resource_manager}providers/Microsoft.SignUp/createTenant"
+    requests_mock.register_uri(
+        "POST", "?".join([url, "api-version=2020-01-01-preview"]),
+        json={
+            "objectId": "0a5f4926-e3ee-4f47-a6e3-8b0a30a40e3d",
+            "tenantId": "60ff9d34-82bf-4f21-b565-308ef0533435",
+            "userId": "1153801116406515559",
+        },
+    )
+    mock_azure = mock_get_secret(mock_azure)
+    payload = TenantCSPPayload(
+        **dict(
+            user_id="admin",
+            password="JediJan13$coot",  # pragma: allowlist secret
+            domain_name="jediccpospawnedtenant2",
+            first_name="Tedry",
+            last_name="Tenet",
+            country_code="US",
+            password_recovery_email_address="thomas@promptworks.com",
+        )
+    )
+    result: TenantCSPResult = mock_azure.create_tenant(payload)
+    assert result.tenant_id == "60ff9d34-82bf-4f21-b565-308ef0533435"
+
+
+def test_create_tenant_req_mock_fail(mock_azure: AzureCloudProvider, requests_mock):
+    url = f"{mock_azure.sdk.cloud.endpoints.resource_manager}providers/Microsoft.SignUp/createTenant"
+    requests_mock.register_uri(
+        "POST", "?".join([url, "api-version=2020-01-01-preview"]),
+        exc=requests.exceptions.ConnectionError,
+    )
+    mock_azure = mock_get_secret(mock_azure)
+    payload = TenantCSPPayload(
+        **dict(
+            user_id="admin",
+            password="JediJan13$coot",  # pragma: allowlist secret
+            domain_name="jediccpospawnedtenant2",
+            first_name="Tedry",
+            last_name="Tenet",
+            country_code="US",
+            password_recovery_email_address="thomas@promptworks.com",
+        )
+    )
+
+    with pytest.raises(ConnectionException):
+        assert mock_azure.create_tenant(payload)
 
 
 # def test_create_tenant_fails(mock_azure: AzureCloudProvider):
