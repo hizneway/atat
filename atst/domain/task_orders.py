@@ -90,3 +90,13 @@ class TaskOrders(BaseDomainClass):
             )
             .all()
         )
+
+    @classmethod
+    def get_clins_for_create_billing_instructions(cls):
+        return (
+            db.session.query(CLIN)
+            .filter(
+                CLIN.last_sent_at.is_(None), CLIN.start_date < pendulum.now(tz="UTC")
+            )
+            .all()
+        )
