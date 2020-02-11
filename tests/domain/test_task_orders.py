@@ -149,11 +149,12 @@ def test_task_order_sort_by_status():
     ]
 
     sorted_by_status = TaskOrders.sort_by_status(initial_to_list)
-    assert len(sorted_by_status["Draft"]) == 3
+    assert len(sorted_by_status["Draft"]) == 4
     assert len(sorted_by_status["Active"]) == 1
     assert len(sorted_by_status["Upcoming"]) == 1
     assert len(sorted_by_status["Expired"]) == 2
-    assert len(sorted_by_status["Unsigned"]) == 1
+    with pytest.raises(KeyError):
+        sorted_by_status["Unsigned"]
     assert list(sorted_by_status.keys()) == [status.value for status in SORT_ORDERING]
 
 

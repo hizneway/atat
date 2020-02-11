@@ -321,7 +321,7 @@ class ManagementGroupCSPPayload(AliasModel):
     tenant_id: str
     management_group_name: Optional[str]
     display_name: str
-    parent_id: str
+    parent_id: Optional[str]
 
     @validator("management_group_name", pre=True, always=True)
     def supply_management_group_name_default(cls, name):
@@ -341,13 +341,22 @@ class ManagementGroupCSPPayload(AliasModel):
 
     @validator("parent_id", pre=True, always=True)
     def enforce_parent_id_pattern(cls, id_):
-        if AZURE_MGMNT_PATH not in id_:
-            return f"{AZURE_MGMNT_PATH}{id_}"
-        else:
-            return id_
+        if id_:
+            if AZURE_MGMNT_PATH not in id_:
+                return f"{AZURE_MGMNT_PATH}{id_}"
+            else:
+                return id_
 
 
 class ManagementGroupCSPResponse(AliasModel):
+    id: str
+
+
+class ManagementGroupGetCSPPayload(BaseCSPPayload):
+    management_group_name: str
+
+
+class ManagementGroupGetCSPResponse(AliasModel):
     id: str
 
 
@@ -356,6 +365,22 @@ class ApplicationCSPPayload(ManagementGroupCSPPayload):
 
 
 class ApplicationCSPResult(ManagementGroupCSPResponse):
+    pass
+
+
+class InitialMgmtGroupCSPPayload(ManagementGroupCSPPayload):
+    pass
+
+
+class InitialMgmtGroupCSPResult(ManagementGroupCSPResponse):
+    pass
+
+
+class InitialMgmtGroupVerificationCSPPayload(ManagementGroupGetCSPPayload):
+    pass
+
+
+class InitialMgmtGroupVerificationCSPResult(ManagementGroupGetCSPResponse):
     pass
 
 
@@ -417,6 +442,15 @@ class KeyVaultCredentials(BaseModel):
             )
 
         return values
+
+    def merge_credentials(
+        self, new_creds: "KeyVaultCredentials"
+    ) -> "KeyVaultCredentials":
+        updated_creds = {k: v for k, v in new_creds.dict().items() if v}
+        old_creds = self.dict()
+        old_creds.update(updated_creds)
+
+        return KeyVaultCredentials(**old_creds)
 
 
 class SubscriptionCreationCSPPayload(BaseCSPPayload):

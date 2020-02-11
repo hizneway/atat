@@ -16,16 +16,14 @@ from reset_database import reset_database
 
 
 def database_setup(username, password, dbname, ccpo_users):
+    print("Applying schema and seeding roles and permissions.")
+    reset_database()
+
     print(
         f"Creating Postgres user role for '{username}' and granting all privileges to database '{dbname}'."
     )
-    try:
-        _create_database_user(username, password, dbname)
-    except sqlalchemy.exc.ProgrammingError as err:
-        print(f"Postgres user role '{username}' already exists.")
+    _create_database_user(username, password, dbname)
 
-    print("Applying schema and seeding roles and permissions.")
-    reset_database()
     print("Creating initial set of CCPO users.")
     _add_ccpo_users(ccpo_users)
 
@@ -46,6 +44,22 @@ def _create_database_user(username, password, dbname):
         f"ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL PRIVILEGES ON SEQUENCES TO {username}; \n"
         f"ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL PRIVILEGES ON FUNCTIONS TO {username}; \n"
     )
+
+    try:
+        # TODO: make this more configurable
+        engine.execute(f"GRANT {username} TO azure_pg_admin;")
+    except sqlalchemy.exc.ProgrammingError as err:
+        print(f"Cannot grant new role {username} to azure_pg_admin")
+
+    for table in meta.tables:
+        engine.execute(f"ALTER TABLE {table} OWNER TO {username};\n")
+
+    sequence_results = engine.execute(
+        "SELECT c.relname FROM pg_class c WHERE c.relkind = 'S';"
+    ).fetchall()
+    sequences = [p[0] for p in sequence_results]
+    for sequence in sequences:
+        engine.execute(f"ALTER SEQUENCE {sequence} OWNER TO {username};\n")
 
     trans.commit()
 
