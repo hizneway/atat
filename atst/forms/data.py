@@ -10,6 +10,7 @@ SERVICE_BRANCHES = [
         translate("forms.portfolio.defense_component.choices.marine_corps"),
     ),
     ("navy", translate("forms.portfolio.defense_component.choices.navy")),
+    ("space_force", translate("forms.portfolio.defense_component.choices.space_force")),
     ("other", translate("forms.portfolio.defense_component.choices.other")),
 ]
 

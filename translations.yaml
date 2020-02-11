@@ -296,6 +296,7 @@ forms:
         army: Army
         marine_corps: Marine Corps
         navy: Navy
+        space_force: Space Force
         other: Other
       title: Select DoD component(s) funding your Portfolio
       validation_message: You must select at least one defense component.
