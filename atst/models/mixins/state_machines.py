@@ -28,6 +28,7 @@ class AzureStages(Enum):
     INITIAL_MGMT_GROUP_VERIFICATION = "initial management group verification"
     TENANT_ADMIN_OWNERSHIP = "tenant admin ownership"
     TENANT_PRINCIPAL_OWNERSHIP = "tenant principial ownership"
+    BILLING_OWNER = "billing owner"
 
 
 def _build_csp_states(csp_stages):

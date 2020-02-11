@@ -20,6 +20,8 @@ from .models import (
     ApplicationCSPResult,
     BillingInstructionCSPPayload,
     BillingInstructionCSPResult,
+    BillingOwnerCSPPayload,
+    BillingOwnerCSPResult,
     BillingProfileCreationCSPPayload,
     BillingProfileCreationCSPResult,
     BillingProfileTenantAccessCSPPayload,
@@ -1060,6 +1062,96 @@ class AzureCloudProvider(CloudProviderInterface):
         except self.sdk.requests.exceptions.HTTPError:
             raise UnknownServerException("azure application error creating tenant")
 
+    def create_billing_owner(self, payload: BillingOwnerCSPPayload):
+        graph_token = self._get_tenant_principal_token(
+            payload.tenant_id, resource=self.graph_resource
+        )
+        if graph_token is None:
+            raise AuthenticationException(
+                "Could not resolve graph token for tenant admin"
+            )
+
+        # Step 1: Create an AAD identity for the user
+        user_result = self._create_active_directory_user(graph_token, payload)
+        # Step 2: Set the recovery email
+        self._update_active_directory_user_email(graph_token, user_result.id, payload)
+        # Step 3: Find the Billing Administrator role ID
+        billing_admin_role_id = self._get_billing_owner_role(graph_token)
+        # Step 4: Assign the Billing Administrator role to the new user
+        self._assign_billing_owner_role(
+            graph_token, billing_admin_role_id, user_result.id
+        )
+
+        return BillingOwnerCSPResult(billing_owner_id=user_result.id)
+
+    def _assign_billing_owner_role(self, graph_token, billing_admin_role_id, user_id):
+        request_body = {
+            "roleDefinitionId": billing_admin_role_id,
+            "principalId": user_id,
+            "resourceScope": "/",
+        }
+
+        auth_header = {
+            "Authorization": f"Bearer {graph_token}",
+        }
+
+        url = f"{self.graph_resource}/beta/roleManagement/directory/roleAssignments"
+
+        try:
+            response = self.sdk.requests.post(
+                url, headers=auth_header, json=request_body
+            )
+            response.raise_for_status()
+        except self.sdk.requests.exceptions.ConnectionError:
+            app.logger.error(
+                f"Could not create tenant. Connection Error", exc_info=1,
+            )
+            raise ConnectionException("connection error creating tenant")
+        except self.sdk.requests.exceptions.Timeout:
+            app.logger.error(
+                f"Could not create tenant. Request timed out.", exc_info=1,
+            )
+            raise ConnectionException("timout error creating tenant")
+        except self.sdk.requests.exceptions.HTTPError:
+            raise UnknownServerException("azure application error creating tenant")
+
+        if response.ok:
+            return True
+        else:
+            raise UserProvisioningException("Could not assign billing admin role")
+
+    def _get_billing_owner_role(self, graph_token):
+        auth_header = {
+            "Authorization": f"Bearer {graph_token}",
+        }
+
+        url = f"{self.graph_resource}/v1.0/directoryRoles"
+        try:
+            response = self.sdk.requests.get(url, headers=auth_header)
+            response.raise_for_status()
+        except self.sdk.requests.exceptions.ConnectionError:
+            app.logger.error(
+                f"Could not create tenant. Connection Error", exc_info=1,
+            )
+            raise ConnectionException("connection error creating tenant")
+        except self.sdk.requests.exceptions.Timeout:
+            app.logger.error(
+                f"Could not create tenant. Request timed out.", exc_info=1,
+            )
+            raise ConnectionException("timout error creating tenant")
+        except self.sdk.requests.exceptions.HTTPError:
+            raise UnknownServerException("azure application error creating tenant")
+
+        if response.ok:
+            result = response.json()
+            for role in result["value"]:
+                if role["displayName"] == "Billing Administrator":
+                    return role["id"]
+        else:
+            raise UserProvisioningException(
+                "Could not find Billing Administrator role ID; role may not be enabled."
+            )
+
     def force_tenant_admin_pw_update(self, creds, tenant_owner_id):
         # use creds to update to force password recovery?
         # not sure what the endpoint/method for this is, yet
@@ -1140,7 +1232,7 @@ class AzureCloudProvider(CloudProviderInterface):
 
         return result
 
-    def _create_active_directory_user(self, graph_token, payload: UserCSPPayload):
+    def _create_active_directory_user(self, graph_token, payload):
         request_body = {
             "accountEnabled": True,
             "displayName": payload.display_name,
@@ -1181,9 +1273,7 @@ class AzureCloudProvider(CloudProviderInterface):
         except self.sdk.requests.exceptions.HTTPError:
             raise UnknownServerException("azure application error creating tenant")
 
-    def _update_active_directory_user_email(
-        self, graph_token, user_id, payload: UserCSPPayload
-    ):
+    def _update_active_directory_user_email(self, graph_token, user_id, payload):
         request_body = {"otherMails": [payload.email]}
 
         auth_header = {
