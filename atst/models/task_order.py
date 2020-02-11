@@ -25,7 +25,6 @@ SORT_ORDERING = [
     Status.DRAFT,
     Status.UPCOMING,
     Status.EXPIRED,
-    Status.UNSIGNED,
 ]
 
 
@@ -148,7 +147,10 @@ class TaskOrder(Base, mixins.TimestampsMixin):
 
     @property
     def display_status(self):
-        return self.status.value
+        if self.status == Status.UNSIGNED:
+            return Status.DRAFT.value
+        else:
+            return self.status.value
 
     @property
     def portfolio_name(self):

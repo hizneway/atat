@@ -6,8 +6,12 @@
   heading_tag="h2",
   heading_classes="",
   content_tag="div",
-  content_classes="") %}
-  <accordion v-cloak inline-template>
+  content_classes="",
+  default_visible=False) %}
+  <accordion
+    v-cloak
+    inline-template
+    v-bind:default-visible='{{ default_visible | string | lower }}'>
     <{{wrapper_tag}} class="{{ wrapper_classes }}">
       <{{heading_tag}} class="accordion__button {{ heading_classes }}">
         <button
