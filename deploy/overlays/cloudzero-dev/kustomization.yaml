@@ -1,9 +1,8 @@
-namespace: staging
+namespace: cloudzero-dev
 bases:
   - ../../azure/
 resources:
   - namespace.yml
-  - reset-cron-job.yml
 patchesStrategicMerge:
   - ports.yml
   - envvars.yml
