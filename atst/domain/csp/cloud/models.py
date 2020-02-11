@@ -417,6 +417,15 @@ class KeyVaultCredentials(BaseModel):
 
         return values
 
+    def merge_credentials(
+        self, new_creds: "KeyVaultCredentials"
+    ) -> "KeyVaultCredentials":
+        updated_creds = {k: v for k, v in new_creds.dict().items() if v}
+        old_creds = self.dict()
+        old_creds.update(updated_creds)
+
+        return KeyVaultCredentials(**old_creds)
+
 
 class SubscriptionCreationCSPPayload(BaseCSPPayload):
     display_name: str

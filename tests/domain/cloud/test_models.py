@@ -100,6 +100,26 @@ def test_KeyVaultCredentials_enforce_root_creds():
     )
 
 
+def test_KeyVaultCredentials_merge_credentials():
+    old_secret = KeyVaultCredentials(
+        tenant_id="foo",
+        tenant_admin_username="bar",
+        tenant_admin_password="baz",  # pragma: allowlist secret
+    )
+    new_secret = KeyVaultCredentials(
+        tenant_id="foo", tenant_sp_client_id="bip", tenant_sp_key="bop"
+    )
+
+    expected_update = KeyVaultCredentials(
+        tenant_id="foo",
+        tenant_admin_username="bar",
+        tenant_admin_password="baz",  # pragma: allowlist secret
+        tenant_sp_client_id="bip",
+        tenant_sp_key="bop",
+    )
+    assert old_secret.merge_credentials(new_secret) == expected_update
+
+
 user_payload = {
     "tenant_id": "123",
     "display_name": "Han Solo",
