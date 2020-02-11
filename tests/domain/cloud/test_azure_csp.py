@@ -1077,7 +1077,7 @@ def test_create_billing_owner(mock_azure: AzureCloudProvider):
 
         result = mock_azure.create_billing_owner(payload)
 
-        assert result.id == final_result
+        assert result.billing_owner_id == final_result
 
 
 def test_update_tenant_creds(mock_azure: AzureCloudProvider):
