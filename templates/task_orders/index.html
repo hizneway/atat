@@ -14,9 +14,15 @@
 
 
 {% macro TaskOrderList(task_orders, status) %}
+  {% set show_task_orders = task_orders|length > 0 %}
   <div class="accordion">
-    {% call Accordion(title=("task_orders.status_list_title"|translate({'status': status})), id=status, heading_tag="h4") %}
-      {% if task_orders|length > 0 %}
+    {% call Accordion(
+      title=("task_orders.status_list_title"|translate({'status': status})),
+      id=status,
+      heading_tag="h4",
+      default_visible=show_task_orders
+    ) %}
+      {% if show_task_orders %}
         {% for task_order in task_orders %}
           {% set to_number %}
             {% if task_order.number != None %}

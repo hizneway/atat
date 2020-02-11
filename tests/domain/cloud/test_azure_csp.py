@@ -29,9 +29,14 @@ from atst.domain.csp.cloud.models import (
     BillingProfileTenantAccessCSPResult,
     BillingProfileVerificationCSPPayload,
     BillingProfileVerificationCSPResult,
+    InitialMgmtGroupCSPPayload,
+    InitialMgmtGroupCSPResult,
+    InitialMgmtGroupVerificationCSPPayload,
+    InitialMgmtGroupVerificationCSPResult,
     CostManagementQueryCSPResult,
     EnvironmentCSPPayload,
     EnvironmentCSPResult,
+    KeyVaultCredentials,
     PrincipalAdminRoleCSPPayload,
     PrincipalAdminRoleCSPResult,
     ProductPurchaseCSPPayload,
@@ -60,13 +65,21 @@ from atst.domain.csp.cloud.models import (
     TenantPrincipalOwnershipCSPPayload,
     TenantPrincipalOwnershipCSPResult,
     UserCSPPayload,
+    UserRoleCSPPayload,
 )
+from atst.domain.csp.cloud.exceptions import UserProvisioningException
 
 BILLING_ACCOUNT_NAME = "52865e4c-52e8-5a6c-da6b-c58f0814f06f:7ea5de9d-b8ce-4901-b1c5-d864320c7b03_2019-05-31"
 
 
 def mock_management_group_create(mock_azure, spec_dict):
     mock_azure.sdk.managementgroups.ManagementGroupsAPI.return_value.management_groups.create_or_update.return_value.result.return_value = (
+        spec_dict
+    )
+
+
+def mock_management_group_get(mock_azure, spec_dict):
+    mock_azure.sdk.managementgroups.ManagementGroupsAPI.return_value.management_groups.get.return_value.result.return_value = (
         spec_dict
     )
 
@@ -113,6 +126,41 @@ def test_create_application_succeeds(mock_azure: AzureCloudProvider):
     result: ApplicationCSPResult = mock_azure.create_application(payload)
 
     assert result.id == "Test Id"
+
+
+def test_create_initial_mgmt_group_succeeds(mock_azure: AzureCloudProvider):
+    application = ApplicationFactory.create()
+    mock_management_group_create(mock_azure, {"id": "Test Id"})
+    mock_azure = mock_get_secret(mock_azure)
+
+    payload = InitialMgmtGroupCSPPayload(
+        tenant_id="1234",
+        display_name=application.name,
+        management_group_name=str(uuid4()),
+    )
+    result: InitialMgmtGroupCSPResult = mock_azure.create_initial_mgmt_group(payload)
+
+    assert result.id == "Test Id"
+
+
+def test_create_initial_mgmt_group_verification_succeeds(
+    mock_azure: AzureCloudProvider,
+):
+    application = ApplicationFactory.create()
+    mock_management_group_get(mock_azure, {"id": "Test Id"})
+    mock_azure = mock_get_secret(mock_azure)
+
+    management_group_name = str(uuid4())
+
+    payload = InitialMgmtGroupVerificationCSPPayload(
+        tenant_id="1234", management_group_name=management_group_name
+    )
+    result: InitialMgmtGroupVerificationCSPResult = mock_azure.create_initial_mgmt_group_verification(
+        payload
+    )
+
+    assert result.id == "Test Id"
+    # assert result.name == management_group_name
 
 
 def test_create_policy_definition_succeeds(mock_azure: AzureCloudProvider):
@@ -1178,3 +1226,71 @@ def test_create_user(mock_azure: AzureCloudProvider):
 
         result = mock_azure.create_user(payload)
         assert result.id == "id"
+
+
+def test_create_user_role(mock_azure: AzureCloudProvider):
+    with patch.object(
+        AzureCloudProvider,
+        "_get_tenant_principal_token",
+        wraps=mock_azure._get_tenant_principal_token,
+    ) as _get_tenant_principal_token:
+        _get_tenant_principal_token.return_value = "token"
+
+        mock_result_create = Mock()
+        mock_result_create.ok = True
+        mock_result_create.json.return_value = {"id": "id"}
+        mock_azure.sdk.requests.put.return_value = mock_result_create
+
+        payload = UserRoleCSPPayload(
+            tenant_id=uuid4().hex,
+            user_object_id=str(uuid4()),
+            management_group_id=str(uuid4()),
+            role="owner",
+        )
+
+        result = mock_azure.create_user_role(payload)
+
+        assert result.id == "id"
+
+
+def test_create_user_role_failure(mock_azure: AzureCloudProvider):
+    with patch.object(
+        AzureCloudProvider,
+        "_get_tenant_principal_token",
+        wraps=mock_azure._get_tenant_principal_token,
+    ) as _get_tenant_principal_token:
+        _get_tenant_principal_token.return_value = "token"
+
+        mock_result_create = Mock()
+        mock_result_create.ok = False
+        mock_azure.sdk.requests.put.return_value = mock_result_create
+
+        payload = UserRoleCSPPayload(
+            tenant_id=uuid4().hex,
+            user_object_id=str(uuid4()),
+            management_group_id=str(uuid4()),
+            role="owner",
+        )
+
+        with pytest.raises(UserProvisioningException):
+            mock_azure.create_user_role(payload)
+
+
+def test_update_tenant_creds(mock_azure: AzureCloudProvider):
+    with patch.object(
+        AzureCloudProvider, "set_secret", wraps=mock_azure.set_secret,
+    ) as set_secret:
+        set_secret.return_value = None
+        existing_secrets = {
+            "tenant_id": "mytenant",
+            "tenant_admin_username": "admin",
+            "tenant_admin_password": "foo",  # pragma: allowlist secret
+        }
+        mock_azure = mock_get_secret(mock_azure, json.dumps(existing_secrets))
+
+        mock_new_secrets = KeyVaultCredentials(**MOCK_CREDS)
+        updated_secret = mock_azure.update_tenant_creds("mytenant", mock_new_secrets)
+
+        assert updated_secret == KeyVaultCredentials(
+            **{**existing_secrets, **MOCK_CREDS}
+        )

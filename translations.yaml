@@ -246,6 +246,7 @@ forms:
       description: Add, remove and edit applications in this Portfolio.
     dod_id_label: DoD ID
     dod_help: How do I find out the DoD ID?
+    dod_text: "An individual's DOD ID (formerly known as EDIPI) number can be found on the back of their CAC. Access to this system requires a valid CAC and DOD ID."
     email_label: Email address
     first_name_label: First name
     funding:
@@ -313,7 +314,7 @@ forms:
     upload_error: There was an error uploading your file. Please try again. If you encounter repeated problems uploading this file, please contact CCPO.
     size_error: "The file you have selected is too large. Please choose a file no larger than {file_size_limit}MB."
     filename_error: File names can only contain the characters A-Z, 0-9, space, hyphen, underscore, and period.
-    number_description: 13-Digit Task Order Number
+    number_description: Task Order Number
     pop_errors:
       date_order: PoP start date must be before end date.
       range: Date must be between {start} and {end}.
@@ -507,7 +508,7 @@ portfolios:
     estimate_warning: Reports displayed in JEDI are estimates and not a system of record.
     total_value:
       header: Total Portfolio Value
-      tooltip: Total portfolio value is all obligated and projected funds for all task orders in this portfolio.
+      tooltip: Total portfolio value is all obligated funds for current and upcoming task orders in this portfolio.
 task_orders:
   add_new_button: Add New Task Order
   review:
@@ -530,7 +531,7 @@ task_orders:
   form:
     add_clin: Add Another CLIN
     add_to_header: Enter the Task Order number
-    add_to_description: Please input your 13-digit Task Order number. This number may be listed under "Order Number" if your Contracting Officer used form 1149, or "Delivery Order/Call No." if form 1155 was used. Moving forward, this portion of funding will be referenced by the recorded Task Order number.
+    add_to_description: Please input your Task Order number. This number may be listed under "Order Number" if your Contracting Officer used form 1149, or "Delivery Order/Call No." if form 1155 was used. Moving forward, this portion of funding will be referenced by the recorded Task Order number.
     builder_base:
       cancel_modal: Do you want to save this draft?
       delete_draft: No, delete it

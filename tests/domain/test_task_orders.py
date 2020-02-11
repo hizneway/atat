@@ -1,5 +1,5 @@
 import pytest
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from decimal import Decimal
 
 from atst.domain.exceptions import AlreadyExistsError
@@ -149,11 +149,12 @@ def test_task_order_sort_by_status():
     ]
 
     sorted_by_status = TaskOrders.sort_by_status(initial_to_list)
-    assert len(sorted_by_status["Draft"]) == 3
+    assert len(sorted_by_status["Draft"]) == 4
     assert len(sorted_by_status["Active"]) == 1
     assert len(sorted_by_status["Upcoming"]) == 1
     assert len(sorted_by_status["Expired"]) == 2
-    assert len(sorted_by_status["Unsigned"]) == 1
+    with pytest.raises(KeyError):
+        sorted_by_status["Unsigned"]
     assert list(sorted_by_status.keys()) == [status.value for status in SORT_ORDERING]
 
 
@@ -178,3 +179,21 @@ def test_allows_alphanumeric_number():
 
     for number in valid_to_numbers:
         assert TaskOrders.create(portfolio.id, number, [], None)
+
+
+def test_get_for_send_task_order_files():
+    new_to = TaskOrderFactory.create(create_clins=[{}])
+    updated_to = TaskOrderFactory.create(
+        create_clins=[{"last_sent_at": datetime(2020, 2, 1)}],
+        pdf_last_sent_at=datetime(2020, 1, 1),
+    )
+    sent_to = TaskOrderFactory.create(
+        create_clins=[{"last_sent_at": datetime(2020, 1, 1)}],
+        pdf_last_sent_at=datetime(2020, 1, 1),
+    )
+
+    updated_and_new_task_orders = TaskOrders.get_for_send_task_order_files()
+    assert len(updated_and_new_task_orders) == 2
+    assert sent_to not in updated_and_new_task_orders
+    assert updated_to in updated_and_new_task_orders
+    assert new_to in updated_and_new_task_orders

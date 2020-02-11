@@ -25,7 +25,6 @@ SORT_ORDERING = [
     Status.DRAFT,
     Status.UPCOMING,
     Status.EXPIRED,
-    Status.UNSIGNED,
 ]
 
 
@@ -39,6 +38,7 @@ class TaskOrder(Base, mixins.TimestampsMixin):
 
     pdf_attachment_id = Column(ForeignKey("attachments.id"))
     _pdf = relationship("Attachment", foreign_keys=[pdf_attachment_id])
+    pdf_last_sent_at = Column(DateTime)
     number = Column(String, unique=True,)  # Task Order Number
     signer_dod_id = Column(String)
     signed_at = Column(DateTime)
@@ -86,6 +86,10 @@ class TaskOrder(Base, mixins.TimestampsMixin):
     @property
     def is_expired(self):
         return self.status == Status.EXPIRED
+
+    @property
+    def is_upcoming(self):
+        return self.status == Status.UPCOMING
 
     @property
     def clins_are_completed(self):
@@ -147,7 +151,10 @@ class TaskOrder(Base, mixins.TimestampsMixin):
 
     @property
     def display_status(self):
-        return self.status.value
+        if self.status == Status.UNSIGNED:
+            return Status.DRAFT.value
+        else:
+            return self.status.value
 
     @property
     def portfolio_name(self):

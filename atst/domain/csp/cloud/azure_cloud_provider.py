@@ -1,6 +1,5 @@
 import json
 from secrets import token_urlsafe
-from typing import Any, Dict
 from uuid import uuid4
 import pydantic
 from flask import current_app as app
@@ -29,6 +28,10 @@ from .models import (
     BillingProfileVerificationCSPPayload,
     BillingProfileVerificationCSPResult,
     CostManagementQueryCSPResult,
+    InitialMgmtGroupCSPPayload,
+    InitialMgmtGroupCSPResult,
+    InitialMgmtGroupVerificationCSPPayload,
+    InitialMgmtGroupVerificationCSPResult,
     EnvironmentCSPPayload,
     EnvironmentCSPResult,
     KeyVaultCredentials,
@@ -61,6 +64,8 @@ from .models import (
     TenantPrincipalOwnershipCSPResult,
     UserCSPPayload,
     UserCSPResult,
+    UserRoleCSPPayload,
+    UserRoleCSPResult,
 )
 from .policy import AzurePolicyManager
 
@@ -107,10 +112,14 @@ class AzureCloudProvider(CloudProviderInterface):
         self.secret_key = config["AZURE_SECRET_KEY"]
         self.tenant_id = config["AZURE_TENANT_ID"]
         self.vault_url = config["AZURE_VAULT_URL"]
-        self.ps_client_id = config["POWERSHELL_CLIENT_ID"]
-        self.owner_role_def_id = config["AZURE_OWNER_ROLE_DEF_ID"]
+        self.ps_client_id = config["AZURE_POWERSHELL_CLIENT_ID"]
         self.graph_resource = config["AZURE_GRAPH_RESOURCE"]
         self.default_aadp_qty = config["AZURE_AADP_QTY"]
+        self.roles = {
+            "owner": config["AZURE_ROLE_DEF_ID_OWNER"],
+            "contributor": config["AZURE_ROLE_DEF_ID_CONTRIBUTOR"],
+            "billing": config["AZURE_ROLE_DEF_ID_BILLING_READER"],
+        }
 
         if azure_sdk_provider is None:
             self.sdk = AzureSDKProvider()
@@ -193,6 +202,38 @@ class AzureCloudProvider(CloudProviderInterface):
 
         return ApplicationCSPResult(**response)
 
+    def create_initial_mgmt_group(self, payload: InitialMgmtGroupCSPPayload):
+        creds = self._source_creds(payload.tenant_id)
+        credentials = self._get_credential_obj(
+            {
+                "client_id": creds.root_sp_client_id,
+                "secret_key": creds.root_sp_key,
+                "tenant_id": creds.root_tenant_id,
+            },
+            resource=self.sdk.cloud.endpoints.resource_manager,
+        )
+        response = self._create_management_group(
+            credentials, payload.management_group_name, payload.display_name,
+        )
+
+        return InitialMgmtGroupCSPResult(**response)
+
+    def create_initial_mgmt_group_verification(
+        self, payload: InitialMgmtGroupVerificationCSPPayload
+    ):
+        creds = self._source_creds(payload.tenant_id)
+        credentials = self._get_credential_obj(
+            {
+                "client_id": creds.root_sp_client_id,
+                "secret_key": creds.root_sp_key,
+                "tenant_id": creds.root_tenant_id,
+            },
+            resource=self.sdk.cloud.endpoints.resource_manager,
+        )
+
+        response = self._get_management_group(credentials, payload.tenant_id,)
+        return InitialMgmtGroupVerificationCSPResult(**response.result())
+
     def _create_management_group(
         self, credentials, management_group_id, display_name, parent_id=None,
     ):
@@ -218,6 +259,11 @@ class AzureCloudProvider(CloudProviderInterface):
         # response object? Will it always raise its own error
         # instead?
         return create_request.result()
+
+    def _get_management_group(self, credentials, management_group_id):
+        mgmgt_group_client = self.sdk.managementgroups.ManagementGroupsAPI(credentials)
+        response = mgmgt_group_client.management_groups.get(management_group_id)
+        return response
 
     def _create_policy_definition(
         self, credentials, subscription_id, management_group_id, properties,
@@ -720,7 +766,7 @@ class AzureCloudProvider(CloudProviderInterface):
     def create_tenant_admin_ownership(self, payload: TenantAdminOwnershipCSPPayload):
         mgmt_token = self._get_elevated_management_token(payload.tenant_id)
 
-        role_definition_id = f"/providers/Microsoft.Management/managementGroups/{payload.tenant_id}/providers/Microsoft.Authorization/roleDefinitions/{self.owner_role_def_id}"
+        role_definition_id = f"/providers/Microsoft.Management/managementGroups/{payload.tenant_id}/providers/Microsoft.Authorization/roleDefinitions/{self.roles['owner']}"
 
         request_body = {
             "properties": {
@@ -764,7 +810,7 @@ class AzureCloudProvider(CloudProviderInterface):
         mgmt_token = self._get_elevated_management_token(payload.tenant_id)
 
         # NOTE: the tenant_id is also the id of the root management group, once it is created
-        role_definition_id = f"/providers/Microsoft.Management/managementGroups/{payload.tenant_id}/providers/Microsoft.Authorization/roleDefinitions/{self.owner_role_def_id}"
+        role_definition_id = f"/providers/Microsoft.Management/managementGroups/{payload.tenant_id}/providers/Microsoft.Authorization/roleDefinitions/{self.roles['owner']}"
 
         request_body = {
             "properties": {
@@ -1173,6 +1219,40 @@ class AzureCloudProvider(CloudProviderInterface):
         except self.sdk.requests.exceptions.HTTPError:
             raise UnknownServerException("azure application error creating tenant")
 
+    def create_user_role(self, payload: UserRoleCSPPayload):
+        graph_token = self._get_tenant_principal_token(payload.tenant_id)
+        if graph_token is None:
+            raise AuthenticationException(
+                "Could not resolve graph token for tenant admin"
+            )
+
+        role_guid = self.roles[payload.role]
+        role_definition_id = f"/providers/Microsoft.Management/managementGroups/{payload.management_group_id}/providers/Microsoft.Authorization/roleDefinitions/{role_guid}"
+
+        request_body = {
+            "properties": {
+                "roleDefinitionId": role_definition_id,
+                "principalId": payload.user_object_id,
+            }
+        }
+
+        auth_header = {
+            "Authorization": f"Bearer {graph_token}",
+        }
+
+        assignment_guid = str(uuid4())
+
+        url = f"{self.sdk.cloud.endpoints.resource_manager}/providers/Microsoft.Management/managementGroups/{payload.management_group_id}/providers/Microsoft.Authorization/roleAssignments/{assignment_guid}?api-version=2015-07-01"
+
+        response = self.sdk.requests.put(url, headers=auth_header, json=request_body)
+
+        if response.ok:
+            return UserRoleCSPResult(**response.json())
+        else:
+            raise UserProvisioningException(
+                f"Failed to create user role assignment: {response.json()}"
+            )
+
     def _extract_subscription_id(self, subscription_url):
         sub_id_match = SUBSCRIPTION_ID_REGEX.match(subscription_url)
 
@@ -1300,12 +1380,10 @@ class AzureCloudProvider(CloudProviderInterface):
 
     def update_tenant_creds(self, tenant_id, secret: KeyVaultCredentials):
         hashed = sha256_hex(tenant_id)
-        new_secrets = secret.dict()
         curr_secrets = self._source_tenant_creds(tenant_id)
-        updated_secrets: Dict[str, Any] = {**curr_secrets.dict(), **new_secrets}
-        us = KeyVaultCredentials(**updated_secrets)
-        self.set_secret(hashed, json.dumps(us.dict()))
-        return us
+        updated_secrets = curr_secrets.merge_credentials(secret)
+        self.set_secret(hashed, json.dumps(updated_secrets.dict()))
+        return updated_secrets
 
     def _source_tenant_creds(self, tenant_id) -> KeyVaultCredentials:
         hashed = sha256_hex(tenant_id)
@@ -1334,7 +1412,7 @@ class AzureCloudProvider(CloudProviderInterface):
             "timeframe": "Custom",
             "timePeriod": {"from": payload.from_date, "to": payload.to_date,},
             "dataset": {
-                "granularity": "Daily",
+                "granularity": "Monthly",
                 "aggregation": {"totalCost": {"name": "PreTaxCost", "function": "Sum"}},
                 "grouping": [{"type": "Dimension", "name": "InvoiceId"}],
             },

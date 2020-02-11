@@ -34,8 +34,10 @@ export default {
 
   methods: {
     next: function() {
+      this.submitted = true
       if (this.validateFields()) {
         this.step += 1
+        this.submitted = false
       }
     },
     previous: function() {

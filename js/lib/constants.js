@@ -1,0 +1,1 @@
+export const sidenavCookieName = 'expandSidenav'

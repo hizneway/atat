@@ -2,7 +2,7 @@
 
 {% macro Tooltip(message,title='Help', classes="") %}
 
-  <button type="button" tabindex="0" class="icon-tooltip {{classes}}" v-tooltip.top="{content: '{{message}}', container: false}">
+  <button type="button" tabindex="0" class="icon-tooltip {{classes}}" v-tooltip.top='{content: "{{message}}", container: false}'>
     {{ Icon('question') }}<span>{{ title }}</span>
   </button>
 

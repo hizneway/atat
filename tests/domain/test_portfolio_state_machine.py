@@ -213,6 +213,8 @@ def test_fsm_transition_start(mock_cloud_provider, portfolio: Portfolio):
         FSMStates.TENANT_PRINCIPAL_CREDENTIAL_CREATED,
         FSMStates.ADMIN_ROLE_DEFINITION_CREATED,
         FSMStates.PRINCIPAL_ADMIN_ROLE_CREATED,
+        FSMStates.INITIAL_MGMT_GROUP_CREATED,
+        FSMStates.INITIAL_MGMT_GROUP_VERIFICATION_CREATED,
         FSMStates.TENANT_ADMIN_OWNERSHIP_CREATED,
         FSMStates.TENANT_PRINCIPAL_OWNERSHIP_CREATED,
     ]
@@ -233,10 +235,12 @@ def test_fsm_transition_start(mock_cloud_provider, portfolio: Portfolio):
         "user_id": user_id,
         "password": "jklfsdNCVD83nklds2#202",  # pragma: allowlist secret
         "domain_name": domain_name,
+        "display_name": "mgmt group display name",
+        "management_group_name": "mgmt-group-uuid",
         "first_name": ppoc.first_name,
         "last_name": ppoc.last_name,
         "country_code": "US",
-        "password_recovery_email_address": ppoc.email,
+        "password_recovery_email_address": "email@example.com",  # ppoc.email,
         "address": {  # TODO: TBD if we're sourcing this from data or config
             "company_name": "",
             "address_line_1": "",

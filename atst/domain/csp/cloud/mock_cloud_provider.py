@@ -1,4 +1,5 @@
 from uuid import uuid4
+import pendulum
 
 from .cloud_provider_interface import CloudProviderInterface
 from .exceptions import (
@@ -23,6 +24,10 @@ from .models import (
     BillingProfileTenantAccessCSPResult,
     BillingProfileVerificationCSPPayload,
     BillingProfileVerificationCSPResult,
+    InitialMgmtGroupCSPPayload,
+    InitialMgmtGroupCSPResult,
+    InitialMgmtGroupVerificationCSPPayload,
+    InitialMgmtGroupVerificationCSPResult,
     CostManagementQueryCSPResult,
     CostManagementQueryProperties,
     ProductPurchaseCSPPayload,
@@ -276,6 +281,29 @@ class MockCloudProvider(CloudProviderInterface):
             }
         )
 
+    def create_initial_mgmt_group(self, payload: InitialMgmtGroupCSPPayload):
+        self._maybe_raise(self.NETWORK_FAILURE_PCT, self.NETWORK_EXCEPTION)
+        self._maybe_raise(self.SERVER_FAILURE_PCT, self.SERVER_EXCEPTION)
+        self._maybe_raise(self.UNAUTHORIZED_RATE, self.AUTHORIZATION_EXCEPTION)
+
+        return InitialMgmtGroupCSPResult(
+            id=f"{AZURE_MGMNT_PATH}{payload.management_group_name}",
+        )
+
+    def create_initial_mgmt_group_verification(
+        self, payload: InitialMgmtGroupVerificationCSPPayload
+    ):
+        self._maybe_raise(self.NETWORK_FAILURE_PCT, self.NETWORK_EXCEPTION)
+        self._maybe_raise(self.SERVER_FAILURE_PCT, self.SERVER_EXCEPTION)
+        self._maybe_raise(self.UNAUTHORIZED_RATE, self.AUTHORIZATION_EXCEPTION)
+
+        return InitialMgmtGroupVerificationCSPResult(
+            **dict(
+                id="Test Id"
+                # id=f"{AZURE_MGMNT_PATH}{payload.management_group_name}"
+            )
+        )
+
     def create_product_purchase(self, payload: ProductPurchaseCSPPayload):
         self._maybe_raise(self.NETWORK_FAILURE_PCT, self.NETWORK_EXCEPTION)
         self._maybe_raise(self.SERVER_FAILURE_PCT, self.SERVER_EXCEPTION)
@@ -455,15 +483,26 @@ class MockCloudProvider(CloudProviderInterface):
         self._maybe_raise(self.UNAUTHORIZED_RATE, self.AUTHORIZATION_EXCEPTION)
         object_id = str(uuid4())
 
+        start_of_month = pendulum.today(tz="utc").start_of("month").replace(tzinfo=None)
+        this_month = start_of_month.to_atom_string()
+        last_month = start_of_month.subtract(months=1).to_atom_string()
+        two_months_ago = start_of_month.subtract(months=2).to_atom_string()
+
         properties = CostManagementQueryProperties(
             **dict(
                 columns=[
                     {"name": "PreTaxCost", "type": "Number"},
-                    {"name": "UsageDate", "type": "Number"},
+                    {"name": "BillingMonth", "type": "Datetime"},
                     {"name": "InvoiceId", "type": "String"},
                     {"name": "Currency", "type": "String"},
                 ],
-                rows=[],
+                rows=[
+                    [1.0, two_months_ago, "", "USD"],
+                    [500.0, two_months_ago, "e05009w9sf", "USD"],
+                    [50.0, last_month, "", "USD"],
+                    [1000.0, last_month, "e0500a4qhw", "USD"],
+                    [500.0, this_month, "", "USD"],
+                ],
             )
         )
 

@@ -34,25 +34,27 @@ def create_portfolio():
 @user_can(Permissions.VIEW_PORTFOLIO_REPORTS, message="view portfolio reports")
 def reports(portfolio_id):
     portfolio = Portfolios.get(g.current_user, portfolio_id)
+    spending = Reports.get_portfolio_spending(portfolio)
+    obligated = portfolio.total_obligated_funds
+    remaining = obligated - (spending["invoiced"] + spending["estimated"])
 
-    current_obligated_funds = Reports.obligated_funds_by_JEDI_clin(portfolio)
+    current_obligated_funds = {
+        **spending,
+        "obligated": obligated,
+        "remaining": remaining,
+    }
 
-    if any(map(lambda clin: clin["remaining"] < 0, current_obligated_funds)):
+    if current_obligated_funds["remaining"] < 0:
         flash("insufficient_funds")
 
-    # wrapped in str() because the sum of obligated funds returns a Decimal object
-    total_portfolio_value = str(
-        sum(
-            task_order.total_obligated_funds
-            for task_order in portfolio.active_task_orders
-        )
-    )
     return render_template(
         "portfolios/reports/index.html",
         portfolio=portfolio,
-        total_portfolio_value=total_portfolio_value,
+        # wrapped in str() because this sum returns a Decimal object
+        total_portfolio_value=str(
+            portfolio.total_obligated_funds + portfolio.upcoming_obligated_funds
+        ),
         current_obligated_funds=current_obligated_funds,
         expired_task_orders=Reports.expired_task_orders(portfolio),
-        monthly_spending=Reports.monthly_spending(portfolio),
         retrieved=datetime.now(),  # mocked datetime of reporting data retrival
     )

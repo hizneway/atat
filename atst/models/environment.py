@@ -61,6 +61,10 @@ class Environment(
     def portfolio_id(self):
         return self.application.portfolio_id
 
+    @property
+    def is_pending(self):
+        return self.cloud_id is None
+
     def __repr__(self):
         return "<Environment(name='{}', num_users='{}', application='{}', portfolio='{}', id='{}')>".format(
             self.name,

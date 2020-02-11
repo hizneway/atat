@@ -1,5 +1,7 @@
 import pendulum
 from flask import current_app as app
+from smtplib import SMTPException
+from azure.core.exceptions import AzureError
 
 from atst.database import db
 from atst.domain.application_roles import ApplicationRoles
@@ -10,12 +12,16 @@ from atst.domain.csp.cloud.models import (
     ApplicationCSPPayload,
     EnvironmentCSPPayload,
     UserCSPPayload,
+    UserRoleCSPPayload,
 )
 from atst.domain.environments import Environments
+from atst.domain.environment_roles import EnvironmentRoles
 from atst.domain.portfolios import Portfolios
-from atst.models import JobFailure
+from atst.models import CSPRole, JobFailure
+from atst.domain.task_orders import TaskOrders
 from atst.models.utils import claim_for_update, claim_many_for_update
 from atst.queue import celery
+from atst.utils.localization import translate
 
 
 class RecordFailure(celery.Task):
@@ -43,8 +49,8 @@ class RecordFailure(celery.Task):
 
 
 @celery.task(ignore_result=True)
-def send_mail(recipients, subject, body):
-    app.mailer.send(recipients, subject, body)
+def send_mail(recipients, subject, body, attachments=[]):
+    app.mailer.send(recipients, subject, body, attachments)
 
 
 @celery.task(ignore_result=True)
@@ -120,11 +126,44 @@ def do_create_environment(csp: CloudProviderInterface, environment_id=None):
         payload = EnvironmentCSPPayload(
             tenant_id=tenant_id, display_name=environment.name, parent_id=parent_id
         )
-
         env_result = csp.create_environment(payload)
         environment.cloud_id = env_result.id
         db.session.add(environment)
         db.session.commit()
+
+
+def do_create_environment_role(csp: CloudProviderInterface, environment_role_id=None):
+    env_role = EnvironmentRoles.get_by_id(environment_role_id)
+
+    with claim_for_update(env_role) as env_role:
+
+        if env_role.cloud_id is not None:
+            return
+
+        env = env_role.environment
+        csp_details = env.application.portfolio.csp_data
+        app_role = env_role.application_role
+
+        role = None
+        if env_role.role == CSPRole.ADMIN:
+            role = UserRoleCSPPayload.Roles.owner
+        elif env_role.role == CSPRole.BILLING_READ:
+            role = UserRoleCSPPayload.Roles.billing
+        elif env_role.role == CSPRole.CONTRIBUTOR:
+            role = UserRoleCSPPayload.Roles.contributor
+
+        payload = UserRoleCSPPayload(
+            tenant_id=csp_details.get("tenant_id"),
+            management_group_id=env.cloud_id,
+            user_object_id=app_role.cloud_id,
+            role=role,
+        )
+        result = csp.create_user_role(payload)
+
+        env_role.cloud_id = result.id
+        db.session.add(env_role)
+        db.session.commit()
+        # TODO: should send notification email to the user, maybe with their portal login name
 
 
 def render_email(template_path, context):
@@ -141,7 +180,7 @@ def do_work(fn, task, csp, **kwargs):
 def do_provision_portfolio(csp: CloudProviderInterface, portfolio_id=None):
     portfolio = Portfolios.get_for_update(portfolio_id)
     fsm = Portfolios.get_or_create_state_machine(portfolio)
-    fsm.trigger_next_transition()
+    fsm.trigger_next_transition(csp_data=portfolio.to_dictionary())
 
 
 @celery.task(bind=True, base=RecordFailure)
@@ -158,6 +197,16 @@ def create_application(self, application_id=None):
 def create_user(self, application_role_ids=None):
     do_work(
         do_create_user, self, app.csp.cloud, application_role_ids=application_role_ids
+    )
+
+
+@celery.task(bind=True, base=RecordFailure)
+def create_environment_role(self, environment_role_id=None):
+    do_work(
+        do_create_environment_role,
+        self,
+        app.csp.cloud,
+        environment_role_id=environment_role_id,
     )
 
 
@@ -188,8 +237,50 @@ def dispatch_create_user(self):
 
 
 @celery.task(bind=True)
+def dispatch_create_environment_role(self):
+    for environment_role_id in EnvironmentRoles.get_pending_creation():
+        create_environment_role.delay(environment_role_id=environment_role_id)
+
+
+@celery.task(bind=True)
 def dispatch_create_environment(self):
     for environment_id in Environments.get_environments_pending_creation(
         pendulum.now()
     ):
         create_environment.delay(environment_id=environment_id)
+
+
+@celery.task(bind=True)
+def dispatch_create_atat_admin_user(self):
+    for environment_id in Environments.get_environments_pending_atat_user_creation(
+        pendulum.now()
+    ):
+        create_atat_admin_user.delay(environment_id=environment_id)
+
+
+@celery.task(bind=True)
+def dispatch_send_task_order_files(self):
+    task_orders = TaskOrders.get_for_send_task_order_files()
+    recipients = [app.config.get("MICROSOFT_TASK_ORDER_EMAIL_ADDRESS")]
+
+    for task_order in task_orders:
+        subject = translate(
+            "email.task_order_sent.subject", {"to_number": task_order.number}
+        )
+        body = translate("email.task_order_sent.body", {"to_number": task_order.number})
+
+        try:
+            file = app.csp.files.download_task_order(task_order.pdf.object_name)
+            file["maintype"] = "application"
+            file["subtype"] = "pdf"
+            send_mail(
+                recipients=recipients, subject=subject, body=body, attachments=[file]
+            )
+        except (AzureError, SMTPException) as err:
+            app.logger.exception(err)
+            continue
+
+        task_order.pdf_last_sent_at = pendulum.now()
+        db.session.add(task_order)
+
+    db.session.commit()

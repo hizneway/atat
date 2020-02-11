@@ -1,9 +1,12 @@
 import pendulum
 import pytest
 from uuid import uuid4
-from unittest.mock import Mock
+from unittest.mock import Mock, MagicMock
+from smtplib import SMTPException
+from azure.core.exceptions import AzureError
 
 from atst.domain.csp.cloud import MockCloudProvider
+from atst.domain.csp.cloud.models import UserRoleCSPResult
 from atst.domain.portfolios import Portfolios
 from atst.models import ApplicationRoleStatus
 
@@ -12,23 +15,28 @@ from atst.jobs import (
     dispatch_create_environment,
     dispatch_create_application,
     dispatch_create_user,
+    dispatch_create_environment_role,
     dispatch_provision_portfolio,
+    dispatch_send_task_order_files,
     create_environment,
     do_create_user,
     do_provision_portfolio,
     do_create_environment,
+    do_create_environment_role,
     do_create_application,
 )
 from tests.factories import (
+    ApplicationFactory,
+    ApplicationRoleFactory,
     EnvironmentFactory,
     EnvironmentRoleFactory,
     PortfolioFactory,
     PortfolioStateMachineFactory,
-    ApplicationFactory,
-    ApplicationRoleFactory,
+    TaskOrderFactory,
     UserFactory,
 )
 from atst.models import CSPRole, EnvironmentRole, ApplicationRoleStatus, JobFailure
+from atst.utils.localization import translate
 
 
 @pytest.fixture(autouse=True, scope="function")
@@ -287,3 +295,120 @@ def test_provision_portfolio_create_tenant(
     # monkeypatch.setattr("atst.jobs.provision_portfolio", mock)
     # dispatch_provision_portfolio.run()
     # mock.delay.assert_called_once_with(portfolio_id=portfolio.id)
+
+
+def test_dispatch_create_environment_role(monkeypatch):
+    portfolio = PortfolioFactory.create(csp_data={"tenant_id": "123"})
+    app_role = ApplicationRoleFactory.create(
+        application=ApplicationFactory.create(portfolio=portfolio),
+        status=ApplicationRoleStatus.ACTIVE,
+        cloud_id="123",
+    )
+    env_role = EnvironmentRoleFactory.create(application_role=app_role)
+
+    mock = Mock()
+    monkeypatch.setattr("atst.jobs.create_environment_role", mock)
+
+    dispatch_create_environment_role.run()
+
+    mock.delay.assert_called_once_with(environment_role_id=env_role.id)
+
+
+def test_create_environment_role():
+    portfolio = PortfolioFactory.create(csp_data={"tenant_id": "123"})
+    app = ApplicationFactory.create(portfolio=portfolio)
+    app_role = ApplicationRoleFactory.create(
+        application=app, status=ApplicationRoleStatus.ACTIVE, cloud_id="123",
+    )
+    env = EnvironmentFactory.create(application=app, cloud_id="123")
+    env_role = EnvironmentRoleFactory.create(
+        environment=env, application_role=app_role, cloud_id=None
+    )
+
+    csp = Mock()
+    result = UserRoleCSPResult(id="a-cloud-id")
+    csp.create_user_role = MagicMock(return_value=result)
+    do_create_environment_role(csp, environment_role_id=env_role.id)
+
+    assert env_role.cloud_id == "a-cloud-id"
+
+
+# TODO: Refactor the tests related to dispatch_send_task_order_files() into a class
+# and separate the success test into two tests
+def test_dispatch_send_task_order_files(monkeypatch, app):
+    mock = Mock()
+    monkeypatch.setattr("atst.jobs.send_mail", mock)
+
+    def _download_task_order(MockFileService, object_name):
+        return {"name": object_name}
+
+    monkeypatch.setattr(
+        "atst.domain.csp.files.MockFileService.download_task_order",
+        _download_task_order,
+    )
+
+    # Create 3 new Task Orders
+    for i in range(3):
+        TaskOrderFactory.create(create_clins=[{"number": "0001"}])
+
+    dispatch_send_task_order_files.run()
+
+    # Check that send_with_attachment was called once for each task order
+    assert mock.call_count == 3
+    mock.reset_mock()
+
+    # Create new TO
+    task_order = TaskOrderFactory.create(create_clins=[{"number": "0001"}])
+    assert not task_order.pdf_last_sent_at
+
+    dispatch_send_task_order_files.run()
+
+    # Check that send_with_attachment was called with correct kwargs
+    mock.assert_called_once_with(
+        recipients=[app.config.get("MICROSOFT_TASK_ORDER_EMAIL_ADDRESS")],
+        subject=translate(
+            "email.task_order_sent.subject", {"to_number": task_order.number}
+        ),
+        body=translate("email.task_order_sent.body", {"to_number": task_order.number}),
+        attachments=[
+            {
+                "name": task_order.pdf.object_name,
+                "maintype": "application",
+                "subtype": "pdf",
+            }
+        ],
+    )
+
+    assert task_order.pdf_last_sent_at
+
+
+def test_dispatch_send_task_order_files_send_failure(monkeypatch):
+    def _raise_smtp_exception(**kwargs):
+        raise SMTPException
+
+    monkeypatch.setattr("atst.jobs.send_mail", _raise_smtp_exception)
+
+    task_order = TaskOrderFactory.create(create_clins=[{"number": "0001"}])
+    dispatch_send_task_order_files.run()
+
+    # Check that pdf_last_sent_at has not been updated
+    assert not task_order.pdf_last_sent_at
+
+
+def test_dispatch_send_task_order_files_download_failure(monkeypatch):
+    mock = Mock()
+    monkeypatch.setattr("atst.jobs.send_mail", mock)
+
+    def _download_task_order(MockFileService, object_name):
+        raise AzureError("something went wrong")
+
+    monkeypatch.setattr(
+        "atst.domain.csp.files.MockFileService.download_task_order",
+        _download_task_order,
+    )
+
+    task_order = TaskOrderFactory.create(create_clins=[{"number": "0002"}])
+    dispatch_send_task_order_files.run()
+
+    # Check that pdf_last_sent_at has not been updated
+    assert not task_order.pdf_last_sent_at
