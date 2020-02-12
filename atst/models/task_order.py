@@ -1,5 +1,4 @@
 from enum import Enum
-from decimal import Decimal
 
 from sqlalchemy import Column, DateTime, ForeignKey, String
 from sqlalchemy.ext.hybrid import hybrid_property
@@ -140,14 +139,6 @@ class TaskOrder(Base, mixins.TimestampsMixin):
     @property
     def total_contract_amount(self):
         return sum((clin.total_amount for clin in self.clins if clin.total_amount))
-
-    @property
-    def invoiced_funds(self):
-        # TODO: implement this using reporting data from the CSP
-        if self.is_active:
-            return self.total_obligated_funds * Decimal(0.75)
-        else:
-            return 0
 
     @property
     def display_status(self):
