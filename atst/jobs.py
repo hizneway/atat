@@ -18,6 +18,7 @@ from atst.domain.environments import Environments
 from atst.domain.environment_roles import EnvironmentRoles
 from atst.domain.portfolios import Portfolios
 from atst.models import CSPRole, JobFailure
+from atst.models.mixins.state_machines import FSMStates
 from atst.domain.task_orders import TaskOrders
 from atst.models.utils import claim_for_update, claim_many_for_update
 from atst.queue import celery
@@ -177,10 +178,30 @@ def do_work(fn, task, csp, **kwargs):
         raise task.retry(exc=e)
 
 
+def send_PPOC_email(portfolio_dict):
+    ppoc_email = portfolio_dict.get("password_recovery_email_address")
+    user_id = portfolio_dict.get("user_id")
+    domain_name = portfolio_dict.get("domain_name")
+
+    send_mail(
+        recipients=[ppoc_email],
+        subject=translate("email.portfolio_ready.subject"),
+        body=translate(
+            "email.portfolio_ready.body",
+            {
+                "password_reset_address": app.config.get("AZURE_LOGIN_URL"),
+                "username": f"{user_id}@{domain_name}.onmicrosoft.com",
+            },
+        ),
+    )
+
+
 def do_provision_portfolio(csp: CloudProviderInterface, portfolio_id=None):
     portfolio = Portfolios.get_for_update(portfolio_id)
     fsm = Portfolios.get_or_create_state_machine(portfolio)
     fsm.trigger_next_transition(csp_data=portfolio.to_dictionary())
+    if fsm.current_state == FSMStates.COMPLETED:
+        send_PPOC_email(portfolio.to_dictionary())
 
 
 @celery.task(bind=True, base=RecordFailure)
