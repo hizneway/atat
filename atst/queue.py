@@ -31,6 +31,10 @@ def update_celery(celery, app):
             "task": "atst.jobs.send_task_order_files",
             "schedule": 60,
         },
+        "beat-create_billing_instruction": {
+            "task": "atst.jobs.create_billing_instruction",
+            "schedule": 60,
+        },
     }
 
     class ContextTask(celery.Task):
