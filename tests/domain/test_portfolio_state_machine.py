@@ -116,6 +116,7 @@ def test_fsm_transition_start(mock_cloud_provider, portfolio: Portfolio):
         FSMStates.TENANT_ADMIN_OWNERSHIP_CREATED,
         FSMStates.TENANT_PRINCIPAL_OWNERSHIP_CREATED,
         FSMStates.BILLING_OWNER_CREATED,
+        FSMStates.COMPLETED,
     ]
 
     if portfolio.csp_data is not None:
@@ -139,7 +140,7 @@ def test_fsm_transition_start(mock_cloud_provider, portfolio: Portfolio):
         "first_name": ppoc.first_name,
         "last_name": ppoc.last_name,
         "country_code": "US",
-        "password_recovery_email_address": "email@example.com",  # ppoc.email,
+        "password_recovery_email_address": ppoc.email,
         "address": {  # TODO: TBD if we're sourcing this from data or config
             "company_name": "",
             "address_line_1": "",
