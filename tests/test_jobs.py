@@ -6,7 +6,8 @@ from smtplib import SMTPException
 from azure.core.exceptions import AzureError
 
 from atst.domain.csp.cloud import MockCloudProvider
-from atst.domain.csp.cloud.models import UserRoleCSPResult
+from atst.domain.csp.cloud.models import BillingInstructionCSPPayload, UserRoleCSPResult
+from atst.domain.portfolios import Portfolios
 from atst.models import ApplicationRoleStatus, Portfolio, FSMStates
 
 from atst.jobs import (
@@ -16,6 +17,7 @@ from atst.jobs import (
     dispatch_create_user,
     dispatch_create_environment_role,
     dispatch_provision_portfolio,
+    create_billing_instruction,
     create_environment,
     do_create_user,
     do_provision_portfolio,
@@ -489,3 +491,57 @@ class TestSendTaskOrderFiles:
 
         # Check that pdf_last_sent_at has not been updated
         assert not task_order.pdf_last_sent_at
+
+
+class TestCreateBillingInstructions:
+    def test_update_clin_last_sent_at(self, session):
+        # create portfolio with one active clin
+        start_date = pendulum.now().subtract(days=1)
+        portfolio = PortfolioFactory.create(
+            csp_data={
+                "tenant_id": str(uuid4()),
+                "billing_account_name": "fake",
+                "billing_profile_name": "fake",
+            },
+            task_orders=[{"create_clins": [{"start_date": start_date}]}],
+        )
+        unsent_clin = portfolio.task_orders[0].clins[0]
+
+        assert not unsent_clin.last_sent_at
+
+        # The session needs to be nested to prevent detached SQLAlchemy instance
+        session.begin_nested()
+        create_billing_instruction()
+        session.rollback()
+
+        # check that last_sent_at has been updated
+        assert unsent_clin.last_sent_at
+
+    def test_failure(self, monkeypatch, session):
+        def _create_billing_instruction(MockCloudProvider, object_name):
+            raise AzureError("something went wrong")
+
+        monkeypatch.setattr(
+            "atst.domain.csp.cloud.MockCloudProvider.create_billing_instruction",
+            _create_billing_instruction,
+        )
+
+        # create portfolio with one active clin
+        start_date = pendulum.now().subtract(days=1)
+        portfolio = PortfolioFactory.create(
+            csp_data={
+                "tenant_id": str(uuid4()),
+                "billing_account_name": "fake",
+                "billing_profile_name": "fake",
+            },
+            task_orders=[{"create_clins": [{"start_date": start_date}]}],
+        )
+        unsent_clin = portfolio.task_orders[0].clins[0]
+
+        # The session needs to be nested to prevent detached SQLAlchemy instance
+        session.begin_nested()
+        create_billing_instruction()
+        session.rollback()
+
+        # check that last_sent_at has not been updated
+        assert not unsent_clin.last_sent_at
