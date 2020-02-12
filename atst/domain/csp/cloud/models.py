@@ -521,10 +521,7 @@ class ProductPurchaseVerificationCSPResult(AliasModel):
     premium_purchase_date: str
 
 
-class UserCSPPayload(BaseCSPPayload):
-    display_name: str
-    tenant_host_name: str
-    email: str
+class UserMixin(BaseModel):
     password: Optional[str]
 
     @property
@@ -538,6 +535,12 @@ class UserCSPPayload(BaseCSPPayload):
     @validator("password", pre=True, always=True)
     def supply_password_default(cls, password):
         return password or token_urlsafe(16)
+
+
+class UserCSPPayload(BaseCSPPayload, UserMixin):
+    display_name: str
+    tenant_host_name: str
+    email: str
 
 
 class UserCSPResult(AliasModel):
@@ -588,3 +591,27 @@ class ReportingCSPPayload(BaseCSPPayload):
             return values
         except (KeyError, IndexError):
             raise ValueError("Invoice section ID not present in payload")
+
+
+class BillingOwnerCSPPayload(BaseCSPPayload, UserMixin):
+    """
+    This class needs to consume data in the shape it's in from the
+    top-level portfolio CSP data, but return it in the shape
+    needed for user provisioning.
+    """
+
+    display_name = "billing_admin"
+    domain_name: str
+    password_recovery_email_address: str
+
+    @property
+    def tenant_host_name(self):
+        return self.domain_name
+
+    @property
+    def email(self):
+        return self.password_recovery_email_address
+
+
+class BillingOwnerCSPResult(AliasModel):
+    billing_owner_id: str
