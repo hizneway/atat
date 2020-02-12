@@ -190,7 +190,7 @@ def send_PPOC_email(portfolio_dict):
             "email.portfolio_ready.body",
             {
                 "password_reset_address": app.config.get("AZURE_LOGIN_URL"),
-                "username": f"{user_id}@{domain_name}.onmicrosoft.com",
+                "username": f"{user_id}@{domain_name}.{app.config.get('OFFICE_365_DOMAIN')}",
             },
         ),
     )

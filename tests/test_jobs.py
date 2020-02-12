@@ -135,11 +135,11 @@ def test_create_application_job_is_idempotent(csp):
     csp.create_application.assert_not_called()
 
 
-def test_create_user_job(session, csp):
+def test_create_user_job(session, csp, app):
     portfolio = PortfolioFactory.create(
         csp_data={
             "tenant_id": str(uuid4()),
-            "domain_name": "rebelalliance.onmicrosoft.com",
+            "domain_name": f"rebelalliance.{app.config.get('OFFICE_365_DOMAIN')}",
         }
     )
     application = ApplicationFactory.create(portfolio=portfolio, cloud_id="321")
@@ -328,7 +328,7 @@ def test_send_ppoc_email(monkeypatch, app):
             "email.portfolio_ready.body",
             {
                 "password_reset_address": app.config.get("AZURE_LOGIN_URL"),
-                "username": f"{user_id}@{domain_name}.onmicrosoft.com",
+                "username": f"{user_id}@{domain_name}.{app.config.get('OFFICE_365_DOMAIN')}",
             },
         ),
     )
