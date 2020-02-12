@@ -6,7 +6,7 @@ You need to start by copying sample.json in this directory and filling in your r
 
 Once you've set up ATAT as prescribed in the root [README](../../README.md) and have populated the file with correct values, you can run each script in turn. The general format of each script call would be as follows.
 ```
-pipenv run ./script/provision/name_of_script.py input.json output.json
+pipenv run python ./script/provision/name_of_script.py input.json output.json
 ```
 Note: Run this script from the root of the project, the paths to your json files need to be relative to where you're running the command from
 
@@ -16,12 +16,12 @@ You should see output detailing each thing the script is doing, or error details
 
 If there are no errors, running the below with a valid input.json would be a complete process:
 ```
-pipenv run ./script/provision/a_create_tenant.py input.json tenant_output.json
-pipenv run ./script/provision/b_setup_billing.py tenant_output.json billing_output.json
-pipenv run ./script/provision/c_billing_profile_tenant_access.py billing_output.json ta_output.json
-pipenv run ./script/provision/d_setup_to_billing.py ta_output.json to_billing_output.json
-pipenv run ./script/provision/e_report_clin.py to_billing_output.json clin_report_output.json
-pipenv run ./script/provision/f_purchase_aadp.py clin_report_output.json purchase_output.json
+pipenv run python ./script/provision/a_create_tenant.py input.json tenant_output.json
+pipenv run python ./script/provision/b_setup_billing.py tenant_output.json billing_output.json
+pipenv run python ./script/provision/c_billing_profile_tenant_access.py billing_output.json ta_output.json
+pipenv run python ./script/provision/d_setup_to_billing.py ta_output.json to_billing_output.json
+pipenv run python ./script/provision/e_report_clin.py to_billing_output.json clin_report_output.json
+pipenv run python ./script/provision/f_purchase_aadp.py clin_report_output.json purchase_output.json
 ```
 
 When a script completes successfully, you should see `writing to output.json` as the final output (with whatever output file you provided). Below is what fields to look for in the output after each step to make sure the correct information was gathered:
@@ -103,7 +103,7 @@ The initial process expects a single initial CLIN to bill against, for the purpo
 Once you've updated the input file, you can run this script like you have previously:
 
 ```
-pipenv run ./script/provision/report_new_clin.py updated_purchase_output.json clins_reported.json
+pipenv run python ./script/provision/report_new_clin.py updated_purchase_output.json clins_reported.json
 ```
 
 Once you've run this, you should see a new section inside of the `"csp_data"` section of the output json with a string for each CLIN that was successfully reported. If the length of the list does not match the length of the list of CLINs you provided, check the terminal output for any error messages.

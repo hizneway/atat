@@ -29,9 +29,6 @@ def poll_billing(csp, inputs, csp_response):
 
 
 def setup_billing(csp, inputs):
-    import ipdb
-
-    ipdb.set_trace()
     create_billing_profile = BillingProfileCreationCSPPayload(
         **{**inputs.get("initial_inputs"), **inputs.get("csp_data")}
     )
