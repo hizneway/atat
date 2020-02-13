@@ -21,10 +21,10 @@
           </template>
         </div>
         <ul class="sidenav__list" v-if="isVisible">
-          {% for other_portfolio in portfolios|sort(attribute='name') %}
-            {{ SidenavItem(other_portfolio.name,
-              href=url_for("applications.portfolio_applications", portfolio_id=other_portfolio.id),
-              active=(other_portfolio.id | string) == request.view_args.get('portfolio_id')
+          {% for portfolio in portfolios|sort(attribute='name') %}
+            {{ SidenavItem(portfolio.name,
+              href=url_for("applications.portfolio_applications", portfolio_id=portfolio.id),
+              active=portfolio == g.portfolio
               ) }}
           {% endfor %}
         </ul>
