@@ -134,9 +134,12 @@ def test_UserCSPPayload_mail_nickname():
     assert payload.mail_nickname == f"han.solo"
 
 
-def test_UserCSPPayload_user_principal_name():
+def test_UserCSPPayload_user_principal_name(app):
     payload = UserCSPPayload(**user_payload)
-    assert payload.user_principal_name == f"han.solo@rebelalliance.onmicrosoft.com"
+    assert (
+        payload.user_principal_name
+        == f"han.solo@rebelalliance.{app.config.get('OFFICE_365_DOMAIN')}"
+    )
 
 
 def test_UserCSPPayload_password():
@@ -167,11 +170,11 @@ class TestBillingOwnerCSPPayload:
         payload = BillingOwnerCSPPayload(**self.user_payload)
         assert payload.password
 
-    def test_user_principal_name(self):
+    def test_user_principal_name(self, app):
         payload = BillingOwnerCSPPayload(**self.user_payload)
         assert (
             payload.user_principal_name
-            == f"billing_admin@rebelalliance.onmicrosoft.com"
+            == f"billing_admin@rebelalliance.{app.config.get('OFFICE_365_DOMAIN')}"
         )
 
     def test_email(self):
