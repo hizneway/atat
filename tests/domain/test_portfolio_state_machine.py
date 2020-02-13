@@ -132,6 +132,7 @@ def test_attach_machine(portfolio):
         "start",
         "reset",
         "fail",
+        "complete",
         "create_tenant",
         "finish_tenant",
         "fail_tenant",
