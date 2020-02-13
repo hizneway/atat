@@ -43,7 +43,6 @@
           :id="name"
           :name="name"
           aria-label="Task Order Upload"
-          v-bind:value="attachment"
           type="file">
           <input type="hidden" name="{{ field.filename.name }}" id="{{ field.filename.name }}" ref="attachmentFilename">
           <input type="hidden" name="{{ field.object_name.name }}" id="{{ field.object_name.name }}" ref="attachmentObjectName" v-bind:value='objectName'>

@@ -55,6 +55,10 @@ export default {
       return this.step === this.steps - 1
     },
     handleSubmit: function(e) {
+      if (this._onLastPage) {
+        this.submitted = true
+      }
+
       if (!this.validateFields() || !this._onLastPage()) {
         e.preventDefault()
         this.next()
