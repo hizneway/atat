@@ -58,6 +58,18 @@ def _build_transitions(csp_stages):
     transitions = []
     states = []
     for stage_i, csp_stage in enumerate(csp_stages):
+        # the last CREATED stage has a transition to COMPLETED
+        if stage_i == len(csp_stages) - 1:
+            transitions.append(
+                dict(
+                    trigger="complete",
+                    source=compose_state(
+                        list(csp_stages)[stage_i], StageStates.CREATED
+                    ),
+                    dest=FSMStates.COMPLETED,
+                )
+            )
+
         for state in StageStates:
             states.append(
                 dict(

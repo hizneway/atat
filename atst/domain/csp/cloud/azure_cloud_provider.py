@@ -331,6 +331,7 @@ class AzureCloudProvider(CloudProviderInterface):
                 timeout=30,
             )
             result.raise_for_status()
+
         except self.sdk.requests.exceptions.ConnectionError:
             app.logger.error(
                 f"Could not create tenant. Connection Error", exc_info=1,
@@ -354,10 +355,7 @@ class AzureCloudProvider(CloudProviderInterface):
 
         result_dict = result.json()
         tenant_id = result_dict.get("tenantId")
-        tenant_admin_username = (
-            f"{payload.user_id}@{payload.domain_name}.onmicrosoft.com"
-        )
-
+        tenant_admin_username = f"{payload.user_id}@{payload.domain_name}.{self.config.get('OFFICE_365_DOMAIN')}"
         self.update_tenant_creds(
             tenant_id,
             KeyVaultCredentials(
@@ -366,6 +364,7 @@ class AzureCloudProvider(CloudProviderInterface):
                 tenant_admin_password=payload.password,
             ),
         )
+
         return TenantCSPResult(domain_name=payload.domain_name, **result_dict)
 
     def create_billing_profile_creation(

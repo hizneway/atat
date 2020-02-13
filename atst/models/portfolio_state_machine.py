@@ -161,6 +161,15 @@ class PortfolioStateMachine(
                     )
 
         elif state_obj.is_CREATED:
+            # if last CREATED state then transition to COMPLETED
+            if list(AzureStages)[-1].name == state_obj.name.split("_CREATED")[
+                0
+            ] and "complete" in self.machine.get_triggers(state_obj.name):
+                app.logger.info(
+                    "last stage completed. transitioning to COMPLETED state"
+                )
+                self.trigger("complete", **kwargs)
+
             # the create trigger for the next stage should be in the available
             # triggers for the current state
             create_trigger = next(

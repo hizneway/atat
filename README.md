@@ -219,6 +219,7 @@ To generate coverage reports for the Javascript tests:
 
 - `ASSETS_URL`: URL to host which serves static assets (such as a CDN).
 - `AZURE_ACCOUNT_NAME`: The name for the Azure blob storage account
+- `AZURE_LOGIN_URL`: The URL used to login for an Azure instance.
 - `AZURE_STORAGE_KEY`: A valid secret key for the Azure blob storage account
 - `AZURE_TO_BUCKET_NAME`: The Azure blob storage container name for task order uploads
 - `BLOB_STORAGE_URL`: URL to Azure blob storage container.
