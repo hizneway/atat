@@ -35,9 +35,6 @@ def setup_to_billing(csp, inputs):
     result = csp.create_task_order_billing_creation(enable_to_billing)
     if result.get("status") == "ok":
         csp_response = result.get("body").dict()
-        import ipdb
-
-        ipdb.set_trace()
         return poll_billing(csp, inputs, csp_response)
     else:
         print("there was an error during the request:")
