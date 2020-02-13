@@ -72,7 +72,7 @@ class MockCloudProvider(CloudProviderInterface):
     AUTHENTICATION_EXCEPTION = AuthenticationException("Authentication failure.")
     AUTHORIZATION_EXCEPTION = AuthorizationException("Not authorized.")
     NETWORK_EXCEPTION = ConnectionException("Network failure.")
-    SERVER_EXCEPTION = UnknownServerException("Not our fault.")
+    SERVER_EXCEPTION = UnknownServerException(500, "Not our fault.")
 
     SERVER_FAILURE_PCT = 1
     NETWORK_FAILURE_PCT = 7

@@ -61,12 +61,13 @@ class UnknownServerException(GeneralCSPException):
     """An error occured on the CSP side (5xx) and we don't know why
     """
 
-    def __init__(self, server_error):
+    def __init__(self, status_code, server_error):
+        self.status_code = status_code
         self.server_error = server_error
 
     @property
     def message(self):
-        return "A server error occured: {}".format(self.server_error)
+        return f"A server error with status code [{self.status_code}] occured: {self.server_error}"
 
 
 class EnvironmentCreationException(GeneralCSPException):

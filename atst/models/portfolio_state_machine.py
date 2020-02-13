@@ -145,7 +145,7 @@ class PortfolioStateMachine(
                     self.trigger("fail")
 
             elif self.current_state == FSMStates.FAILED:
-                # get the first trigger that starts with 'create_'
+                # get the first trigger that starts with 'resume_progress_'
                 resume_progress_trigger = next(
                     filter(
                         lambda trigger: trigger.startswith("resume_progress_"),

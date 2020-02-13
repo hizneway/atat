@@ -69,7 +69,7 @@ def mock_policy():
 def mock_azure_exceptions():
     from azure.core import exceptions
 
-    return Mock(spec=exceptions)
+    return exceptions
 
 
 def mock_adal():

@@ -143,11 +143,9 @@ def test_fail_stage(portfolio):
     sm.state = FSMStates.TENANT_IN_PROGRESS
     sm.fail_stage("tenant")
     assert sm.state == FSMStates.TENANT_FAILED
-    # import ipdb;ipdb.set_trace()
 
 
 def test_stage_state_to_stage_name():
-    # sm = PortfolioStateMachineFactory.create(portfolio=portfolio)
     stage = _stage_state_to_stage_name(
         FSMStates.TENANT_IN_PROGRESS, StageStates.IN_PROGRESS
     )
