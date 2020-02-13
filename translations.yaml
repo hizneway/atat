@@ -83,7 +83,9 @@ errors:
 email:
   application_invite: "{inviter_name} has invited you to a JEDI cloud application"
   portfolio_invite: "{inviter_name} has invited you to a JEDI cloud portfolio"
-  environment_ready: JEDI cloud environment ready
+  portfolio_ready:
+    subject: Portfolio Provisioned
+    body: "Your portfolio has been provisioned.\nVisit {password_reset_address}, and use your username, {username}, to create a password."
   task_order_sent:
     subject: "Task Order {to_number}"
     body: "Task Order number {to_number} updated."

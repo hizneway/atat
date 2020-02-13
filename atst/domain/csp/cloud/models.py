@@ -4,6 +4,7 @@ from typing import Dict, List, Optional
 from uuid import uuid4
 import re
 
+from flask import current_app as app
 from pydantic import BaseModel, validator, root_validator
 
 from atst.utils import snake_to_camel
@@ -526,7 +527,7 @@ class UserMixin(BaseModel):
 
     @property
     def user_principal_name(self):
-        return f"{self.mail_nickname}@{self.tenant_host_name}.onmicrosoft.com"
+        return f"{self.mail_nickname}@{self.tenant_host_name}.{app.config.get('OFFICE_365_DOMAIN')}"
 
     @property
     def mail_nickname(self):

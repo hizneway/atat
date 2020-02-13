@@ -327,9 +327,7 @@ class AzureCloudProvider(CloudProviderInterface):
         if result.status_code == 200:
             result_dict = result.json()
             tenant_id = result_dict.get("tenantId")
-            tenant_admin_username = (
-                f"{payload.user_id}@{payload.domain_name}.onmicrosoft.com"
-            )
+            tenant_admin_username = f"{payload.user_id}@{payload.domain_name}.{self.config.get('OFFICE_365_DOMAIN')}"
             self.update_tenant_creds(
                 tenant_id,
                 KeyVaultCredentials(
