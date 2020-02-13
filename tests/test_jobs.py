@@ -7,8 +7,7 @@ from azure.core.exceptions import AzureError
 
 from atst.domain.csp.cloud import MockCloudProvider
 from atst.domain.csp.cloud.models import UserRoleCSPResult
-from atst.domain.portfolios import Portfolios
-from atst.models import ApplicationRoleStatus
+from atst.models import ApplicationRoleStatus, Portfolio, FSMStates
 
 from atst.jobs import (
     RecordFailure,
@@ -24,6 +23,7 @@ from atst.jobs import (
     do_create_environment,
     do_create_environment_role,
     do_create_application,
+    send_PPOC_email,
 )
 from tests.factories import (
     ApplicationFactory,
@@ -135,11 +135,11 @@ def test_create_application_job_is_idempotent(csp):
     csp.create_application.assert_not_called()
 
 
-def test_create_user_job(session, csp):
+def test_create_user_job(session, csp, app):
     portfolio = PortfolioFactory.create(
         csp_data={
             "tenant_id": str(uuid4()),
-            "domain_name": "rebelalliance.onmicrosoft.com",
+            "domain_name": f"rebelalliance.{app.config.get('OFFICE_365_DOMAIN')}",
         }
     )
     application = ApplicationFactory.create(portfolio=portfolio, cloud_id="321")
@@ -281,10 +281,57 @@ def test_dispatch_provision_portfolio(csp, monkeypatch):
     mock.delay.assert_called_once_with(portfolio_id=portfolio.id)
 
 
-def test_do_provision_portfolio(csp, session, portfolio):
-    do_provision_portfolio(csp=csp, portfolio_id=portfolio.id)
-    session.refresh(portfolio)
-    assert portfolio.state_machine
+class TestDoProvisionPortfolio:
+    def test_portfolio_has_state_machine(self, csp, session, portfolio):
+        do_provision_portfolio(csp=csp, portfolio_id=portfolio.id)
+        session.refresh(portfolio)
+        assert portfolio.state_machine
+
+    def test_sends_email_to_PPOC_on_completion(
+        self, monkeypatch, csp, portfolio: Portfolio
+    ):
+        mock = Mock()
+        monkeypatch.setattr("atst.jobs.send_PPOC_email", mock)
+
+        csp._authorize.return_value = None
+        csp._maybe_raise.return_value = None
+        sm: PortfolioStateMachine = PortfolioStateMachineFactory.create(
+            portfolio=portfolio
+        )
+        # The stage before "COMPLETED"
+        sm.state = FSMStates.BILLING_OWNER_CREATED
+        do_provision_portfolio(csp=csp, portfolio_id=portfolio.id)
+
+        # send_PPOC_email was called
+        assert mock.assert_called_once
+
+
+def test_send_ppoc_email(monkeypatch, app):
+    mock = Mock()
+    monkeypatch.setattr("atst.jobs.send_mail", mock)
+
+    ppoc_email = "example@example.com"
+    user_id = "user_id"
+    domain_name = "domain"
+
+    send_PPOC_email(
+        {
+            "password_recovery_email_address": ppoc_email,
+            "user_id": user_id,
+            "domain_name": domain_name,
+        }
+    )
+    mock.assert_called_once_with(
+        recipients=[ppoc_email],
+        subject=translate("email.portfolio_ready.subject"),
+        body=translate(
+            "email.portfolio_ready.body",
+            {
+                "password_reset_address": app.config.get("AZURE_LOGIN_URL"),
+                "username": f"{user_id}@{domain_name}.{app.config.get('OFFICE_365_DOMAIN')}",
+            },
+        ),
+    )
 
 
 def test_provision_portfolio_create_tenant(
