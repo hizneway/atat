@@ -153,10 +153,44 @@ def test_create_user_job(session, csp, app):
         cloud_id=None,
     )
 
+    session.begin_nested()
     do_create_user(csp, [app_role.id])
-    session.refresh(app_role)
+    session.rollback()
 
     assert app_role.cloud_id
+
+
+def test_create_user_sends_email(monkeypatch, csp):
+    mock = Mock()
+    monkeypatch.setattr("atst.jobs.send_mail", mock)
+
+    portfolio = PortfolioFactory.create(
+        csp_data={
+            "tenant_id": str(uuid4()),
+            "domain_name": "rebelalliance.onmicrosoft.com",
+        }
+    )
+    application_1 = ApplicationFactory.create(portfolio=portfolio, cloud_id="321")
+    application_2 = ApplicationFactory.create(portfolio=portfolio, cloud_id="123")
+
+    user = UserFactory.create()
+
+    app_role_1 = ApplicationRoleFactory.create(
+        user=user,
+        application=application_1,
+        status=ApplicationRoleStatus.ACTIVE,
+        cloud_id=None,
+    )
+
+    app_role_2 = ApplicationRoleFactory.create(
+        user=user,
+        application=application_2,
+        status=ApplicationRoleStatus.ACTIVE,
+        cloud_id=None,
+    )
+
+    do_create_user(csp, [app_role_1.id, app_role_2.id])
+    assert mock.call_count == 1
 
 
 def test_dispatch_create_environment(session, monkeypatch):
