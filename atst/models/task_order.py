@@ -77,7 +77,7 @@ class TaskOrder(Base, mixins.TimestampsMixin):
 
     @property
     def is_draft(self):
-        return self.status == Status.DRAFT
+        return self.status == Status.DRAFT or self.status == Status.UNSIGNED
 
     @property
     def is_active(self):
