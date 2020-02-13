@@ -94,6 +94,7 @@ def test_build_transitions():
         ["TENANT", "FAILED"],
     ]
     assert [t.get("trigger") for t in transitions] == [
+        "complete",
         "create_tenant",
         "finish_tenant",
         "fail_tenant",
