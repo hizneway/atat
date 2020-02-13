@@ -135,62 +135,63 @@ def test_create_application_job_is_idempotent(csp):
     csp.create_application.assert_not_called()
 
 
-def test_create_user_job(session, csp, app):
-    portfolio = PortfolioFactory.create(
-        csp_data={
-            "tenant_id": str(uuid4()),
-            "domain_name": f"rebelalliance.{app.config.get('OFFICE_365_DOMAIN')}",
-        }
-    )
-    application = ApplicationFactory.create(portfolio=portfolio, cloud_id="321")
-    user = UserFactory.create(
-        first_name="Han", last_name="Solo", email="han@example.com"
-    )
-    app_role = ApplicationRoleFactory.create(
-        application=application,
-        user=user,
-        status=ApplicationRoleStatus.ACTIVE,
-        cloud_id=None,
-    )
+class TestCreateUserJob:
+    @pytest.fixture
+    def portfolio(self, app):
+        return PortfolioFactory.create(
+            csp_data={
+                "tenant_id": str(uuid4()),
+                "domain_name": f"rebelalliance.{app.config.get('OFFICE_365_DOMAIN')}",
+            }
+        )
 
-    session.begin_nested()
-    do_create_user(csp, [app_role.id])
-    session.rollback()
+    @pytest.fixture
+    def app_1(self, portfolio):
+        return ApplicationFactory.create(portfolio=portfolio, cloud_id="321")
 
-    assert app_role.cloud_id
+    @pytest.fixture
+    def app_2(self, portfolio):
+        return ApplicationFactory.create(portfolio=portfolio, cloud_id="123")
 
+    @pytest.fixture
+    def user(self):
+        return UserFactory.create(
+            first_name="Han", last_name="Solo", email="han@example.com"
+        )
 
-def test_create_user_sends_email(monkeypatch, csp):
-    mock = Mock()
-    monkeypatch.setattr("atst.jobs.send_mail", mock)
+    @pytest.fixture
+    def app_role_1(self, app_1, user):
+        return ApplicationRoleFactory.create(
+            application=app_1,
+            user=user,
+            status=ApplicationRoleStatus.ACTIVE,
+            cloud_id=None,
+        )
 
-    portfolio = PortfolioFactory.create(
-        csp_data={
-            "tenant_id": str(uuid4()),
-            "domain_name": "rebelalliance.onmicrosoft.com",
-        }
-    )
-    application_1 = ApplicationFactory.create(portfolio=portfolio, cloud_id="321")
-    application_2 = ApplicationFactory.create(portfolio=portfolio, cloud_id="123")
+    @pytest.fixture
+    def app_role_2(self, app_2, user):
+        return ApplicationRoleFactory.create(
+            application=app_2,
+            user=user,
+            status=ApplicationRoleStatus.ACTIVE,
+            cloud_id=None,
+        )
 
-    user = UserFactory.create()
+    def test_create_user_job(self, session, csp, app_role_1):
+        assert not app_role_1.cloud_id
 
-    app_role_1 = ApplicationRoleFactory.create(
-        user=user,
-        application=application_1,
-        status=ApplicationRoleStatus.ACTIVE,
-        cloud_id=None,
-    )
+        session.begin_nested()
+        do_create_user(csp, [app_role_1.id])
+        session.rollback()
 
-    app_role_2 = ApplicationRoleFactory.create(
-        user=user,
-        application=application_2,
-        status=ApplicationRoleStatus.ACTIVE,
-        cloud_id=None,
-    )
+        assert app_role_1.cloud_id
 
-    do_create_user(csp, [app_role_1.id, app_role_2.id])
-    assert mock.call_count == 1
+    def test_create_user_sends_email(self, monkeypatch, csp, app_role_1, app_role_2):
+        mock = Mock()
+        monkeypatch.setattr("atst.jobs.send_mail", mock)
+
+        do_create_user(csp, [app_role_1.id, app_role_2.id])
+        assert mock.call_count == 1
 
 
 def test_dispatch_create_environment(session, monkeypatch):
