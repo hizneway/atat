@@ -9,7 +9,7 @@ from atst.domain.csp.cloud.models import (
     TaskOrderBillingCreationCSPPayload,
     TaskOrderBillingVerificationCSPPayload,
 )
-from script.provision.provision_base import handle, wait
+from script.provision.provision_base import handle
 
 
 def poll_billing(csp, inputs, csp_response):
