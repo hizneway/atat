@@ -9,12 +9,12 @@ from atst.domain.csp.cloud.models import (
     TaskOrderBillingCreationCSPPayload,
     TaskOrderBillingVerificationCSPPayload,
 )
-from script.provision.provision_base import handle
+from script.provision.provision_base import handle, wait
 
 
 def poll_billing(csp, inputs, csp_response):
     if csp_response.get("task_order_billing_verify_url") is not None:
-        time.sleep(csp_response.get("task_order_billing_retry_after"))
+        time.sleep(10)
         enable_to_billing = TaskOrderBillingVerificationCSPPayload(
             **{**inputs.get("initial_inputs"), **inputs.get("csp_data"), **csp_response}
         )
@@ -32,10 +32,12 @@ def setup_to_billing(csp, inputs):
     enable_to_billing = TaskOrderBillingCreationCSPPayload(
         **{**inputs.get("initial_inputs"), **inputs.get("csp_data")}
     )
-
     result = csp.create_task_order_billing_creation(enable_to_billing)
     if result.get("status") == "ok":
         csp_response = result.get("body").dict()
+        import ipdb
+
+        ipdb.set_trace()
         return poll_billing(csp, inputs, csp_response)
     else:
         print("there was an error during the request:")

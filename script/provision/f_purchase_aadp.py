@@ -13,7 +13,7 @@ from script.provision.provision_base import handle
 
 def poll_purchase(csp, inputs, csp_response):
     if csp_response.get("product_purchase_verify_url") is not None:
-        time.sleep(csp_response.get("product_purchase_retry_after"))
+        time.sleep(10)
         purchase_premium = ProductPurchaseVerificationCSPPayload(
             **{**inputs.get("initial_inputs"), **inputs.get("csp_data"), **csp_response}
         )

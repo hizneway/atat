@@ -14,7 +14,7 @@ from script.provision.provision_base import handle
 
 def poll_billing(csp, inputs, csp_response):
     if csp_response.get("billing_profile_verify_url") is not None:
-        time.sleep(csp_response.get("billing_profile_retry_after"))
+        time.sleep(10)
         get_billing_profile = BillingProfileVerificationCSPPayload(
             **{**inputs.get("initial_inputs"), **inputs.get("csp_data"), **csp_response}
         )
