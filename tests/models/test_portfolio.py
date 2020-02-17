@@ -6,7 +6,6 @@ from tests.factories import (
     random_future_date,
     random_past_date,
 )
-import datetime
 import pendulum
 from decimal import Decimal
 import pytest
@@ -83,7 +82,7 @@ def test_funding_duration(session):
         portfolio=portfolio,
         signed_at=random_past_date(),
         create_clins=[
-            {"start_date": datetime.datetime.now(), "end_date": funding_end_date,}
+            {"start_date": pendulum.now(tz="utc"), "end_date": funding_end_date,}
         ],
     )
 
@@ -106,7 +105,7 @@ def test_days_remaining(session):
 
     assert (
         portfolio.days_to_funding_expiration
-        == (funding_end_date - datetime.date.today()).days
+        == (funding_end_date - pendulum.today()).days
     )
 
     # empty portfolio
@@ -121,8 +120,8 @@ def test_active_task_orders(session):
         signed_at=random_past_date(),
         create_clins=[
             {
-                "start_date": datetime.date(2019, 1, 1),
-                "end_date": datetime.date(2019, 10, 31),
+                "start_date": pendulum.date(2019, 1, 1),
+                "end_date": pendulum.date(2019, 10, 31),
             }
         ],
     )

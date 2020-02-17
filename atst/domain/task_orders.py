@@ -1,5 +1,5 @@
-from datetime import datetime
 from sqlalchemy import or_
+import pendulum
 
 from atst.database import db
 from atst.models.clin import CLIN
@@ -41,8 +41,7 @@ class TaskOrders(BaseDomainClass):
     @classmethod
     def sign(cls, task_order, signer_dod_id):
         task_order.signer_dod_id = signer_dod_id
-        task_order.signed_at = datetime.now()
-
+        task_order.signed_at = pendulum.now(tz="utc")
         db.session.add(task_order)
         db.session.commit()
 

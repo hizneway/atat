@@ -1,6 +1,6 @@
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.exc import IntegrityError
-from datetime import datetime
+import pendulum
 
 from atst.database import db
 from atst.models import User
@@ -111,7 +111,7 @@ class Users(object):
 
     @classmethod
     def update_last_login(cls, user):
-        user.last_login = datetime.now()
+        user.last_login = pendulum.now(tz="utc")
         db.session.add(user)
         db.session.commit()
 

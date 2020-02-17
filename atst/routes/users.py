@@ -1,4 +1,4 @@
-import datetime as dt
+import pendulum
 from flask import Blueprint, render_template, g, request as http_request, redirect
 from atst.forms.edit_user import EditUserForm
 from atst.domain.users import Users
@@ -23,8 +23,8 @@ def user():
         next=next_,
         form=form,
         user=user,
-        mindate=(dt.datetime.now() - dt.timedelta(days=365)),
-        maxdate=dt.datetime.now(),
+        mindate=pendulum.now(tz="utc").subtract(days=365),
+        maxdate=pendulum.now(tz="utc"),
     )
 
 
@@ -44,6 +44,6 @@ def update_user():
         form=form,
         user=user,
         next=next_url,
-        mindate=(dt.datetime.now() - dt.timedelta(days=365)),
-        maxdate=dt.datetime.now(),
+        mindate=pendulum.now(tz="utc").subtract(days=365),
+        maxdate=pendulum.now(tz="utc"),
     )

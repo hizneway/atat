@@ -13,7 +13,7 @@ import tests.factories as factories
 from tests.mocks import PDF_FILENAME, PDF_FILENAME2
 from tests.utils import FakeLogger, FakeNotificationSender
 
-from datetime import datetime, timedelta
+import pendulum
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
@@ -175,7 +175,7 @@ def extended_financial_verification_data(pdf_upload):
     return {
         "funding_type": "RDTE",
         "funding_type_other": "other",
-        "expiration_date": "1/1/{}".format(datetime.date.today().year + 1),
+        "expiration_date": "1/1/{}".format(pendulum.today().year + 1),
         "clin_0001": "50000",
         "clin_0003": "13000",
         "clin_1001": "30000",
@@ -214,7 +214,6 @@ def make_x509():
         if signer_key is None:
             signer_key = private_key
 
-        one_day = timedelta(1, 0, 0)
         public_key = private_key.public_key()
         builder = x509.CertificateBuilder()
         builder = builder.subject_name(
@@ -227,8 +226,8 @@ def make_x509():
             builder = builder.add_extension(
                 x509.BasicConstraints(ca=True, path_length=None), critical=True
             )
-        builder = builder.not_valid_before(datetime.today() - (one_day * 2))
-        builder = builder.not_valid_after(datetime.today() + (one_day * 30))
+        builder = builder.not_valid_before(pendulum.today().subtract(days=2))
+        builder = builder.not_valid_after(pendulum.today().add(days=30))
         builder = builder.serial_number(x509.random_serial_number())
         builder = builder.public_key(public_key)
         certificate = builder.sign(
@@ -249,13 +248,12 @@ def make_crl():
         cn="ATAT",
         expired_serials=None,
     ):
-        one_day = timedelta(1, 0, 0)
         builder = x509.CertificateRevocationListBuilder()
         builder = builder.issuer_name(
             x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, cn)])
         )
-        last_update = datetime.today() + (one_day * last_update_days)
-        next_update = datetime.today() + (one_day * next_update_days)
+        last_update = pendulum.today().add(days=last_update_days)
+        next_update = pendulum.today().add(days=next_update_days)
         builder = builder.last_update(last_update)
         builder = builder.next_update(next_update)
         if expired_serials:

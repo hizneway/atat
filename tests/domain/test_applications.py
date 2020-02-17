@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+import pendulum
 import pytest
 from uuid import uuid4
 
@@ -200,8 +200,8 @@ def test_update_does_not_duplicate_names_within_portfolio():
 
 
 def test_get_applications_pending_creation():
-    now = datetime.now()
-    later = now + timedelta(minutes=30)
+    now = pendulum.now(tz="utc")
+    later = now.add(minutes=30)
 
     portfolio1 = PortfolioFactory.create(state="COMPLETED")
     app_ready = ApplicationFactory.create(portfolio=portfolio1)
