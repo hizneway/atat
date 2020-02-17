@@ -1523,3 +1523,23 @@ def test_update_tenant_creds(mock_azure: AzureCloudProvider):
         assert updated_secret == KeyVaultCredentials(
             **{**existing_secrets, **MOCK_CREDS}
         )
+
+
+def test_get_calculator_creds(mock_azure: AzureCloudProvider):
+    mock_azure.sdk.adal.AuthenticationContext.return_value.acquire_token_with_client_credentials.return_value = {
+        "accessToken": "TOKEN"
+    }
+    assert mock_azure._get_calculator_creds() == "TOKEN"
+
+
+def test_get_calculator_url(mock_azure: AzureCloudProvider):
+    with patch.object(
+        AzureCloudProvider,
+        "_get_calculator_creds",
+        wraps=mock_azure._get_calculator_creds,
+    ) as _get_calculator_creds:
+        _get_calculator_creds.return_value = "TOKEN"
+        assert (
+            mock_azure.get_calculator_url()
+            == f"{mock_azure.config.get('AZURE_CALC_URL')}?access_token=TOKEN"
+        )
