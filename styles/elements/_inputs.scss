@@ -58,7 +58,7 @@
 
 .usa-input {
   margin: ($gap * 2) 0;
-  max-width: 75rem;
+  max-width: $max-input-width;
 
   &-label-helper {
     font-size: $small-font-size;
@@ -111,8 +111,7 @@
     @include h5;
 
     font-weight: normal;
-
-    @include line-max;
+    max-width: $max-input-width;
 
     .icon-link {
       padding: 0 ($gap / 2);

@@ -20,7 +20,7 @@
 
   {% if user_can(permissions.EDIT_APPLICATION) %}
     <base-form inline-template>
-      <form method="POST" action="{{ url_for('applications.update', application_id=application.id) }}" class="col col--half">
+      <form method="POST" action="{{ url_for('applications.update', application_id=application.id) }}" class="form-container--narrow">
         {{ application_form.csrf_token }}
         {{ TextInput(application_form.name, validation="applicationName", optional=False) }}
         {{ TextInput(application_form.description, validation="defaultTextAreaField", paragraph=True, optional=True, showOptional=False) }}

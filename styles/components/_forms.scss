@@ -22,8 +22,9 @@
     }
 
     .usa-input {
-      input {
-        max-width: none;
+      input,
+      textarea {
+        max-width: $max-input-width;
       }
     }
   }
@@ -204,6 +205,10 @@
   }
 }
 
-.form-container__half {
-  max-width: 46rem;
+.form-container {
+  margin-bottom: $action-footer-height + $large-spacing;
+
+  &--narrow {
+    max-width: $max-input-width;
+  }
 }
