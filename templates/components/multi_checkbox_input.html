@@ -26,7 +26,7 @@
           <div class="usa-input__title">
             {{ field.label | striptags }}
             {% if optional %}
-              <span class="usa-input-label-helper">(optional)</span>
+              <span class="usa-input-label-helper">{{ "common.optional" | translate }}</span>
             {% endif %}
             {% if tooltip %}{{ Tooltip(tooltip) }}{% endif %}
             {% if not field.description %}
