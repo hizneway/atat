@@ -506,12 +506,12 @@ portfolios:
     archive_button: Delete member
   reports:
     days_remaining:
-      header: Days Remaining
+      header: Days remaining
       toolip: Days remaining are the days of funding remaining in the portfolio.
     duration:
-      header: Funding Duration
+      header: Funding duration
       tooltip: Funding duration is the period of time that there is a valid task order funding the portfolio.
-    estimate_warning: Reports displayed in JEDI are estimates and not a system of record.
+    estimate_warning: Reports displayed in JEDI are estimates and not a system of record. To manage your costs, go to Azure by selecting the Login to Azure button above.
     total_value:
       header: Total Portfolio Value
       tooltip: Total portfolio value is all obligated funds for current and upcoming task orders in this portfolio.
