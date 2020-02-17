@@ -371,18 +371,14 @@ select {
 .phone-input {
   display: flex;
   flex-direction: row;
+  justify-content: flex-start;
 
   &__phone {
     margin-right: $gap * 4;
+    flex-grow: 1;
 
     .usa-input {
       margin: 0;
-
-      input,
-      label,
-      .usa-input__message {
-        max-width: 20rem;
-      }
 
       .icon-validation {
         left: 20rem;
@@ -391,7 +387,8 @@ select {
   }
 
   &__extension {
-    margin-left: $gap * 4;
+    margin-right: $gap * 4;
+    flex-grow: 0;
 
     .usa-input {
       margin: 0;
