@@ -1738,7 +1738,6 @@ class AzureCloudProvider(CloudProviderInterface):
         cost_mgmt_url = (
             f"/providers/Microsoft.CostManagement/query?api-version=2019-11-01"
         )
-
         try:
             result = self.sdk.requests.post(
                 f"{self.sdk.cloud.endpoints.resource_manager}{payload.invoice_section_id}{cost_mgmt_url}",
@@ -1770,3 +1769,17 @@ class AzureCloudProvider(CloudProviderInterface):
                 result.status_code,
                 f"azure application error getting reporting data. {str(exc)}",
             )
+
+    def _get_calculator_creds(self):
+        authority = f"{self.sdk.cloud.endpoints.active_directory}/{self.tenant_id}"
+        context = self.sdk.adal.AuthenticationContext(authority=authority)
+        response = context.acquire_token_with_client_credentials(
+            self.config.get("AZURE_CALC_RESOURCE"),
+            self.config.get("AZURE_CALC_CLIENT_ID"),
+            self.config.get("AZURE_CALC_SECRET"),
+        )
+        return response.get("accessToken")
+
+    def get_calculator_url(self):
+        calc_access_token = self._get_calculator_creds()
+        return f"{self.config.get('AZURE_CALC_URL')}?access_token={calc_access_token}"

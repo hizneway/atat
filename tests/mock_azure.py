@@ -4,6 +4,9 @@ from unittest.mock import Mock
 from atst.domain.csp.cloud import AzureCloudProvider
 
 AZURE_CONFIG = {
+    "AZURE_CALC_CLIENT_ID": "MOCK",
+    "AZURE_CALC_SECRET": "MOCK",  # pragma: allowlist secret
+    "AZURE_CALC_RESOURCE": "http://calc",
     "AZURE_CLIENT_ID": "MOCK",
     "AZURE_SECRET_KEY": "MOCK",
     "AZURE_TENANT_ID": "MOCK",

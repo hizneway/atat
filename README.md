@@ -219,6 +219,10 @@ To generate coverage reports for the Javascript tests:
 
 - `ASSETS_URL`: URL to host which serves static assets (such as a CDN).
 - `AZURE_ACCOUNT_NAME`: The name for the Azure blob storage account
+- `AZURE_CALC_CLIENT_ID`: The client id used to generate a token for the Azure pricing calculator
+- `AZURE_CALC_RESOURCE`: The resource URL used to generate a token for the Azure pricing calculator
+- `AZURE_CALC_SECRET`: The secret key used to generate a token for the Azure pricing calculator
+- `AZURE_CALC_URL`: The redirect URL for the Azure pricing calculator
 - `AZURE_LOGIN_URL`: The URL used to login for an Azure instance.
 - `AZURE_STORAGE_KEY`: A valid secret key for the Azure blob storage account
 - `AZURE_TO_BUCKET_NAME`: The Azure blob storage container name for task order uploads
