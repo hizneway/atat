@@ -103,7 +103,7 @@ commands:
               --password $AZURE_SP_PASSWORD \
               --username $AZURE_SP
             echo "Successfully logged in to Azure CLI."
-            az acr login --name $AZURE_REGISTRY
+            az acr login --name $AZURE_REGISTRY | grep "Succeeded"
       - run:
           name: Install kubectl
           command: |
