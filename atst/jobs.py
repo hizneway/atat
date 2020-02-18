@@ -292,7 +292,7 @@ def dispatch_create_atat_admin_user(self):
 
 
 @celery.task(bind=True)
-def dispatch_send_task_order_files(self):
+def send_task_order_files(self):
     task_orders = TaskOrders.get_for_send_task_order_files()
     recipients = [app.config.get("MICROSOFT_TASK_ORDER_EMAIL_ADDRESS")]
 
@@ -313,7 +313,7 @@ def dispatch_send_task_order_files(self):
             app.logger.exception(err)
             continue
 
-        task_order.pdf_last_sent_at = pendulum.now()
+        task_order.pdf_last_sent_at = pendulum.now(tz="UTC")
         db.session.add(task_order)
 
     db.session.commit()

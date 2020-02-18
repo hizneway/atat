@@ -27,8 +27,8 @@ def update_celery(celery, app):
             "task": "atst.jobs.dispatch_create_environment_role",
             "schedule": 60,
         },
-        "beat-dispatch_send_task_order_files": {
-            "task": "atst.jobs.dispatch_send_task_order_files",
+        "beat-send_task_order_files": {
+            "task": "atst.jobs.send_task_order_files",
             "schedule": 60,
         },
     }

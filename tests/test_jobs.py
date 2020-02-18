@@ -16,7 +16,6 @@ from atst.jobs import (
     dispatch_create_user,
     dispatch_create_environment_role,
     dispatch_provision_portfolio,
-    dispatch_send_task_order_files,
     create_environment,
     do_create_user,
     do_provision_portfolio,
@@ -24,6 +23,7 @@ from atst.jobs import (
     do_create_environment_role,
     do_create_application,
     send_PPOC_email,
+    send_task_order_files,
 )
 from tests.factories import (
     ApplicationFactory,
@@ -415,7 +415,7 @@ def test_create_environment_role():
     assert env_role.cloud_id == "a-cloud-id"
 
 
-class TestDispatchSendTaskOrderFiles:
+class TestSendTaskOrderFiles:
     @pytest.fixture(scope="function")
     def send_mail(self, monkeypatch):
         mock = Mock()
@@ -437,14 +437,14 @@ class TestDispatchSendTaskOrderFiles:
         for i in range(3):
             TaskOrderFactory.create(create_clins=[{"number": "0001"}])
 
-        dispatch_send_task_order_files.run()
+        send_task_order_files.run()
 
         # Check that send_with_attachment was called once for each task order
         assert send_mail.call_count == 3
 
     def test_kwargs(self, send_mail, download_task_order, app):
         task_order = TaskOrderFactory.create(create_clins=[{"number": "0001"}])
-        dispatch_send_task_order_files.run()
+        send_task_order_files.run()
 
         # Check that send_with_attachment was called with correct kwargs
         send_mail.assert_called_once_with(
@@ -471,7 +471,7 @@ class TestDispatchSendTaskOrderFiles:
 
         monkeypatch.setattr("atst.jobs.send_mail", _raise_smtp_exception)
         task_order = TaskOrderFactory.create(create_clins=[{"number": "0001"}])
-        dispatch_send_task_order_files.run()
+        send_task_order_files.run()
 
         # Check that pdf_last_sent_at has not been updated
         assert not task_order.pdf_last_sent_at
@@ -485,7 +485,7 @@ class TestDispatchSendTaskOrderFiles:
             _download_task_order,
         )
         task_order = TaskOrderFactory.create(create_clins=[{"number": "0002"}])
-        dispatch_send_task_order_files.run()
+        send_task_order_files.run()
 
         # Check that pdf_last_sent_at has not been updated
         assert not task_order.pdf_last_sent_at
