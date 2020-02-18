@@ -400,41 +400,32 @@ def test_dispatch_create_environment_role(monkeypatch):
 
 
 class TestCreateEnvironmentRole:
-    def test_success(self):
+    @pytest.fixture
+    def env_role(self):
         portfolio = PortfolioFactory.create(csp_data={"tenant_id": "123"})
         app = ApplicationFactory.create(portfolio=portfolio)
         app_role = ApplicationRoleFactory.create(
             application=app, status=ApplicationRoleStatus.ACTIVE, cloud_id="123",
         )
         env = EnvironmentFactory.create(application=app, cloud_id="123")
-        env_role = EnvironmentRoleFactory.create(
+        return EnvironmentRoleFactory.create(
             environment=env, application_role=app_role, cloud_id=None
         )
 
+    @pytest.fixture
+    def csp(self):
         csp = Mock()
         result = UserRoleCSPResult(id="a-cloud-id")
         csp.create_user_role = MagicMock(return_value=result)
-        do_create_environment_role(csp, environment_role_id=env_role.id)
+        return csp
 
+    def test_success(self, env_role, csp):
+        do_create_environment_role(csp, environment_role_id=env_role.id)
         assert env_role.cloud_id == "a-cloud-id"
 
-    def test_sends_email(self, monkeypatch):
+    def test_sends_email(self, monkeypatch, env_role, csp):
         send_mail = Mock()
         monkeypatch.setattr("atst.jobs.send_mail", send_mail)
-
-        portfolio = PortfolioFactory.create(csp_data={"tenant_id": "123"})
-        app = ApplicationFactory.create(portfolio=portfolio)
-        app_role = ApplicationRoleFactory.create(
-            application=app, status=ApplicationRoleStatus.ACTIVE, cloud_id="123",
-        )
-        env = EnvironmentFactory.create(application=app, cloud_id="123")
-        env_role = EnvironmentRoleFactory.create(
-            environment=env, application_role=app_role, cloud_id=None
-        )
-
-        csp = Mock()
-        result = UserRoleCSPResult(id="a-cloud-id")
-        csp.create_user_role = MagicMock(return_value=result)
         do_create_environment_role(csp, environment_role_id=env_role.id)
         assert send_mail.call_count == 1
 
