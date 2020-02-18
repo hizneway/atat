@@ -30,6 +30,7 @@ from atst.jobs import (
 from tests.factories import (
     ApplicationFactory,
     ApplicationRoleFactory,
+    CLINFactory,
     EnvironmentFactory,
     EnvironmentRoleFactory,
     PortfolioFactory,
@@ -494,8 +495,8 @@ class TestSendTaskOrderFiles:
 
 
 class TestCreateBillingInstructions:
-    def test_update_clin_last_sent_at(self, session):
-        # create portfolio with one active clin
+    @pytest.fixture
+    def unsent_clin(self):
         start_date = pendulum.now().subtract(days=1)
         portfolio = PortfolioFactory.create(
             csp_data={
@@ -505,19 +506,20 @@ class TestCreateBillingInstructions:
             },
             task_orders=[{"create_clins": [{"start_date": start_date}]}],
         )
-        unsent_clin = portfolio.task_orders[0].clins[0]
+        return portfolio.task_orders[0].clins[0]
 
+    def test_update_clin_last_sent_at(self, session, unsent_clin):
         assert not unsent_clin.last_sent_at
 
         # The session needs to be nested to prevent detached SQLAlchemy instance
         session.begin_nested()
         create_billing_instruction()
-        session.rollback()
 
         # check that last_sent_at has been updated
         assert unsent_clin.last_sent_at
+        session.rollback()
 
-    def test_failure(self, monkeypatch, session):
+    def test_failure(self, monkeypatch, session, unsent_clin):
         def _create_billing_instruction(MockCloudProvider, object_name):
             raise AzureError("something went wrong")
 
@@ -526,22 +528,41 @@ class TestCreateBillingInstructions:
             _create_billing_instruction,
         )
 
-        # create portfolio with one active clin
-        start_date = pendulum.now().subtract(days=1)
+        # The session needs to be nested to prevent detached SQLAlchemy instance
+        session.begin_nested()
+        create_billing_instruction()
+
+        # check that last_sent_at has not been updated
+        assert not unsent_clin.last_sent_at
+        session.rollback()
+
+    def test_task_order_with_multiple_clins(self, session):
+        start_date = pendulum.now(tz="UTC").subtract(days=1)
         portfolio = PortfolioFactory.create(
             csp_data={
                 "tenant_id": str(uuid4()),
                 "billing_account_name": "fake",
                 "billing_profile_name": "fake",
             },
-            task_orders=[{"create_clins": [{"start_date": start_date}]}],
+            task_orders=[
+                {
+                    "create_clins": [
+                        {"start_date": start_date, "last_sent_at": start_date}
+                    ]
+                }
+            ],
         )
-        unsent_clin = portfolio.task_orders[0].clins[0]
+        task_order = portfolio.task_orders[0]
+        sent_clin = task_order.clins[0]
 
-        # The session needs to be nested to prevent detached SQLAlchemy instance
+        # Add new CLIN to the Task Order
+        new_clin = CLINFactory.create(task_order=task_order)
+        assert not new_clin.last_sent_at
+
         session.begin_nested()
         create_billing_instruction()
-        session.rollback()
 
-        # check that last_sent_at has not been updated
-        assert not unsent_clin.last_sent_at
+        # check that last_sent_at has been update for the new clin only
+        assert new_clin.last_sent_at
+        assert sent_clin.last_sent_at != new_clin.last_sent_at
+        session.rollback()
