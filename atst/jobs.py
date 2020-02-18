@@ -177,7 +177,20 @@ def do_create_environment_role(csp: CloudProviderInterface, environment_role_id=
         env_role.cloud_id = result.id
         db.session.add(env_role)
         db.session.commit()
-        # TODO: should send notification email to the user, maybe with their portal login name
+        user = env_role.application_role.user
+        mail_name = user.full_name.replace(" ", ".").lower()
+        username = f"{mail_name}@{csp_details.get('tennant_id')}.{app.config.get('OFFICE_365_DOMAIN')}"
+        send_mail(
+            recipients=[user.email],
+            subject=translate("email.azure_account_update.subject"),
+            body=translate(
+                "email.azure_account_update.body",
+                {"url": app.config.get("AZURE_LOGIN_URL"), "username": username},
+            ),
+        )
+        app.logger.info(
+            f"Notification email sent for enivornment role creation. User id: {user.id}"
+        )
 
 
 def render_email(template_path, context):

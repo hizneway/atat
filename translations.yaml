@@ -86,7 +86,10 @@ email:
   app_role_created:
     subject: Application Role Created
     body: "Your application role has been created.\nVisit {url}, and use your username, {username}, to log in."
-  portfolio_invite: "{inviter_name} has invited you to a JEDI cloud portfolio."
+  azure_account_update:
+    subject: Azure account update
+    body: "There has been an update to your Azure account. \nVisit {url}, and use your username, {username}, to log in."
+  portfolio_invite: "{inviter_name} has invited you to a JEDI cloud portfolio"
   portfolio_ready:
     subject: Portfolio Provisioned
     body: "Your portfolio has been provisioned.\nVisit {password_reset_address}, and use your username, {username}, to create a password."
