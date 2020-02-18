@@ -72,7 +72,7 @@ class MockCloudProvider(CloudProviderInterface):
     AUTHENTICATION_EXCEPTION = AuthenticationException("Authentication failure.")
     AUTHORIZATION_EXCEPTION = AuthorizationException("Not authorized.")
     NETWORK_EXCEPTION = ConnectionException("Network failure.")
-    SERVER_EXCEPTION = UnknownServerException("Not our fault.")
+    SERVER_EXCEPTION = UnknownServerException(500, "Not our fault.")
 
     SERVER_FAILURE_PCT = 1
     NETWORK_FAILURE_PCT = 7
@@ -128,10 +128,6 @@ class MockCloudProvider(CloudProviderInterface):
         """
         payload is an instance of TenantCSPPayload data class
         """
-
-        self._authorize("admin")
-
-        self._delay(1, 5)
 
         self._maybe_raise(self.NETWORK_FAILURE_PCT, self.NETWORK_EXCEPTION)
         self._maybe_raise(self.SERVER_FAILURE_PCT, self.SERVER_EXCEPTION)

@@ -1,6 +1,9 @@
 import pytest
+import pydantic
+
 import re
 from unittest import mock
+from enum import Enum
 
 from tests.factories import (
     PortfolioStateMachineFactory,
@@ -8,11 +11,28 @@ from tests.factories import (
 )
 
 from atst.models import FSMStates, PortfolioStateMachine, TaskOrder
-from atst.models.mixins.state_machines import AzureStages, StageStates, compose_state
+from atst.domain.csp.cloud.models import BillingProfileCreationCSPPayload
+from atst.models.mixins.state_machines import (
+    AzureStages,
+    StageStates,
+    compose_state,
+    _build_transitions,
+    _build_csp_states,
+)
 from atst.models.portfolio import Portfolio
-from atst.models.portfolio_state_machine import get_stage_csp_class
+from atst.models.portfolio_state_machine import (
+    get_stage_csp_class,
+    _stage_to_classname,
+    _stage_state_to_stage_name,
+    StateMachineMisconfiguredError,
+)
+
 
 # TODO: Write failure case tests
+
+
+class AzureStagesTest(Enum):
+    TENANT = "tenant"
 
 
 @pytest.fixture(scope="function")
@@ -37,12 +57,63 @@ def test_state_machine_trigger_next_transition(portfolio):
     assert sm.current_state == FSMStates.STARTED
 
 
-def test_state_machine_compose_state(portfolio):
-    PortfolioStateMachineFactory.create(portfolio=portfolio)
+def test_state_machine_compose_state():
     assert (
         compose_state(AzureStages.TENANT, StageStates.CREATED)
         == FSMStates.TENANT_CREATED
     )
+
+
+def test_stage_to_classname():
+    assert (
+        _stage_to_classname(AzureStages.BILLING_PROFILE_CREATION.name)
+        == "BillingProfileCreation"
+    )
+
+
+def test_get_stage_csp_class():
+    csp_class = get_stage_csp_class(list(AzureStages)[0].name.lower(), "payload")
+    assert isinstance(csp_class, pydantic.main.ModelMetaclass)
+
+
+def test_get_stage_csp_class_import_fail():
+    with pytest.raises(StateMachineMisconfiguredError):
+        csp_class = get_stage_csp_class("doesnotexist", "payload")
+
+
+def test_build_transitions():
+    states, transitions = _build_transitions(AzureStagesTest)
+    assert [s.get("name").name for s in states] == [
+        "TENANT_CREATED",
+        "TENANT_IN_PROGRESS",
+        "TENANT_FAILED",
+    ]
+    assert [s.get("tags") for s in states] == [
+        ["TENANT", "CREATED"],
+        ["TENANT", "IN_PROGRESS"],
+        ["TENANT", "FAILED"],
+    ]
+    assert [t.get("trigger") for t in transitions] == [
+        "complete",
+        "create_tenant",
+        "finish_tenant",
+        "fail_tenant",
+        "resume_progress_tenant",
+    ]
+
+
+def test_build_csp_states():
+    states = _build_csp_states(AzureStagesTest)
+    assert list(states) == [
+        "UNSTARTED",
+        "STARTING",
+        "STARTED",
+        "COMPLETED",
+        "FAILED",
+        "TENANT_CREATED",
+        "TENANT_IN_PROGRESS",
+        "TENANT_FAILED",
+    ]
 
 
 def test_state_machine_valid_data_classes_for_stages(portfolio):
@@ -50,6 +121,37 @@ def test_state_machine_valid_data_classes_for_stages(portfolio):
     for stage in AzureStages:
         assert get_stage_csp_class(stage.name.lower(), "payload") is not None
         assert get_stage_csp_class(stage.name.lower(), "result") is not None
+
+
+def test_attach_machine(portfolio):
+    sm = PortfolioStateMachineFactory.create(portfolio=portfolio)
+    sm.machine = None
+    sm.attach_machine(stages=AzureStagesTest)
+    assert list(sm.machine.events) == [
+        "init",
+        "start",
+        "reset",
+        "fail",
+        "complete",
+        "create_tenant",
+        "finish_tenant",
+        "fail_tenant",
+        "resume_progress_tenant",
+    ]
+
+
+def test_fail_stage(portfolio):
+    sm = PortfolioStateMachineFactory.create(portfolio=portfolio)
+    sm.state = FSMStates.TENANT_IN_PROGRESS
+    sm.fail_stage("tenant")
+    assert sm.state == FSMStates.TENANT_FAILED
+
+
+def test_stage_state_to_stage_name():
+    stage = _stage_state_to_stage_name(
+        FSMStates.TENANT_IN_PROGRESS, StageStates.IN_PROGRESS
+    )
+    assert stage == "tenant"
 
 
 def test_state_machine_initialization(portfolio):

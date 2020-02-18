@@ -1,13 +1,20 @@
 import json
 from unittest.mock import Mock, patch
 from uuid import uuid4
-
 import pendulum
 import pydantic
 import pytest
+
 from tests.factories import ApplicationFactory, EnvironmentFactory
 from tests.mock_azure import AUTH_CREDENTIALS, mock_azure
 
+from atst.domain.csp.cloud.exceptions import (
+    AuthenticationException,
+    UserProvisioningException,
+    ConnectionException,
+    UnknownServerException,
+    SecretException,
+)
 from atst.domain.csp.cloud import AzureCloudProvider
 from atst.domain.csp.cloud.models import (
     AdminRoleDefinitionCSPPayload,
@@ -64,6 +71,23 @@ from atst.domain.csp.cloud.models import (
 from atst.domain.csp.cloud.exceptions import UserProvisioningException
 
 BILLING_ACCOUNT_NAME = "52865e4c-52e8-5a6c-da6b-c58f0814f06f:7ea5de9d-b8ce-4901-b1c5-d864320c7b03_2019-05-31"
+
+
+def mock_requests_response(
+    status=200, content="CONTENT", json_data=None, raise_for_status=None
+):
+    mock_resp = Mock()
+    # mock raise_for_status call w/optional error
+    mock_resp.raise_for_status = Mock()
+    if raise_for_status:
+        mock_resp.raise_for_status.side_effect = raise_for_status
+    # set status code and content
+    mock_resp.status_code = status
+    mock_resp.content = content
+    # add json data if provided
+    if json_data:
+        mock_resp.json = mock.Mock(return_value=json_data)
+    return mock_resp
 
 
 def mock_management_group_create(mock_azure, spec_dict):
@@ -190,7 +214,18 @@ def test_create_tenant(mock_azure: AzureCloudProvider):
         "userId": "1153801116406515559",
     }
     mock_result.status_code = 200
-    mock_azure.sdk.requests.post.return_value = mock_result
+    mock_http_error_resp = mock_requests_response(
+        status=500,
+        raise_for_status=mock_azure.sdk.requests.exceptions.HTTPError(
+            "500 Server Error"
+        ),
+    )
+    mock_azure.sdk.requests.post.side_effect = [
+        mock_azure.sdk.requests.exceptions.ConnectionError,
+        mock_azure.sdk.requests.exceptions.Timeout,
+        mock_http_error_resp,
+        mock_result,
+    ]
     payload = TenantCSPPayload(
         **dict(
             user_id="admin",
@@ -203,30 +238,16 @@ def test_create_tenant(mock_azure: AzureCloudProvider):
         )
     )
     mock_azure = mock_get_secret(mock_azure)
-    result = mock_azure.create_tenant(payload)
-    body: TenantCSPResult = result.get("body")
-    assert body.tenant_id == "60ff9d34-82bf-4f21-b565-308ef0533435"
 
+    with pytest.raises(ConnectionException):
+        mock_azure.create_tenant(payload)
+    with pytest.raises(ConnectionException):
+        mock_azure.create_tenant(payload)
+    with pytest.raises(UnknownServerException, match=r".*500 Server Error.*"):
+        mock_azure.create_tenant(payload)
 
-def test_create_tenant_fails(mock_azure: AzureCloudProvider):
-    mock_result = Mock()
-    mock_result.json.return_value = {"error": "body"}
-    mock_result.status_code = 403
-    mock_azure.sdk.requests.post.return_value = mock_result
-    payload = TenantCSPPayload(
-        **dict(
-            user_id="admin",
-            password="JediJan13$coot",  # pragma: allowlist secret
-            domain_name="jediccpospawnedtenant2",
-            first_name="Tedry",
-            last_name="Tenet",
-            country_code="US",
-            password_recovery_email_address="thomas@promptworks.com",
-        )
-    )
-    mock_azure = mock_get_secret(mock_azure)
-    result = mock_azure.create_tenant(payload)
-    assert result.get("status") == "error"
+    result: TenantCSPResult = mock_azure.create_tenant(payload)
+    assert result.tenant_id == "60ff9d34-82bf-4f21-b565-308ef0533435"
 
 
 def test_create_billing_profile_creation(mock_azure: AzureCloudProvider):
@@ -240,7 +261,20 @@ def test_create_billing_profile_creation(mock_azure: AzureCloudProvider):
         "Retry-After": "10",
     }
     mock_result.status_code = 202
-    mock_azure.sdk.requests.post.return_value = mock_result
+
+    mock_http_error_resp = mock_requests_response(
+        status=500,
+        raise_for_status=mock_azure.sdk.requests.exceptions.HTTPError(
+            "500 Server Error"
+        ),
+    )
+    mock_azure.sdk.requests.post.side_effect = [
+        mock_azure.sdk.requests.exceptions.ConnectionError,
+        mock_azure.sdk.requests.exceptions.Timeout,
+        mock_http_error_resp,
+        mock_result,
+    ]
+
     payload = BillingProfileCreationCSPPayload(
         **dict(
             address=dict(
@@ -256,8 +290,16 @@ def test_create_billing_profile_creation(mock_azure: AzureCloudProvider):
             billing_account_name=BILLING_ACCOUNT_NAME,
         )
     )
-    result = mock_azure.create_billing_profile_creation(payload)
-    body: BillingProfileCreationCSPResult = result.get("body")
+    with pytest.raises(ConnectionException):
+        mock_azure.create_billing_profile_creation(payload)
+    with pytest.raises(ConnectionException):
+        mock_azure.create_billing_profile_creation(payload)
+    with pytest.raises(UnknownServerException, match=r".*500 Server Error.*"):
+        mock_azure.create_billing_profile_creation(payload)
+
+    body: BillingProfileCreationCSPResult = mock_azure.create_billing_profile_creation(
+        payload
+    )
     assert body.billing_profile_retry_after == 10
 
 
@@ -297,7 +339,18 @@ def test_validate_billing_profile_creation(mock_azure: AzureCloudProvider):
         },
         "type": "Microsoft.Billing/billingAccounts/billingProfiles",
     }
-    mock_azure.sdk.requests.get.return_value = mock_result
+    mock_http_error_resp = mock_requests_response(
+        status=500,
+        raise_for_status=mock_azure.sdk.requests.exceptions.HTTPError(
+            "500 Server Error"
+        ),
+    )
+    mock_azure.sdk.requests.get.side_effect = [
+        mock_azure.sdk.requests.exceptions.ConnectionError,
+        mock_azure.sdk.requests.exceptions.Timeout,
+        mock_http_error_resp,
+        mock_result,
+    ]
 
     payload = BillingProfileVerificationCSPPayload(
         **dict(
@@ -305,9 +358,16 @@ def test_validate_billing_profile_creation(mock_azure: AzureCloudProvider):
             billing_profile_verify_url="https://management.azure.com/providers/Microsoft.Billing/billingAccounts/7c89b735-b22b-55c0-ab5a-c624843e8bf6:de4416ce-acc6-44b1-8122-c87c4e903c91_2019-05-31/operationResults/createBillingProfile_478d5706-71f9-4a8b-8d4e-2cbaca27a668?api-version=2019-10-01-preview",
         )
     )
+    with pytest.raises(ConnectionException):
+        mock_azure.create_billing_profile_verification(payload)
+    with pytest.raises(ConnectionException):
+        mock_azure.create_billing_profile_verification(payload)
+    with pytest.raises(UnknownServerException, match=r".*500 Server Error.*"):
+        mock_azure.create_billing_profile_verification(payload)
 
-    result = mock_azure.create_billing_profile_verification(payload)
-    body: BillingProfileVerificationCSPResult = result.get("body")
+    body: BillingProfileVerificationCSPResult = mock_azure.create_billing_profile_verification(
+        payload
+    )
     assert body.billing_profile_name == "KQWI-W2SU-BG7-TGB"
     assert (
         body.billing_profile_properties.billing_profile_display_name
@@ -336,7 +396,18 @@ def test_create_billing_profile_tenant_access(mock_azure: AzureCloudProvider):
         "type": "Microsoft.Billing/billingRoleAssignments",
     }
 
-    mock_azure.sdk.requests.post.return_value = mock_result
+    mock_http_error_resp = mock_requests_response(
+        status=500,
+        raise_for_status=mock_azure.sdk.requests.exceptions.HTTPError(
+            "500 Server Error"
+        ),
+    )
+    mock_azure.sdk.requests.post.side_effect = [
+        mock_azure.sdk.requests.exceptions.ConnectionError,
+        mock_azure.sdk.requests.exceptions.Timeout,
+        mock_http_error_resp,
+        mock_result,
+    ]
 
     payload = BillingProfileTenantAccessCSPPayload(
         **dict(
@@ -346,9 +417,16 @@ def test_create_billing_profile_tenant_access(mock_azure: AzureCloudProvider):
             billing_profile_name="KQWI-W2SU-BG7-TGB",
         )
     )
+    with pytest.raises(ConnectionException):
+        mock_azure.create_billing_profile_tenant_access(payload)
+    with pytest.raises(ConnectionException):
+        mock_azure.create_billing_profile_tenant_access(payload)
+    with pytest.raises(UnknownServerException, match=r".*500 Server Error.*"):
+        mock_azure.create_billing_profile_tenant_access(payload)
 
-    result = mock_azure.create_billing_profile_tenant_access(payload)
-    body: BillingProfileTenantAccessCSPResult = result.get("body")
+    body: BillingProfileTenantAccessCSPResult = mock_azure.create_billing_profile_tenant_access(
+        payload
+    )
     assert (
         body.billing_role_assignment_name
         == "40000000-aaaa-bbbb-cccc-100000000000_0a5f4926-e3ee-4f47-a6e3-8b0a30a40e3d"
@@ -367,7 +445,18 @@ def test_create_task_order_billing_creation(mock_azure: AzureCloudProvider):
         "Retry-After": "10",
     }
 
-    mock_azure.sdk.requests.patch.return_value = mock_result
+    mock_http_error_resp = mock_requests_response(
+        status=500,
+        raise_for_status=mock_azure.sdk.requests.exceptions.HTTPError(
+            "500 Server Error"
+        ),
+    )
+    mock_azure.sdk.requests.patch.side_effect = [
+        mock_azure.sdk.requests.exceptions.ConnectionError,
+        mock_azure.sdk.requests.exceptions.Timeout,
+        mock_http_error_resp,
+        mock_result,
+    ]
 
     payload = TaskOrderBillingCreationCSPPayload(
         **dict(
@@ -376,9 +465,16 @@ def test_create_task_order_billing_creation(mock_azure: AzureCloudProvider):
             billing_profile_name="KQWI-W2SU-BG7-TGB",
         )
     )
+    with pytest.raises(ConnectionException):
+        mock_azure.create_task_order_billing_creation(payload)
+    with pytest.raises(ConnectionException):
+        mock_azure.create_task_order_billing_creation(payload)
+    with pytest.raises(UnknownServerException, match=r".*500 Server Error.*"):
+        mock_azure.create_task_order_billing_creation(payload)
 
-    result = mock_azure.create_task_order_billing_creation(payload)
-    body: TaskOrderBillingCreationCSPResult = result.get("body")
+    body: TaskOrderBillingCreationCSPResult = mock_azure.create_task_order_billing_creation(
+        payload
+    )
 
     assert (
         body.task_order_billing_verify_url
@@ -428,7 +524,18 @@ def test_create_task_order_billing_verification(mock_azure):
         },
         "type": "Microsoft.Billing/billingAccounts/billingProfiles",
     }
-    mock_azure.sdk.requests.get.return_value = mock_result
+    mock_http_error_resp = mock_requests_response(
+        status=500,
+        raise_for_status=mock_azure.sdk.requests.exceptions.HTTPError(
+            "500 Server Error"
+        ),
+    )
+    mock_azure.sdk.requests.get.side_effect = [
+        mock_azure.sdk.requests.exceptions.ConnectionError,
+        mock_azure.sdk.requests.exceptions.Timeout,
+        mock_http_error_resp,
+        mock_result,
+    ]
 
     payload = TaskOrderBillingVerificationCSPPayload(
         **dict(
@@ -436,9 +543,16 @@ def test_create_task_order_billing_verification(mock_azure):
             task_order_billing_verify_url="https://management.azure.com/providers/Microsoft.Billing/billingAccounts/7c89b735-b22b-55c0-ab5a-c624843e8bf6:de4416ce-acc6-44b1-8122-c87c4e903c91_2019-05-31/operationResults/createBillingProfile_478d5706-71f9-4a8b-8d4e-2cbaca27a668?api-version=2019-10-01-preview",
         )
     )
+    with pytest.raises(ConnectionException):
+        mock_azure.create_task_order_billing_verification(payload)
+    with pytest.raises(ConnectionException):
+        mock_azure.create_task_order_billing_verification(payload)
+    with pytest.raises(UnknownServerException, match=r".*500 Server Error.*"):
+        mock_azure.create_task_order_billing_verification(payload)
 
-    result = mock_azure.create_task_order_billing_verification(payload)
-    body: TaskOrderBillingVerificationCSPResult = result.get("body")
+    body: TaskOrderBillingVerificationCSPResult = mock_azure.create_task_order_billing_verification(
+        payload
+    )
     assert body.billing_profile_name == "KQWI-W2SU-BG7-TGB"
     assert (
         body.billing_profile_enabled_plan_details.enabled_azure_plans[0].get("skuId")
@@ -463,7 +577,18 @@ def test_create_billing_instruction(mock_azure: AzureCloudProvider):
         "type": "Microsoft.Billing/billingAccounts/billingProfiles/billingInstructions",
     }
 
-    mock_azure.sdk.requests.put.return_value = mock_result
+    mock_http_error_resp = mock_requests_response(
+        status=500,
+        raise_for_status=mock_azure.sdk.requests.exceptions.HTTPError(
+            "500 Server Error"
+        ),
+    )
+    mock_azure.sdk.requests.put.side_effect = [
+        mock_azure.sdk.requests.exceptions.ConnectionError,
+        mock_azure.sdk.requests.exceptions.Timeout,
+        mock_http_error_resp,
+        mock_result,
+    ]
 
     payload = BillingInstructionCSPPayload(
         **dict(
@@ -477,8 +602,13 @@ def test_create_billing_instruction(mock_azure: AzureCloudProvider):
             billing_profile_name="KQWI-W2SU-BG7-TGB",
         )
     )
-    result = mock_azure.create_billing_instruction(payload)
-    body: BillingInstructionCSPResult = result.get("body")
+    with pytest.raises(ConnectionException):
+        mock_azure.create_billing_instruction(payload)
+    with pytest.raises(ConnectionException):
+        mock_azure.create_billing_instruction(payload)
+    with pytest.raises(UnknownServerException, match=r".*500 Server Error.*"):
+        mock_azure.create_billing_instruction(payload)
+    body: BillingInstructionCSPResult = mock_azure.create_billing_instruction(payload)
     assert body.reported_clin_name == "TO1:CLIN001"
 
 
@@ -494,7 +624,18 @@ def test_create_product_purchase(mock_azure: AzureCloudProvider):
         "Retry-After": "10",
     }
 
-    mock_azure.sdk.requests.post.return_value = mock_result
+    mock_http_error_resp = mock_requests_response(
+        status=500,
+        raise_for_status=mock_azure.sdk.requests.exceptions.HTTPError(
+            "500 Server Error"
+        ),
+    )
+    mock_azure.sdk.requests.post.side_effect = [
+        mock_azure.sdk.requests.exceptions.ConnectionError,
+        mock_azure.sdk.requests.exceptions.Timeout,
+        mock_http_error_resp,
+        mock_result,
+    ]
 
     payload = ProductPurchaseCSPPayload(
         **dict(
@@ -503,9 +644,14 @@ def test_create_product_purchase(mock_azure: AzureCloudProvider):
             billing_profile_name="KQWI-W2SU-BG7-TGB",
         )
     )
+    with pytest.raises(ConnectionException):
+        mock_azure.create_product_purchase(payload)
+    with pytest.raises(ConnectionException):
+        mock_azure.create_product_purchase(payload)
+    with pytest.raises(UnknownServerException, match=r".*500 Server Error.*"):
+        mock_azure.create_product_purchase(payload)
 
-    result = mock_azure.create_product_purchase(payload)
-    body: ProductPurchaseCSPResult = result.get("body")
+    body: ProductPurchaseCSPResult = mock_azure.create_product_purchase(payload)
     assert (
         body.product_purchase_verify_url
         == "https://management.azure.com/providers/Microsoft.Billing/billingAccounts/7c89b735-b22b-55c0-ab5a-c624843e8bf6:de4416ce-acc6-44b1-8122-c87c4e903c91_2019-05-31/operationResults/patchBillingProfile_KQWI-W2SU-BG7-TGB:02715576-4118-466c-bca7-b1cd3169ff46?api-version=2019-10-01-preview"
@@ -540,7 +686,18 @@ def test_create_product_purchase_verification(mock_azure):
         "type": "Microsoft.Billing/billingAccounts/billingProfiles/invoiceSections/products",
     }
 
-    mock_azure.sdk.requests.get.return_value = mock_result
+    mock_http_error_resp = mock_requests_response(
+        status=500,
+        raise_for_status=mock_azure.sdk.requests.exceptions.HTTPError(
+            "500 Server Error"
+        ),
+    )
+    mock_azure.sdk.requests.get.side_effect = [
+        mock_azure.sdk.requests.exceptions.ConnectionError,
+        mock_azure.sdk.requests.exceptions.Timeout,
+        mock_http_error_resp,
+        mock_result,
+    ]
 
     payload = ProductPurchaseVerificationCSPPayload(
         **dict(
@@ -548,9 +705,16 @@ def test_create_product_purchase_verification(mock_azure):
             product_purchase_verify_url="https://management.azure.com/providers/Microsoft.Billing/billingAccounts/7c89b735-b22b-55c0-ab5a-c624843e8bf6:de4416ce-acc6-44b1-8122-c87c4e903c91_2019-05-31/operationResults/createBillingProfile_478d5706-71f9-4a8b-8d4e-2cbaca27a668?api-version=2019-10-01-preview",
         )
     )
+    with pytest.raises(ConnectionException):
+        mock_azure.create_product_purchase_verification(payload)
+    with pytest.raises(ConnectionException):
+        mock_azure.create_product_purchase_verification(payload)
+    with pytest.raises(UnknownServerException, match=r".*500 Server Error.*"):
+        mock_azure.create_product_purchase_verification(payload)
 
-    result = mock_azure.create_product_purchase_verification(payload)
-    body: ProductPurchaseVerificationCSPResult = result.get("body")
+    body: ProductPurchaseVerificationCSPResult = mock_azure.create_product_purchase_verification(
+        payload
+    )
     assert body.premium_purchase_date == "01/31/2020"
 
 
@@ -566,12 +730,31 @@ def test_create_tenant_principal_app(mock_azure: AzureCloudProvider):
         mock_result.ok = True
         mock_result.json.return_value = {"appId": "appId", "id": "id"}
 
-        mock_azure.sdk.requests.post.return_value = mock_result
+        mock_http_error_resp = mock_requests_response(
+            status=500,
+            raise_for_status=mock_azure.sdk.requests.exceptions.HTTPError(
+                "500 Server Error"
+            ),
+        )
+        mock_azure.sdk.requests.post.side_effect = [
+            mock_azure.sdk.requests.exceptions.ConnectionError,
+            mock_azure.sdk.requests.exceptions.Timeout,
+            mock_http_error_resp,
+            mock_result,
+        ]
+
         mock_azure = mock_get_secret(mock_azure)
 
         payload = TenantPrincipalAppCSPPayload(
             **{"tenant_id": "6d2d2d6c-a6d6-41e1-8bb1-73d11475f8f4"}
         )
+        with pytest.raises(ConnectionException):
+            mock_azure.create_tenant_principal_app(payload)
+        with pytest.raises(ConnectionException):
+            mock_azure.create_tenant_principal_app(payload)
+        with pytest.raises(UnknownServerException, match=r".*500 Server Error.*"):
+            mock_azure.create_tenant_principal_app(payload)
+
         result: TenantPrincipalAppCSPResult = mock_azure.create_tenant_principal_app(
             payload
         )
@@ -591,7 +774,19 @@ def test_create_tenant_principal(mock_azure: AzureCloudProvider):
         mock_result.ok = True
         mock_result.json.return_value = {"id": "principal_id"}
 
-        mock_azure.sdk.requests.post.return_value = mock_result
+        mock_http_error_resp = mock_requests_response(
+            status=500,
+            raise_for_status=mock_azure.sdk.requests.exceptions.HTTPError(
+                "500 Server Error"
+            ),
+        )
+        mock_azure.sdk.requests.post.side_effect = [
+            mock_azure.sdk.requests.exceptions.ConnectionError,
+            mock_azure.sdk.requests.exceptions.Timeout,
+            mock_http_error_resp,
+            mock_result,
+        ]
+
         mock_azure = mock_get_secret(mock_azure)
 
         payload = TenantPrincipalCSPPayload(
@@ -600,6 +795,12 @@ def test_create_tenant_principal(mock_azure: AzureCloudProvider):
                 "principal_app_id": "appId",
             }
         )
+        with pytest.raises(ConnectionException):
+            mock_azure.create_tenant_principal(payload)
+        with pytest.raises(ConnectionException):
+            mock_azure.create_tenant_principal(payload)
+        with pytest.raises(UnknownServerException, match=r".*500 Server Error.*"):
+            mock_azure.create_tenant_principal(payload)
 
         result: TenantPrincipalCSPResult = mock_azure.create_tenant_principal(payload)
 
@@ -618,7 +819,18 @@ def test_create_tenant_principal_credential(mock_azure: AzureCloudProvider):
         mock_result.ok = True
         mock_result.json.return_value = {"secretText": "new secret key"}
 
-        mock_azure.sdk.requests.post.return_value = mock_result
+        mock_http_error_resp = mock_requests_response(
+            status=500,
+            raise_for_status=mock_azure.sdk.requests.exceptions.HTTPError(
+                "500 Server Error"
+            ),
+        )
+        mock_azure.sdk.requests.post.side_effect = [
+            mock_azure.sdk.requests.exceptions.ConnectionError,
+            mock_azure.sdk.requests.exceptions.Timeout,
+            mock_http_error_resp,
+            mock_result,
+        ]
 
         mock_azure = mock_get_secret(mock_azure)
 
@@ -629,6 +841,12 @@ def test_create_tenant_principal_credential(mock_azure: AzureCloudProvider):
                 "principal_app_object_id": "appObjId",
             }
         )
+        with pytest.raises(ConnectionException):
+            mock_azure.create_tenant_principal_credential(payload)
+        with pytest.raises(ConnectionException):
+            mock_azure.create_tenant_principal_credential(payload)
+        with pytest.raises(UnknownServerException, match=r".*500 Server Error.*"):
+            mock_azure.create_tenant_principal_credential(payload)
 
         result: TenantPrincipalCredentialCSPResult = mock_azure.create_tenant_principal_credential(
             payload
@@ -654,12 +872,29 @@ def test_create_admin_role_definition(mock_azure: AzureCloudProvider):
             ]
         }
 
-        mock_azure.sdk.requests.get.return_value = mock_result
+        mock_http_error_resp = mock_requests_response(
+            status=500,
+            raise_for_status=mock_azure.sdk.requests.exceptions.HTTPError(
+                "500 Server Error"
+            ),
+        )
+        mock_azure.sdk.requests.get.side_effect = [
+            mock_azure.sdk.requests.exceptions.ConnectionError,
+            mock_azure.sdk.requests.exceptions.Timeout,
+            mock_http_error_resp,
+            mock_result,
+        ]
         mock_azure = mock_get_secret(mock_azure)
 
         payload = AdminRoleDefinitionCSPPayload(
             **{"tenant_id": "6d2d2d6c-a6d6-41e1-8bb1-73d11475f8f4"}
         )
+        with pytest.raises(ConnectionException):
+            mock_azure.create_admin_role_definition(payload)
+        with pytest.raises(ConnectionException):
+            mock_azure.create_admin_role_definition(payload)
+        with pytest.raises(UnknownServerException, match=r".*500 Server Error.*"):
+            mock_azure.create_admin_role_definition(payload)
 
         result: AdminRoleDefinitionCSPResult = mock_azure.create_admin_role_definition(
             payload
@@ -680,7 +915,18 @@ def test_create_tenant_admin_ownership(mock_azure: AzureCloudProvider):
         mock_result.ok = True
         mock_result.json.return_value = {"id": "id"}
 
-        mock_azure.sdk.requests.put.return_value = mock_result
+        mock_http_error_resp = mock_requests_response(
+            status=500,
+            raise_for_status=mock_azure.sdk.requests.exceptions.HTTPError(
+                "500 Server Error"
+            ),
+        )
+        mock_azure.sdk.requests.put.side_effect = [
+            mock_azure.sdk.requests.exceptions.ConnectionError,
+            mock_azure.sdk.requests.exceptions.Timeout,
+            mock_http_error_resp,
+            mock_result,
+        ]
 
         payload = TenantAdminOwnershipCSPPayload(
             **{
@@ -688,6 +934,12 @@ def test_create_tenant_admin_ownership(mock_azure: AzureCloudProvider):
                 "user_object_id": "971efe4d-1e80-4e39-b3b9-4e5c63ad446d",
             }
         )
+        with pytest.raises(ConnectionException):
+            mock_azure.create_tenant_admin_ownership(payload)
+        with pytest.raises(ConnectionException):
+            mock_azure.create_tenant_admin_ownership(payload)
+        with pytest.raises(UnknownServerException, match=r".*500 Server Error.*"):
+            mock_azure.create_tenant_admin_ownership(payload)
 
         result: TenantAdminOwnershipCSPResult = mock_azure.create_tenant_admin_ownership(
             payload
@@ -708,7 +960,18 @@ def test_create_tenant_principal_ownership(mock_azure: AzureCloudProvider):
         mock_result.ok = True
         mock_result.json.return_value = {"id": "id"}
 
-        mock_azure.sdk.requests.put.return_value = mock_result
+        mock_http_error_resp = mock_requests_response(
+            status=500,
+            raise_for_status=mock_azure.sdk.requests.exceptions.HTTPError(
+                "500 Server Error"
+            ),
+        )
+        mock_azure.sdk.requests.put.side_effect = [
+            mock_azure.sdk.requests.exceptions.ConnectionError,
+            mock_azure.sdk.requests.exceptions.Timeout,
+            mock_http_error_resp,
+            mock_result,
+        ]
 
         payload = TenantPrincipalOwnershipCSPPayload(
             **{
@@ -716,6 +979,12 @@ def test_create_tenant_principal_ownership(mock_azure: AzureCloudProvider):
                 "principal_id": "971efe4d-1e80-4e39-b3b9-4e5c63ad446d",
             }
         )
+        with pytest.raises(ConnectionException):
+            mock_azure.create_tenant_principal_ownership(payload)
+        with pytest.raises(ConnectionException):
+            mock_azure.create_tenant_principal_ownership(payload)
+        with pytest.raises(UnknownServerException, match=r".*500 Server Error.*"):
+            mock_azure.create_tenant_principal_ownership(payload)
 
         result: TenantPrincipalOwnershipCSPResult = mock_azure.create_tenant_principal_ownership(
             payload
@@ -736,7 +1005,18 @@ def test_create_principal_admin_role(mock_azure: AzureCloudProvider):
         mock_result.ok = True
         mock_result.json.return_value = {"id": "id"}
 
-        mock_azure.sdk.requests.post.return_value = mock_result
+        mock_http_error_resp = mock_requests_response(
+            status=500,
+            raise_for_status=mock_azure.sdk.requests.exceptions.HTTPError(
+                "500 Server Error"
+            ),
+        )
+        mock_azure.sdk.requests.post.side_effect = [
+            mock_azure.sdk.requests.exceptions.ConnectionError,
+            mock_azure.sdk.requests.exceptions.Timeout,
+            mock_http_error_resp,
+            mock_result,
+        ]
 
         payload = PrincipalAdminRoleCSPPayload(
             **{
@@ -745,6 +1025,12 @@ def test_create_principal_admin_role(mock_azure: AzureCloudProvider):
                 "admin_role_def_id": uuid4().hex,
             }
         )
+        with pytest.raises(ConnectionException):
+            mock_azure.create_principal_admin_role(payload)
+        with pytest.raises(ConnectionException):
+            mock_azure.create_principal_admin_role(payload)
+        with pytest.raises(UnknownServerException, match=r".*500 Server Error.*"):
+            mock_azure.create_principal_admin_role(payload)
 
         result: PrincipalAdminRoleCSPResult = mock_azure.create_principal_admin_role(
             payload
@@ -768,7 +1054,20 @@ def test_create_subscription_creation(mock_azure: AzureCloudProvider):
             "Retry-After": 10,
         }
         mock_result.json.return_value = {}
-        mock_azure.sdk.requests.put.return_value = mock_result
+
+        mock_http_error_resp = mock_requests_response(
+            status=500,
+            raise_for_status=mock_azure.sdk.requests.exceptions.HTTPError(
+                "500 Server Error"
+            ),
+        )
+        mock_azure.sdk.requests.put.side_effect = [
+            mock_azure.sdk.requests.exceptions.ConnectionError,
+            mock_azure.sdk.requests.exceptions.Timeout,
+            mock_http_error_resp,
+            mock_result,
+        ]
+
         management_group_id = str(uuid4())
         payload = SubscriptionCreationCSPPayload(
             **dict(
@@ -780,6 +1079,12 @@ def test_create_subscription_creation(mock_azure: AzureCloudProvider):
                 invoice_section_name="6HMZ-2HLO-PJA-TGB",
             )
         )
+        with pytest.raises(ConnectionException):
+            mock_azure.create_subscription_creation(payload)
+        with pytest.raises(ConnectionException):
+            mock_azure.create_subscription_creation(payload)
+        with pytest.raises(UnknownServerException, match=r".*500 Server Error.*"):
+            mock_azure.create_subscription_creation(payload)
 
         result: SubscriptionCreationCSPResult = mock_azure.create_subscription_creation(
             payload
@@ -801,7 +1106,19 @@ def test_create_subscription_verification(mock_azure: AzureCloudProvider):
         mock_result.json.return_value = {
             "subscriptionLink": "/subscriptions/60fbbb72-0516-4253-ab18-c92432ba3230"
         }
-        mock_azure.sdk.requests.get.return_value = mock_result
+
+        mock_http_error_resp = mock_requests_response(
+            status=500,
+            raise_for_status=mock_azure.sdk.requests.exceptions.HTTPError(
+                "500 Server Error"
+            ),
+        )
+        mock_azure.sdk.requests.get.side_effect = [
+            mock_azure.sdk.requests.exceptions.ConnectionError,
+            mock_azure.sdk.requests.exceptions.Timeout,
+            mock_http_error_resp,
+            mock_result,
+        ]
 
         payload = SubscriptionVerificationCSPPayload(
             **dict(
@@ -809,6 +1126,12 @@ def test_create_subscription_verification(mock_azure: AzureCloudProvider):
                 subscription_verify_url="https://verify.me",
             )
         )
+        with pytest.raises(ConnectionException):
+            mock_azure.create_subscription_verification(payload)
+        with pytest.raises(ConnectionException):
+            mock_azure.create_subscription_verification(payload)
+        with pytest.raises(UnknownServerException, match=r".*500 Server Error.*"):
+            mock_azure.create_subscription_verification(payload)
 
         result: SuscriptionVerificationCSPResult = mock_azure.create_subscription_verification(
             payload
@@ -837,7 +1160,20 @@ def test_get_reporting_data(mock_azure: AzureCloudProvider):
         "type": "Microsoft.CostManagement/query",
     }
     mock_result.ok = True
-    mock_azure.sdk.requests.post.return_value = mock_result
+
+    mock_http_error_resp = mock_requests_response(
+        status=500,
+        raise_for_status=mock_azure.sdk.requests.exceptions.HTTPError(
+            "500 Server Error"
+        ),
+    )
+    mock_azure.sdk.requests.post.side_effect = [
+        mock_azure.sdk.requests.exceptions.ConnectionError,
+        mock_azure.sdk.requests.exceptions.Timeout,
+        mock_http_error_resp,
+        mock_result,
+    ]
+
     mock_azure = mock_get_secret(mock_azure)
 
     # Subset of a profile's CSP data that we care about for reporting
@@ -851,14 +1187,19 @@ def test_get_reporting_data(mock_azure: AzureCloudProvider):
             ],
         },
     }
-
-    data: CostManagementQueryCSPResult = mock_azure.get_reporting_data(
-        ReportingCSPPayload(
-            from_date=pendulum.now().subtract(years=1).add(days=1).format("YYYY-MM-DD"),
-            to_date=pendulum.now().format("YYYY-MM-DD"),
-            **csp_data,
-        )
+    payload = ReportingCSPPayload(
+        from_date=pendulum.now().subtract(years=1).add(days=1).format("YYYY-MM-DD"),
+        to_date=pendulum.now().format("YYYY-MM-DD"),
+        **csp_data,
     )
+    with pytest.raises(ConnectionException):
+        mock_azure.get_reporting_data(payload)
+    with pytest.raises(ConnectionException):
+        mock_azure.get_reporting_data(payload)
+    with pytest.raises(UnknownServerException, match=r".*500 Server Error.*"):
+        mock_azure.get_reporting_data(payload)
+
+    data: CostManagementQueryCSPResult = mock_azure.get_reporting_data(payload)
 
     assert isinstance(data, CostManagementQueryCSPResult)
     assert data.name == "e82d0cda-2ffb-4476-a98a-425c83c216f9"
@@ -868,7 +1209,20 @@ def test_get_reporting_data(mock_azure: AzureCloudProvider):
 def test_get_reporting_data_malformed_payload(mock_azure: AzureCloudProvider):
     mock_result = Mock()
     mock_result.ok = True
-    mock_azure.sdk.requests.post.return_value = mock_result
+
+    mock_http_error_resp = mock_requests_response(
+        status=500,
+        raise_for_status=mock_azure.sdk.requests.exceptions.HTTPError(
+            "500 Server Error"
+        ),
+    )
+    mock_azure.sdk.requests.post.side_effect = [
+        mock_azure.sdk.requests.exceptions.ConnectionError,
+        mock_azure.sdk.requests.exceptions.Timeout,
+        mock_http_error_resp,
+        mock_result,
+    ]
+
     mock_azure = mock_get_secret(mock_azure)
 
     # Malformed csp_data payloads that should throw pydantic validation errors
@@ -905,6 +1259,26 @@ def test_get_secret(mock_azure: AzureCloudProvider):
         assert mock_azure.get_secret("secret key") == "my secret"
 
 
+def test_get_secret_secret_exception(mock_azure: AzureCloudProvider):
+    with patch.object(
+        AzureCloudProvider,
+        "_get_client_secret_credential_obj",
+        wraps=mock_azure._get_client_secret_credential_obj,
+    ) as _get_client_secret_credential_obj:
+        _get_client_secret_credential_obj.return_value = {}
+
+        mock_azure.sdk.secrets.SecretClient.return_value.get_secret.return_value = (
+            "my secret"
+        )
+
+        mock_azure.sdk.secrets.SecretClient.return_value.get_secret.side_effect = [
+            mock_azure.sdk.azure_exceptions.HttpResponseError,
+        ]
+
+        with pytest.raises(SecretException):
+            mock_azure.get_secret("secret key") == "my secret"
+
+
 def test_set_secret(mock_azure: AzureCloudProvider):
     with patch.object(
         AzureCloudProvider,
@@ -916,15 +1290,45 @@ def test_set_secret(mock_azure: AzureCloudProvider):
         mock_azure.sdk.secrets.SecretClient.return_value.set_secret.return_value = (
             "my secret"
         )
-
         assert mock_azure.set_secret("secret key", "secret_value") == "my secret"
+
+
+def test_set_secret_secret_exception(mock_azure: AzureCloudProvider):
+    with patch.object(
+        AzureCloudProvider,
+        "_get_client_secret_credential_obj",
+        wraps=mock_azure._get_client_secret_credential_obj,
+    ) as _get_client_secret_credential_obj:
+        _get_client_secret_credential_obj.return_value = {}
+
+        mock_azure.sdk.secrets.SecretClient.return_value.set_secret.return_value = (
+            "my secret"
+        )
+
+        mock_azure.sdk.secrets.SecretClient.return_value.set_secret.side_effect = [
+            mock_azure.sdk.azure_exceptions.HttpResponseError,
+        ]
+
+        with pytest.raises(SecretException):
+            mock_azure.set_secret("secret key", "secret_value")
 
 
 def test_create_active_directory_user(mock_azure: AzureCloudProvider):
     mock_result = Mock()
     mock_result.ok = True
     mock_result.json.return_value = {"id": "id"}
-    mock_azure.sdk.requests.post.return_value = mock_result
+    mock_http_error_resp = mock_requests_response(
+        status=500,
+        raise_for_status=mock_azure.sdk.requests.exceptions.HTTPError(
+            "500 Server Error"
+        ),
+    )
+    mock_azure.sdk.requests.post.side_effect = [
+        mock_azure.sdk.requests.exceptions.ConnectionError,
+        mock_azure.sdk.requests.exceptions.Timeout,
+        mock_http_error_resp,
+        mock_result,
+    ]
 
     payload = UserCSPPayload(
         tenant_id=uuid4().hex,
@@ -933,6 +1337,12 @@ def test_create_active_directory_user(mock_azure: AzureCloudProvider):
         email="test@testerson.test",
         password="asdfghjkl",  # pragma: allowlist secret
     )
+    with pytest.raises(ConnectionException):
+        mock_azure._create_active_directory_user("token", payload)
+    with pytest.raises(ConnectionException):
+        mock_azure._create_active_directory_user("token", payload)
+    with pytest.raises(UnknownServerException, match=r".*500 Server Error.*"):
+        mock_azure._create_active_directory_user("token", payload)
 
     result = mock_azure._create_active_directory_user("token", payload)
 
@@ -942,8 +1352,18 @@ def test_create_active_directory_user(mock_azure: AzureCloudProvider):
 def test_update_active_directory_user_email(mock_azure: AzureCloudProvider):
     mock_result = Mock()
     mock_result.ok = True
-    mock_azure.sdk.requests.patch.return_value = mock_result
-
+    mock_http_error_resp = mock_requests_response(
+        status=500,
+        raise_for_status=mock_azure.sdk.requests.exceptions.HTTPError(
+            "500 Server Error"
+        ),
+    )
+    mock_azure.sdk.requests.patch.side_effect = [
+        mock_azure.sdk.requests.exceptions.ConnectionError,
+        mock_azure.sdk.requests.exceptions.Timeout,
+        mock_http_error_resp,
+        mock_result,
+    ]
     payload = UserCSPPayload(
         tenant_id=uuid4().hex,
         display_name="Test Testerson",
@@ -951,6 +1371,12 @@ def test_update_active_directory_user_email(mock_azure: AzureCloudProvider):
         email="test@testerson.test",
         password="asdfghjkl",  # pragma: allowlist secret
     )
+    with pytest.raises(ConnectionException):
+        mock_azure._update_active_directory_user_email("token", uuid4().hex, payload)
+    with pytest.raises(ConnectionException):
+        mock_azure._update_active_directory_user_email("token", uuid4().hex, payload)
+    with pytest.raises(UnknownServerException, match=r".*500 Server Error.*"):
+        mock_azure._update_active_directory_user_email("token", uuid4().hex, payload)
 
     result = mock_azure._update_active_directory_user_email(
         "token", uuid4().hex, payload
@@ -985,7 +1411,6 @@ def test_create_user(mock_azure: AzureCloudProvider):
         )
 
         result = mock_azure.create_user(payload)
-
         assert result.id == "id"
 
 

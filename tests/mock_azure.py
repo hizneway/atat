@@ -66,6 +66,12 @@ def mock_policy():
     return Mock(spec=policy)
 
 
+def mock_azure_exceptions():
+    from azure.core import exceptions
+
+    return exceptions
+
+
 def mock_adal():
     import adal
 
@@ -75,7 +81,9 @@ def mock_adal():
 def mock_requests():
     import requests
 
-    return Mock(spec=requests)
+    mock_requests = Mock(wraps=requests)
+    mock_requests.exceptions = requests.exceptions
+    return mock_requests
 
 
 def mock_secrets():
@@ -101,6 +109,7 @@ class MockAzureSDK(object):
         self.graphrbac = mock_graphrbac()
         self.credentials = mock_credentials()
         self.identity = mock_identity()
+        self.azure_exceptions = mock_azure_exceptions()
         self.policy = mock_policy()
         self.secrets = mock_secrets()
         self.requests = mock_requests()

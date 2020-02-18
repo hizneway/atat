@@ -109,6 +109,14 @@ def _build_transitions(csp_stages):
                         dest=compose_state(csp_stage, StageStates.FAILED),
                     )
                 )
+                transitions.append(
+                    dict(
+                        trigger="resume_progress_" + csp_stage.name.lower(),
+                        source=compose_state(csp_stage, StageStates.FAILED),
+                        dest=compose_state(csp_stage, StageStates.IN_PROGRESS),
+                        conditions=["is_ready_resume_progress"],
+                    )
+                )
     return states, transitions
 
 
@@ -130,15 +138,20 @@ class FSMMixin:
     ]
 
     def fail_stage(self, stage):
-        fail_trigger = "fail" + stage
+        fail_trigger = f"fail_{stage}"
+
         if fail_trigger in self.machine.get_triggers(self.current_state.name):
             self.trigger(fail_trigger)
             app.logger.info(
                 f"calling fail trigger '{fail_trigger}' for '{self.__repr__()}'"
             )
+        else:
+            app.logger.info(
+                f"could not locate fail trigger '{fail_trigger}' for '{self.__repr__()}'"
+            )
 
     def finish_stage(self, stage):
-        finish_trigger = "finish_" + stage
+        finish_trigger = f"finish_{stage}"
         if finish_trigger in self.machine.get_triggers(self.current_state.name):
             app.logger.info(
                 f"calling finish trigger '{finish_trigger}' for '{self.__repr__()}'"
