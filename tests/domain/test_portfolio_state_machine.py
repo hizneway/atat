@@ -2,7 +2,7 @@ import pytest
 import pydantic
 
 import re
-from unittest import mock
+from unittest.mock import Mock, patch
 from enum import Enum
 
 from tests.factories import (
@@ -41,12 +41,19 @@ def portfolio():
     portfolio = CLINFactory.create().task_order.portfolio
     return portfolio
 
+@pytest.fixture(scope="function")
+def state_machine():
+    # TODO: setup clin/to as active/funded/ready
+    portfolio = CLINFactory.create().task_order.portfolio
+    return PortfolioStateMachineFactory.create(portfolio=portfolio)
 
+@pytest.mark.state_machine
 def test_fsm_creation(portfolio):
     sm = PortfolioStateMachineFactory.create(portfolio=portfolio)
     assert sm.portfolio
 
 
+@pytest.mark.state_machine
 def test_state_machine_trigger_next_transition(portfolio):
     sm = PortfolioStateMachineFactory.create(portfolio=portfolio)
 
@@ -57,6 +64,7 @@ def test_state_machine_trigger_next_transition(portfolio):
     assert sm.current_state == FSMStates.STARTED
 
 
+@pytest.mark.state_machine
 def test_state_machine_compose_state():
     assert (
         compose_state(AzureStages.TENANT, StageStates.CREATED)
@@ -64,6 +72,7 @@ def test_state_machine_compose_state():
     )
 
 
+@pytest.mark.state_machine
 def test_stage_to_classname():
     assert (
         _stage_to_classname(AzureStages.BILLING_PROFILE_CREATION.name)
@@ -71,16 +80,19 @@ def test_stage_to_classname():
     )
 
 
+@pytest.mark.state_machine
 def test_get_stage_csp_class():
     csp_class = get_stage_csp_class(list(AzureStages)[0].name.lower(), "payload")
     assert isinstance(csp_class, pydantic.main.ModelMetaclass)
 
 
+@pytest.mark.state_machine
 def test_get_stage_csp_class_import_fail():
     with pytest.raises(StateMachineMisconfiguredError):
         csp_class = get_stage_csp_class("doesnotexist", "payload")
 
 
+@pytest.mark.state_machine
 def test_build_transitions():
     states, transitions = _build_transitions(AzureStagesTest)
     assert [s.get("name").name for s in states] == [
@@ -102,6 +114,7 @@ def test_build_transitions():
     ]
 
 
+@pytest.mark.state_machine
 def test_build_csp_states():
     states = _build_csp_states(AzureStagesTest)
     assert list(states) == [
@@ -116,18 +129,18 @@ def test_build_csp_states():
     ]
 
 
-def test_state_machine_valid_data_classes_for_stages(portfolio):
-    PortfolioStateMachineFactory.create(portfolio=portfolio)
+@pytest.mark.state_machine
+def test_state_machine_valid_data_classes_for_stages():
     for stage in AzureStages:
         assert get_stage_csp_class(stage.name.lower(), "payload") is not None
         assert get_stage_csp_class(stage.name.lower(), "result") is not None
 
 
-def test_attach_machine(portfolio):
-    sm = PortfolioStateMachineFactory.create(portfolio=portfolio)
-    sm.machine = None
-    sm.attach_machine(stages=AzureStagesTest)
-    assert list(sm.machine.events) == [
+@pytest.mark.state_machine
+def test_attach_machine(state_machine):
+    state_machine.machine = None
+    state_machine.attach_machine(stages=AzureStagesTest)
+    assert list(state_machine.machine.events) == [
         "init",
         "start",
         "reset",
@@ -139,14 +152,60 @@ def test_attach_machine(portfolio):
         "resume_progress_tenant",
     ]
 
+@pytest.mark.state_machine
+def test_current_state_property(state_machine):
+    assert state_machine.current_state == FSMStates.UNSTARTED
+    state_machine.state = FSMStates.TENANT_IN_PROGRESS
+    assert state_machine.current_state == FSMStates.TENANT_IN_PROGRESS
 
-def test_fail_stage(portfolio):
-    sm = PortfolioStateMachineFactory.create(portfolio=portfolio)
-    sm.state = FSMStates.TENANT_IN_PROGRESS
-    sm.fail_stage("tenant")
-    assert sm.state == FSMStates.TENANT_FAILED
+@pytest.mark.state_machine
+def test_fail_stage(state_machine):
+    state_machine.state = FSMStates.TENANT_IN_PROGRESS
+    state_machine.portfolio.csp_data = {}
+    state_machine.fail_stage("tenant")
+    assert state_machine.state == FSMStates.TENANT_FAILED
 
+@pytest.mark.state_machine
+def test_fail_stage_invalid_triggers(state_machine):
+    state_machine.state = FSMStates.TENANT_IN_PROGRESS
+    state_machine.portfolio.csp_data = {}
+    state_machine.machine.get_triggers = Mock(return_value=['some', 'triggers', 'here'])
+    state_machine.fail_stage("tenant")
+    assert state_machine.state == FSMStates.TENANT_IN_PROGRESS
 
+@pytest.mark.state_machine
+def test_fail_stage_invalid_stage(state_machine):
+    state_machine.state = FSMStates.TENANT_IN_PROGRESS
+    state_machine.portfolio.csp_data = {}
+    portfolio.csp_data = {}
+    state_machine.fail_stage("invalid stage")
+    assert state_machine.state == FSMStates.TENANT_IN_PROGRESS
+
+@pytest.mark.state_machine
+def test_finish_stage(state_machine):
+    state_machine.state = FSMStates.TENANT_IN_PROGRESS
+    state_machine.portfolio.csp_data = {}
+    state_machine.finish_stage("tenant")
+    assert state_machine.state == FSMStates.TENANT_CREATED
+
+@pytest.mark.state_machine
+def test_finish_stage_invalid_triggers(state_machine):
+    state_machine.state = FSMStates.TENANT_IN_PROGRESS
+    state_machine.portfolio.csp_data = {}
+
+    state_machine.machine.get_triggers = Mock(return_value=['some', 'triggers', 'here'])
+    state_machine.finish_stage("tenant")
+    assert state_machine.state == FSMStates.TENANT_IN_PROGRESS
+
+@pytest.mark.state_machine
+def test_finish_stage_invalid_stage(state_machine):
+    state_machine.state = FSMStates.TENANT_IN_PROGRESS
+    state_machine.portfolio.csp_data = {}
+    portfolio.csp_data = {}
+    state_machine.finish_stage("invalid stage")
+    assert state_machine.state == FSMStates.TENANT_IN_PROGRESS
+
+@pytest.mark.state_machine
 def test_stage_state_to_stage_name():
     stage = _stage_state_to_stage_name(
         FSMStates.TENANT_IN_PROGRESS, StageStates.IN_PROGRESS
@@ -154,18 +213,17 @@ def test_stage_state_to_stage_name():
     assert stage == "tenant"
 
 
-def test_state_machine_initialization(portfolio):
-
-    sm = PortfolioStateMachineFactory.create(portfolio=portfolio)
+@pytest.mark.state_machine
+def test_state_machine_initialization(state_machine):
     for stage in AzureStages:
 
         # check that all stages have a 'create' and 'fail' triggers
         stage_name = stage.name.lower()
         for trigger_prefix in ["create", "fail"]:
-            assert hasattr(sm, trigger_prefix + "_" + stage_name)
+            assert hasattr(state_machine, trigger_prefix + "_" + stage_name)
 
         # check that machine
-        in_progress_triggers = sm.machine.get_triggers(stage.name + "_IN_PROGRESS")
+        in_progress_triggers = state_machine.machine.get_triggers(stage.name + "_IN_PROGRESS")
         assert [
             "reset",
             "fail",
@@ -173,32 +231,26 @@ def test_state_machine_initialization(portfolio):
             "fail_" + stage_name,
         ] == in_progress_triggers
 
-        started_triggers = sm.machine.get_triggers("STARTED")
+        started_triggers = state_machine.machine.get_triggers("STARTED")
         create_trigger = next(
             filter(
                 lambda trigger: trigger.startswith("create_"),
-                sm.machine.get_triggers(FSMStates.STARTED.name),
+                state_machine.machine.get_triggers(FSMStates.STARTED.name),
             ),
             None,
         )
         assert ["reset", "fail", create_trigger] == started_triggers
 
 
-@mock.patch("atst.domain.csp.cloud.MockCloudProvider")
+@pytest.mark.state_machine
+@patch("atst.domain.csp.cloud.MockCloudProvider")
 def test_fsm_transition_start(mock_cloud_provider, portfolio: Portfolio):
     mock_cloud_provider._authorize.return_value = None
     mock_cloud_provider._maybe_raise.return_value = None
-    sm: PortfolioStateMachine = PortfolioStateMachineFactory.create(portfolio=portfolio)
-    assert sm.portfolio
-    assert sm.state == FSMStates.UNSTARTED
-
-    sm.init()
-    assert sm.state == FSMStates.STARTING
-
-    sm.start()
-    assert sm.state == FSMStates.STARTED
 
     expected_states = [
+        FSMStates.STARTING,
+        FSMStates.STARTED,
         FSMStates.TENANT_CREATED,
         FSMStates.BILLING_PROFILE_CREATION_CREATED,
         FSMStates.BILLING_PROFILE_VERIFICATION_CREATED,
@@ -227,6 +279,12 @@ def test_fsm_transition_start(mock_cloud_provider, portfolio: Portfolio):
         csp_data = {}
 
     ppoc = portfolio.owner
+    if not ppoc:
+        class ppoc:
+            first_name = "John"
+            last_name = "Doe"
+            email = "email@example.com"
+
     user_id = f"{ppoc.first_name[0]}{ppoc.last_name}".lower()
     domain_name = re.sub("[^0-9a-zA-Z]+", "", portfolio.name).lower()
 
@@ -260,6 +318,10 @@ def test_fsm_transition_start(mock_cloud_provider, portfolio: Portfolio):
     }
 
     config = {"billing_account_name": "billing_account_name"}
+
+    sm: PortfolioStateMachine = PortfolioStateMachineFactory.create(portfolio=portfolio)
+    assert sm.portfolio
+    assert sm.state == FSMStates.UNSTARTED
 
     for expected_state in expected_states:
         collected_data = dict(
