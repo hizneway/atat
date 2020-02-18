@@ -40,7 +40,7 @@
           <div class="usa-input__title">
             {{ label }}
             {% if optional and showOptional %}
-              <span class="usa-input-label-helper">(optional)</span>
+              <span class="usa-input-label-helper">{{ "common.optional" | translate }}</span>
             {% endif %}
             {% if tooltip and not disabled %}
               {{ Tooltip(tooltip, tooltip_title) }}

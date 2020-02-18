@@ -1,6 +1,6 @@
 from werkzeug.datastructures import FileStorage
 import pytest
-from datetime import date
+import pendulum
 from unittest.mock import patch, PropertyMock
 import pendulum
 
@@ -13,11 +13,11 @@ from tests.mocks import PDF_FILENAME
 
 
 def test_period_of_performance_is_first_to_last_clin():
-    start_date = date(2019, 6, 6)
-    end_date = date(2020, 6, 6)
+    start_date = pendulum.date(2019, 6, 6)
+    end_date = pendulum.date(2020, 6, 6)
 
-    intermediate_start_date = date(2019, 7, 1)
-    intermediate_end_date = date(2020, 3, 1)
+    intermediate_start_date = pendulum.date(2019, 7, 1)
+    intermediate_end_date = pendulum.date(2020, 3, 1)
 
     task_order = TaskOrderFactory.create(
         clins=[

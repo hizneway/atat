@@ -1,7 +1,7 @@
 # Add root application dir to the python path
 import os
 import sys
-from datetime import timedelta, date
+import pendulum
 import random
 from faker import Faker
 from werkzeug.datastructures import FileStorage
@@ -170,10 +170,9 @@ def add_members_to_portfolio(portfolio):
 
 
 def add_task_orders_to_portfolio(portfolio):
-    today = date.today()
-    future = today + timedelta(days=100)
-    yesterday = today - timedelta(days=1)
-    five_days = timedelta(days=5)
+    today = pendulum.today()
+    future = today.add(days=100)
+    yesterday = today.subtract(days=1)
 
     def build_pdf():
         return {"filename": "sample_task_order.pdf", "object_name": str(uuid4())}
@@ -192,13 +191,13 @@ def add_task_orders_to_portfolio(portfolio):
 
     clins = [
         CLINFactory.build(
-            task_order=unsigned_to, start_date=(today - five_days), end_date=today
+            task_order=unsigned_to, start_date=today.subtract(days=5), end_date=today
         ),
         CLINFactory.build(
-            task_order=upcoming_to, start_date=(today + five_days), end_date=future
+            task_order=upcoming_to, start_date=today.add(days=5), end_date=future
         ),
         CLINFactory.build(
-            task_order=expired_to, start_date=(today - five_days), end_date=yesterday
+            task_order=expired_to, start_date=today.subtract(days=5), end_date=yesterday
         ),
         CLINFactory.build(
             task_order=active_to,

@@ -1,5 +1,4 @@
 import re
-import datetime
 from atst.utils.localization import translate
 from flask import render_template
 from jinja2 import contextfilter
@@ -54,10 +53,6 @@ def formattedDate(value, formatter="%m/%d/%Y"):
         return "-"
 
 
-def dateFromString(value, formatter="%m/%Y"):
-    return datetime.datetime.strptime(value, formatter)
-
-
 def pageWindow(pagination, size=2):
     page = pagination.page
     num_pages = pagination.pages
@@ -81,7 +76,6 @@ def register_filters(app):
     app.jinja_env.filters["dollars"] = dollars
     app.jinja_env.filters["usPhone"] = usPhone
     app.jinja_env.filters["formattedDate"] = formattedDate
-    app.jinja_env.filters["dateFromString"] = dateFromString
     app.jinja_env.filters["pageWindow"] = pageWindow
     app.jinja_env.filters["renderAuditEvent"] = renderAuditEvent
     app.jinja_env.filters["withExtraParams"] = with_extra_params

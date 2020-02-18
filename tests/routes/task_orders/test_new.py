@@ -1,6 +1,6 @@
 import pytest
 from flask import url_for, get_flashed_messages
-from datetime import timedelta, date
+import pendulum
 from uuid import uuid4
 
 from atst.domain.task_orders import TaskOrders
@@ -339,7 +339,7 @@ def test_task_orders_submit_task_order(client, user_session, task_order):
     )
     assert response.status_code == 302
 
-    active_start_date = date.today() - timedelta(days=1)
+    active_start_date = pendulum.today().subtract(days=1)
     active_task_order = TaskOrderFactory(portfolio=task_order.portfolio)
     CLINFactory(task_order=active_task_order, start_date=active_start_date)
     assert active_task_order.status == TaskOrderStatus.UNSIGNED
@@ -348,7 +348,7 @@ def test_task_orders_submit_task_order(client, user_session, task_order):
     )
     assert active_task_order.status == TaskOrderStatus.ACTIVE
 
-    upcoming_start_date = date.today() + timedelta(days=1)
+    upcoming_start_date = pendulum.today().add(days=1)
     upcoming_task_order = TaskOrderFactory(portfolio=task_order.portfolio)
     CLINFactory(task_order=upcoming_task_order, start_date=upcoming_start_date)
     assert upcoming_task_order.status == TaskOrderStatus.UNSIGNED

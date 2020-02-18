@@ -1,4 +1,4 @@
-import datetime
+import pendulum
 
 from atst.models import InvitationStatus, PortfolioRoleStatus
 
@@ -17,7 +17,7 @@ def test_expired_invite_is_not_revokable():
         portfolio=portfolio, user=user, status=PortfolioRoleStatus.PENDING
     )
     invite = PortfolioInvitationFactory.create(
-        expiration_time=datetime.datetime.now() - datetime.timedelta(minutes=60),
+        expiration_time=pendulum.now(tz="utc").subtract(minutes=60),
         role=portfolio_role,
     )
     assert not invite.is_revokable

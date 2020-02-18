@@ -1,4 +1,4 @@
-import datetime
+import pendulum
 from dateutil.relativedelta import relativedelta
 from flask import current_app as app
 
@@ -17,8 +17,8 @@ def test_clin_form_jedi_clin_type():
 
 
 def test_clin_form_start_date_before_end_date():
-    invalid_start = datetime.date(2020, 12, 12)
-    invalid_end = datetime.date(2020, 1, 1)
+    invalid_start = pendulum.date(2020, 12, 12)
+    invalid_end = pendulum.date(2020, 1, 1)
     invalid_clin = factories.CLINFactory.create(
         start_date=invalid_start, end_date=invalid_end
     )
@@ -28,8 +28,8 @@ def test_clin_form_start_date_before_end_date():
         translate("forms.task_order.pop_errors.date_order")
         in clin_form.start_date.errors
     )
-    valid_start = datetime.date(2020, 1, 1)
-    valid_end = datetime.date(2020, 12, 12)
+    valid_start = pendulum.date(2020, 1, 1)
+    valid_end = pendulum.date(2020, 12, 12)
     valid_clin = factories.CLINFactory.create(
         start_date=valid_start, end_date=valid_end
     )
@@ -81,8 +81,8 @@ def test_clin_form_obligated_greater_than_total():
     invalid_clin = factories.CLINFactory.create(
         total_amount=0,
         obligated_amount=1,
-        start_date=datetime.date(2019, 9, 15),
-        end_date=datetime.date(2020, 9, 14),
+        start_date=pendulum.date(2019, 9, 15),
+        end_date=pendulum.date(2020, 9, 14),
     )
     invalid_clin_form = CLINForm(obj=invalid_clin)
     assert not invalid_clin_form.validate()
@@ -95,8 +95,8 @@ def test_clin_form_dollar_amounts_out_of_range():
     invalid_clin = factories.CLINFactory.create(
         total_amount=-1,
         obligated_amount=1000000001,
-        start_date=datetime.date(2019, 9, 15),
-        end_date=datetime.date(2020, 9, 14),
+        start_date=pendulum.date(2019, 9, 15),
+        end_date=pendulum.date(2020, 9, 14),
     )
     invalid_clin_form = CLINForm(obj=invalid_clin)
     assert not invalid_clin_form.validate()

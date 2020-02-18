@@ -1,5 +1,5 @@
-import datetime
 from sqlalchemy.orm.exc import NoResultFound
+import pendulum
 
 from atst.database import db
 from atst.models import ApplicationInvitation, InvitationStatus, PortfolioInvitation
@@ -99,9 +99,7 @@ class BaseInvitations(object):
 
     @classmethod
     def current_expiration_time(cls):
-        return datetime.datetime.now() + datetime.timedelta(
-            minutes=cls.EXPIRATION_LIMIT_MINUTES
-        )
+        return pendulum.now(tz="utc").add(minutes=cls.EXPIRATION_LIMIT_MINUTES)
 
     @classmethod
     def _update_status(cls, invite, new_status):

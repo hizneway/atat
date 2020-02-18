@@ -3,7 +3,7 @@ import random
 import string
 import factory
 from uuid import uuid4
-import datetime
+import pendulum
 
 from atst.forms import data
 from atst.models import *
@@ -56,8 +56,8 @@ def _random_date(year_min, year_max, operation):
     else:
         inc = random.randrange(year_min, year_max)
 
-    return datetime.date(
-        operation(datetime.date.today().year, inc),
+    return pendulum.date(
+        operation(pendulum.today().year, inc),
         random.randrange(1, 12),
         random.randrange(1, 28),
     )
@@ -99,8 +99,7 @@ class UserFactory(Base):
     citizenship = "United States"
     designation = "military"
     date_latest_training = factory.LazyFunction(
-        lambda: datetime.date.today()
-        + datetime.timedelta(days=-(random.randrange(1, 365)))
+        lambda: pendulum.today().add(days=-(random.randrange(1, 365)))
     )
 
     @classmethod
@@ -341,7 +340,7 @@ class CLINFactory(Base):
 
     task_order = factory.SubFactory(TaskOrderFactory)
     number = factory.LazyFunction(random_clin_number)
-    start_date = datetime.date.today()
+    start_date = pendulum.today()
     end_date = factory.LazyFunction(random_future_date)
     total_amount = factory.LazyFunction(lambda *args: random.randint(50000, 999999))
     obligated_amount = factory.LazyFunction(lambda *args: random.randint(100, 50000))

@@ -4,7 +4,6 @@ import hashlib
 import logging
 
 from OpenSSL import crypto, SSL
-from datetime import datetime
 from flask import current_app as app
 
 from .util import load_crl_locations_cache, serialize_crl_locations_cache, CRL_LIST

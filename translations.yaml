@@ -51,6 +51,7 @@ common:
   lorem: Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
   name: Name
   next: Next
+  optional: Optional
   previous: Previous
   save: Save
   save_changes: Save Changes
@@ -506,12 +507,12 @@ portfolios:
     archive_button: Delete member
   reports:
     days_remaining:
-      header: Days Remaining
+      header: Days remaining
       toolip: Days remaining are the days of funding remaining in the portfolio.
     duration:
-      header: Funding Duration
+      header: Funding duration
       tooltip: Funding duration is the period of time that there is a valid task order funding the portfolio.
-    estimate_warning: Reports displayed in JEDI are estimates and not a system of record.
+    estimate_warning: Reports displayed in JEDI are estimates and not a system of record. To manage your costs, go to Azure by selecting the Login to Azure button above.
     total_value:
       header: Total Portfolio Value
       tooltip: Total portfolio value is all obligated funds for current and upcoming task orders in this portfolio.
@@ -533,7 +534,6 @@ task_orders:
     tooltip:
       obligated_funds: Funds committed to fund your portfolio. This may represent 100% of your total Task Order value, or a portion of it.
       total_value: All obligated and projected funds for the Task Order’s Base and Option CLINs.
-      expended_funds: All funds spent from the Task Order so far.
   form:
     add_clin: Add Another CLIN
     add_to_header: Enter the Task Order number
@@ -593,7 +593,6 @@ task_orders:
   summary:
     obligated: Total Obligated
     total: Total Value
-    expended: Total Expended
 JEDICLINType:
   JEDI_CLIN_1: "IDIQ CLIN 0001 Unclassified IaaS/PaaS"
   JEDI_CLIN_2: "IDIQ CLIN 0002 Classified IaaS/PaaS"
