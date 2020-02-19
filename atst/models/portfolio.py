@@ -202,7 +202,7 @@ class Portfolio(
 
         try:
             initial_task_order: TaskOrder = self.task_orders[0]
-            initial_clin = initial_task_order.sorted_clins[0]
+            initial_clin = initial_task_order.clins[0]
             portfolio_data.update(
                 {
                     "initial_clin_amount": initial_clin.obligated_amount,

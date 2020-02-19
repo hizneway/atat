@@ -62,7 +62,7 @@ def test_clin_sorting():
             CLINFactory.create(number="2001"),
         ]
     )
-    assert [clin.number for clin in task_order.sorted_clins] == [
+    assert [clin.number for clin in task_order.clins] == [
         "0001",
         "1001",
         "2001",
