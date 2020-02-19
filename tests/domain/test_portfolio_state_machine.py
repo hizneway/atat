@@ -1,4 +1,7 @@
-import re
+import pytest
+import pydantic
+
+from unittest.mock import Mock, patch
 from enum import Enum
 from unittest.mock import Mock, patch
 
@@ -12,6 +15,7 @@ from tests.factories import (
     PortfolioStateMachineFactory,
     TaskOrderFactory,
     UserFactory,
+    get_portfolio_csp_data,
 )
 
 from atst.models import FSMStates, PortfolioStateMachine, TaskOrder
@@ -68,14 +72,19 @@ def test_fsm_creation(portfolio):
 
 
 @pytest.mark.state_machine
-def test_state_machine_trigger_next_transition(portfolio):
-    sm = PortfolioStateMachineFactory.create(portfolio=portfolio)
+def test_state_machine_trigger_next_transition(state_machine):
 
-    sm.trigger_next_transition()
-    assert sm.current_state == FSMStates.STARTING
+    state_machine.trigger_next_transition()
+    assert state_machine.current_state == FSMStates.STARTING
 
-    sm.trigger_next_transition()
-    assert sm.current_state == FSMStates.STARTED
+    state_machine.trigger_next_transition()
+    assert state_machine.current_state == FSMStates.STARTED
+
+    state_machine.state = FSMStates.STARTED
+    state_machine.trigger_next_transition(
+        csp_data=get_portfolio_csp_data(state_machine.portfolio)
+    )
+    assert state_machine.current_state == FSMStates.TENANT_CREATED
 
 
 @pytest.mark.state_machine
@@ -172,6 +181,8 @@ def test_current_state_property(state_machine):
     assert state_machine.current_state == FSMStates.UNSTARTED
     state_machine.state = FSMStates.TENANT_IN_PROGRESS
     assert state_machine.current_state == FSMStates.TENANT_IN_PROGRESS
+    state_machine.state = "UNSTARTED"
+    assert state_machine.current_state == FSMStates.UNSTARTED
 
 
 @pytest.mark.state_machine
@@ -268,9 +279,12 @@ def test_state_machine_initialization(state_machine):
 
 @pytest.mark.state_machine
 @patch("atst.domain.csp.cloud.MockCloudProvider")
-def test_fsm_transition_start(mock_cloud_provider, portfolio: Portfolio):
+def test_fsm_transition_start(
+    mock_cloud_provider, state_machine: PortfolioStateMachine
+):
     mock_cloud_provider._authorize.return_value = None
     mock_cloud_provider._maybe_raise.return_value = None
+    portfolio = state_machine.portfolio
 
     expected_states = [
         FSMStates.STARTING,
@@ -302,52 +316,17 @@ def test_fsm_transition_start(mock_cloud_provider, portfolio: Portfolio):
     else:
         csp_data = {}
 
-    ppoc = portfolio.owner
-
-    user_id = f"{ppoc.first_name[0]}{ppoc.last_name}".lower()
-    domain_name = re.sub("[^0-9a-zA-Z]+", "", portfolio.name).lower()
-
-    initial_task_order: TaskOrder = portfolio.task_orders[0]
-    initial_clin = initial_task_order.sorted_clins[0]
-
-    portfolio_data = {
-        "user_id": user_id,
-        "password": "jklfsdNCVD83nklds2#202",  # pragma: allowlist secret
-        "domain_name": domain_name,
-        "display_name": "mgmt group display name",
-        "management_group_name": "mgmt-group-uuid",
-        "first_name": ppoc.first_name,
-        "last_name": ppoc.last_name,
-        "country_code": "US",
-        "password_recovery_email_address": ppoc.email,
-        "address": {  # TODO: TBD if we're sourcing this from data or config
-            "company_name": "",
-            "address_line_1": "",
-            "city": "",
-            "region": "",
-            "country": "",
-            "postal_code": "",
-        },
-        "billing_profile_display_name": "My Billing Profile",
-        "initial_clin_amount": initial_clin.obligated_amount,
-        "initial_clin_start_date": initial_clin.start_date.strftime("%Y/%m/%d"),
-        "initial_clin_end_date": initial_clin.end_date.strftime("%Y/%m/%d"),
-        "initial_clin_type": initial_clin.number,
-        "initial_task_order_id": initial_task_order.number,
-    }
-
     config = {"billing_account_name": "billing_account_name"}
 
-    sm: PortfolioStateMachine = PortfolioStateMachineFactory.create(portfolio=portfolio)
-    assert sm.portfolio
-    assert sm.state == FSMStates.UNSTARTED
+    assert state_machine.state == FSMStates.UNSTARTED
+    portfolio_data = get_portfolio_csp_data(portfolio)
 
     for expected_state in expected_states:
         collected_data = dict(
             list(csp_data.items()) + list(portfolio_data.items()) + list(config.items())
         )
-        sm.trigger_next_transition(csp_data=collected_data)
-        assert sm.state == expected_state
+        state_machine.trigger_next_transition(csp_data=collected_data)
+        assert state_machine.state == expected_state
         if portfolio.csp_data is not None:
             csp_data = portfolio.csp_data
         else:
