@@ -111,6 +111,18 @@ def do_create_user(csp: CloudProviderInterface, application_role_ids=None):
             db.session.add(app_role)
 
         db.session.commit()
+        username = payload.user_principal_name
+        send_mail(
+            recipients=[user.email],
+            subject=translate("email.app_role_created.subject"),
+            body=translate(
+                "email.app_role_created.body",
+                {"url": app.config.get("AZURE_LOGIN_URL"), "username": username},
+            ),
+        )
+        app.logger.info(
+            f"Application role created notification email sent. User id: {user.id}"
+        )
 
 
 def do_create_environment(csp: CloudProviderInterface, environment_id=None):
@@ -280,7 +292,7 @@ def dispatch_create_atat_admin_user(self):
 
 
 @celery.task(bind=True)
-def dispatch_send_task_order_files(self):
+def send_task_order_files(self):
     task_orders = TaskOrders.get_for_send_task_order_files()
     recipients = [app.config.get("MICROSOFT_TASK_ORDER_EMAIL_ADDRESS")]
 
@@ -301,7 +313,7 @@ def dispatch_send_task_order_files(self):
             app.logger.exception(err)
             continue
 
-        task_order.pdf_last_sent_at = pendulum.now()
+        task_order.pdf_last_sent_at = pendulum.now(tz="UTC")
         db.session.add(task_order)
 
     db.session.commit()
