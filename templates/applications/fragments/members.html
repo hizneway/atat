@@ -82,7 +82,7 @@
           <form method="post" action="{{ url_for('applications.revoke_invite', application_id=application.id, application_role_id=member.role_id) }}">
             {{ member.form.csrf_token }}
             <h1>{{ "invites.revoke" | translate }}</h1>
-            <hr>
+            <hr class="full-width">
             {{ "invites.revoke_modal_text" | translate({"application": application.name}) }}
             <div class="action-group">
               <button class="action-group__action usa-button usa-button-primary" type="submit">{{ "invites.revoke" | translate }}</button>
