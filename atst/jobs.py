@@ -325,15 +325,16 @@ def create_billing_instruction(self):
     clins = TaskOrders.get_clins_for_create_billing_instructions()
     for clin in clins:
         portfolio = clin.task_order.portfolio
-        clin_data = clin.to_dictionary()
-        portfolio_data = portfolio.to_dictionary()
 
         payload = BillingInstructionCSPPayload(
             tenant_id=portfolio.csp_data.get("tenant_id"),
             billing_account_name=portfolio.csp_data.get("billing_account_name"),
             billing_profile_name=portfolio.csp_data.get("billing_profile_name"),
-            **clin_data,
-            **portfolio_data,
+            initial_clin_amount=clin.obligated_amount,
+            initial_clin_start_date=str(clin.start_date),
+            initial_clin_end_date=str(clin.end_date),
+            initial_clin_type=clin.number,
+            initial_task_order_id=str(clin.task_order_id),
         )
 
         try:

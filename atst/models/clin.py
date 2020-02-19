@@ -71,8 +71,6 @@ class CLIN(Base, mixins.TimestampsMixin):
             for c in self.__table__.columns
             if c.name not in ["id"]
         }
-        data["start_date"] = str(data["start_date"])
-        data["end_date"] = str(data["end_date"])
 
         return data
 

@@ -220,14 +220,6 @@ class BillingInstructionCSPPayload(BaseCSPPayload):
     billing_account_name: str
     billing_profile_name: str
 
-    class Config:
-        fields = {
-            "initial_clin_amount": "obligated_amount",
-            "initial_clin_start_date": "start_date",
-            "initial_clin_end_date": "end_date",
-            "initial_clin_type": "number",
-        }
-
 
 class BillingInstructionCSPResult(AliasModel):
     reported_clin_name: str

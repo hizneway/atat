@@ -561,6 +561,7 @@ class TestCreateBillingInstructions:
 
         session.begin_nested()
         create_billing_instruction()
+        session.add(sent_clin)
 
         # check that last_sent_at has been update for the new clin only
         assert new_clin.last_sent_at
