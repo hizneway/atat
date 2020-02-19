@@ -156,4 +156,3 @@ class FSMMixin:
                 f"calling finish trigger '{finish_trigger}' for '{self.__repr__()}'"
             )
             self.trigger(finish_trigger)
-
