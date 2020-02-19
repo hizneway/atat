@@ -271,7 +271,7 @@ forms:
       label: Portfolio Name
       length_validation_message: Portfolio names can be between 4-100 characters
       help_text: |
-        <div>
+        <div class="usa-input__help">
           <p>
             Naming can be difficult. Choose a name that is descriptive enough for users to identify the Portfolio. You may consider naming based on your organization.
           </p>
@@ -285,7 +285,7 @@ forms:
     description:
       label: Portfolio Description
       help_text: |
-        <div>
+        <div class="usa-input__help">
           <p>
             Add a brief one to two sentence description of your Portfolio. Consider this your statement of work.
           </p>
@@ -310,11 +310,9 @@ forms:
       title: Select DoD component(s) funding your Portfolio
       validation_message: You must select at least one defense component.
       help_text: |
-        <p>
           Select the DOD component(s) that will fund all Applications within this Portfolio.
           In JEDI, multiple DoD organizations can fund the same Portfolio.<br/>
-          Select all that apply.<br/>
-        </p>
+          Select all that apply.
   attachment:
     object_name:
       length_error: Object name may be no longer than 40 characters.

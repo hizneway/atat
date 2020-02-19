@@ -33,6 +33,7 @@ class PortfolioForm(BaseForm):
 class PortfolioCreationForm(PortfolioForm):
     defense_component = SelectMultipleField(
         translate("forms.portfolio.defense_component.title"),
+        description=translate("forms.portfolio.defense_component.help_text"),
         choices=SERVICE_BRANCHES,
         widget=ListWidget(prefix_label=False),
         option_widget=CheckboxInput(),
