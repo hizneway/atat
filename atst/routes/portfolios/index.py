@@ -50,9 +50,7 @@ def reports(portfolio_id):
         "portfolios/reports/index.html",
         portfolio=portfolio,
         # wrapped in str() because this sum returns a Decimal object
-        total_portfolio_value=str(
-            portfolio.total_obligated_funds + portfolio.upcoming_obligated_funds
-        ),
+        total_portfolio_value=str(portfolio.total_obligated_funds),
         current_obligated_funds=current_obligated_funds,
         expired_task_orders=Reports.expired_task_orders(portfolio),
         retrieved=pendulum.now(),  # mocked datetime of reporting data retrival
