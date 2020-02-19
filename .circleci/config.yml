@@ -96,6 +96,7 @@ commands:
             apk del --purge build
       - run:
           name: Login to Azure CLI
+          shell: /bin/sh -o pipefail
           command: |
             az login \
               --service-principal \
