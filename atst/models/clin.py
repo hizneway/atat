@@ -65,6 +65,10 @@ class CLIN(Base, mixins.TimestampsMixin):
             ]
         )
 
+    @property
+    def jedi_clin_number(self):
+        return self.jedi_clin_type.value[-1]
+
     def to_dictionary(self):
         data = {
             c.name: getattr(self, c.name)

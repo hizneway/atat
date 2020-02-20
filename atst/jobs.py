@@ -333,7 +333,7 @@ def create_billing_instruction(self):
             initial_clin_amount=clin.obligated_amount,
             initial_clin_start_date=str(clin.start_date),
             initial_clin_end_date=str(clin.end_date),
-            initial_clin_type=clin.number,
+            initial_clin_type=clin.jedi_clin_number,
             initial_task_order_id=str(clin.task_order_id),
         )
 
