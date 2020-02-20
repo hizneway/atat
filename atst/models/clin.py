@@ -66,11 +66,13 @@ class CLIN(Base, mixins.TimestampsMixin):
         )
 
     def to_dictionary(self):
-        return {
+        data = {
             c.name: getattr(self, c.name)
             for c in self.__table__.columns
             if c.name not in ["id"]
         }
+
+        return data
 
     @property
     def is_active(self):

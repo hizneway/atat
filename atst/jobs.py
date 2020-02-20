@@ -10,6 +10,7 @@ from atst.domain.csp.cloud import CloudProviderInterface
 from atst.domain.csp.cloud.exceptions import GeneralCSPException
 from atst.domain.csp.cloud.models import (
     ApplicationCSPPayload,
+    BillingInstructionCSPPayload,
     EnvironmentCSPPayload,
     UserCSPPayload,
     UserRoleCSPPayload,
@@ -315,5 +316,34 @@ def send_task_order_files(self):
 
         task_order.pdf_last_sent_at = pendulum.now(tz="UTC")
         db.session.add(task_order)
+
+    db.session.commit()
+
+
+@celery.task(bind=True)
+def create_billing_instruction(self):
+    clins = TaskOrders.get_clins_for_create_billing_instructions()
+    for clin in clins:
+        portfolio = clin.task_order.portfolio
+
+        payload = BillingInstructionCSPPayload(
+            tenant_id=portfolio.csp_data.get("tenant_id"),
+            billing_account_name=portfolio.csp_data.get("billing_account_name"),
+            billing_profile_name=portfolio.csp_data.get("billing_profile_name"),
+            initial_clin_amount=clin.obligated_amount,
+            initial_clin_start_date=str(clin.start_date),
+            initial_clin_end_date=str(clin.end_date),
+            initial_clin_type=clin.number,
+            initial_task_order_id=str(clin.task_order_id),
+        )
+
+        try:
+            app.csp.cloud.create_billing_instruction(payload)
+        except (AzureError) as err:
+            app.logger.exception(err)
+            continue
+
+        clin.last_sent_at = pendulum.now(tz="UTC")
+        db.session.add(clin)
 
     db.session.commit()
