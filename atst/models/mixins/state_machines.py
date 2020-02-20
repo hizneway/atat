@@ -139,7 +139,6 @@ class FSMMixin:
 
     def fail_stage(self, stage):
         fail_trigger = f"fail_{stage}"
-
         if fail_trigger in self.machine.get_triggers(self.current_state.name):
             self.trigger(fail_trigger)
             app.logger.info(
@@ -157,30 +156,3 @@ class FSMMixin:
                 f"calling finish trigger '{finish_trigger}' for '{self.__repr__()}'"
             )
             self.trigger(finish_trigger)
-
-    def prepare_init(self, event):
-        pass
-
-    def before_init(self, event):
-        pass
-
-    def after_init(self, event):
-        pass
-
-    def prepare_start(self, event):
-        pass
-
-    def before_start(self, event):
-        pass
-
-    def after_start(self, event):
-        pass
-
-    def prepare_reset(self, event):
-        pass
-
-    def before_reset(self, event):
-        pass
-
-    def after_reset(self, event):
-        pass
