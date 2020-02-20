@@ -519,3 +519,15 @@
     }
   }
 }
+
+#portfolio-create {
+  .usa-input__choices {
+    .usa-input__title {
+      font-weight: $font-bold;
+    }
+
+    label {
+      font-size: $base-font-size;
+    }
+  }
+}

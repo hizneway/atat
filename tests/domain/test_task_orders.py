@@ -9,6 +9,27 @@ from atst.models.task_order import TaskOrder, SORT_ORDERING, Status
 from tests.factories import TaskOrderFactory, CLINFactory, PortfolioFactory
 
 
+@pytest.fixture
+def new_task_order():
+    return TaskOrderFactory.create(create_clins=[{}])
+
+
+@pytest.fixture
+def updated_task_order():
+    return TaskOrderFactory.create(
+        create_clins=[{"last_sent_at": pendulum.date(2020, 2, 1)}],
+        pdf_last_sent_at=pendulum.date(2020, 1, 1),
+    )
+
+
+@pytest.fixture
+def sent_task_order():
+    return TaskOrderFactory.create(
+        create_clins=[{"last_sent_at": pendulum.date(2020, 1, 1)}],
+        pdf_last_sent_at=pendulum.date(2020, 1, 1),
+    )
+
+
 def test_create_adds_clins():
     portfolio = PortfolioFactory.create()
     clins = [
@@ -181,19 +202,18 @@ def test_allows_alphanumeric_number():
         assert TaskOrders.create(portfolio.id, number, [], None)
 
 
-def test_get_for_send_task_order_files():
-    new_to = TaskOrderFactory.create(create_clins=[{}])
-    updated_to = TaskOrderFactory.create(
-        create_clins=[{"last_sent_at": pendulum.datetime(2020, 2, 1)}],
-        pdf_last_sent_at=pendulum.datetime(2020, 1, 1),
-    )
-    sent_to = TaskOrderFactory.create(
-        create_clins=[{"last_sent_at": pendulum.datetime(2020, 1, 1)}],
-        pdf_last_sent_at=pendulum.datetime(2020, 1, 1),
-    )
-
+def test_get_for_send_task_order_files(
+    new_task_order, updated_task_order, sent_task_order
+):
     updated_and_new_task_orders = TaskOrders.get_for_send_task_order_files()
     assert len(updated_and_new_task_orders) == 2
-    assert sent_to not in updated_and_new_task_orders
-    assert updated_to in updated_and_new_task_orders
-    assert new_to in updated_and_new_task_orders
+    assert sent_task_order not in updated_and_new_task_orders
+    assert updated_task_order in updated_and_new_task_orders
+    assert new_task_order in updated_and_new_task_orders
+
+
+def test_get_clins_for_create_billing_instructions(new_task_order, sent_task_order):
+    new_clins = TaskOrders.get_clins_for_create_billing_instructions()
+    assert len(new_clins) == 1
+    assert new_task_order.clins[0] in new_clins
+    assert sent_task_order.clins[0] not in new_clins
