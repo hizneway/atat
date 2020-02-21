@@ -307,14 +307,6 @@ def dispatch_create_environment(self):
 
 
 @celery.task(bind=True)
-def dispatch_create_atat_admin_user(self):
-    for environment_id in Environments.get_environments_pending_atat_user_creation(
-        pendulum.now()
-    ):
-        create_atat_admin_user.delay(environment_id=environment_id)
-
-
-@celery.task(bind=True)
 def send_task_order_files(self):
     task_orders = TaskOrders.get_for_send_task_order_files()
     recipients = [app.config.get("MICROSOFT_TASK_ORDER_EMAIL_ADDRESS")]
