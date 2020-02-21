@@ -1,5 +1,5 @@
 from flask import g
-from sqlalchemy import func, or_
+from sqlalchemy import func, or_, and_
 from typing import List
 from uuid import UUID
 
@@ -132,13 +132,15 @@ class Applications(BaseDomainClass):
             db.session.query(Application.id)
             .join(Portfolio)
             .join(PortfolioStateMachine)
-            .filter(PortfolioStateMachine.state == FSMStates.COMPLETED)
-            .filter(Application.deleted == False)
-            .filter(Application.cloud_id.is_(None))
             .filter(
-                or_(
-                    Application.claimed_until.is_(None),
-                    Application.claimed_until <= func.now(),
+                and_(
+                    PortfolioStateMachine.state == FSMStates.COMPLETED,
+                    Application.deleted == False,
+                    Application.cloud_id.is_(None),
+                    or_(
+                        Application.claimed_until.is_(None),
+                        Application.claimed_until <= func.now(),
+                    ),
                 )
             )
         ).all()
