@@ -81,5 +81,5 @@ class CLIN(Base, mixins.TimestampsMixin):
     @property
     def is_active(self):
         return (
-            self.start_date <= pendulum.today() <= self.end_date
+            self.start_date <= pendulum.today().date() <= self.end_date
         ) and self.task_order.signed_at
