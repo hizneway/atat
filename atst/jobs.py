@@ -6,7 +6,7 @@ from azure.core.exceptions import AzureError
 from atst.database import db
 from atst.domain.application_roles import ApplicationRoles
 from atst.domain.applications import Applications
-from atst.domain.csp.cloud import CloudProviderInterface
+from atst.domain.csp.cloud import CloudProviderInterface, generate_user_principal_name
 from atst.domain.csp.cloud.exceptions import GeneralCSPException
 from atst.domain.csp.cloud.models import (
     ApplicationCSPPayload,
@@ -177,9 +177,10 @@ def do_create_environment_role(csp: CloudProviderInterface, environment_role_id=
         env_role.cloud_id = result.id
         db.session.add(env_role)
         db.session.commit()
+
         user = env_role.application_role.user
-        mail_name = user.full_name.replace(" ", ".").lower()
-        username = f"{mail_name}@{csp_details.get('tennant_id')}.{app.config.get('OFFICE_365_DOMAIN')}"
+        domain_name = csp_details.get("domain_name")
+        username = generate_user_principal_name(user.full_name, domain_name,)
         send_mail(
             recipients=[user.email],
             subject=translate("email.azure_account_update.subject"),
@@ -189,7 +190,7 @@ def do_create_environment_role(csp: CloudProviderInterface, environment_role_id=
             ),
         )
         app.logger.info(
-            f"Notification email sent for enivornment role creation. User id: {user.id}"
+            f"Notification email sent for environment role creation. User id: {user.id}"
         )
 
 
@@ -208,7 +209,7 @@ def send_PPOC_email(portfolio_dict):
     ppoc_email = portfolio_dict.get("password_recovery_email_address")
     user_id = portfolio_dict.get("user_id")
     domain_name = portfolio_dict.get("domain_name")
-
+    username = generate_user_principal_name(user_id, domain_name)
     send_mail(
         recipients=[ppoc_email],
         subject=translate("email.portfolio_ready.subject"),
@@ -216,7 +217,7 @@ def send_PPOC_email(portfolio_dict):
             "email.portfolio_ready.body",
             {
                 "password_reset_address": app.config.get("AZURE_LOGIN_URL"),
-                "username": f"{user_id}@{domain_name}.{app.config.get('OFFICE_365_DOMAIN')}",
+                "username": username,
             },
         ),
     )

@@ -4,9 +4,12 @@ from typing import Dict, List, Optional
 from uuid import uuid4
 import re
 
-from flask import current_app as app
 from pydantic import BaseModel, validator, root_validator
 
+from .utils import (
+    generate_mail_nickname,
+    generate_user_principal_name,
+)
 from atst.utils import snake_to_camel
 
 
@@ -527,11 +530,11 @@ class UserMixin(BaseModel):
 
     @property
     def user_principal_name(self):
-        return f"{self.mail_nickname}@{self.tenant_host_name}.{app.config.get('OFFICE_365_DOMAIN')}"
+        return generate_user_principal_name(self.display_name, self.tenant_host_name)
 
     @property
     def mail_nickname(self):
-        return self.display_name.replace(" ", ".").lower()
+        return generate_mail_nickname(self.display_name)
 
     @validator("password", pre=True, always=True)
     def supply_password_default(cls, password):
