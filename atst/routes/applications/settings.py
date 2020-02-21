@@ -6,6 +6,7 @@ from flask import (
     request as http_request,
     url_for,
 )
+from secrets import token_urlsafe
 
 from .blueprint import applications_bp
 from atst.domain.exceptions import AlreadyExistsError
@@ -535,7 +536,9 @@ def build_subscription_payload(environment) -> SubscriptionCreationCSPPayload:
         0
     ]["invoice_section_name"]
 
-    display_name = f"{environment.application.name}-{environment.name}"
+    display_name = (
+        f"{environment.application.name}-{environment.name}-{token_urlsafe(6)}"
+    )
 
     return SubscriptionCreationCSPPayload(
         tenant_id=csp_data.get("tenant_id"),
