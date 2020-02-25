@@ -6,7 +6,8 @@ from azure.core.exceptions import AzureError
 from atst.database import db
 from atst.domain.application_roles import ApplicationRoles
 from atst.domain.applications import Applications
-from atst.domain.csp.cloud import CloudProviderInterface, generate_user_principal_name
+from atst.domain.csp.cloud import CloudProviderInterface
+from atst.domain.csp.cloud.utils import generate_user_principal_name
 from atst.domain.csp.cloud.exceptions import GeneralCSPException
 from atst.domain.csp.cloud.models import (
     ApplicationCSPPayload,

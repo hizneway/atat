@@ -12,7 +12,7 @@ from sqlalchemy_json import NestedMutableJson
 from atst.database import db
 import atst.models.mixins as mixins
 import atst.models.types as types
-from atst.domain.csp.cloud import generate_mail_nickname
+from atst.domain.csp.cloud.utils import generate_mail_nickname
 from atst.domain.permission_sets import PermissionSets
 from atst.models.base import Base
 from atst.models.portfolio_role import PortfolioRole, Status as PortfolioRoleStatus
