@@ -786,10 +786,9 @@ def test_create_subscription_success(
     client, user_session, mock_azure: AzureCloudProvider
 ):
     environment = EnvironmentFactory.create()
-
     user_session(environment.portfolio.owner)
     environment.cloud_id = "management/group/id"
-    environment.application.portfolio.csp_data = {
+    environment.portfolio.csp_data = {
         "billing_account_name": "xxxx-xxxx-xxx-xxx",
         "billing_profile_name": "xxxxxxxxxxx:xxxxxxxxxxxxx_xxxxxx",
         "tenant_id": "xxxxxxxxxxx-xxxxxxxxxx-xxxxxxx-xxxxx",
@@ -832,7 +831,7 @@ def test_create_subscription_failure(client, user_session, monkeypatch):
 
     user_session(environment.portfolio.owner)
     environment.cloud_id = "management/group/id"
-    environment.application.portfolio.csp_data = {
+    environment.portfolio.csp_data = {
         "billing_account_name": "xxxx-xxxx-xxx-xxx",
         "billing_profile_name": "xxxxxxxxxxx:xxxxxxxxxxxxx_xxxxxx",
         "tenant_id": "xxxxxxxxxxx-xxxxxxxxxx-xxxxxxx-xxxxx",

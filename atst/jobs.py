@@ -135,7 +135,7 @@ def do_create_environment(csp: CloudProviderInterface, environment_id=None):
         if environment.cloud_id is not None:
             return
 
-        csp_details = environment.application.portfolio.csp_data
+        csp_details = environment.portfolio.csp_data
         parent_id = environment.application.cloud_id
         tenant_id = csp_details.get("tenant_id")
         payload = EnvironmentCSPPayload(
@@ -156,7 +156,7 @@ def do_create_environment_role(csp: CloudProviderInterface, environment_role_id=
             return
 
         env = env_role.environment
-        csp_details = env.application.portfolio.csp_data
+        csp_details = env.portfolio.csp_data
         app_role = env_role.application_role
 
         role = None

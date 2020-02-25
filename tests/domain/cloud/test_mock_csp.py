@@ -23,10 +23,10 @@ def mock_csp():
 def test_create_environment(mock_csp: MockCloudProvider):
     environment = EnvironmentFactory.create()
     environment.application.cloud_id = "parent_id"
-    environment.application.portfolio.csp_data = {"tenant_id": "fake"}
+    environment.portfolio.csp_data = {"tenant_id": "fake"}
     payload = EnvironmentCSPPayload(
         **dict(
-            tenant_id=environment.application.portfolio.csp_data.get("tenant_id"),
+            tenant_id=environment.portfolio.csp_data.get("tenant_id"),
             display_name=environment.name,
             parent_id=environment.application.cloud_id,
         )

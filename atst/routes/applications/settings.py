@@ -530,7 +530,7 @@ def resend_invite(application_id, application_role_id):
 
 
 def build_subscription_payload(environment) -> SubscriptionCreationCSPPayload:
-    csp_data = environment.application.portfolio.csp_data
+    csp_data = environment.portfolio.csp_data
     parent_group_id = environment.cloud_id
     invoice_section_name = csp_data["billing_profile_properties"]["invoice_sections"][
         0

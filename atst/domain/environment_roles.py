@@ -111,9 +111,7 @@ class EnvironmentRoles(object):
         environment_role = EnvironmentRoles.get_by_id(environment_role_id)
 
         if environment_role.cloud_id and not environment_role.environment.cloud_id:
-            tenant_id = environment_role.environment.application.portfolio.csp_data.get(
-                "tenant_id"
-            )
+            tenant_id = environment_role.environment.portfolio.csp_data.get("tenant_id")
             app.csp.cloud.disable_user(tenant_id, environment_role.csp_user_id)
 
         environment_role.status = EnvironmentRole.Status.DISABLED
