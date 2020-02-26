@@ -1,5 +1,5 @@
 import json
-from secrets import token_urlsafe
+from secrets import token_hex, token_urlsafe
 from uuid import uuid4
 from flask import current_app as app
 
@@ -12,6 +12,7 @@ from .exceptions import (
     ConnectionException,
     UnknownServerException,
     SecretException,
+    DomainNameException,
 )
 from .models import (
     AdminRoleDefinitionCSPPayload,
@@ -346,12 +347,32 @@ class AzureCloudProvider(CloudProviderInterface):
                 result.status_code, f"azure application error disable user. {str(exc)}",
             )
 
+    def validate_domain_name(self, name):
+        response = self.sdk.requests.get(
+            f"{self.sdk.cloud.endpoints.active_directory}/{name}.onmicrosoft.com/.well-known/openid-configuration",
+            timeout=30,
+        )
+        # If an existing tenant with name cannot be found, 'error' will be in the response
+        return "error" in response.json()
+
+    def generate_valid_domain_name(self, name, suffix="", max_tries=6):
+        if max_tries > 0:
+            domain_name = name + suffix
+            if self.validate_domain_name(domain_name):
+                return domain_name
+            else:
+                suffix = token_hex(3)
+                return self.generate_valid_domain_name(name, suffix, max_tries - 1)
+        else:
+            raise DomainNameException(name)
+
     def create_tenant(self, payload: TenantCSPPayload):
         sp_token = self._get_root_provisioning_token()
         if sp_token is None:
             raise AuthenticationException("Could not resolve token for tenant creation")
 
         payload.password = token_urlsafe(16)
+        payload.domain_name = self.generate_valid_domain_name(payload.domain_name)
         create_tenant_body = payload.dict(by_alias=True)
 
         create_tenant_headers = {
