@@ -1,4 +1,4 @@
-from sqlalchemy import func, or_
+from sqlalchemy import func, or_, and_
 from sqlalchemy.orm.exc import NoResultFound
 from typing import List
 from uuid import UUID
@@ -125,8 +125,16 @@ class Environments(object):
         """
         results = (
             cls.base_provision_query(now)
-            .filter(Application.cloud_id != None)
-            .filter(Environment.cloud_id.is_(None))
+            .filter(
+                and_(
+                    Application.cloud_id != None,
+                    Environment.cloud_id.is_(None),
+                    or_(
+                        Environment.claimed_until.is_(None),
+                        Environment.claimed_until <= func.now(),
+                    ),
+                )
+            )
             .all()
         )
         return [id_ for id_, in results]

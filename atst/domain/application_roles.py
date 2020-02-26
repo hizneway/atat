@@ -3,6 +3,7 @@ from typing import List
 from uuid import UUID
 
 from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy import func, and_, or_
 
 from atst.database import db
 from atst.domain.environment_roles import EnvironmentRoles
@@ -116,11 +117,19 @@ class ApplicationRoles(object):
             db.session.query(ApplicationRole.id, ApplicationRole.user_id, Portfolio.id)
             .join(Application, Application.id == ApplicationRole.application_id)
             .join(Portfolio, Portfolio.id == Application.portfolio_id)
-            .filter(Application.cloud_id.isnot(None))
-            .filter(ApplicationRole.deleted == False)
-            .filter(ApplicationRole.cloud_id.is_(None))
-            .filter(ApplicationRole.user_id.isnot(None))
-            .filter(ApplicationRole.status == ApplicationRoleStatus.ACTIVE)
+            .filter(
+                and_(
+                    Application.cloud_id.isnot(None),
+                    ApplicationRole.deleted == False,
+                    ApplicationRole.cloud_id.is_(None),
+                    ApplicationRole.user_id.isnot(None),
+                    ApplicationRole.status == ApplicationRoleStatus.ACTIVE,
+                    or_(
+                        ApplicationRole.claimed_until.is_(None),
+                        ApplicationRole.claimed_until <= func.now(),
+                    ),
+                )
+            )
         ).all()
 
         groups = []

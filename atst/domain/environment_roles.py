@@ -1,4 +1,5 @@
 from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy import func, and_, or_
 from flask import current_app as app
 
 from atst.database import db
@@ -95,13 +96,21 @@ class EnvironmentRoles(object):
             db.session.query(EnvironmentRole.id)
             .join(Environment)
             .join(ApplicationRole)
-            .filter(Environment.deleted == False)
-            .filter(EnvironmentRole.deleted == False)
-            .filter(ApplicationRole.deleted == False)
-            .filter(ApplicationRole.cloud_id != None)
-            .filter(ApplicationRole.status != ApplicationRoleStatus.DISABLED)
-            .filter(EnvironmentRole.status != EnvironmentRole.Status.DISABLED)
-            .filter(EnvironmentRole.cloud_id.is_(None))
+            .filter(
+                and_(
+                    Environment.deleted == False,
+                    EnvironmentRole.deleted == False,
+                    ApplicationRole.deleted == False,
+                    ApplicationRole.cloud_id != None,
+                    ApplicationRole.status != ApplicationRoleStatus.DISABLED,
+                    EnvironmentRole.status != EnvironmentRole.Status.DISABLED,
+                    EnvironmentRole.cloud_id.is_(None),
+                    or_(
+                        EnvironmentRole.claimed_until.is_(None),
+                        EnvironmentRole.claimed_until <= func.now(),
+                    ),
+                )
+            )
             .all()
         )
         return [id_ for id_, in results]
