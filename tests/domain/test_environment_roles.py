@@ -111,7 +111,7 @@ def test_disable_checks_env_provisioning_status(session):
 
 def test_disable_checks_env_role_provisioning_status():
     environment = EnvironmentFactory.create(cloud_id="cloud-id")
-    environment.application.portfolio.csp_data = {"tenant_id": uuid4().hex}
+    environment.portfolio.csp_data = {"tenant_id": uuid4().hex}
     env_role1 = EnvironmentRoleFactory.create(environment=environment)
     assert not env_role1.cloud_id
     env_role1 = EnvironmentRoles.disable(env_role1.id)

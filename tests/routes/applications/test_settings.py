@@ -15,7 +15,10 @@ from atst.domain.applications import Applications
 from atst.domain.common import Paginator
 from atst.domain.csp.cloud.azure_cloud_provider import AzureCloudProvider
 from atst.domain.csp.cloud.exceptions import GeneralCSPException
-from atst.domain.csp.cloud.models import SubscriptionCreationCSPResult
+from atst.domain.csp.cloud.models import (
+    SubscriptionCreationCSPResult,
+    SubscriptionCreationCSPPayload,
+)
 from atst.domain.environment_roles import EnvironmentRoles
 from atst.domain.invitations import ApplicationInvitations
 from atst.domain.permission_sets import PermissionSets
@@ -26,6 +29,7 @@ from atst.models.application_role import Status as ApplicationRoleStatus
 from atst.models.environment_role import CSPRole, EnvironmentRole
 from atst.models.permissions import Permissions
 from atst.routes.applications.settings import (
+    build_subscription_payload,
     filter_env_roles_data,
     filter_env_roles_form_data,
     get_environments_obj_for_app,
@@ -786,10 +790,9 @@ def test_create_subscription_success(
     client, user_session, mock_azure: AzureCloudProvider
 ):
     environment = EnvironmentFactory.create()
-
     user_session(environment.portfolio.owner)
     environment.cloud_id = "management/group/id"
-    environment.application.portfolio.csp_data = {
+    environment.portfolio.csp_data = {
         "billing_account_name": "xxxx-xxxx-xxx-xxx",
         "billing_profile_name": "xxxxxxxxxxx:xxxxxxxxxxxxx_xxxxxx",
         "tenant_id": "xxxxxxxxxxx-xxxxxxxxxx-xxxxxxx-xxxxx",
@@ -832,7 +835,7 @@ def test_create_subscription_failure(client, user_session, monkeypatch):
 
     user_session(environment.portfolio.owner)
     environment.cloud_id = "management/group/id"
-    environment.application.portfolio.csp_data = {
+    environment.portfolio.csp_data = {
         "billing_account_name": "xxxx-xxxx-xxx-xxx",
         "billing_profile_name": "xxxxxxxxxxx:xxxxxxxxxxxxx_xxxxxx",
         "tenant_id": "xxxxxxxxxxx-xxxxxxxxxx-xxxxxxx-xxxxx",
@@ -846,3 +849,66 @@ def test_create_subscription_failure(client, user_session, monkeypatch):
     )
 
     assert response.status_code == 400
+
+
+class TestBuildSubscriptionPayload:
+    def test_unique_display_name(self):
+        # Create 2 Applications with the same name that both have an environment named 'Environment'
+        app_1 = ApplicationFactory.create(
+            name="Application", environments=[{"name": "Environment", "cloud_id": 123}]
+        )
+        env_1 = app_1.environments[0]
+        app_2 = ApplicationFactory.create(
+            name="Application", environments=[{"name": "Environment", "cloud_id": 456}]
+        )
+        env_2 = app_2.environments[0]
+        env_1.portfolio.csp_data = {
+            "billing_account_name": "xxxx-xxxx-xxx-xxx",
+            "billing_profile_name": "xxxxxxxxxxx:xxxxxxxxxxxxx_xxxxxx",
+            "tenant_id": "xxxxxxxxxxx-xxxxxxxxxx-xxxxxxx-xxxxx",
+            "billing_profile_properties": {
+                "invoice_sections": [{"invoice_section_name": "xxxx-xxxx-xxx-xxx"}]
+            },
+        }
+        env_2.portfolio.csp_data = {
+            "billing_account_name": "xxxx-xxxx-xxx-xxx",
+            "billing_profile_name": "xxxxxxxxxxx:xxxxxxxxxxxxx_xxxxxx",
+            "tenant_id": "xxxxxxxxxxx-xxxxxxxxxx-xxxxxxx-xxxxx",
+            "billing_profile_properties": {
+                "invoice_sections": [{"invoice_section_name": "xxxx-xxxx-xxx-xxx"}]
+            },
+        }
+
+        # Create subscription payload for each environment
+        payload_1 = build_subscription_payload(env_1)
+        payload_2 = build_subscription_payload(env_2)
+
+        assert payload_1.display_name != payload_2.display_name
+
+    def test_populates_payload_correctly(self):
+        app = ApplicationFactory.create(
+            name="Application", environments=[{"name": "Environment", "cloud_id": 123}]
+        )
+        environment = app.environments[0]
+        account_name = "fake-account-name"
+        profile_name = "fake-profile-name"
+        tenant_id = "123"
+        section_name = "fake-section-name"
+        environment.portfolio.csp_data = {
+            "billing_account_name": account_name,
+            "billing_profile_name": profile_name,
+            "tenant_id": tenant_id,
+            "billing_profile_properties": {
+                "invoice_sections": [{"invoice_section_name": section_name}]
+            },
+        }
+        payload = build_subscription_payload(environment)
+        assert type(payload) == SubscriptionCreationCSPPayload
+        # Check all key/value pairs except for display_name because of the appended random string
+        assert {
+            "tenant_id": tenant_id,
+            "parent_group_id": environment.cloud_id,
+            "billing_account_name": account_name,
+            "billing_profile_name": profile_name,
+            "invoice_section_name": section_name,
+        }.items() <= payload.dict().items()

@@ -58,7 +58,7 @@ class EnvironmentRole(
 
     @property
     def portfolio_id(self):
-        return self.environment.application.portfolio_id
+        return self.environment.portfolio_id
 
     @property
     def application_id(self):
@@ -86,8 +86,8 @@ class EnvironmentRole(
             "environment_id": str(self.environment_id),
             "application": self.environment.application.name,
             "application_id": str(self.environment.application_id),
-            "portfolio": self.environment.application.portfolio.name,
-            "portfolio_id": str(self.environment.application.portfolio.id),
+            "portfolio": self.environment.portfolio.name,
+            "portfolio_id": str(self.environment.portfolio.id),
         }
 
 

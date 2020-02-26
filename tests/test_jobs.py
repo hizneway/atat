@@ -104,7 +104,7 @@ tomorrow = now.add(days=1)
 def test_create_environment_job(session, csp):
     environment = EnvironmentFactory.create()
     environment.application.cloud_id = "parentId"
-    environment.application.portfolio.csp_data = {"tenant_id": "fake"}
+    environment.portfolio.csp_data = {"tenant_id": "fake"}
     session.add(environment)
     session.commit()
     do_create_environment(csp, environment.id)

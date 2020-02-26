@@ -70,7 +70,7 @@ class Environment(
             self.name,
             self.num_users,
             self.application.name,
-            self.application.portfolio.name,
+            self.portfolio.name,
             self.id,
         )
 
