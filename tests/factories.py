@@ -79,49 +79,6 @@ def get_all_portfolio_permission_sets():
     return PermissionSets.get_many(PortfolioRoles.PORTFOLIO_PERMISSION_SETS)
 
 
-def get_portfolio_csp_data(portfolio):
-
-    ppoc = portfolio.owner
-    if not ppoc:
-
-        class ppoc:
-            first_name = "John"
-            last_name = "Doe"
-            email = "email@example.com"
-
-    user_id = f"{ppoc.first_name[0]}{ppoc.last_name}".lower()
-    domain_name = re.sub("[^0-9a-zA-Z]+", "", portfolio.name).lower()
-
-    initial_task_order: TaskOrder = portfolio.task_orders[0]
-    initial_clin = initial_task_order.sorted_clins[0]
-
-    return {
-        "user_id": user_id,
-        "password": "jklfsdNCVD83nklds2#202",  # pragma: allowlist secret
-        "domain_name": domain_name,
-        "display_name": "mgmt group display name",
-        "management_group_name": "mgmt-group-uuid",
-        "first_name": ppoc.first_name,
-        "last_name": ppoc.last_name,
-        "country_code": "US",
-        "password_recovery_email_address": ppoc.email,
-        "address": {  # TODO: TBD if we're sourcing this from data or config
-            "company_name": "",
-            "address_line_1": "",
-            "city": "",
-            "region": "",
-            "country": "",
-            "postal_code": "",
-        },
-        "billing_profile_display_name": "My Billing Profile",
-        "initial_clin_amount": initial_clin.obligated_amount,
-        "initial_clin_start_date": initial_clin.start_date.strftime("%Y/%m/%d"),
-        "initial_clin_end_date": initial_clin.end_date.strftime("%Y/%m/%d"),
-        "initial_clin_type": initial_clin.number,
-        "initial_task_order_id": initial_task_order.number,
-    }
-
-
 class Base(factory.alchemy.SQLAlchemyModelFactory):
     @classmethod
     def dictionary(cls, **attrs):

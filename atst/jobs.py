@@ -209,10 +209,17 @@ def send_PPOC_email(portfolio_dict):
     )
 
 
+def make_initial_csp_data(portfolio):
+    return {
+        **portfolio.to_dictionary(),
+        "billing_account_name": app.config.get("AZURE_BILLING_ACCOUNT_NAME"),
+    }
+
+
 def do_provision_portfolio(csp: CloudProviderInterface, portfolio_id=None):
     portfolio = Portfolios.get_for_update(portfolio_id)
     fsm = Portfolios.get_or_create_state_machine(portfolio)
-    fsm.trigger_next_transition(csp_data=portfolio.to_dictionary())
+    fsm.trigger_next_transition(csp_data=make_initial_csp_data(portfolio))
     if fsm.current_state == FSMStates.COMPLETED:
         send_PPOC_email(portfolio.to_dictionary())
 
@@ -333,7 +340,7 @@ def create_billing_instruction(self):
             initial_clin_amount=clin.obligated_amount,
             initial_clin_start_date=str(clin.start_date),
             initial_clin_end_date=str(clin.end_date),
-            initial_clin_type=clin.number,
+            initial_clin_type=clin.jedi_clin_number,
             initial_task_order_id=str(clin.task_order_id),
         )
 

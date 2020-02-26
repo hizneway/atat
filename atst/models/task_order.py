@@ -3,12 +3,13 @@ from enum import Enum
 from sqlalchemy import Column, DateTime, ForeignKey, String
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship
-
+from atst.models.clin import CLIN
 from atst.models.base import Base
 import atst.models.types as types
 import atst.models.mixins as mixins
 from atst.models.attachment import Attachment
 from pendulum import today
+from sqlalchemy import func
 
 
 class Status(Enum):
@@ -41,14 +42,12 @@ class TaskOrder(Base, mixins.TimestampsMixin):
     number = Column(String, unique=True,)  # Task Order Number
     signer_dod_id = Column(String)
     signed_at = Column(DateTime)
-
     clins = relationship(
-        "CLIN", back_populates="task_order", cascade="all, delete-orphan"
+        "CLIN",
+        back_populates="task_order",
+        cascade="all, delete-orphan",
+        order_by=lambda: [func.substr(CLIN.number, 2), func.substr(CLIN.number, 1, 2)],
     )
-
-    @property
-    def sorted_clins(self):
-        return sorted(self.clins, key=lambda clin: (clin.number[1:], clin.number[0]))
 
     @hybrid_property
     def pdf(self):

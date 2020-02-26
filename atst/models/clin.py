@@ -65,6 +65,10 @@ class CLIN(Base, mixins.TimestampsMixin):
             ]
         )
 
+    @property
+    def jedi_clin_number(self):
+        return self.jedi_clin_type.value[-1]
+
     def to_dictionary(self):
         data = {
             c.name: getattr(self, c.name)
@@ -77,5 +81,5 @@ class CLIN(Base, mixins.TimestampsMixin):
     @property
     def is_active(self):
         return (
-            self.start_date <= pendulum.today() <= self.end_date
+            self.start_date <= pendulum.today().date() <= self.end_date
         ) and self.task_order.signed_at

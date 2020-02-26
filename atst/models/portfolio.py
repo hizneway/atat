@@ -1,22 +1,22 @@
 import re
-from string import ascii_lowercase, digits
-from random import choices
 from itertools import chain
+from random import choices
+from string import ascii_lowercase, digits
+from typing import Dict
 
 from sqlalchemy import Column, String
 from sqlalchemy.orm import relationship
 from sqlalchemy.types import ARRAY
-
-from atst.models.base import Base
-import atst.models.types as types
-import atst.models.mixins as mixins
-from atst.models.task_order import TaskOrder
-from atst.models.portfolio_role import PortfolioRole, Status as PortfolioRoleStatus
-from atst.domain.permission_sets import PermissionSets
-from atst.utils import first_or_none
-from atst.database import db
-
 from sqlalchemy_json import NestedMutableJson
+
+from atst.database import db
+import atst.models.mixins as mixins
+import atst.models.types as types
+from atst.domain.permission_sets import PermissionSets
+from atst.models.base import Base
+from atst.models.portfolio_role import PortfolioRole
+from atst.models.portfolio_role import Status as PortfolioRoleStatus
+from atst.utils import first_or_none
 
 
 class Portfolio(
@@ -54,6 +54,7 @@ class Portfolio(
     roles = relationship("PortfolioRole")
 
     task_orders = relationship("TaskOrder")
+    clins = relationship("CLIN", secondary="task_orders")
 
     @property
     def owner_role(self):
@@ -82,13 +83,27 @@ class Portfolio(
         return len(self.task_orders)
 
     @property
-    def active_clins(self):
-        return [
-            clin
-            for task_order in self.task_orders
-            for clin in task_order.clins
-            if clin.is_active
-        ]
+    def initial_clin_dict(self) -> Dict:
+        initial_clin = min(
+            (
+                clin
+                for clin in self.clins
+                if (clin.is_active and clin.task_order.is_signed)
+            ),
+            key=lambda clin: clin.start_date,
+            default=None,
+        )
+        if initial_clin:
+            return {
+                "initial_task_order_id": initial_clin.task_order.number,
+                "initial_clin_number": initial_clin.number,
+                "initial_clin_type": initial_clin.jedi_clin_number,
+                "initial_clin_amount": initial_clin.obligated_amount,
+                "initial_clin_start_date": initial_clin.start_date.strftime("%Y/%m/%d"),
+                "initial_clin_end_date": initial_clin.end_date.strftime("%Y/%m/%d"),
+            }
+        else:
+            return {}
 
     @property
     def active_task_orders(self):
@@ -171,24 +186,32 @@ class Portfolio(
         return self.id
 
     @property
+    def domain_name(self):
+        """
+        CSP domain name associated with portfolio. 
+        If a domain name is not set, generate one.
+        """
+        domain_name = re.sub("[^0-9a-zA-Z]+", "", self.name).lower() + "".join(
+            choices(ascii_lowercase + digits, k=4)
+        )
+        if self.csp_data:
+            return self.csp_data.get("domain_name", domain_name)
+        else:
+            return domain_name
+
+    @property
     def application_id(self):
         return None
 
     def to_dictionary(self):
-        ppoc = self.owner
-        user_id = f"{ppoc.first_name[0]}{ppoc.last_name}".lower()
-
-        domain_name = re.sub("[^0-9a-zA-Z]+", "", self.name).lower() + "".join(
-            choices(ascii_lowercase + digits, k=4)
-        )
-        portfolio_data = {
-            "user_id": user_id,
+        return {
+            "user_id": f"{self.owner.first_name[0]}{self.owner.last_name}".lower(),
             "password": "",
-            "domain_name": domain_name,
-            "first_name": ppoc.first_name,
-            "last_name": ppoc.last_name,
+            "domain_name": self.domain_name,
+            "first_name": self.owner.first_name,
+            "last_name": self.owner.last_name,
             "country_code": "US",
-            "password_recovery_email_address": ppoc.email,
+            "password_recovery_email_address": self.owner.email,
             "address": {  # TODO: TBD if we're sourcing this from data or config
                 "company_name": "",
                 "address_line_1": "",
@@ -198,26 +221,8 @@ class Portfolio(
                 "postal_code": "",
             },
             "billing_profile_display_name": "ATAT Billing Profile",
+            **self.initial_clin_dict,
         }
-
-        try:
-            initial_task_order: TaskOrder = self.task_orders[0]
-            initial_clin = initial_task_order.sorted_clins[0]
-            portfolio_data.update(
-                {
-                    "initial_clin_amount": initial_clin.obligated_amount,
-                    "initial_clin_start_date": initial_clin.start_date.strftime(
-                        "%Y/%m/%d"
-                    ),
-                    "initial_clin_end_date": initial_clin.end_date.strftime("%Y/%m/%d"),
-                    "initial_clin_type": initial_clin.number,
-                    "initial_task_order_id": initial_task_order.number,
-                }
-            )
-        except IndexError:
-            pass
-
-        return portfolio_data
 
     def __repr__(self):
         return "<Portfolio(name='{}', user_count='{}', id='{}')>".format(

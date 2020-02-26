@@ -15,7 +15,6 @@ from tests.factories import (
     PortfolioStateMachineFactory,
     TaskOrderFactory,
     UserFactory,
-    get_portfolio_csp_data,
 )
 
 from atst.models import FSMStates, PortfolioStateMachine, TaskOrder
@@ -82,7 +81,7 @@ def test_state_machine_trigger_next_transition(state_machine):
 
     state_machine.state = FSMStates.STARTED
     state_machine.trigger_next_transition(
-        csp_data=get_portfolio_csp_data(state_machine.portfolio)
+        csp_data=state_machine.portfolio.to_dictionary()
     )
     assert state_machine.current_state == FSMStates.TENANT_CREATED
 
@@ -319,7 +318,11 @@ def test_fsm_transition_start(
     config = {"billing_account_name": "billing_account_name"}
 
     assert state_machine.state == FSMStates.UNSTARTED
-    portfolio_data = get_portfolio_csp_data(portfolio)
+    portfolio_data = {
+        **portfolio.to_dictionary(),
+        "display_name": "mgmt group display name",
+        "management_group_name": "mgmt-group-uuid",
+    }
 
     for expected_state in expected_states:
         collected_data = dict(

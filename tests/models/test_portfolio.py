@@ -179,3 +179,58 @@ class TestUpcomingObligatedFunds:
         )
         # Only sums the upcoming task order
         assert portfolio.upcoming_obligated_funds == Decimal(700.0)
+
+
+class TestInitialClinDict:
+    def test_formats_dict_correctly(self):
+        portfolio = PortfolioFactory()
+        task_order = TaskOrderFactory(
+            portfolio=portfolio, number="1234567890123", signed_at=pendulum.now()
+        )
+        clin = CLINFactory(task_order=task_order)
+        initial_clin = portfolio.initial_clin_dict
+
+        assert initial_clin["initial_clin_amount"] == clin.obligated_amount
+        assert initial_clin["initial_clin_start_date"] == clin.start_date.strftime(
+            "%Y/%m/%d"
+        )
+        assert initial_clin["initial_clin_end_date"] == clin.end_date.strftime(
+            "%Y/%m/%d"
+        )
+        assert initial_clin["initial_clin_type"] == clin.jedi_clin_number
+        assert initial_clin["initial_clin_number"] == clin.number
+        assert initial_clin["initial_task_order_id"] == task_order.number
+
+    def test_no_valid_clins(self):
+        portfolio = PortfolioFactory()
+        assert portfolio.initial_clin_dict == {}
+
+    def test_picks_the_initial_clin(self):
+        yesterday = pendulum.now().subtract(days=1).date()
+        tomorrow = pendulum.now().add(days=1).date()
+        portfolio = PortfolioFactory(
+            task_orders=[
+                {
+                    "signed_at": pendulum.now(),
+                    "create_clins": [
+                        {
+                            "number": "0001",
+                            "start_date": yesterday.subtract(days=1),
+                            "end_date": yesterday,
+                        },
+                        {
+                            "number": "1001",
+                            "start_date": yesterday,
+                            "end_date": tomorrow,
+                        },
+                        {
+                            "number": "0002",
+                            "start_date": yesterday,
+                            "end_date": tomorrow,
+                        },
+                    ],
+                },
+                {"create_clins": [{"number": "0003"}]},
+            ],
+        )
+        assert portfolio.initial_clin_dict["initial_clin_number"] == "1001"
