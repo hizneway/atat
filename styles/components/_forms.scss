@@ -203,6 +203,8 @@
 
 .form-container {
   margin-bottom: $action-footer-height + $large-spacing;
+  max-width: $max-form-width;
+  width: 100%;
 
   &--narrow {
     max-width: $max-input-width;
