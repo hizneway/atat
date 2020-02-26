@@ -12,10 +12,10 @@ from sqlalchemy_json import NestedMutableJson
 from atst.database import db
 import atst.models.mixins as mixins
 import atst.models.types as types
+from atst.domain.csp.cloud.utils import generate_mail_nickname
 from atst.domain.permission_sets import PermissionSets
 from atst.models.base import Base
-from atst.models.portfolio_role import PortfolioRole
-from atst.models.portfolio_role import Status as PortfolioRoleStatus
+from atst.models.portfolio_role import PortfolioRole, Status as PortfolioRoleStatus
 from atst.utils import first_or_none
 
 
@@ -188,7 +188,7 @@ class Portfolio(
     @property
     def domain_name(self):
         """
-        CSP domain name associated with portfolio. 
+        CSP domain name associated with portfolio.
         If a domain name is not set, generate one.
         """
         domain_name = re.sub("[^0-9a-zA-Z]+", "", self.name).lower() + "".join(
@@ -205,7 +205,9 @@ class Portfolio(
 
     def to_dictionary(self):
         return {
-            "user_id": f"{self.owner.first_name[0]}{self.owner.last_name}".lower(),
+            "user_id": generate_mail_nickname(
+                f"{self.owner.first_name[0]}{self.owner.last_name}"
+            ),
             "password": "",
             "domain_name": self.domain_name,
             "first_name": self.owner.first_name,
