@@ -40,7 +40,6 @@ common:
   applications: Applications
   cancel: Cancel
   close: Close
-  confirm: Confirm
   continue: Continue
   delete: Delete
   delete_confirm: "Please type the word {word} to confirm:"
@@ -48,7 +47,6 @@ common:
   disable: Disable
   edit: Edit
   email: Email
-  lorem: Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
   name: Name
   next: Next
   optional: Optional
@@ -351,17 +349,7 @@ fragments:
   portfolio_admin:
     none: Not Selected
   ppoc:
-    alert:
-      message: Selecting a new PPoC gives that member full access to the portfolio and removes your ability to manage the PPoC role. The rest of your permissions will remain untouched. Please be sure you want to proceed.
-      title: Warning!
-    assign_user_button_text: Assign member
-    confirm_alert:
-      title: "Once you assign a new PPoC, you will no longer be able to request portfolio deactivation or manage the PPoC role."
-    subtitle: The PPoC has the ability to edit all aspects of a portfolio and is the only one who can manage the PPoC role.
-    title: Primary point of contact (PPoC)
     update_btn: Update
-    update_ppoc_confirmation_title: Confirmation
-    update_ppoc_title: Update primary point of contact
 invites:
   revoke: Revoke Invite
   revoke_modal_text: "By revoking this invitation to {application}, you are confirming that this member will no longer have access."
@@ -446,7 +434,6 @@ portfolios:
       step_3_button_text: Save Application
     create_new_env: Create a new environment.
     create_new_env_info: Creating an environment gives you access to the Cloud Service Provider. This environment will function within the constraints of the task order, and any costs will be billed against the portfolio.
-    csp_link: Cloud Service Provider Link
     enter_env_name: "Enter environment name:"
     environments:
       add_subscription: Add new subscription
@@ -470,9 +457,6 @@ portfolios:
         team_mgmt:
           label: Edit Application Team
           description: Add and remove team members.
-        del_env:
-          label: Delete Application
-          description: Delete this application.
         env_access:
           title: Environment Roles
           table_header: Environment Access
