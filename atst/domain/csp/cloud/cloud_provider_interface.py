@@ -54,13 +54,13 @@ class CloudProviderInterface:  # pragma: no cover
         """
         raise NotImplementedError()
 
-    def disable_user(self, auth_credentials: Dict, csp_user_id: str) -> bool:
+    def disable_user(self, tenant_id: str, role_assignment_cloud_id: str) -> bool:
         """Revoke all privileges for a user. Used to prevent user access while a full
         delete is being processed.
 
         Arguments:
-            auth_credentials -- Object containing CSP account credentials
-            csp_user_id -- CSP internal user identifier
+            tenant_id -- CSP internal tenant identifier
+            role_assignment_cloud_id -- CSP name of the role assignment to delete.
 
         Returns:
             bool -- True on success
