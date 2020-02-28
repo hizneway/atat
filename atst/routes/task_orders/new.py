@@ -85,7 +85,9 @@ def update_and_render_next(
     else:
         form = TaskOrderForm(form_data)
 
-    task_order = update_task_order(form, portfolio_id, task_order_id)
+    task_order = update_task_order(
+        form, portfolio_id, task_order_id, flash_invalid=(not previous)
+    )
     if task_order or previous:
         to_id = task_order.id if task_order else task_order_id
         return redirect(url_for(next_page, task_order_id=to_id))
