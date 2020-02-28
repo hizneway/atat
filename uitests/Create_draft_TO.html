@@ -4,7 +4,7 @@
 <head profile="http://selenium-ide.openqa.org/profiles/test-case">
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 <link rel="selenium.base" href="" />
-<title>Add expired TO</title>
+<title>Create draft TO</title>
 <meta name="ghost-inspector-details" content="This test isn't designed to run on its own. It is incorporated into other tests in the CI and Walker suites." />
 <meta name="ghost-inspector-browser" content="chrome" />
 <meta name="ghost-inspector-userAgent" content="" />
@@ -22,7 +22,7 @@
 <table cellpadding="1" cellspacing="1" border="1">
 <thead>
 <tr>
-<td rowspan="1" colspan="3">Add expired TO</td>
+<td rowspan="1" colspan="3">Create draft TO</td>
 </tr>
 </thead>
 <tbody>
@@ -31,14 +31,170 @@
 <td></td>
 <td></td>
 </tr>
+<!--Imported from: AT-AT CI - New Portfolio
+Imported from: AT-AT CI - login-->
 <tr>
-<td>waitForElementPresent</td>
-<td>css=.sticky-cta-buttons > .usa-button.usa-button-primary</td>
+<td>open</td>
+<td>/login-dev</td>
 <td></td>
 </tr>
-<tr original-target=".sticky-cta-buttons > .usa-button.usa-button-primary">
+<tr>
+<td>waitForPageToLoad</td>
+<td></td>
+<td></td>
+</tr>
+<!--Imported from: AT-AT CI - New Portfolio
+Imported from: AT-AT CI - login-->
+<tr>
+<td>waitForElementPresent</td>
+<td>css=.home__content > h1</td>
+<td></td>
+</tr>
+<tr>
+<td>assertText</td>
+<td>css=.home__content > h1</td>
+<td>JEDI Cloud Services</td>
+</tr>
+<tr>
+<td>waitForPageToLoad</td>
+<td></td>
+<td></td>
+</tr>
+<!--Imported from: AT-AT CI - New Portfolio-->
+<tr>
+<td>waitForElementPresent</td>
+<td>css=a[href="/portfolios/new"]</td>
+<td></td>
+</tr>
+<tr original-target="a[href="/portfolios/new"],xpath=//a[contains(text(), "Add New Portfolio")]">
 <td>click</td>
-<td>css=.sticky-cta-buttons > .usa-button.usa-button-primary</td>
+<td>css=a[href="/portfolios/new"]</td>
+<td></td>
+</tr>
+<tr>
+<td>waitForPageToLoad</td>
+<td></td>
+<td></td>
+</tr>
+<!--Imported from: AT-AT CI - New Portfolio-->
+<tr>
+<td>waitForElementPresent</td>
+<td>css=.portfolio-header__name > h1</td>
+<td></td>
+</tr>
+<tr>
+<td>assertText</td>
+<td>css=.portfolio-header__name > h1</td>
+<td>*New Portfolio*</td>
+</tr>
+<tr>
+<td>waitForPageToLoad</td>
+<td></td>
+<td></td>
+</tr>
+<!--Imported from: AT-AT CI - New Portfolio-->
+<tr>
+<td>waitForElementPresent</td>
+<td>css=.sticky-cta-text > h3</td>
+<td></td>
+</tr>
+<tr>
+<td>assertText</td>
+<td>css=.sticky-cta-text > h3</td>
+<td>*Name and Describe Portfolio*</td>
+</tr>
+<tr>
+<td>waitForPageToLoad</td>
+<td></td>
+<td></td>
+</tr>
+<!--Imported from: AT-AT CI - New Portfolio-->
+<tr>
+<td>waitForElementPresent</td>
+<td>css=#name</td>
+<td></td>
+</tr>
+<tr>
+<td>type</td>
+<td>css=#name</td>
+<td>Tatooine Energy Maintenance Systems ${alphanumeric}</td>
+</tr>
+<tr>
+<td>waitForPageToLoad</td>
+<td></td>
+<td></td>
+</tr>
+<!--Imported from: AT-AT CI - New Portfolio-->
+<tr>
+<td>waitForElementPresent</td>
+<td>css=fieldset.usa-input__choices > ul > li:nth-of-type(5) > label</td>
+<td></td>
+</tr>
+<tr original-target="fieldset.usa-input__choices > ul > li:nth-of-type(5) > label,xpath=//label[contains(text(), "Other")]">
+<td>click</td>
+<td>css=fieldset.usa-input__choices > ul > li:nth-of-type(5) > label</td>
+<td></td>
+</tr>
+<tr>
+<td>waitForPageToLoad</td>
+<td></td>
+<td></td>
+</tr>
+<!--Imported from: AT-AT CI - New Portfolio-->
+<tr>
+<td>waitForElementPresent</td>
+<td>css=input[type="submit"]</td>
+<td></td>
+</tr>
+<tr>
+<td>click</td>
+<td>css=input[type="submit"]</td>
+<td></td>
+</tr>
+<tr>
+<td>waitForPageToLoad</td>
+<td></td>
+<td></td>
+</tr>
+<!--Imported from: AT-AT CI - New Portfolio-->
+<tr>
+<td>waitForElementPresent</td>
+<td>css=.empty-state > h3</td>
+<td></td>
+</tr>
+<tr>
+<td>assertText</td>
+<td>css=.empty-state > h3</td>
+<td>*You don’t have any Applications yet*</td>
+</tr>
+<tr>
+<td>waitForPageToLoad</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>waitForElementPresent</td>
+<td>css=.icon--funding</td>
+<td></td>
+</tr>
+<tr>
+<td>click</td>
+<td>css=.icon--funding</td>
+<td></td>
+</tr>
+<tr>
+<td>waitForPageToLoad</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>waitForElementPresent</td>
+<td>css=.empty-state__footer > .usa-button.usa-button-primary</td>
+<td></td>
+</tr>
+<tr original-target=".empty-state__footer > .usa-button.usa-button-primary,xpath=//a[contains(text(), "Add Task Order")]">
+<td>click</td>
+<td>css=.empty-state__footer > .usa-button.usa-button-primary</td>
 <td></td>
 </tr>
 <tr>
@@ -275,7 +431,7 @@
 <tr>
 <td>type</td>
 <td>css=fieldset[name="clins-0-end_date"] > .date-picker-component > .usa-form-group.usa-form-group-year > input[name="date-year"]</td>
-<td>2019</td>
+<td>2020</td>
 </tr>
 <tr>
 <td>waitForPageToLoad</td>
@@ -299,12 +455,12 @@
 </tr>
 <tr>
 <td>waitForElementPresent</td>
-<td>css=input[type="submit"]</td>
+<td>css=a.action-group__action</td>
 <td></td>
 </tr>
-<tr>
+<tr original-target="a.action-group__action,xpath=//a[contains(text(), "Cancel")]">
 <td>click</td>
-<td>css=input[type="submit"]</td>
+<td>css=a.action-group__action</td>
 <td></td>
 </tr>
 <tr>
@@ -314,73 +470,13 @@
 </tr>
 <tr>
 <td>waitForElementPresent</td>
-<td>css=a.usa-button.usa-button-primary</td>
+<td>css=.action-group > button[type="submit"].usa-button.usa-button-primary:nth-of-type(2)</td>
 <td></td>
 </tr>
-<tr original-target="a.usa-button.usa-button-primary,xpath=//a[contains(text(), "Next: Submit Task Order")]">
+<tr original-target=".action-group > button[type="submit"].usa-button.usa-button-primary:nth-of-type(2),xpath=//button[contains(text(), "Yes, save for later")]">
 <td>click</td>
-<td>css=a.usa-button.usa-button-primary</td>
+<td>css=.action-group > button[type="submit"].usa-button.usa-button-primary:nth-of-type(2)</td>
 <td></td>
-</tr>
-<tr>
-<td>waitForPageToLoad</td>
-<td></td>
-<td></td>
-</tr>
-<tr>
-<td>waitForElementPresent</td>
-<td>css=.task-order__confirmation > div:nth-of-type(1) > .usa-input > fieldset.usa-input__choices > legend > label</td>
-<td></td>
-</tr>
-<tr original-target=".task-order__confirmation > div:nth-of-type(1) > .usa-input > fieldset.usa-input__choices > legend > label,xpath=//label[contains(text(), "I confirm the uploaded Task Order is signed by the appropriate")]">
-<td>click</td>
-<td>css=.task-order__confirmation > div:nth-of-type(1) > .usa-input > fieldset.usa-input__choices > legend > label</td>
-<td></td>
-</tr>
-<tr>
-<td>waitForPageToLoad</td>
-<td></td>
-<td></td>
-</tr>
-<tr>
-<td>waitForElementPresent</td>
-<td>css=.task-order__confirmation > div:nth-of-type(2) > .usa-input > fieldset.usa-input__choices > legend > label</td>
-<td></td>
-</tr>
-<tr original-target=".task-order__confirmation > div:nth-of-type(2) > .usa-input > fieldset.usa-input__choices > legend > label,xpath=//label[contains(text(), "I confirm that the information entered here in matches that of the submitted Task Order.")]">
-<td>click</td>
-<td>css=.task-order__confirmation > div:nth-of-type(2) > .usa-input > fieldset.usa-input__choices > legend > label</td>
-<td></td>
-</tr>
-<tr>
-<td>waitForPageToLoad</td>
-<td></td>
-<td></td>
-</tr>
-<tr>
-<td>waitForElementPresent</td>
-<td>css=input[type="submit"]</td>
-<td></td>
-</tr>
-<tr>
-<td>click</td>
-<td>css=input[type="submit"]</td>
-<td></td>
-</tr>
-<tr>
-<td>waitForPageToLoad</td>
-<td></td>
-<td></td>
-</tr>
-<tr>
-<td>waitForElementPresent</td>
-<td>css=h3.usa-alert-heading</td>
-<td></td>
-</tr>
-<tr>
-<td>assertText</td>
-<td>css=h3.usa-alert-heading</td>
-<td>*Your Task Order has been uploaded successfully.*</td>
 </tr>
 </tbody>
 </table>

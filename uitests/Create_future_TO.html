@@ -4,7 +4,7 @@
 <head profile="http://selenium-ide.openqa.org/profiles/test-case">
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 <link rel="selenium.base" href="" />
-<title>Create TO after other steps</title>
+<title>Create future TO</title>
 <meta name="ghost-inspector-details" content="This test isn't designed to run on its own. It is incorporated into other tests in the CI and Walker suites." />
 <meta name="ghost-inspector-browser" content="chrome" />
 <meta name="ghost-inspector-userAgent" content="" />
@@ -22,7 +22,7 @@
 <table cellpadding="1" cellspacing="1" border="1">
 <thead>
 <tr>
-<td rowspan="1" colspan="3">Create TO after other steps</td>
+<td rowspan="1" colspan="3">Create future TO</td>
 </tr>
 </thead>
 <tbody>
@@ -51,7 +51,7 @@
 <td>css=.empty-state__footer > .usa-button.usa-button-primary</td>
 <td></td>
 </tr>
-<tr original-target=".empty-state__footer > .usa-button.usa-button-primary">
+<tr original-target=".empty-state__footer > .usa-button.usa-button-primary,xpath=//a[contains(text(), "Add Task Order")]">
 <td>click</td>
 <td>css=.empty-state__footer > .usa-button.usa-button-primary</td>
 <td></td>
@@ -155,7 +155,7 @@
 <tr>
 <td>type</td>
 <td>css=#clins-0-number</td>
-<td>0002</td>
+<td>0001</td>
 </tr>
 <tr>
 <td>waitForPageToLoad</td>
@@ -170,7 +170,7 @@
 <tr>
 <td>type</td>
 <td>css=#clins-0-jedi_clin_type</td>
-<td>JEDI_CLIN_2</td>
+<td>JEDI_CLIN_1</td>
 </tr>
 <tr>
 <td>waitForPageToLoad</td>
@@ -185,7 +185,7 @@
 <tr>
 <td>type</td>
 <td>css=#clins-0-total_amount</td>
-<td>$800,000</td>
+<td>$500,000</td>
 </tr>
 <tr>
 <td>waitForPageToLoad</td>
@@ -200,7 +200,7 @@
 <tr>
 <td>type</td>
 <td>css=#clins-0-obligated_amount</td>
-<td>$100,000</td>
+<td>$5,000</td>
 </tr>
 <tr>
 <td>waitForPageToLoad</td>
@@ -215,7 +215,7 @@
 <tr>
 <td>type</td>
 <td>css=fieldset[name="clins-0-start_date"] > .date-picker-component > .usa-form-group.usa-form-group-month > input[name="date-month"]</td>
-<td>10</td>
+<td>7</td>
 </tr>
 <tr>
 <td>waitForPageToLoad</td>
@@ -245,7 +245,7 @@
 <tr>
 <td>type</td>
 <td>css=fieldset[name="clins-0-start_date"] > .date-picker-component > .usa-form-group.usa-form-group-year > input[name="date-year"]</td>
-<td>2019</td>
+<td>2020</td>
 </tr>
 <tr>
 <td>waitForPageToLoad</td>
@@ -260,7 +260,7 @@
 <tr>
 <td>type</td>
 <td>css=fieldset[name="clins-0-end_date"] > .date-picker-component > .usa-form-group.usa-form-group-month > input[name="date-month"]</td>
-<td>6</td>
+<td>12</td>
 </tr>
 <tr>
 <td>waitForPageToLoad</td>
@@ -275,7 +275,7 @@
 <tr>
 <td>type</td>
 <td>css=fieldset[name="clins-0-end_date"] > .date-picker-component > .usa-form-group.usa-form-group-day > input[name="date-day"]</td>
-<td>30</td>
+<td>31</td>
 </tr>
 <tr>
 <td>waitForPageToLoad</td>
