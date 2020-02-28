@@ -4,8 +4,8 @@
 <head profile="http://selenium-ide.openqa.org/profiles/test-case">
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 <link rel="selenium.base" href="" />
-<title>Create New TO</title>
-<meta name="ghost-inspector-details" content="" />
+<title>Create draft TO</title>
+<meta name="ghost-inspector-details" content="This test isn't designed to run on its own. It is incorporated into other tests in the CI and Walker suites." />
 <meta name="ghost-inspector-browser" content="chrome" />
 <meta name="ghost-inspector-userAgent" content="" />
 <meta name="ghost-inspector-region" content="us-east-1" />
@@ -14,15 +14,15 @@
 <meta name="ghost-inspector-maxAjaxDelay" content="10000" />
 <meta name="ghost-inspector-viewportSize" content="1920x1080" />
 <meta name="ghost-inspector-screenshotTarget" content="" />
-<meta name="ghost-inspector-screenshotExclusions" content="div.global-navigation, time" />
+<meta name="ghost-inspector-screenshotExclusions" content="" />
 <meta name="ghost-inspector-screenshotCompareEnabled" content="true" />
-<meta name="ghost-inspector-screenshotCompareThreshold" content="0.03" />
+<meta name="ghost-inspector-screenshotCompareThreshold" content="0.1" />
 </head>
 <body>
 <table cellpadding="1" cellspacing="1" border="1">
 <thead>
 <tr>
-<td rowspan="1" colspan="3">Create New TO</td>
+<td rowspan="1" colspan="3">Create draft TO</td>
 </tr>
 </thead>
 <tbody>
@@ -192,7 +192,7 @@ Imported from: AT-AT CI - login-->
 <td>css=.empty-state__footer > .usa-button.usa-button-primary</td>
 <td></td>
 </tr>
-<tr original-target=".empty-state__footer > .usa-button.usa-button-primary">
+<tr original-target=".empty-state__footer > .usa-button.usa-button-primary,xpath=//a[contains(text(), "Add Task Order")]">
 <td>click</td>
 <td>css=.empty-state__footer > .usa-button.usa-button-primary</td>
 <td></td>
@@ -296,7 +296,7 @@ Imported from: AT-AT CI - login-->
 <tr>
 <td>type</td>
 <td>css=#clins-0-number</td>
-<td>0002</td>
+<td>0001</td>
 </tr>
 <tr>
 <td>waitForPageToLoad</td>
@@ -311,7 +311,7 @@ Imported from: AT-AT CI - login-->
 <tr>
 <td>type</td>
 <td>css=#clins-0-jedi_clin_type</td>
-<td>JEDI_CLIN_2</td>
+<td>JEDI_CLIN_1</td>
 </tr>
 <tr>
 <td>waitForPageToLoad</td>
@@ -326,7 +326,7 @@ Imported from: AT-AT CI - login-->
 <tr>
 <td>type</td>
 <td>css=#clins-0-total_amount</td>
-<td>$800,000</td>
+<td>$40,000</td>
 </tr>
 <tr>
 <td>waitForPageToLoad</td>
@@ -341,7 +341,7 @@ Imported from: AT-AT CI - login-->
 <tr>
 <td>type</td>
 <td>css=#clins-0-obligated_amount</td>
-<td>$100,000</td>
+<td>$8,000</td>
 </tr>
 <tr>
 <td>waitForPageToLoad</td>
@@ -401,7 +401,7 @@ Imported from: AT-AT CI - login-->
 <tr>
 <td>type</td>
 <td>css=fieldset[name="clins-0-end_date"] > .date-picker-component > .usa-form-group.usa-form-group-month > input[name="date-month"]</td>
-<td>6</td>
+<td>10</td>
 </tr>
 <tr>
 <td>waitForPageToLoad</td>
@@ -416,7 +416,7 @@ Imported from: AT-AT CI - login-->
 <tr>
 <td>type</td>
 <td>css=fieldset[name="clins-0-end_date"] > .date-picker-component > .usa-form-group.usa-form-group-day > input[name="date-day"]</td>
-<td>30</td>
+<td>31</td>
 </tr>
 <tr>
 <td>waitForPageToLoad</td>
@@ -455,12 +455,12 @@ Imported from: AT-AT CI - login-->
 </tr>
 <tr>
 <td>waitForElementPresent</td>
-<td>css=input[type="submit"]</td>
+<td>css=a.action-group__action</td>
 <td></td>
 </tr>
-<tr>
+<tr original-target="a.action-group__action,xpath=//a[contains(text(), "Cancel")]">
 <td>click</td>
-<td>css=input[type="submit"]</td>
+<td>css=a.action-group__action</td>
 <td></td>
 </tr>
 <tr>
@@ -470,73 +470,13 @@ Imported from: AT-AT CI - login-->
 </tr>
 <tr>
 <td>waitForElementPresent</td>
-<td>css=a.usa-button.usa-button-primary</td>
+<td>css=.action-group > button[type="submit"].usa-button.usa-button-primary:nth-of-type(2)</td>
 <td></td>
 </tr>
-<tr original-target="a.usa-button.usa-button-primary,xpath=//a[contains(text(), "Next: Submit Task Order")]">
+<tr original-target=".action-group > button[type="submit"].usa-button.usa-button-primary:nth-of-type(2),xpath=//button[contains(text(), "Yes, save for later")]">
 <td>click</td>
-<td>css=a.usa-button.usa-button-primary</td>
+<td>css=.action-group > button[type="submit"].usa-button.usa-button-primary:nth-of-type(2)</td>
 <td></td>
-</tr>
-<tr>
-<td>waitForPageToLoad</td>
-<td></td>
-<td></td>
-</tr>
-<tr>
-<td>waitForElementPresent</td>
-<td>css=.task-order__confirmation > div:nth-of-type(1) > .usa-input > fieldset.usa-input__choices > legend > label</td>
-<td></td>
-</tr>
-<tr original-target=".task-order__confirmation > div:nth-of-type(1) > .usa-input > fieldset.usa-input__choices > legend > label,xpath=//label[contains(text(), "I confirm the uploaded Task Order is signed by the appropriate")]">
-<td>click</td>
-<td>css=.task-order__confirmation > div:nth-of-type(1) > .usa-input > fieldset.usa-input__choices > legend > label</td>
-<td></td>
-</tr>
-<tr>
-<td>waitForPageToLoad</td>
-<td></td>
-<td></td>
-</tr>
-<tr>
-<td>waitForElementPresent</td>
-<td>css=.task-order__confirmation > div:nth-of-type(2) > .usa-input > fieldset.usa-input__choices > legend > label</td>
-<td></td>
-</tr>
-<tr original-target=".task-order__confirmation > div:nth-of-type(2) > .usa-input > fieldset.usa-input__choices > legend > label,xpath=//label[contains(text(), "I confirm that the information entered here in matches that of the submitted Task Order.")]">
-<td>click</td>
-<td>css=.task-order__confirmation > div:nth-of-type(2) > .usa-input > fieldset.usa-input__choices > legend > label</td>
-<td></td>
-</tr>
-<tr>
-<td>waitForPageToLoad</td>
-<td></td>
-<td></td>
-</tr>
-<tr>
-<td>waitForElementPresent</td>
-<td>css=input[type="submit"]</td>
-<td></td>
-</tr>
-<tr>
-<td>click</td>
-<td>css=input[type="submit"]</td>
-<td></td>
-</tr>
-<tr>
-<td>waitForPageToLoad</td>
-<td></td>
-<td></td>
-</tr>
-<tr>
-<td>waitForElementPresent</td>
-<td>css=h3.usa-alert-heading</td>
-<td></td>
-</tr>
-<tr>
-<td>assertText</td>
-<td>css=h3.usa-alert-heading</td>
-<td>*Your Task Order has been uploaded successfully.*</td>
 </tr>
 </tbody>
 </table>

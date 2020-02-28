@@ -4,8 +4,8 @@
 <head profile="http://selenium-ide.openqa.org/profiles/test-case">
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 <link rel="selenium.base" href="" />
-<title>Add future TO</title>
-<meta name="ghost-inspector-details" content="This test isn't designed to run on its own. It is incorporated into other tests in the CI and Walker suites." />
+<title>Create New TO (Base)</title>
+<meta name="ghost-inspector-details" content="" />
 <meta name="ghost-inspector-browser" content="chrome" />
 <meta name="ghost-inspector-userAgent" content="" />
 <meta name="ghost-inspector-region" content="us-east-1" />
@@ -22,7 +22,7 @@
 <table cellpadding="1" cellspacing="1" border="1">
 <thead>
 <tr>
-<td rowspan="1" colspan="3">Add future TO</td>
+<td rowspan="1" colspan="3">Create New TO (Base)</td>
 </tr>
 </thead>
 <tbody>
@@ -31,14 +31,170 @@
 <td></td>
 <td></td>
 </tr>
+<!--Imported from: AT-AT CI - New Portfolio
+Imported from: AT-AT CI - login-->
 <tr>
-<td>waitForElementPresent</td>
-<td>css=.sticky-cta-buttons > .usa-button.usa-button-primary</td>
+<td>open</td>
+<td>/login-dev</td>
 <td></td>
 </tr>
-<tr original-target=".sticky-cta-buttons > .usa-button.usa-button-primary">
+<tr>
+<td>waitForPageToLoad</td>
+<td></td>
+<td></td>
+</tr>
+<!--Imported from: AT-AT CI - New Portfolio
+Imported from: AT-AT CI - login-->
+<tr>
+<td>waitForElementPresent</td>
+<td>css=.home__content > h1</td>
+<td></td>
+</tr>
+<tr>
+<td>assertText</td>
+<td>css=.home__content > h1</td>
+<td>JEDI Cloud Services</td>
+</tr>
+<tr>
+<td>waitForPageToLoad</td>
+<td></td>
+<td></td>
+</tr>
+<!--Imported from: AT-AT CI - New Portfolio-->
+<tr>
+<td>waitForElementPresent</td>
+<td>css=a[href="/portfolios/new"]</td>
+<td></td>
+</tr>
+<tr original-target="a[href="/portfolios/new"],xpath=//a[contains(text(), "Add New Portfolio")]">
 <td>click</td>
-<td>css=.sticky-cta-buttons > .usa-button.usa-button-primary</td>
+<td>css=a[href="/portfolios/new"]</td>
+<td></td>
+</tr>
+<tr>
+<td>waitForPageToLoad</td>
+<td></td>
+<td></td>
+</tr>
+<!--Imported from: AT-AT CI - New Portfolio-->
+<tr>
+<td>waitForElementPresent</td>
+<td>css=.portfolio-header__name > h1</td>
+<td></td>
+</tr>
+<tr>
+<td>assertText</td>
+<td>css=.portfolio-header__name > h1</td>
+<td>*New Portfolio*</td>
+</tr>
+<tr>
+<td>waitForPageToLoad</td>
+<td></td>
+<td></td>
+</tr>
+<!--Imported from: AT-AT CI - New Portfolio-->
+<tr>
+<td>waitForElementPresent</td>
+<td>css=.sticky-cta-text > h3</td>
+<td></td>
+</tr>
+<tr>
+<td>assertText</td>
+<td>css=.sticky-cta-text > h3</td>
+<td>*Name and Describe Portfolio*</td>
+</tr>
+<tr>
+<td>waitForPageToLoad</td>
+<td></td>
+<td></td>
+</tr>
+<!--Imported from: AT-AT CI - New Portfolio-->
+<tr>
+<td>waitForElementPresent</td>
+<td>css=#name</td>
+<td></td>
+</tr>
+<tr>
+<td>type</td>
+<td>css=#name</td>
+<td>Tatooine Energy Maintenance Systems ${alphanumeric}</td>
+</tr>
+<tr>
+<td>waitForPageToLoad</td>
+<td></td>
+<td></td>
+</tr>
+<!--Imported from: AT-AT CI - New Portfolio-->
+<tr>
+<td>waitForElementPresent</td>
+<td>css=fieldset.usa-input__choices > ul > li:nth-of-type(5) > label</td>
+<td></td>
+</tr>
+<tr original-target="fieldset.usa-input__choices > ul > li:nth-of-type(5) > label,xpath=//label[contains(text(), "Other")]">
+<td>click</td>
+<td>css=fieldset.usa-input__choices > ul > li:nth-of-type(5) > label</td>
+<td></td>
+</tr>
+<tr>
+<td>waitForPageToLoad</td>
+<td></td>
+<td></td>
+</tr>
+<!--Imported from: AT-AT CI - New Portfolio-->
+<tr>
+<td>waitForElementPresent</td>
+<td>css=input[type="submit"]</td>
+<td></td>
+</tr>
+<tr>
+<td>click</td>
+<td>css=input[type="submit"]</td>
+<td></td>
+</tr>
+<tr>
+<td>waitForPageToLoad</td>
+<td></td>
+<td></td>
+</tr>
+<!--Imported from: AT-AT CI - New Portfolio-->
+<tr>
+<td>waitForElementPresent</td>
+<td>css=.empty-state > h3</td>
+<td></td>
+</tr>
+<tr>
+<td>assertText</td>
+<td>css=.empty-state > h3</td>
+<td>*You don’t have any Applications yet*</td>
+</tr>
+<tr>
+<td>waitForPageToLoad</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>waitForElementPresent</td>
+<td>css=.icon--funding</td>
+<td></td>
+</tr>
+<tr>
+<td>click</td>
+<td>css=.icon--funding</td>
+<td></td>
+</tr>
+<tr>
+<td>waitForPageToLoad</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>waitForElementPresent</td>
+<td>css=.usa-button.usa-button-primary</td>
+<td></td>
+</tr>
+<tr original-target=".usa-button.usa-button-primary,xpath=//a[contains(text(), "Add Task Order")]">
+<td>click</td>
+<td>css=.usa-button.usa-button-primary</td>
 <td></td>
 </tr>
 <tr>
@@ -140,7 +296,7 @@
 <tr>
 <td>type</td>
 <td>css=#clins-0-number</td>
-<td>0001</td>
+<td>0002</td>
 </tr>
 <tr>
 <td>waitForPageToLoad</td>
@@ -155,7 +311,7 @@
 <tr>
 <td>type</td>
 <td>css=#clins-0-jedi_clin_type</td>
-<td>JEDI_CLIN_1</td>
+<td>JEDI_CLIN_2</td>
 </tr>
 <tr>
 <td>waitForPageToLoad</td>
@@ -170,7 +326,7 @@
 <tr>
 <td>type</td>
 <td>css=#clins-0-total_amount</td>
-<td>$500,000</td>
+<td>$800,000</td>
 </tr>
 <tr>
 <td>waitForPageToLoad</td>
@@ -185,7 +341,7 @@
 <tr>
 <td>type</td>
 <td>css=#clins-0-obligated_amount</td>
-<td>$5,000</td>
+<td>$100,000</td>
 </tr>
 <tr>
 <td>waitForPageToLoad</td>
@@ -200,7 +356,7 @@
 <tr>
 <td>type</td>
 <td>css=fieldset[name="clins-0-start_date"] > .date-picker-component > .usa-form-group.usa-form-group-month > input[name="date-month"]</td>
-<td>7</td>
+<td>10</td>
 </tr>
 <tr>
 <td>waitForPageToLoad</td>
@@ -230,7 +386,7 @@
 <tr>
 <td>type</td>
 <td>css=fieldset[name="clins-0-start_date"] > .date-picker-component > .usa-form-group.usa-form-group-year > input[name="date-year"]</td>
-<td>2020</td>
+<td>2019</td>
 </tr>
 <tr>
 <td>waitForPageToLoad</td>
@@ -245,7 +401,7 @@
 <tr>
 <td>type</td>
 <td>css=fieldset[name="clins-0-end_date"] > .date-picker-component > .usa-form-group.usa-form-group-month > input[name="date-month"]</td>
-<td>12</td>
+<td>6</td>
 </tr>
 <tr>
 <td>waitForPageToLoad</td>
@@ -260,7 +416,7 @@
 <tr>
 <td>type</td>
 <td>css=fieldset[name="clins-0-end_date"] > .date-picker-component > .usa-form-group.usa-form-group-day > input[name="date-day"]</td>
-<td>31</td>
+<td>30</td>
 </tr>
 <tr>
 <td>waitForPageToLoad</td>

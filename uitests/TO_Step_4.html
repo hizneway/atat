@@ -16,7 +16,7 @@
 <meta name="ghost-inspector-screenshotTarget" content="" />
 <meta name="ghost-inspector-screenshotExclusions" content="div.global-navigation, time" />
 <meta name="ghost-inspector-screenshotCompareEnabled" content="true" />
-<meta name="ghost-inspector-screenshotCompareThreshold" content="0.03" />
+<meta name="ghost-inspector-screenshotCompareThreshold" content="0.04" />
 </head>
 <body>
 <table cellpadding="1" cellspacing="1" border="1">
@@ -742,12 +742,12 @@ Imported from: AT-AT CI - TO Step 2-->
 </tr>
 <tr>
 <td>waitForElementPresent</td>
-<td>css=.row > .col.col--grow.summary-item:nth-of-type(1) > .summary-item__value--large</td>
+<td>css=.usa-grid > .summary-item:nth-of-type(1) > .summary-item__value--large</td>
 <td></td>
 </tr>
 <tr>
 <td>assertText</td>
-<td>css=.row > .col.col--grow.summary-item:nth-of-type(1) > .summary-item__value--large</td>
+<td>css=.usa-grid > .summary-item:nth-of-type(1) > .summary-item__value--large</td>
 <td>*$800,000.00*</td>
 </tr>
 <tr>
@@ -757,12 +757,12 @@ Imported from: AT-AT CI - TO Step 2-->
 </tr>
 <tr>
 <td>waitForElementPresent</td>
-<td>css=.row > .col.col--grow.summary-item:nth-of-type(2) > .summary-item__value--large</td>
+<td>css=.usa-grid > .summary-item:nth-of-type(2) > .summary-item__value--large</td>
 <td></td>
 </tr>
 <tr>
 <td>assertText</td>
-<td>css=.row > .col.col--grow.summary-item:nth-of-type(2) > .summary-item__value--large</td>
+<td>css=.usa-grid > .summary-item:nth-of-type(2) > .summary-item__value--large</td>
 <td>*$100,000.00*</td>
 </tr>
 <tr>
@@ -772,13 +772,13 @@ Imported from: AT-AT CI - TO Step 2-->
 </tr>
 <tr>
 <td>waitForElementPresent</td>
-<td>css=.row > .col.col--grow.summary-item:nth-of-type(3) > .summary-item__value--large</td>
+<td>css=table.fixed-table-wrapper > tbody > tr > td:nth-of-type(1)</td>
 <td></td>
 </tr>
 <tr>
-<td>verifyText</td>
-<td>css=.row > .col.col--grow.summary-item:nth-of-type(3) > .summary-item__value--large</td>
-<td>*$0.00*</td>
+<td>assertText</td>
+<td>css=table.fixed-table-wrapper > tbody > tr > td:nth-of-type(1)</td>
+<td>*0002*</td>
 </tr>
 <tr>
 <td>waitForPageToLoad</td>
@@ -787,13 +787,58 @@ Imported from: AT-AT CI - TO Step 2-->
 </tr>
 <tr>
 <td>waitForElementPresent</td>
-<td>css=table.fixed-table-wrapper > thead > tr > th.task-order__amount:nth-of-type(6)</td>
+<td>css=table.fixed-table-wrapper > tbody > tr > td:nth-of-type(2)</td>
 <td></td>
 </tr>
 <tr>
 <td>assertText</td>
-<td>css=table.fixed-table-wrapper > thead > tr > th.task-order__amount:nth-of-type(6)</td>
-<td>*Amount Obligated*</td>
+<td>css=table.fixed-table-wrapper > tbody > tr > td:nth-of-type(2)</td>
+<td>*Base*</td>
+</tr>
+<tr>
+<td>waitForPageToLoad</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>waitForElementPresent</td>
+<td>css=table.fixed-table-wrapper > tbody > tr > td:nth-of-type(4)</td>
+<td></td>
+</tr>
+<tr>
+<td>assertText</td>
+<td>css=table.fixed-table-wrapper > tbody > tr > td:nth-of-type(4)</td>
+<td>*10/01/2019 -  06/30/2020*</td>
+</tr>
+<tr>
+<td>waitForPageToLoad</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>waitForElementPresent</td>
+<td>css=table.fixed-table-wrapper > tbody > tr > td.task-order__amount:nth-of-type(5)</td>
+<td></td>
+</tr>
+<tr>
+<td>assertText</td>
+<td>css=table.fixed-table-wrapper > tbody > tr > td.task-order__amount:nth-of-type(5)</td>
+<td>*$800,000.00*</td>
+</tr>
+<tr>
+<td>waitForPageToLoad</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>waitForElementPresent</td>
+<td>css=table.fixed-table-wrapper > tbody > tr > td.task-order__amount:nth-of-type(6)</td>
+<td></td>
+</tr>
+<tr>
+<td>assertText</td>
+<td>css=table.fixed-table-wrapper > tbody > tr > td.task-order__amount:nth-of-type(6)</td>
+<td>*$100,000.00*</td>
 </tr>
 </tbody>
 </table>

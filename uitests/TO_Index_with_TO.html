@@ -16,7 +16,7 @@
 <meta name="ghost-inspector-screenshotTarget" content="" />
 <meta name="ghost-inspector-screenshotExclusions" content="div.global-navigation, time" />
 <meta name="ghost-inspector-screenshotCompareEnabled" content="true" />
-<meta name="ghost-inspector-screenshotCompareThreshold" content="0.03" />
+<meta name="ghost-inspector-screenshotCompareThreshold" content="0.04" />
 </head>
 <body>
 <table cellpadding="1" cellspacing="1" border="1">
@@ -579,12 +579,12 @@ Ghost Inspector flow control because button tends to take a little while to beco
 </tr>
 <tr>
 <td>waitForElementPresent</td>
-<td>css=.accordion-list > .accordion:nth-of-type(2) > div > h4.accordion__button > button.usa-accordion-button</td>
+<td>css=.accordion__content--list-item > .usa-grid > .usa-width-one-fourth:nth-of-type(1)</td>
 <td></td>
 </tr>
-<tr original-target=".accordion-list > .accordion:nth-of-type(2) > div > h4.accordion__button > button.usa-accordion-button,xpath=//button[contains(text(), "Active Task Orders")]">
-<td>click</td>
-<td>css=.accordion-list > .accordion:nth-of-type(2) > div > h4.accordion__button > button.usa-accordion-button</td>
+<tr>
+<td>assertElementPresent</td>
+<td>css=.accordion__content--list-item > .usa-grid > .usa-width-one-fourth:nth-of-type(1)</td>
 <td></td>
 </tr>
 <tr>
@@ -594,12 +594,12 @@ Ghost Inspector flow control because button tends to take a little while to beco
 </tr>
 <tr>
 <td>waitForElementPresent</td>
-<td>css=.accordion__content--list-item > .row > .col.col--grow:nth-of-type(1)</td>
+<td>css=.usa-grid > .usa-width-one-fourth:nth-of-type(2)</td>
 <td></td>
 </tr>
 <tr>
 <td>assertElementPresent</td>
-<td>css=.accordion__content--list-item > .row > .col.col--grow:nth-of-type(1)</td>
+<td>css=.usa-grid > .usa-width-one-fourth:nth-of-type(2)</td>
 <td></td>
 </tr>
 <tr>
@@ -609,42 +609,12 @@ Ghost Inspector flow control because button tends to take a little while to beco
 </tr>
 <tr>
 <td>waitForElementPresent</td>
-<td>css=.row > .col.col--grow:nth-of-type(2)</td>
+<td>css=.usa-grid > .usa-width-one-fourth:nth-of-type(3)</td>
 <td></td>
 </tr>
 <tr>
 <td>assertElementPresent</td>
-<td>css=.row > .col.col--grow:nth-of-type(2)</td>
-<td></td>
-</tr>
-<tr>
-<td>waitForPageToLoad</td>
-<td></td>
-<td></td>
-</tr>
-<tr>
-<td>waitForElementPresent</td>
-<td>css=.row > .col.col--grow:nth-of-type(3)</td>
-<td></td>
-</tr>
-<tr>
-<td>assertElementPresent</td>
-<td>css=.row > .col.col--grow:nth-of-type(3)</td>
-<td></td>
-</tr>
-<tr>
-<td>waitForPageToLoad</td>
-<td></td>
-<td></td>
-</tr>
-<tr>
-<td>waitForElementPresent</td>
-<td>css=.row > .col.col--grow:nth-of-type(4)</td>
-<td></td>
-</tr>
-<tr>
-<td>assertElementPresent</td>
-<td>css=.row > .col.col--grow:nth-of-type(4)</td>
+<td>css=.usa-grid > .usa-width-one-fourth:nth-of-type(3)</td>
 <td></td>
 </tr>
 <tr>
@@ -736,51 +706,6 @@ Ghost Inspector flow control because button tends to take a little while to beco
 <td>assertText</td>
 <td>css=#Expired > .accordion__content--empty</td>
 <td>*This Portfolio has no Expired Task Orders.*</td>
-</tr>
-<tr>
-<td>waitForPageToLoad</td>
-<td></td>
-<td></td>
-</tr>
-<tr>
-<td>waitForElementPresent</td>
-<td>css=.accordion-list > .accordion:nth-of-type(6) > div > h4.accordion__button > button.usa-accordion-button</td>
-<td></td>
-</tr>
-<tr original-target=".accordion-list > .accordion:nth-of-type(6) > div > h4.accordion__button > button.usa-accordion-button,xpath=//button[contains(text(), "Unsigned Task Orders")]">
-<td>click</td>
-<td>css=.accordion-list > .accordion:nth-of-type(6) > div > h4.accordion__button > button.usa-accordion-button</td>
-<td></td>
-</tr>
-<tr>
-<td>waitForPageToLoad</td>
-<td></td>
-<td></td>
-</tr>
-<tr>
-<td>waitForElementPresent</td>
-<td>css=#Unsigned > .accordion__content--empty</td>
-<td></td>
-</tr>
-<tr>
-<td>assertText</td>
-<td>css=#Unsigned > .accordion__content--empty</td>
-<td>*This Portfolio has no Unsigned Task Orders.*</td>
-</tr>
-<tr>
-<td>waitForPageToLoad</td>
-<td></td>
-<td></td>
-</tr>
-<tr>
-<td>waitForElementPresent</td>
-<td>css=.accordion-list > .accordion:nth-of-type(6) > div > h4.accordion__button > button.usa-accordion-button</td>
-<td></td>
-</tr>
-<tr original-target=".accordion-list > .accordion:nth-of-type(6) > div > h4.accordion__button > button.usa-accordion-button,xpath=//button[contains(text(), "Unsigned Task Orders")]">
-<td>click</td>
-<td>css=.accordion-list > .accordion:nth-of-type(6) > div > h4.accordion__button > button.usa-accordion-button</td>
-<td></td>
 </tr>
 <tr>
 <td>waitForPageToLoad</td>

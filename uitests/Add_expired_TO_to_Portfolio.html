@@ -4,7 +4,7 @@
 <head profile="http://selenium-ide.openqa.org/profiles/test-case">
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 <link rel="selenium.base" href="" />
-<title>Add expired TO</title>
+<title>Add expired TO to Portfolio</title>
 <meta name="ghost-inspector-details" content="This test isn't designed to run on its own. It is incorporated into other tests in the CI and Walker suites." />
 <meta name="ghost-inspector-browser" content="chrome" />
 <meta name="ghost-inspector-userAgent" content="" />
@@ -22,7 +22,7 @@
 <table cellpadding="1" cellspacing="1" border="1">
 <thead>
 <tr>
-<td rowspan="1" colspan="3">Add expired TO</td>
+<td rowspan="1" colspan="3">Add expired TO to Portfolio</td>
 </tr>
 </thead>
 <tbody>
@@ -33,12 +33,27 @@
 </tr>
 <tr>
 <td>waitForElementPresent</td>
-<td>css=.sticky-cta-buttons > .usa-button.usa-button-primary</td>
+<td>css=.icon--funding</td>
 <td></td>
 </tr>
-<tr original-target=".sticky-cta-buttons > .usa-button.usa-button-primary">
+<tr>
 <td>click</td>
-<td>css=.sticky-cta-buttons > .usa-button.usa-button-primary</td>
+<td>css=.icon--funding</td>
+<td></td>
+</tr>
+<tr>
+<td>waitForPageToLoad</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>waitForElementPresent</td>
+<td>css=.stick-cta-buttons > .usa-button.usa-button-primary</td>
+<td></td>
+</tr>
+<tr original-target=".stick-cta-buttons > .usa-button.usa-button-primary,xpath=//a[contains(text(), "Add New Task Order")]">
+<td>click</td>
+<td>css=.stick-cta-buttons > .usa-button.usa-button-primary</td>
 <td></td>
 </tr>
 <tr>

@@ -4,8 +4,8 @@
 <head profile="http://selenium-ide.openqa.org/profiles/test-case">
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 <link rel="selenium.base" href="" />
-<title>TO Index with expired TO</title>
-<meta name="ghost-inspector-details" content="" />
+<title>Create expired TO</title>
+<meta name="ghost-inspector-details" content="This test isn't designed to run on its own. It is incorporated into other tests in the CI and Walker suites." />
 <meta name="ghost-inspector-browser" content="chrome" />
 <meta name="ghost-inspector-userAgent" content="" />
 <meta name="ghost-inspector-region" content="us-east-1" />
@@ -14,15 +14,15 @@
 <meta name="ghost-inspector-maxAjaxDelay" content="10000" />
 <meta name="ghost-inspector-viewportSize" content="1920x1080" />
 <meta name="ghost-inspector-screenshotTarget" content="" />
-<meta name="ghost-inspector-screenshotExclusions" content="div.global-navigation, time" />
+<meta name="ghost-inspector-screenshotExclusions" content="" />
 <meta name="ghost-inspector-screenshotCompareEnabled" content="true" />
-<meta name="ghost-inspector-screenshotCompareThreshold" content="0.04" />
+<meta name="ghost-inspector-screenshotCompareThreshold" content="0.1" />
 </head>
 <body>
 <table cellpadding="1" cellspacing="1" border="1">
 <thead>
 <tr>
-<td rowspan="1" colspan="3">TO Index with expired TO</td>
+<td rowspan="1" colspan="3">Create expired TO</td>
 </tr>
 </thead>
 <tbody>
@@ -31,148 +31,6 @@
 <td></td>
 <td></td>
 </tr>
-<!--Imported from: AT-AT CI - New Portfolio
-Imported from: AT-AT CI - login-->
-<tr>
-<td>open</td>
-<td>/login-dev</td>
-<td></td>
-</tr>
-<tr>
-<td>waitForPageToLoad</td>
-<td></td>
-<td></td>
-</tr>
-<!--Imported from: AT-AT CI - New Portfolio
-Imported from: AT-AT CI - login-->
-<tr>
-<td>waitForElementPresent</td>
-<td>css=.home__content > h1</td>
-<td></td>
-</tr>
-<tr>
-<td>assertText</td>
-<td>css=.home__content > h1</td>
-<td>JEDI Cloud Services</td>
-</tr>
-<tr>
-<td>waitForPageToLoad</td>
-<td></td>
-<td></td>
-</tr>
-<!--Imported from: AT-AT CI - New Portfolio-->
-<tr>
-<td>waitForElementPresent</td>
-<td>css=a[href="/portfolios/new"]</td>
-<td></td>
-</tr>
-<tr original-target="a[href="/portfolios/new"],xpath=//a[contains(text(), "Add New Portfolio")]">
-<td>click</td>
-<td>css=a[href="/portfolios/new"]</td>
-<td></td>
-</tr>
-<tr>
-<td>waitForPageToLoad</td>
-<td></td>
-<td></td>
-</tr>
-<!--Imported from: AT-AT CI - New Portfolio-->
-<tr>
-<td>waitForElementPresent</td>
-<td>css=.portfolio-header__name > h1</td>
-<td></td>
-</tr>
-<tr>
-<td>assertText</td>
-<td>css=.portfolio-header__name > h1</td>
-<td>*New Portfolio*</td>
-</tr>
-<tr>
-<td>waitForPageToLoad</td>
-<td></td>
-<td></td>
-</tr>
-<!--Imported from: AT-AT CI - New Portfolio-->
-<tr>
-<td>waitForElementPresent</td>
-<td>css=.sticky-cta-text > h3</td>
-<td></td>
-</tr>
-<tr>
-<td>assertText</td>
-<td>css=.sticky-cta-text > h3</td>
-<td>*Name and Describe Portfolio*</td>
-</tr>
-<tr>
-<td>waitForPageToLoad</td>
-<td></td>
-<td></td>
-</tr>
-<!--Imported from: AT-AT CI - New Portfolio-->
-<tr>
-<td>waitForElementPresent</td>
-<td>css=#name</td>
-<td></td>
-</tr>
-<tr>
-<td>type</td>
-<td>css=#name</td>
-<td>Tatooine Energy Maintenance Systems ${alphanumeric}</td>
-</tr>
-<tr>
-<td>waitForPageToLoad</td>
-<td></td>
-<td></td>
-</tr>
-<!--Imported from: AT-AT CI - New Portfolio-->
-<tr>
-<td>waitForElementPresent</td>
-<td>css=fieldset.usa-input__choices > ul > li:nth-of-type(5) > label</td>
-<td></td>
-</tr>
-<tr original-target="fieldset.usa-input__choices > ul > li:nth-of-type(5) > label,xpath=//label[contains(text(), "Other")]">
-<td>click</td>
-<td>css=fieldset.usa-input__choices > ul > li:nth-of-type(5) > label</td>
-<td></td>
-</tr>
-<tr>
-<td>waitForPageToLoad</td>
-<td></td>
-<td></td>
-</tr>
-<!--Imported from: AT-AT CI - New Portfolio-->
-<tr>
-<td>waitForElementPresent</td>
-<td>css=input[type="submit"]</td>
-<td></td>
-</tr>
-<tr>
-<td>click</td>
-<td>css=input[type="submit"]</td>
-<td></td>
-</tr>
-<tr>
-<td>waitForPageToLoad</td>
-<td></td>
-<td></td>
-</tr>
-<!--Imported from: AT-AT CI - New Portfolio-->
-<tr>
-<td>waitForElementPresent</td>
-<td>css=.empty-state > h3</td>
-<td></td>
-</tr>
-<tr>
-<td>assertText</td>
-<td>css=.empty-state > h3</td>
-<td>*You don’t have any Applications yet*</td>
-</tr>
-<tr>
-<td>waitForPageToLoad</td>
-<td></td>
-<td></td>
-</tr>
-<!--Imported from: AT-AT Holding - Create expired TO-->
 <tr>
 <td>waitForElementPresent</td>
 <td>css=.icon--funding</td>
@@ -188,7 +46,6 @@ Imported from: AT-AT CI - login-->
 <td></td>
 <td></td>
 </tr>
-<!--Imported from: AT-AT Holding - Create expired TO-->
 <tr>
 <td>waitForElementPresent</td>
 <td>css=.empty-state__footer > .usa-button.usa-button-primary</td>
@@ -204,7 +61,6 @@ Imported from: AT-AT CI - login-->
 <td></td>
 <td></td>
 </tr>
-<!--Imported from: AT-AT Holding - Create expired TO-->
 <tr>
 <td>waitForElementPresent</td>
 <td>css=.upload-button</td>
@@ -220,7 +76,6 @@ Imported from: AT-AT CI - login-->
 <td></td>
 <td></td>
 </tr>
-<!--Imported from: AT-AT Holding - Create expired TO-->
 <tr>
 <td>waitForElementPresent</td>
 <td>css=#pdf</td>
@@ -236,8 +91,7 @@ Imported from: AT-AT CI - login-->
 <td></td>
 <td></td>
 </tr>
-<!--Imported from: AT-AT Holding - Create expired TO
-Ghost Inspector flow control because button tends to take a little while to become enabled-->
+<!--Ghost Inspector flow control because button tends to take a little while to become enabled-->
 <tr>
 <td>assertElementNotPresent</td>
 <td>css=input[type="submit"][disabled="disabled"]</td>
@@ -248,7 +102,6 @@ Ghost Inspector flow control because button tends to take a little while to beco
 <td></td>
 <td></td>
 </tr>
-<!--Imported from: AT-AT Holding - Create expired TO-->
 <tr>
 <td>waitForElementPresent</td>
 <td>css=input[type="submit"]</td>
@@ -264,7 +117,6 @@ Ghost Inspector flow control because button tends to take a little while to beco
 <td></td>
 <td></td>
 </tr>
-<!--Imported from: AT-AT Holding - Create expired TO-->
 <tr>
 <td>waitForElementPresent</td>
 <td>css=#number</td>
@@ -280,7 +132,6 @@ Ghost Inspector flow control because button tends to take a little while to beco
 <td></td>
 <td></td>
 </tr>
-<!--Imported from: AT-AT Holding - Create expired TO-->
 <tr>
 <td>waitForElementPresent</td>
 <td>css=input[type="submit"]</td>
@@ -296,7 +147,6 @@ Ghost Inspector flow control because button tends to take a little while to beco
 <td></td>
 <td></td>
 </tr>
-<!--Imported from: AT-AT Holding - Create expired TO-->
 <tr>
 <td>waitForElementPresent</td>
 <td>css=#clins-0-number</td>
@@ -312,7 +162,6 @@ Ghost Inspector flow control because button tends to take a little while to beco
 <td></td>
 <td></td>
 </tr>
-<!--Imported from: AT-AT Holding - Create expired TO-->
 <tr>
 <td>waitForElementPresent</td>
 <td>css=#clins-0-jedi_clin_type</td>
@@ -328,7 +177,6 @@ Ghost Inspector flow control because button tends to take a little while to beco
 <td></td>
 <td></td>
 </tr>
-<!--Imported from: AT-AT Holding - Create expired TO-->
 <tr>
 <td>waitForElementPresent</td>
 <td>css=#clins-0-total_amount</td>
@@ -344,7 +192,6 @@ Ghost Inspector flow control because button tends to take a little while to beco
 <td></td>
 <td></td>
 </tr>
-<!--Imported from: AT-AT Holding - Create expired TO-->
 <tr>
 <td>waitForElementPresent</td>
 <td>css=#clins-0-obligated_amount</td>
@@ -360,7 +207,6 @@ Ghost Inspector flow control because button tends to take a little while to beco
 <td></td>
 <td></td>
 </tr>
-<!--Imported from: AT-AT Holding - Create expired TO-->
 <tr>
 <td>waitForElementPresent</td>
 <td>css=fieldset[name="clins-0-start_date"] > .date-picker-component > .usa-form-group.usa-form-group-month > input[name="date-month"]</td>
@@ -376,7 +222,6 @@ Ghost Inspector flow control because button tends to take a little while to beco
 <td></td>
 <td></td>
 </tr>
-<!--Imported from: AT-AT Holding - Create expired TO-->
 <tr>
 <td>waitForElementPresent</td>
 <td>css=fieldset[name="clins-0-start_date"] > .date-picker-component > .usa-form-group.usa-form-group-day > input[name="date-day"]</td>
@@ -392,7 +237,6 @@ Ghost Inspector flow control because button tends to take a little while to beco
 <td></td>
 <td></td>
 </tr>
-<!--Imported from: AT-AT Holding - Create expired TO-->
 <tr>
 <td>waitForElementPresent</td>
 <td>css=fieldset[name="clins-0-start_date"] > .date-picker-component > .usa-form-group.usa-form-group-year > input[name="date-year"]</td>
@@ -408,7 +252,6 @@ Ghost Inspector flow control because button tends to take a little while to beco
 <td></td>
 <td></td>
 </tr>
-<!--Imported from: AT-AT Holding - Create expired TO-->
 <tr>
 <td>waitForElementPresent</td>
 <td>css=fieldset[name="clins-0-end_date"] > .date-picker-component > .usa-form-group.usa-form-group-month > input[name="date-month"]</td>
@@ -424,7 +267,6 @@ Ghost Inspector flow control because button tends to take a little while to beco
 <td></td>
 <td></td>
 </tr>
-<!--Imported from: AT-AT Holding - Create expired TO-->
 <tr>
 <td>waitForElementPresent</td>
 <td>css=fieldset[name="clins-0-end_date"] > .date-picker-component > .usa-form-group.usa-form-group-day > input[name="date-day"]</td>
@@ -440,7 +282,6 @@ Ghost Inspector flow control because button tends to take a little while to beco
 <td></td>
 <td></td>
 </tr>
-<!--Imported from: AT-AT Holding - Create expired TO-->
 <tr>
 <td>waitForElementPresent</td>
 <td>css=fieldset[name="clins-0-end_date"] > .date-picker-component > .usa-form-group.usa-form-group-year > input[name="date-year"]</td>
@@ -456,7 +297,6 @@ Ghost Inspector flow control because button tends to take a little while to beco
 <td></td>
 <td></td>
 </tr>
-<!--Imported from: AT-AT Holding - Create expired TO-->
 <tr>
 <td>waitForElementPresent</td>
 <td>css=fieldset[name="clins-0-end_date"] > .date-picker-component > .usa-form-group.usa-form-group-day > input[name="date-day"]</td>
@@ -472,7 +312,6 @@ Ghost Inspector flow control because button tends to take a little while to beco
 <td></td>
 <td></td>
 </tr>
-<!--Imported from: AT-AT Holding - Create expired TO-->
 <tr>
 <td>waitForElementPresent</td>
 <td>css=input[type="submit"]</td>
@@ -488,7 +327,6 @@ Ghost Inspector flow control because button tends to take a little while to beco
 <td></td>
 <td></td>
 </tr>
-<!--Imported from: AT-AT Holding - Create expired TO-->
 <tr>
 <td>waitForElementPresent</td>
 <td>css=a.usa-button.usa-button-primary</td>
@@ -504,7 +342,6 @@ Ghost Inspector flow control because button tends to take a little while to beco
 <td></td>
 <td></td>
 </tr>
-<!--Imported from: AT-AT Holding - Create expired TO-->
 <tr>
 <td>waitForElementPresent</td>
 <td>css=.task-order__confirmation > div:nth-of-type(1) > .usa-input > fieldset.usa-input__choices > legend > label</td>
@@ -520,7 +357,6 @@ Ghost Inspector flow control because button tends to take a little while to beco
 <td></td>
 <td></td>
 </tr>
-<!--Imported from: AT-AT Holding - Create expired TO-->
 <tr>
 <td>waitForElementPresent</td>
 <td>css=.task-order__confirmation > div:nth-of-type(2) > .usa-input > fieldset.usa-input__choices > legend > label</td>
@@ -536,7 +372,6 @@ Ghost Inspector flow control because button tends to take a little while to beco
 <td></td>
 <td></td>
 </tr>
-<!--Imported from: AT-AT Holding - Create expired TO-->
 <tr>
 <td>waitForElementPresent</td>
 <td>css=input[type="submit"]</td>
@@ -552,7 +387,6 @@ Ghost Inspector flow control because button tends to take a little while to beco
 <td></td>
 <td></td>
 </tr>
-<!--Imported from: AT-AT Holding - Create expired TO-->
 <tr>
 <td>waitForElementPresent</td>
 <td>css=h3.usa-alert-heading</td>
@@ -562,141 +396,6 @@ Ghost Inspector flow control because button tends to take a little while to beco
 <td>assertText</td>
 <td>css=h3.usa-alert-heading</td>
 <td>*Your Task Order has been uploaded successfully.*</td>
-</tr>
-<tr>
-<td>waitForPageToLoad</td>
-<td></td>
-<td></td>
-</tr>
-<tr>
-<td>waitForElementPresent</td>
-<td>css=.accordion-list > .accordion:nth-of-type(2) > div > h4.accordion__button > button.usa-accordion-button</td>
-<td></td>
-</tr>
-<tr original-target=".accordion-list > .accordion:nth-of-type(2) > div > h4.accordion__button > button.usa-accordion-button,//button[contains(text(), "Active Task Orders")]">
-<td>click</td>
-<td>css=.accordion-list > .accordion:nth-of-type(2) > div > h4.accordion__button > button.usa-accordion-button</td>
-<td></td>
-</tr>
-<tr>
-<td>waitForPageToLoad</td>
-<td></td>
-<td></td>
-</tr>
-<tr>
-<td>waitForElementPresent</td>
-<td>css=#Active > .accordion__content--empty</td>
-<td></td>
-</tr>
-<tr>
-<td>assertText</td>
-<td>css=#Active > .accordion__content--empty</td>
-<td>*This Portfolio has no Active Task Orders.*</td>
-</tr>
-<tr>
-<td>waitForPageToLoad</td>
-<td></td>
-<td></td>
-</tr>
-<tr>
-<td>waitForElementPresent</td>
-<td>css=.accordion-list > .accordion:nth-of-type(3) > div > h4.accordion__button > button.usa-accordion-button</td>
-<td></td>
-</tr>
-<tr original-target=".accordion-list > .accordion:nth-of-type(3) > div > h4.accordion__button > button.usa-accordion-button,//button[contains(text(), "Draft Task Orders")]">
-<td>click</td>
-<td>css=.accordion-list > .accordion:nth-of-type(3) > div > h4.accordion__button > button.usa-accordion-button</td>
-<td></td>
-</tr>
-<tr>
-<td>waitForPageToLoad</td>
-<td></td>
-<td></td>
-</tr>
-<tr>
-<td>waitForElementPresent</td>
-<td>css=#Draft > .accordion__content--empty</td>
-<td></td>
-</tr>
-<tr>
-<td>assertText</td>
-<td>css=#Draft > .accordion__content--empty</td>
-<td>*This Portfolio has no Draft Task Orders.*</td>
-</tr>
-<tr>
-<td>waitForPageToLoad</td>
-<td></td>
-<td></td>
-</tr>
-<tr>
-<td>waitForElementPresent</td>
-<td>css=.accordion-list > .accordion:nth-of-type(4) > div > h4.accordion__button > button.usa-accordion-button</td>
-<td></td>
-</tr>
-<tr original-target=".accordion-list > .accordion:nth-of-type(4) > div > h4.accordion__button > button.usa-accordion-button,//button[contains(text(), "Upcoming Task Orders")]">
-<td>click</td>
-<td>css=.accordion-list > .accordion:nth-of-type(4) > div > h4.accordion__button > button.usa-accordion-button</td>
-<td></td>
-</tr>
-<tr>
-<td>waitForPageToLoad</td>
-<td></td>
-<td></td>
-</tr>
-<tr>
-<td>waitForElementPresent</td>
-<td>css=#Upcoming > .accordion__content--empty</td>
-<td></td>
-</tr>
-<tr>
-<td>assertText</td>
-<td>css=#Upcoming > .accordion__content--empty</td>
-<td>*This Portfolio has no Upcoming Task Orders.*</td>
-</tr>
-<tr>
-<td>waitForPageToLoad</td>
-<td></td>
-<td></td>
-</tr>
-<tr>
-<td>waitForElementPresent</td>
-<td>css=.accordion__content--list-item</td>
-<td></td>
-</tr>
-<tr>
-<td>assertElementPresent</td>
-<td>css=.accordion__content--list-item</td>
-<td></td>
-</tr>
-<tr>
-<td>waitForPageToLoad</td>
-<td></td>
-<td></td>
-</tr>
-<tr>
-<td>waitForElementPresent</td>
-<td>css=a.accordion-list__collapse</td>
-<td></td>
-</tr>
-<tr original-target="a.accordion-list__collapse,//a[contains(text(), "Collapse All")]">
-<td>click</td>
-<td>css=a.accordion-list__collapse</td>
-<td></td>
-</tr>
-<tr>
-<td>waitForPageToLoad</td>
-<td></td>
-<td></td>
-</tr>
-<tr>
-<td>waitForElementPresent</td>
-<td>css=.accordion-list > .accordion:nth-of-type(5) > div > h4.accordion__button > button.usa-accordion-button</td>
-<td></td>
-</tr>
-<tr original-target=".accordion-list > .accordion:nth-of-type(5) > div > h4.accordion__button > button.usa-accordion-button,//button[contains(text(), "Expired Task Orders")]">
-<td>click</td>
-<td>css=.accordion-list > .accordion:nth-of-type(5) > div > h4.accordion__button > button.usa-accordion-button</td>
-<td></td>
 </tr>
 </tbody>
 </table>
