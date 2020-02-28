@@ -1,4 +1,4 @@
-# ATST
+# ATAT
 
 [![Build Status](https://circleci.com/gh/dod-ccpo/atst.svg?style=svg)](https://circleci.com/gh/dod-ccpo/atst)
 
@@ -9,7 +9,7 @@ This is the user-facing web application for ATAT.
 ## Installation
 
 ### System Requirements
-ATST uses the [Scripts to Rule Them All](https://github.com/github/scripts-to-rule-them-all)
+ATAT uses the [Scripts to Rule Them All](https://github.com/github/scripts-to-rule-them-all)
 pattern for setting up and running the project. The scripts are located in the
 `script` directory and use script fragments in the
 [scriptz](https://github.com/dod-ccpo/scriptz) repository that are shared across
@@ -25,17 +25,17 @@ locally:
   computer, but 3.7.3 is required for ATAT.
 
 * `pipenv`
-  ATST requires `pipenv` to be installed for python dependency management. `pipenv`
+  ATAT requires `pipenv` to be installed for python dependency management. `pipenv`
   will create the virtual environment that the app requires. [See
   `pipenv`'s documentation for instructions on installing `pipenv`](
   https://pipenv.readthedocs.io/en/latest/install/#installing-pipenv).
 
 * `yarn`
-  ATST requires `yarn` for installing and managing Javascript
+  ATAT requires `yarn` for installing and managing Javascript
   dependencies: https://yarnpkg.com/en/
 
 * `postgres` >= 9.6
-  ATST requires a PostgreSQL instance (>= 9.6) for persistence. Have PostgresSQL installed
+  ATAT requires a PostgreSQL instance (>= 9.6) for persistence. Have PostgresSQL installed
   and running on the default port of 5432. (A good resource for installing and running
   PostgreSQL for Macs is [Postgres.app](https://postgresapp.com/). Follow the instructions,
   including the optional Step 3, and add `/Applications/Postgres.app/Contents/Versions/latest/bin`
@@ -43,7 +43,7 @@ locally:
   by executing `psql` and ensuring that a connection is successfully made.
 
 * `redis`
-  ATST also requires a Redis instance for session management. Have Redis installed and
+  ATAT also requires a Redis instance for session management. Have Redis installed and
   running on the default port of 6379. You can ensure that Redis is running by
   executing `redis-cli` with no options and ensuring a connection is succesfully made.
 
@@ -370,4 +370,3 @@ fi
 ```
 
 Also note that if the line number of a previously whitelisted secret changes, the whitelist file, `.secrets.baseline`, will be updated and needs to be committed.
-
