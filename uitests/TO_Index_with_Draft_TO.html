@@ -16,7 +16,7 @@
 <meta name="ghost-inspector-screenshotTarget" content="" />
 <meta name="ghost-inspector-screenshotExclusions" content="div.global-navigation, time" />
 <meta name="ghost-inspector-screenshotCompareEnabled" content="true" />
-<meta name="ghost-inspector-screenshotCompareThreshold" content="0.03" />
+<meta name="ghost-inspector-screenshotCompareThreshold" content="0.04" />
 </head>
 <body>
 <table cellpadding="1" cellspacing="1" border="1">
@@ -622,6 +622,17 @@ Ghost Inspector flow control because button tends to take a little while to beco
 <td></td>
 <td></td>
 </tr>
+<!--Ghost Inspector flow control because button tends to take a little while to become enabled-->
+<tr>
+<td>assertElementNotPresent</td>
+<td>css=input[type="submit"][disabled="disabled"]</td>
+<td></td>
+</tr>
+<tr>
+<td>waitForPageToLoad</td>
+<td></td>
+<td></td>
+</tr>
 <tr>
 <td>waitForElementPresent</td>
 <td>css=input[type="submit"]</td>
@@ -714,21 +725,6 @@ Ghost Inspector flow control because button tends to take a little while to beco
 </tr>
 <tr>
 <td>waitForElementPresent</td>
-<td>css=.accordion-list > .accordion:nth-of-type(3) > div > h4.accordion__button > button.usa-accordion-button</td>
-<td></td>
-</tr>
-<tr original-target=".accordion-list > .accordion:nth-of-type(3) > div > h4.accordion__button > button.usa-accordion-button,xpath=//button[contains(text(), "Draft Task Orders")]">
-<td>click</td>
-<td>css=.accordion-list > .accordion:nth-of-type(3) > div > h4.accordion__button > button.usa-accordion-button</td>
-<td></td>
-</tr>
-<tr>
-<td>waitForPageToLoad</td>
-<td></td>
-<td></td>
-</tr>
-<tr>
-<td>waitForElementPresent</td>
 <td>css=#Draft > .accordion__content--list-item</td>
 <td></td>
 </tr>
@@ -744,12 +740,12 @@ Ghost Inspector flow control because button tends to take a little while to beco
 </tr>
 <tr>
 <td>waitForElementPresent</td>
-<td>css=#Draft > .accordion__content--list-item > .row > .col.col--grow:nth-of-type(1)</td>
+<td>css=#Draft > .accordion__content--list-item > .usa-grid > .usa-width-one-fourth:nth-of-type(1)</td>
 <td></td>
 </tr>
 <tr>
 <td>assertElementPresent</td>
-<td>css=#Draft > .accordion__content--list-item > .row > .col.col--grow:nth-of-type(1)</td>
+<td>css=#Draft > .accordion__content--list-item > .usa-grid > .usa-width-one-fourth:nth-of-type(1)</td>
 <td></td>
 </tr>
 <tr>
@@ -759,12 +755,12 @@ Ghost Inspector flow control because button tends to take a little while to beco
 </tr>
 <tr>
 <td>waitForElementPresent</td>
-<td>css=#Draft > .accordion__content--list-item > .row > .col.col--grow:nth-of-type(1) > p</td>
+<td>css=#Draft > .accordion__content--list-item > .usa-grid > .usa-width-one-fourth:nth-of-type(1) > p</td>
 <td></td>
 </tr>
 <tr>
 <td>assertText</td>
-<td>css=#Draft > .accordion__content--list-item > .row > .col.col--grow:nth-of-type(1) > p</td>
+<td>css=#Draft > .accordion__content--list-item > .usa-grid > .usa-width-one-fourth:nth-of-type(1) > p</td>
 <td>*-
                     -
                     -*</td>
@@ -776,12 +772,12 @@ Ghost Inspector flow control because button tends to take a little while to beco
 </tr>
 <tr>
 <td>waitForElementPresent</td>
-<td>css=#Draft > .accordion__content--list-item > .row > .col.col--grow:nth-of-type(2)</td>
+<td>css=#Draft > .accordion__content--list-item > .usa-grid > .usa-width-one-fourth:nth-of-type(2)</td>
 <td></td>
 </tr>
 <tr>
 <td>assertElementPresent</td>
-<td>css=#Draft > .accordion__content--list-item > .row > .col.col--grow:nth-of-type(2)</td>
+<td>css=#Draft > .accordion__content--list-item > .usa-grid > .usa-width-one-fourth:nth-of-type(2)</td>
 <td></td>
 </tr>
 <tr>
@@ -791,12 +787,12 @@ Ghost Inspector flow control because button tends to take a little while to beco
 </tr>
 <tr>
 <td>waitForElementPresent</td>
-<td>css=#Draft > .accordion__content--list-item > .row > .col.col--grow:nth-of-type(2) > p</td>
+<td>css=#Draft > .accordion__content--list-item > .usa-grid > .usa-width-one-fourth:nth-of-type(2) > p</td>
 <td></td>
 </tr>
 <tr>
 <td>assertText</td>
-<td>css=#Draft > .accordion__content--list-item > .row > .col.col--grow:nth-of-type(2) > p</td>
+<td>css=#Draft > .accordion__content--list-item > .usa-grid > .usa-width-one-fourth:nth-of-type(2) > p</td>
 <td>*$0.00*</td>
 </tr>
 <tr>
@@ -806,12 +802,12 @@ Ghost Inspector flow control because button tends to take a little while to beco
 </tr>
 <tr>
 <td>waitForElementPresent</td>
-<td>css=#Draft > .accordion__content--list-item > .row > .col.col--grow:nth-of-type(3)</td>
+<td>css=#Draft > .accordion__content--list-item > .usa-grid > .usa-width-one-fourth:nth-of-type(3)</td>
 <td></td>
 </tr>
 <tr>
 <td>assertElementPresent</td>
-<td>css=#Draft > .accordion__content--list-item > .row > .col.col--grow:nth-of-type(3)</td>
+<td>css=#Draft > .accordion__content--list-item > .usa-grid > .usa-width-one-fourth:nth-of-type(3)</td>
 <td></td>
 </tr>
 <tr>
@@ -821,42 +817,12 @@ Ghost Inspector flow control because button tends to take a little while to beco
 </tr>
 <tr>
 <td>waitForElementPresent</td>
-<td>css=#Draft > .accordion__content--list-item > .row > .col.col--grow:nth-of-type(3) > p</td>
+<td>css=#Draft > .accordion__content--list-item > .usa-grid > .usa-width-one-fourth:nth-of-type(3) > p</td>
 <td></td>
 </tr>
 <tr>
 <td>assertText</td>
-<td>css=#Draft > .accordion__content--list-item > .row > .col.col--grow:nth-of-type(3) > p</td>
-<td>*$0.00*</td>
-</tr>
-<tr>
-<td>waitForPageToLoad</td>
-<td></td>
-<td></td>
-</tr>
-<tr>
-<td>waitForElementPresent</td>
-<td>css=#Draft > .accordion__content--list-item > .row > .col.col--grow:nth-of-type(4)</td>
-<td></td>
-</tr>
-<tr>
-<td>assertElementPresent</td>
-<td>css=#Draft > .accordion__content--list-item > .row > .col.col--grow:nth-of-type(4)</td>
-<td></td>
-</tr>
-<tr>
-<td>waitForPageToLoad</td>
-<td></td>
-<td></td>
-</tr>
-<tr>
-<td>waitForElementPresent</td>
-<td>css=#Draft > .accordion__content--list-item > .row > .col.col--grow:nth-of-type(4) > p</td>
-<td></td>
-</tr>
-<tr>
-<td>assertText</td>
-<td>css=#Draft > .accordion__content--list-item > .row > .col.col--grow:nth-of-type(4) > p</td>
+<td>css=#Draft > .accordion__content--list-item > .usa-grid > .usa-width-one-fourth:nth-of-type(3) > p</td>
 <td>*$0.00*</td>
 </tr>
 </tbody>
