@@ -7,12 +7,12 @@ data:
   AZURE_ACCOUNT_NAME: jeditasksatat
   CELERY_DEFAULT_QUEUE: celery-staging
   FLASK_ENV: staging
-  PGDATABASE: cloudzero_jedidev_atat
+  PGDATABASE: cloudzero_pwdev_atat
   PGHOST: 191.238.6.43
-  PGUSER: atat@cloudzero-jedidev-sql
+  PGUSER: atat@cloudzero-pwdev-sql
   PGSSLMODE: require
-  REDIS_HOST: 10.1.3.34:6380
-  SERVER_NAME: dev.atat.cloud.mil
+  REDIS_HOST: 10.1.3.171:6380
+  SERVER_NAME: staging.atat.cloud.mil
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -20,14 +20,14 @@ metadata:
   name: atst-envvars
 data:
   ASSETS_URL: ""
-  AZURE_ACCOUNT_NAME: jeditasksatat
-  CAC_URL: https://auth-dev.atat.cloud.mil
-  CDN_ORIGIN: https://dev.atat.cloud.mil
+  AZURE_ACCOUNT_NAME: pwdevtasks
+  CAC_URL: https://auth-staging.atat.cloud.mil
+  CDN_ORIGIN: https://staging.atat.cloud.mil
   CELERY_DEFAULT_QUEUE: celery-staging
   FLASK_ENV: staging
-  PGDATABASE: cloudzero_jedidev_atat
+  PGDATABASE: cloudzero_pwdev_atat
   PGHOST: 191.238.6.43
-  PGUSER: atat@cloudzero-jedidev-sql
+  PGUSER: atat@cloudzero-pwdev-sql
   PGSSLMODE: require
-  REDIS_HOST: 10.1.3.34:6380
-  SESSION_COOKIE_DOMAIN: atat.cloud.mil
+  REDIS_HOST: 10.1.3.171:6380
+  SESSION_COOKIE_DOMAIN: atat.code.mil

@@ -4,8 +4,8 @@ kind: Service
 metadata:
   name: atst-main
   annotations:
-    service.beta.kubernetes.io/azure-load-balancer-internal: "true"
-    service.beta.kubernetes.io/azure-load-balancer-internal-subnet: "cloudzero-jedidev-public"
+    # service.beta.kubernetes.io/azure-load-balancer-internal: "true"
+    service.beta.kubernetes.io/azure-load-balancer-internal-subnet: "cloudzero-pwdev-public"
 spec:
   loadBalancerIP: ""
   ports:
@@ -21,8 +21,8 @@ kind: Service
 metadata:
   name: atst-auth
   annotations:
-    service.beta.kubernetes.io/azure-load-balancer-internal: "true"
-    service.beta.kubernetes.io/azure-load-balancer-internal-subnet: "cloudzero-jedidev-public"
+    # service.beta.kubernetes.io/azure-load-balancer-internal: "true"
+    service.beta.kubernetes.io/azure-load-balancer-internal-subnet: "cloudzero-pwdev-public"
 spec:
   loadBalancerIP: ""
   ports:

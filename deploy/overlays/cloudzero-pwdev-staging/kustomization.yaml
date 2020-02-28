@@ -1,4 +1,4 @@
-namespace: cloudzero-dev
+namespace: staging
 bases:
   - ../../azure/
 resources:
@@ -7,6 +7,7 @@ patchesStrategicMerge:
   - ports.yml
   - envvars.yml
   - flex_vol.yml
+  - autoscaling.yml
 patchesJson6902:
   - target:
       group: extensions
