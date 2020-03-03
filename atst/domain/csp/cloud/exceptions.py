@@ -133,3 +133,14 @@ class SecretException(GeneralCSPException):
         return "Could not get or set secret for ({}): {}".format(
             self.tenant_id, self.reason
         )
+
+
+class DomainNameException(GeneralCSPException):
+    """A problem occured when generating the domain name for a tenant"""
+
+    def __init__(self, name):
+        self.name = name
+
+    @property
+    def message(self):
+        return f"Could not generate unique tenant name for {self.name}"

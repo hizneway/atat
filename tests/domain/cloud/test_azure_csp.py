@@ -14,6 +14,7 @@ from atst.domain.csp.cloud.exceptions import (
     ConnectionException,
     UnknownServerException,
     SecretException,
+    DomainNameException,
 )
 from atst.domain.csp.cloud import AzureCloudProvider
 from atst.domain.csp.cloud.models import (
@@ -1588,3 +1589,44 @@ def test_get_calculator_url(mock_azure: AzureCloudProvider):
             mock_azure.get_calculator_url()
             == f"{mock_azure.config.get('AZURE_CALC_URL')}?access_token=TOKEN"
         )
+
+
+class TestGenerateValidDomainName:
+    def test_success(self, monkeypatch, mock_azure: AzureCloudProvider):
+        tenant_name = "tenant"
+
+        def _validate_domain_name(mock_azure, name):
+            return True
+
+        monkeypatch.setattr(
+            "atst.domain.csp.cloud.AzureCloudProvider.validate_domain_name",
+            _validate_domain_name,
+        )
+        assert mock_azure.generate_valid_domain_name(tenant_name) == tenant_name
+
+    def test_failure_after_max_tries(self, monkeypatch, mock_azure: AzureCloudProvider):
+        def _validate_domain_name(mock_azure, name):
+            return False
+
+        monkeypatch.setattr(
+            "atst.domain.csp.cloud.AzureCloudProvider.validate_domain_name",
+            _validate_domain_name,
+        )
+        with pytest.raises(DomainNameException):
+            mock_azure.generate_valid_domain_name(name="test", max_tries=3)
+
+    def test_unique(self, monkeypatch, mock_azure: AzureCloudProvider):
+        # mock that a tenant exists with the name tenant_name
+        tenant_name = "tenant"
+
+        def _validate_domain_name(mock_azure, name):
+            if name == tenant_name:
+                return False
+            else:
+                return True
+
+        monkeypatch.setattr(
+            "atst.domain.csp.cloud.AzureCloudProvider.validate_domain_name",
+            _validate_domain_name,
+        )
+        assert mock_azure.generate_valid_domain_name(tenant_name) != tenant_name

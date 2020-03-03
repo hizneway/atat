@@ -1,7 +1,5 @@
 import re
 from itertools import chain
-from random import choices
-from string import ascii_lowercase, digits
 from typing import Dict
 
 from sqlalchemy import Column, String
@@ -191,9 +189,7 @@ class Portfolio(
         CSP domain name associated with portfolio.
         If a domain name is not set, generate one.
         """
-        domain_name = re.sub("[^0-9a-zA-Z]+", "", self.name).lower() + "".join(
-            choices(ascii_lowercase + digits, k=4)
-        )
+        domain_name = re.sub("[^0-9a-zA-Z]+", "", self.name).lower()
         if self.csp_data:
             return self.csp_data.get("domain_name", domain_name)
         else:
