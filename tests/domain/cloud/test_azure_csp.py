@@ -8,7 +8,7 @@ import pytest
 from tests.factories import ApplicationFactory, EnvironmentFactory
 from tests.mock_azure import AUTH_CREDENTIALS, mock_azure
 
-from atst.domain.csp.cloud.exceptions import (
+from atat.domain.csp.cloud.exceptions import (
     AuthenticationException,
     UserProvisioningException,
     ConnectionException,
@@ -16,8 +16,8 @@ from atst.domain.csp.cloud.exceptions import (
     SecretException,
     DomainNameException,
 )
-from atst.domain.csp.cloud import AzureCloudProvider
-from atst.domain.csp.cloud.models import (
+from atat.domain.csp.cloud import AzureCloudProvider
+from atat.domain.csp.cloud.models import (
     AdminRoleDefinitionCSPPayload,
     AdminRoleDefinitionCSPResult,
     ApplicationCSPPayload,
@@ -69,7 +69,7 @@ from atst.domain.csp.cloud.models import (
     UserCSPPayload,
     UserRoleCSPPayload,
 )
-from atst.domain.csp.cloud.exceptions import UserProvisioningException
+from atat.domain.csp.cloud.exceptions import UserProvisioningException
 
 BILLING_ACCOUNT_NAME = "52865e4c-52e8-5a6c-da6b-c58f0814f06f:7ea5de9d-b8ce-4901-b1c5-d864320c7b03_2019-05-31"
 
@@ -1599,7 +1599,7 @@ class TestGenerateValidDomainName:
             return True
 
         monkeypatch.setattr(
-            "atst.domain.csp.cloud.AzureCloudProvider.validate_domain_name",
+            "atat.domain.csp.cloud.AzureCloudProvider.validate_domain_name",
             _validate_domain_name,
         )
         assert mock_azure.generate_valid_domain_name(tenant_name) == tenant_name
@@ -1609,7 +1609,7 @@ class TestGenerateValidDomainName:
             return False
 
         monkeypatch.setattr(
-            "atst.domain.csp.cloud.AzureCloudProvider.validate_domain_name",
+            "atat.domain.csp.cloud.AzureCloudProvider.validate_domain_name",
             _validate_domain_name,
         )
         with pytest.raises(DomainNameException):
@@ -1626,7 +1626,7 @@ class TestGenerateValidDomainName:
                 return True
 
         monkeypatch.setattr(
-            "atst.domain.csp.cloud.AzureCloudProvider.validate_domain_name",
+            "atat.domain.csp.cloud.AzureCloudProvider.validate_domain_name",
             _validate_domain_name,
         )
         assert mock_azure.generate_valid_domain_name(tenant_name) != tenant_name
