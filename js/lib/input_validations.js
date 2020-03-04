@@ -1,5 +1,4 @@
 import createNumberMask from 'text-mask-addons/dist/createNumberMask'
-import emailMask from 'text-mask-addons/dist/emailMask'
 import createAutoCorrectedDatePipe from 'text-mask-addons/dist/createAutoCorrectedDatePipe'
 
 export default {
@@ -68,7 +67,7 @@ export default {
       'Please enter a dollar amount between $0.00 and $1,000,000,000.00',
   },
   email: {
-    mask: emailMask,
+    mask: false,
     match: /^.+@[^.].*\.[a-zA-Z]{2,10}$/,
     unmask: [],
     validationError: 'Please enter a valid e-mail address',
