@@ -51,6 +51,8 @@ from .models import (
     TaskOrderBillingVerificationCSPResult,
     TenantAdminOwnershipCSPPayload,
     TenantAdminOwnershipCSPResult,
+    TenantAdminCredentialResetCSPPayload,
+    TenantAdminCredentialResetCSPResult,
     TenantCSPPayload,
     TenantCSPResult,
     TenantPrincipalAppCSPPayload,
@@ -334,6 +336,14 @@ class MockCloudProvider(CloudProviderInterface):
         self._maybe_raise(self.SERVER_FAILURE_PCT, self.SERVER_EXCEPTION)
         self._maybe_raise(self.UNAUTHORIZED_RATE, self.AUTHORIZATION_EXCEPTION)
         return TenantAdminOwnershipCSPResult(**dict(id="admin_owner_assignment_id"))
+
+    def create_tenant_admin_credential_reset(
+        self, payload: TenantAdminCredentialResetCSPPayload
+    ):
+        self._maybe_raise(self.NETWORK_FAILURE_PCT, self.NETWORK_EXCEPTION)
+        self._maybe_raise(self.SERVER_FAILURE_PCT, self.SERVER_EXCEPTION)
+        self._maybe_raise(self.UNAUTHORIZED_RATE, self.AUTHORIZATION_EXCEPTION)
+        return TenantAdminCredentialResetCSPResult()
 
     def create_tenant_principal_ownership(
         self, payload: TenantPrincipalOwnershipCSPPayload

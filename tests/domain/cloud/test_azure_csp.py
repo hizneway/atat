@@ -56,6 +56,8 @@ from atat.domain.csp.cloud.models import (
     TaskOrderBillingVerificationCSPResult,
     TenantAdminOwnershipCSPPayload,
     TenantAdminOwnershipCSPResult,
+    TenantAdminCredentialResetCSPPayload,
+    TenantAdminCredentialResetCSPResult,
     TenantCSPPayload,
     TenantCSPResult,
     TenantPrincipalAppCSPPayload,
@@ -1427,6 +1429,38 @@ def test_update_active_directory_user_email(mock_azure: AzureCloudProvider):
     result = mock_azure._update_active_directory_user_email(
         "token", uuid4().hex, payload
     )
+
+    assert result
+
+
+def test_update_active_directory_user_password_profile(mock_azure: AzureCloudProvider):
+    mock_result = Mock()
+    mock_result.ok = True
+    mock_http_error_resp = mock_requests_response(
+        status=500,
+        raise_for_status=mock_azure.sdk.requests.exceptions.HTTPError(
+            "500 Server Error"
+        ),
+    )
+    mock_azure.sdk.requests.patch.side_effect = [
+        mock_azure.sdk.requests.exceptions.ConnectionError,
+        mock_azure.sdk.requests.exceptions.Timeout,
+        mock_http_error_resp,
+        mock_result,
+    ]
+    payload = TenantAdminCredentialResetCSPPayload(
+        tenant_id="6d2d2d6c-a6d6-41e1-8bb1-73d11475f8f4",
+        user_id="admin",
+        new_password="asdfghjkl",  # pragma: allowlist secret
+    )
+    with pytest.raises(ConnectionException):
+        mock_azure._update_active_directory_user_password_profile("token", payload)
+    with pytest.raises(ConnectionException):
+        mock_azure._update_active_directory_user_password_profile("token", payload)
+    with pytest.raises(UnknownServerException, match=r".*500 Server Error.*"):
+        mock_azure._update_active_directory_user_password_profile("token", payload)
+
+    result = mock_azure._update_active_directory_user_password_profile("token", payload)
 
     assert result
 

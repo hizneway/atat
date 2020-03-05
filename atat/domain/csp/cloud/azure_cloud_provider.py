@@ -1,4 +1,6 @@
 import json
+import random
+import string
 from secrets import token_hex, token_urlsafe
 from uuid import uuid4
 from flask import current_app as app
@@ -54,6 +56,8 @@ from .models import (
     TaskOrderBillingVerificationCSPResult,
     TenantAdminOwnershipCSPPayload,
     TenantAdminOwnershipCSPResult,
+    TenantAdminCredentialResetCSPPayload,
+    TenantAdminCredentialResetCSPResult,
     TenantCSPPayload,
     TenantCSPResult,
     TenantPrincipalAppCSPPayload,
@@ -933,6 +937,20 @@ class AzureCloudProvider(CloudProviderInterface):
                 f"azure application error during product purchase verification. {str(exc)}",
             )
 
+    def create_tenant_admin_credential_reset(
+        self, payload: TenantAdminCredentialResetCSPPayload
+    ):
+
+        graph_token = self._get_tenant_admin_token(
+            payload.tenant_id, self.graph_resource
+        )
+        if graph_token is None:
+            raise AuthenticationException(
+                "Could not resolve graph token for tenant admin"
+            )
+
+        self._update_active_directory_user_password_profile(graph_token, payload)
+
     def create_tenant_admin_ownership(self, payload: TenantAdminOwnershipCSPPayload):
         mgmt_token = self._get_elevated_management_token(payload.tenant_id)
 
@@ -1579,6 +1597,62 @@ class AzureCloudProvider(CloudProviderInterface):
             raise UnknownServerException(
                 result.status_code,
                 f"azure application error updating active directory user email. {str(exc)}",
+            )
+
+    def _update_active_directory_user_password_profile(self, graph_token, payload):
+        request_body = {
+            "passwordProfile": {
+                "forceChangePasswordNextSignIn": True,
+                "forceChangePasswordNextSignInWithMfa": False,
+                "password": payload.new_password
+                or "".join(random.choice(string.ascii_letters) for i in range(15)),
+            }
+        }
+
+        auth_header = {
+            "Authorization": f"Bearer {graph_token}",
+        }
+
+        url = f"{self.graph_resource}v1.0/users/{payload.user_id}"
+
+        try:
+            result = self.sdk.requests.patch(
+                url, headers=auth_header, json=request_body, timeout=30
+            )
+            result.raise_for_status()
+
+            if result.ok:
+                return True
+            else:
+                raise UserProvisioningException(
+                    f"Failed update user password profile: {response.json()}"
+                )
+
+        except self.sdk.requests.exceptions.ConnectionError:
+            app.logger.error(
+                f"Could not update active directory user password profile. Connection Error",
+                exc_info=1,
+            )
+            raise ConnectionException(
+                "connection error updating active directory user password profile"
+            )
+        except self.sdk.requests.exceptions.Timeout:
+            app.logger.error(
+                f"Could not update active directory user password profile. Request timed out.",
+                exc_info=1,
+            )
+            raise ConnectionException(
+                "timout error updating active directory user password profile"
+            )
+        except self.sdk.requests.exceptions.HTTPError as exc:
+            app.logger.error(
+                result.status_code,
+                "azure application error updating active directory user password profile",
+                exc_info=1,
+            )
+            raise UnknownServerException(
+                result.status_code,
+                f"azure application error updating active directory user password profile. {str(exc)}",
             )
 
     def create_user_role(self, payload: UserRoleCSPPayload):
