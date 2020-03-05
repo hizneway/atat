@@ -57,7 +57,6 @@ from .models import (
     TenantAdminOwnershipCSPPayload,
     TenantAdminOwnershipCSPResult,
     TenantAdminCredentialResetCSPPayload,
-    TenantAdminCredentialResetCSPResult,
     TenantCSPPayload,
     TenantCSPResult,
     TenantPrincipalAppCSPPayload,
