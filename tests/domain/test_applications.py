@@ -162,6 +162,7 @@ class TestInvite:
                 {"environment_id": env1.id, "role": CSPRole.ADMIN},
                 {"environment_id": env2.id, "role": None},
             ],
+            cloud_id="123",
         )
 
         member_role = invitation.role
@@ -183,7 +184,31 @@ class TestInvite:
                     {"environment_id": env1.id, "role": CSPRole.ADMIN},
                     {"environment_id": uuid4(), "role": CSPRole.ADMIN},
                 ],
+                cloud_id="123",
             )
+
+    def test_no_cloud_id(self, application, user_data):
+        invitation = Applications.invite(
+            application=application,
+            inviter=application.portfolio.owner,
+            user_data=user_data,
+            permission_sets_names=[PermissionSets.EDIT_APPLICATION_TEAM],
+            cloud_id=None,
+        )
+
+        assert invitation.role.cloud_id is None
+
+    def test_cloud_id_set_in_app_role(self, application, user_data):
+        cloud_id = "123456"
+        invitation = Applications.invite(
+            application=application,
+            inviter=application.portfolio.owner,
+            user_data=user_data,
+            permission_sets_names=[PermissionSets.EDIT_APPLICATION_TEAM],
+            cloud_id=cloud_id,
+        )
+
+        assert invitation.role.cloud_id == cloud_id
 
 
 def test_create_does_not_duplicate_names_within_portfolio():

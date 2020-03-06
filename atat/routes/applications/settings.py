@@ -21,6 +21,7 @@ from atat.domain.common import Paginator
 from atat.domain.environment_roles import EnvironmentRoles
 from atat.domain.invitations import ApplicationInvitations
 from atat.domain.portfolios import Portfolios
+from atat.domain.users import Users
 from atat.forms.application_member import NewForm as NewMemberForm, UpdateMemberForm
 from atat.forms.application import NameAndDescriptionForm, EditEnvironmentForm
 from atat.forms.data import ENV_ROLE_NO_ACCESS as NO_ACCESS
@@ -195,6 +196,7 @@ def handle_create_member(application_id, form_data):
     form = NewMemberForm(form_data)
 
     if form.validate():
+        cloud_id = Users.get_cloud_id(form.user_data.data["dod_id"])
         try:
             invite = Applications.invite(
                 application=application,
@@ -202,6 +204,7 @@ def handle_create_member(application_id, form_data):
                 user_data=form.user_data.data,
                 permission_sets_names=form.data["permission_sets"],
                 environment_roles_data=form.environment_roles.data,
+                cloud_id=cloud_id,
             )
 
             send_application_invitation(
