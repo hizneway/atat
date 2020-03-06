@@ -120,3 +120,18 @@ class Users(object):
         user.last_session_id = session_id
         db.session.add(user)
         db.session.commit()
+
+    @classmethod
+    def get_cloud_id(cls, dod_id):
+        try:
+            user = db.session.query(User).filter_by(dod_id=dod_id).one()
+            return next(
+                (
+                    app_role.cloud_id
+                    for app_role in user.application_roles
+                    if app_role.cloud_id is not None
+                ),
+                None,
+            )
+        except NoResultFound:
+            return None
