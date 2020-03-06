@@ -197,6 +197,18 @@ class TestCreateUserJob:
         do_create_user(csp, [app_role_1.id, app_role_2.id])
         assert mock.call_count == 1
 
+    def test_user_has_tenant(self, session, csp, app_role_1, app_1, user):
+        cloud_id = "123456"
+        ApplicationRoleFactory.create(
+            user=user, status=ApplicationRoleStatus.ACTIVE, cloud_id=cloud_id,
+        )
+
+        session.begin_nested()
+        do_create_user(csp, [app_role_1.id])
+        session.rollback()
+
+        assert app_role_1.cloud_id == cloud_id
+
 
 def test_dispatch_create_environment(session, monkeypatch):
     # Given that I have a portfolio with an active CLIN and two environments,
