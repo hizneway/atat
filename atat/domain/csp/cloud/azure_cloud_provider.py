@@ -1,5 +1,4 @@
 import json
-import random
 import string
 from secrets import token_hex, token_urlsafe
 from uuid import uuid4
@@ -1603,8 +1602,7 @@ class AzureCloudProvider(CloudProviderInterface):
             "passwordProfile": {
                 "forceChangePasswordNextSignIn": True,
                 "forceChangePasswordNextSignInWithMfa": False,
-                "password": payload.new_password
-                or "".join(random.choice(string.ascii_letters) for i in range(15)),
+                "password": payload.new_password or token_urlsafe(16),
             }
         }
 

@@ -57,7 +57,6 @@ from atat.domain.csp.cloud.models import (
     TenantAdminOwnershipCSPPayload,
     TenantAdminOwnershipCSPResult,
     TenantAdminCredentialResetCSPPayload,
-    TenantAdminCredentialResetCSPResult,
     TenantCSPPayload,
     TenantCSPResult,
     TenantPrincipalAppCSPPayload,

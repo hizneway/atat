@@ -52,7 +52,6 @@ from .models import (
     TenantAdminOwnershipCSPPayload,
     TenantAdminOwnershipCSPResult,
     TenantAdminCredentialResetCSPPayload,
-    TenantAdminCredentialResetCSPResult,
     TenantCSPPayload,
     TenantCSPResult,
     TenantPrincipalAppCSPPayload,
@@ -343,7 +342,6 @@ class MockCloudProvider(CloudProviderInterface):
         self._maybe_raise(self.NETWORK_FAILURE_PCT, self.NETWORK_EXCEPTION)
         self._maybe_raise(self.SERVER_FAILURE_PCT, self.SERVER_EXCEPTION)
         self._maybe_raise(self.UNAUTHORIZED_RATE, self.AUTHORIZATION_EXCEPTION)
-        return TenantAdminCredentialResetCSPResult()
 
     def create_tenant_principal_ownership(
         self, payload: TenantPrincipalOwnershipCSPPayload
