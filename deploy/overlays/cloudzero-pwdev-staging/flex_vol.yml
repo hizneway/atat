@@ -12,15 +12,15 @@ spec:
               usepodidentity: "false"
               usevmmanagedidentity: "true"
               vmmanagedidentityclientid: $VMSS_CLIENT_ID
-              keyvaultname: "cz-jedidev-keyvault"
-              keyvaultobjectnames: "dhparam4096;ATATCERT;ATATCERT"
+              keyvaultname: "cz-pwdev-keyvault"
+              keyvaultobjectnames: "dhparam4096;stagingcert;stagingcert"
         - name: flask-secret
           flexVolume:
             options:
               usepodidentity: "false"
               usevmmanagedidentity: "true"
               vmmanagedidentityclientid: $VMSS_CLIENT_ID
-              keyvaultname: "cz-jedidev-keyvault"
+              keyvaultname: "cz-pwdev-keyvault"
               keyvaultobjectnames: "AZURE-STORAGE-KEY;MAIL-PASSWORD;PGPASSWORD;REDIS-PASSWORD;SECRET-KEY"
 ---
 apiVersion: extensions/v1beta1
@@ -37,7 +37,7 @@ spec:
               usepodidentity: "false"
               usevmmanagedidentity: "true"
               vmmanagedidentityclientid: $VMSS_CLIENT_ID
-              keyvaultname: "cz-jedidev-keyvault"
+              keyvaultname: "cz-pwdev-keyvault"
               keyvaultobjectnames: "AZURE-STORAGE-KEY;MAIL-PASSWORD;PGPASSWORD;REDIS-PASSWORD;SECRET-KEY"
 ---
 apiVersion: extensions/v1beta1
@@ -54,7 +54,7 @@ spec:
               usepodidentity: "false"
               usevmmanagedidentity: "true"
               vmmanagedidentityclientid: $VMSS_CLIENT_ID
-              keyvaultname: "cz-jedidev-keyvault"
+              keyvaultname: "cz-pwdev-keyvault"
               keyvaultobjectnames: "AZURE-STORAGE-KEY;MAIL-PASSWORD;PGPASSWORD;REDIS-PASSWORD;SECRET-KEY"
 ---
 apiVersion: batch/v1beta1
@@ -73,5 +73,5 @@ spec:
                   usepodidentity: "false"
                   usevmmanagedidentity: "true"
                   vmmanagedidentityclientid: $VMSS_CLIENT_ID
-                  keyvaultname: "cz-jedidev-keyvault"
+                  keyvaultname: "cz-pwdev-keyvault"
                   keyvaultobjectnames: "AZURE-STORAGE-KEY;MAIL-PASSWORD;PGPASSWORD;REDIS-PASSWORD;SECRET-KEY"
