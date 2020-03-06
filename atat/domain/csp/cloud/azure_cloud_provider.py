@@ -1,5 +1,4 @@
 import json
-import string
 from secrets import token_hex, token_urlsafe
 from uuid import uuid4
 from flask import current_app as app
