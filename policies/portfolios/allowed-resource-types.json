@@ -5,12 +5,12 @@
       "displayName": "Allowed resource types",
       "policyType": "Custom",
       "mode": "Indexed",
-      "description": "This policy enables you to specify the resource types that your organization can deploy.",
+      "description": "The list of resource types that can be deployed",
       "parameters": {
         "listOfResourceTypesAllowed": {
           "type": "Array",
           "metadata": {
-            "description": "The list of resource types that can be deployed.",
+            "description": "The list of resource types that can be deployed",
             "displayName": "Allowed resource types",
             "strongType": "resourceTypes"
           }
