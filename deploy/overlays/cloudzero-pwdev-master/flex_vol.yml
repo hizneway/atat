@@ -1,0 +1,12 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: atst
+spec:
+  template:
+    spec:
+      volumes:
+        - name: nginx-secret
+          flexVolume:
+            options:
+              keyvaultobjectnames: "dhparam4096;mastercert;mastercert"

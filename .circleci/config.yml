@@ -263,9 +263,9 @@ jobs:
     docker:
       - image: docker:18.06.0-ce-git
         environment:
-          AZURE_REGISTRY: pwatat
-          RESOURCE_GROUP: atat
-          CLUSTER_NAME: atat-cluster
+          AZURE_REGISTRY: cloudzeropwdevregistry
+          RESOURCE_GROUP: cloudzero-pwdev-vpc
+          CLUSTER_NAME: cloudzero-pwdev-k8s
     steps:
       - deploy:
           namespace: staging
@@ -275,12 +275,12 @@ jobs:
     docker:
       - image: docker:18.06.0-ce-git
         environment:
-          AZURE_REGISTRY: pwatat
-          RESOURCE_GROUP: atat
-          CLUSTER_NAME: atat-cluster
+          AZURE_REGISTRY: cloudzeropwdevregistry
+          RESOURCE_GROUP: cloudzero-pwdev-vpc
+          CLUSTER_NAME: cloudzero-pwdev-k8s
     steps:
       - deploy:
-          namespace: atat
+          namespace: master
           tag: ${AZURE_SERVER_NAME}/atat:master-${CIRCLE_SHA1}
 
 workflows:
