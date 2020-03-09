@@ -101,7 +101,7 @@ def do_create_user(csp: CloudProviderInterface, application_role_ids=None):
 
         csp_details = app_roles[0].application.portfolio.csp_data
         user = app_roles[0].user
-        cloud_id = Users.get_cloud_id(user.dod_id)
+        cloud_id = Users.get_cloud_id(user.dod_id, app_roles[0].portfolio_id)
 
         payload = UserCSPPayload(
             tenant_id=csp_details.get("tenant_id"),

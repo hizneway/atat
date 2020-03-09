@@ -122,7 +122,7 @@ class Users(object):
         db.session.commit()
 
     @classmethod
-    def get_cloud_id(cls, dod_id):
+    def get_cloud_id(cls, dod_id, portfolio_id):
         try:
             user = db.session.query(User).filter_by(dod_id=dod_id).one()
             return next(
@@ -130,6 +130,7 @@ class Users(object):
                     app_role.cloud_id
                     for app_role in user.application_roles
                     if app_role.cloud_id is not None
+                    and app_role.portfolio_id == portfolio_id
                 ),
                 None,
             )

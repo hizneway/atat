@@ -196,7 +196,9 @@ def handle_create_member(application_id, form_data):
     form = NewMemberForm(form_data)
 
     if form.validate():
-        cloud_id = Users.get_cloud_id(form.user_data.data["dod_id"])
+        cloud_id = Users.get_cloud_id(
+            form.user_data.data["dod_id"], application.portfolio_id
+        )
         try:
             invite = Applications.invite(
                 application=application,

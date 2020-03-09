@@ -5,7 +5,12 @@ from atat.domain.users import Users
 from atat.domain.exceptions import NotFoundError, AlreadyExistsError, UnauthorizedError
 from atat.utils import pick
 
-from tests.factories import ApplicationRoleFactory, UserFactory
+from tests.factories import (
+    ApplicationFactory,
+    ApplicationRoleFactory,
+    PortfolioFactory,
+    UserFactory,
+)
 
 DOD_ID = "my_dod_id"
 REQUIRED_KWARGS = {"first_name": "Luke", "last_name": "Skywalker"}
@@ -110,16 +115,43 @@ class TestGetCloudId:
     def user(self):
         return UserFactory.create(dod_id=1234567890)
 
-    def test_app_role_provisioned(self, user):
+    @pytest.fixture
+    def portfolio(self):
+        return PortfolioFactory.create()
+
+    def test_app_role_provisioned_same_portfolio(self, user, portfolio):
         cloud_id = "123456"
-        ApplicationRoleFactory.create(user=user, cloud_id=cloud_id)
-        ApplicationRoleFactory.create(user=user)
-        existing_cloud_id = Users.get_cloud_id(user.dod_id)
+        # create two application roles in the same portfolio, one of which has been provisioned
+        ApplicationRoleFactory.create(
+            user=user,
+            cloud_id=cloud_id,
+            application=ApplicationFactory.create(portfolio=portfolio),
+        )
+        ApplicationRoleFactory.create(
+            user=user, application=ApplicationFactory.create(portfolio=portfolio)
+        )
+        existing_cloud_id = Users.get_cloud_id(user.dod_id, portfolio.id)
         assert existing_cloud_id == cloud_id
 
-    def test_no_application_roles(self, user):
-        assert Users.get_cloud_id(user.dod_id) is None
+    def test_app_role_provisioned_new_portfolio(self, user, portfolio):
+        cloud_id = "123456"
+        # create two application roles in two different portfolios, one of which has been provisioned
+        ApplicationRoleFactory.create(
+            user=user,
+            cloud_id=cloud_id,
+            application=ApplicationFactory.create(portfolio=portfolio),
+        )
+        portfolio_2 = PortfolioFactory.create()
+        ApplicationRoleFactory.create(
+            user=user, application=ApplicationFactory.create(portfolio=portfolio_2)
+        )
+        assert Users.get_cloud_id(user.dod_id, portfolio_2) is None
 
-    def test_app_role_not_provisioned(self, user):
-        ApplicationRoleFactory.create(user=user)
-        assert Users.get_cloud_id(user.dod_id) is None
+    def test_no_application_roles(self, user, portfolio):
+        assert Users.get_cloud_id(user.dod_id, portfolio.id) is None
+
+    def test_app_role_not_provisioned(self, user, portfolio):
+        ApplicationRoleFactory.create(
+            user=user, application=ApplicationFactory.create(portfolio=portfolio)
+        )
+        assert Users.get_cloud_id(user.dod_id, portfolio.id) is None

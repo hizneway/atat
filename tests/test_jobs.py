@@ -200,7 +200,10 @@ class TestCreateUserJob:
     def test_user_has_tenant(self, session, csp, app_role_1, app_1, user):
         cloud_id = "123456"
         ApplicationRoleFactory.create(
-            user=user, status=ApplicationRoleStatus.ACTIVE, cloud_id=cloud_id,
+            user=user,
+            status=ApplicationRoleStatus.ACTIVE,
+            cloud_id=cloud_id,
+            application=ApplicationFactory.create(portfolio=app_1.portfolio),
         )
 
         session.begin_nested()
