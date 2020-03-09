@@ -307,6 +307,7 @@ def test_fsm_transition_start(
         FSMStates.TENANT_ADMIN_OWNERSHIP_CREATED,
         FSMStates.TENANT_PRINCIPAL_OWNERSHIP_CREATED,
         FSMStates.BILLING_OWNER_CREATED,
+        FSMStates.TENANT_ADMIN_CREDENTIAL_RESET_CREATED,
         FSMStates.COMPLETED,
     ]
 

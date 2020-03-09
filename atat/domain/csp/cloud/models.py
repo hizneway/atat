@@ -244,6 +244,15 @@ class TenantAdminOwnershipCSPResult(AliasModel):
         fields = {"admin_owner_assignment_id": "id"}
 
 
+class TenantAdminCredentialResetCSPPayload(BaseCSPPayload):
+    user_id: str
+    new_password: Optional[str]
+
+
+class TenantAdminCredentialResetCSPResult(AliasModel):
+    pass
+
+
 class TenantPrincipalOwnershipCSPPayload(BaseCSPPayload):
     principal_id: str
 
