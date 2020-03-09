@@ -385,8 +385,11 @@ class InitialMgmtGroupCSPPayload(ManagementGroupCSPPayload):
     pass
 
 
-class InitialMgmtGroupCSPResult(ManagementGroupCSPResponse):
-    pass
+class InitialMgmtGroupCSPResult(AliasModel):
+    root_management_group_id: str
+
+    class Config:
+        fields = {"root_management_group_id": "id"}
 
 
 class InitialMgmtGroupVerificationCSPPayload(ManagementGroupGetCSPPayload):
