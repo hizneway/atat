@@ -2,7 +2,7 @@
   "definitionPoint": "portfolio",
   "policyDefinition": {
     "properties": {
-      "displayName": "SKUs",
+      "displayName": "Allowed VM SKUs",
       "policyType": "Custom",
       "mode": "Indexed",
       "description": "The list of SKUs that can be specified for virtual machines.",
