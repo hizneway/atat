@@ -2,14 +2,15 @@
   "definitionPoint": "portfolio",
   "policyDefinition": {
     "properties": {
-      "displayName": "Custom - Region Restriction",
+      "displayName": "Allowed Regions",
+      "description": "The list of locations that can be specified when deploying resources.",
       "policyType": "Custom",
       "mode": "Indexed",
       "parameters": {
         "listOfAllowedLocations": {
           "type": "Array",
           "metadata": {
-            "displayName": "Allowed locations",
+            "displayName": "Allowed Regions",
             "description": "The list of locations that can be specified when deploying resources.",
             "strongType": "location"
           }
