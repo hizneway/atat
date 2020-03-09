@@ -19,7 +19,7 @@
           <span class="topbar__link-label">Support</span>
         </a>
 
-        <a href="{{ url_for('atat.logout') }}" class="topbar__link" title='{{ "navigation.topbar.logout_link_title" | translate }}'>
+        <a href="{{ url_for('atat.logout') }}" class="topbar__link" title='{{ "navigation.topbar.logout_link_title" | translate }}' v-on:click="logout">
           <span class="topbar__link-label">Logout</span>
           {{ Icon('logout', classes='topbar__link-icon') }}
         </a>
