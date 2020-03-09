@@ -32,6 +32,8 @@ from .models import (
     InitialMgmtGroupVerificationCSPResult,
     CostManagementQueryCSPResult,
     CostManagementQueryProperties,
+    PoliciesCSPPayload,
+    PoliciesCSPResult,
     ProductPurchaseCSPPayload,
     ProductPurchaseCSPResult,
     ProductPurchaseVerificationCSPPayload,
@@ -527,4 +529,13 @@ class MockCloudProvider(CloudProviderInterface):
 
         return CostManagementQueryCSPResult(
             **dict(name=object_id, properties=properties,)
+        )
+
+    def create_policies(self, payload: PoliciesCSPPayload):
+        self._maybe_raise(self.NETWORK_FAILURE_PCT, self.NETWORK_EXCEPTION)
+        self._maybe_raise(self.SERVER_FAILURE_PCT, self.SERVER_EXCEPTION)
+        self._maybe_raise(self.UNAUTHORIZED_RATE, self.AUTHORIZATION_EXCEPTION)
+
+        return PoliciesCSPResult(
+            policy_assignment_id=f"{AZURE_MGMNT_PATH}{payload.root_management_group_id}/providers/Microsoft.Authorization/policyAssignments/Default JEDI Policy Set",
         )
