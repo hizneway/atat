@@ -1643,7 +1643,7 @@ class TestGenerateValidDomainName:
 
 def test_create_policies(mock_azure: AzureCloudProvider, monkeypatch):
     final_assignment_id = "whatever"
-    post_results = [
+    put_results = [
         mock_requests_response(
             json_data={"id": "foo", "properties": {"displayName": "foo"}}
         ),
@@ -1664,7 +1664,7 @@ def test_create_policies(mock_azure: AzureCloudProvider, monkeypatch):
         mock_requests_response(json_data={"id": final_assignment_id}),
     ]
     mock_session = Mock
-    mock_session.put = Mock(side_effect=post_results)
+    mock_session.put = Mock(side_effect=put_results)
 
     monkeypatch.setattr(
         "atat.domain.csp.cloud.azure_cloud_provider.AzureCloudProvider._get_tenant_principal_token",
