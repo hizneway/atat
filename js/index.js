@@ -131,4 +131,16 @@ const app = new Vue({
       },
     },
   },
+
+  methods: {
+    logout: function(e) {
+      // clear all cookies
+      var cookies = document.cookie.split(';')
+
+      for (var i = 0; i < cookies.length; i++) {
+        document.cookie =
+          cookies[i].split('=')[0] + '=; expires=Thu, 01 Jan 1970 00:00:01 GMT;'
+      }
+    },
+  },
 })
