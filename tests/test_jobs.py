@@ -9,6 +9,7 @@ from atat.domain.csp.cloud import MockCloudProvider
 from atat.domain.csp.cloud.models import BillingInstructionCSPPayload, UserRoleCSPResult
 from atat.domain.portfolios import Portfolios
 from atat.models import ApplicationRoleStatus, Portfolio, FSMStates
+from atat.models.mixins.state_machines import AzureStages
 
 from atat.jobs import (
     RecordFailure,
@@ -337,7 +338,8 @@ class TestDoProvisionPortfolio:
             portfolio=portfolio
         )
         # The stage before "COMPLETED"
-        sm.state = FSMStates.BILLING_OWNER_CREATED
+        last_step = [e.name for e in AzureStages][-1]
+        sm.state = getattr(FSMStates, f"{last_step}_CREATED")
         do_provision_portfolio(csp=csp, portfolio_id=portfolio.id)
 
         # send_PPOC_email was called
