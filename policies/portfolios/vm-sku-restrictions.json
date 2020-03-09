@@ -1,0 +1,157 @@
+{
+  "definitionPoint": "portfolio",
+  "policyDefinition": {
+    "properties": {
+      "displayName": "SKUs",
+      "policyType": "Custom",
+      "mode": "Indexed",
+      "description": "The list of SKUs that can be specified for virtual machines.",
+      "parameters": {
+        "listOfAllowedSKUs": {
+          "type": "array",
+          "metadata": {
+            "description": "The list of SKUs that can be specified for virtual machines.",
+            "displayName": "Allowed SKUs",
+            "strongType": "VMSKUs"
+          }
+        }
+      },
+      "policyRule": {
+        "if": {
+          "allOf": [
+            {
+              "field": "type",
+              "equals": "Microsoft.Compute/virtualMachines"
+            },
+            {
+              "not": {
+                "field": "Microsoft.Compute/virtualMachines/sku.name",
+                "in": "[parameters('listOfAllowedSKUs')]"
+              }
+            }
+          ]
+        },
+        "then": {
+          "effect": "Deny"
+        }
+      }
+    },
+    "type": "Microsoft.Authorization/policyDefinitions"
+  },
+  "parameters": {
+    "listOfAllowedSKUs": {
+      "value": [
+        "standard_a1_v2",
+        "standard_a2_v2",
+        "standard_a2m_v2",
+        "standard_a4_v2",
+        "standard_a4m_v2",
+        "standard_a8m_v2",
+        "standard_a8_v2",
+        "standard_b12ms",
+        "standard_b16ms",
+        "standard_b1ls",
+        "standard_b1ms",
+        "standard_b1s",
+        "standard_b20ms",
+        "standard_b2ms",
+        "standard_b2s",
+        "standard_b4ms",
+        "standard_b8ms",
+        "standard_d16_v3",
+        "standard_d16s_v3",
+        "standard_d2_v3",
+        "standard_d2s_v3",
+        "standard_d32_v3",
+        "standard_d32s_v3",
+        "standard_d4_v3",
+        "standard_d48_v3",
+        "standard_d48s_v3",
+        "standard_d4s_v3",
+        "standard_d64_v3",
+        "standard_d64s_v3",
+        "standard_d8_v3",
+        "standard_d8s_v3",
+        "standard_e16_v3",
+        "standard_e16-4s_v3",
+        "standard_e16-8s_v3",
+        "standard_e16s_v3",
+        "standard_e2_v3",
+        "standard_e20_v3",
+        "standard_e20s_v3",
+        "standard_e2s_v3",
+        "standard_e32_v3",
+        "standard_e32-16s_v3",
+        "standard_e32-8s_v3",
+        "standard_e4_v3",
+        "standard_e32s_v3",
+        "standard_e4-2s_v3",
+        "standard_e48_v3",
+        "standard_e48s_v3",
+        "standard_e4s_v3",
+        "standard_e64_v3",
+        "standard_e64-16s_v3",
+        "standard_e64-32s_v3",
+        "standard_e64i_v3",
+        "standard_e64is_v3",
+        "standard_e64s_v3",
+        "standard_e8_v3",
+        "standard_e8-2s_v3",
+        "standard_e8-4s_v3",
+        "standard_e8s_v3",
+        "standard_f16s_v2",
+        "standard_f2s_v2",
+        "standard_f32s_v2",
+        "standard_f48s_v2",
+        "standard_f4s_v2",
+        "standard_f64s_v2",
+        "standard_f72s_v2",
+        "standard_f8s_v2",
+        "standard_m128",
+        "standard_m128-32ms",
+        "standard_m128-64ms",
+        "standard_m128m",
+        "standard_m128ms",
+        "standard_m128s",
+        "standard_m16-4ms",
+        "standard_m16-8ms",
+        "standard_m16ms",
+        "standard_m32-16ms",
+        "standard_m32-8ms",
+        "standard_m32ls",
+        "standard_m32ms",
+        "standard_m32ts",
+        "standard_m64",
+        "standard_m64-16ms",
+        "standard_m64-32ms",
+        "standard_m64ls",
+        "standard_m64m",
+        "standard_m64ms",
+        "standard_m64s",
+        "standard_m8-2ms",
+        "standard_m8-4ms",
+        "standard_m8ms",
+        "standard_nc12s_v3",
+        "standard_nc24rs_v3",
+        "standard_nc24s_v3",
+        "standard_nc6s_v3",
+        "standard_l16s_v2",
+        "standard_l32s_v2",
+        "standard_l48s_v2",
+        "standard_l64s_v2",
+        "standard_l80s_v2",
+        "standard_l8s_v2",
+        "standard_dc2s",
+        "standard_dc4s",
+        "standard_nv12s_v3",
+        "standard_nv24s_v3",
+        "standard_nv48s_v3",
+        "standard_hb120rs_v2",
+        "standard_m208ms_v2",
+        "standard_m208s_v2",
+        "standard_m416ms_v2",
+        "standard_m416s_v2"
+      ]
+    }
+  }
+}
