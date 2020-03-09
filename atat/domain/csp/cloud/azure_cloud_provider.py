@@ -55,6 +55,7 @@ from .models import (
     TenantAdminOwnershipCSPPayload,
     TenantAdminOwnershipCSPResult,
     TenantAdminCredentialResetCSPPayload,
+    TenantAdminCredentialResetCSPResult,
     TenantCSPPayload,
     TenantCSPResult,
     TenantPrincipalAppCSPPayload,
@@ -947,6 +948,8 @@ class AzureCloudProvider(CloudProviderInterface):
             )
 
         self._update_active_directory_user_password_profile(graph_token, payload)
+
+        return TenantAdminCredentialResetCSPResult()
 
     def create_tenant_admin_ownership(self, payload: TenantAdminOwnershipCSPPayload):
         mgmt_token = self._get_elevated_management_token(payload.tenant_id)
