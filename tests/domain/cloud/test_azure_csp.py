@@ -39,6 +39,8 @@ from atat.domain.csp.cloud.models import (
     EnvironmentCSPPayload,
     EnvironmentCSPResult,
     KeyVaultCredentials,
+    PoliciesCSPPayload,
+    PoliciesCSPResult,
     PrincipalAdminRoleCSPPayload,
     PrincipalAdminRoleCSPResult,
     ProductPurchaseCSPPayload,
@@ -88,7 +90,7 @@ def mock_requests_response(
     mock_resp.content = content
     # add json data if provided
     if json_data:
-        mock_resp.json = mock.Mock(return_value=json_data)
+        mock_resp.json = Mock(return_value=json_data)
     return mock_resp
 
 
@@ -160,7 +162,7 @@ def test_create_initial_mgmt_group_succeeds(mock_azure: AzureCloudProvider):
     )
     result: InitialMgmtGroupCSPResult = mock_azure.create_initial_mgmt_group(payload)
 
-    assert result.id == "Test Id"
+    assert result.root_management_group_id == "Test Id"
 
 
 def test_create_initial_mgmt_group_verification_succeeds(
@@ -181,31 +183,6 @@ def test_create_initial_mgmt_group_verification_succeeds(
 
     assert result.id == "Test Id"
     # assert result.name == management_group_name
-
-
-def test_create_policy_definition_succeeds(mock_azure: AzureCloudProvider):
-    subscription_id = str(uuid4())
-    management_group_id = str(uuid4())
-    properties = {
-        "policyType": "test",
-        "displayName": "test policy",
-    }
-
-    result = mock_azure._create_policy_definition(
-        AUTH_CREDENTIALS, subscription_id, management_group_id, properties
-    )
-    azure_sdk_method = (
-        mock_azure.sdk.policy.PolicyClient.return_value.policy_definitions.create_or_update_at_management_group
-    )
-    mock_policy_definition = (
-        mock_azure.sdk.policy.PolicyClient.return_value.policy_definitions.models.PolicyDefinition()
-    )
-    assert azure_sdk_method.called
-    azure_sdk_method.assert_called_with(
-        management_group_id=management_group_id,
-        policy_definition_name=properties.get("displayName"),
-        parameters=mock_policy_definition,
-    )
 
 
 def test_disable_user(mock_azure: AzureCloudProvider):
@@ -1580,7 +1557,6 @@ def test_create_billing_owner(mock_azure: AzureCloudProvider):
         )
 
         result = mock_azure.create_billing_owner(payload)
-
         assert result.billing_owner_id == final_result
 
 
@@ -1663,3 +1639,41 @@ class TestGenerateValidDomainName:
             _validate_domain_name,
         )
         assert mock_azure.generate_valid_domain_name(tenant_name) != tenant_name
+
+
+def test_create_policies(mock_azure: AzureCloudProvider, monkeypatch):
+    final_assignment_id = "whatever"
+    post_results = [
+        mock_requests_response(
+            json_data={"id": "foo", "properties": {"displayName": "foo"}}
+        ),
+        mock_requests_response(
+            json_data={"id": "bar", "properties": {"displayName": "bar"}}
+        ),
+        mock_requests_response(
+            json_data={"id": "baz", "properties": {"displayName": "baz"}}
+        ),
+        mock_requests_response(
+            json_data={
+                "id": "test_id",
+                "policyType": "Custom",
+                "name": "test_name",
+                "properties": {"displayName": "test_display_name"},
+            }
+        ),
+        mock_requests_response(json_data={"id": final_assignment_id}),
+    ]
+    mock_session = Mock
+    mock_session.put = Mock(side_effect=post_results)
+
+    monkeypatch.setattr(
+        "atat.domain.csp.cloud.azure_cloud_provider.AzureCloudProvider._get_tenant_principal_token",
+        lambda *a: "token",
+    )
+    monkeypatch.setattr("requests.Session", mock_session)
+
+    payload = PoliciesCSPPayload(
+        tenant_id="1234", root_management_group_id=str(uuid4()),
+    )
+    result: PoliciesCSPResult = mock_azure.create_policies(payload)
+    assert result.policy_assignment_id == final_assignment_id
