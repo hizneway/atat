@@ -281,7 +281,7 @@ class AzureCloudProvider(CloudProviderInterface):
         try:
             result = session.put(create_policy_definition_uri, json=body, timeout=30,)
             result.raise_for_status()
-            if result.status_code in [200, 201]:
+            if result.status_code == 201:
                 return result.json()
 
         except self.sdk.requests.exceptions.ConnectionError:
@@ -362,7 +362,7 @@ class AzureCloudProvider(CloudProviderInterface):
         try:
             result = session.put(create_policy_assignment_uri, json=body, timeout=30,)
             result.raise_for_status()
-            if result.status_code in [200, 201]:
+            if result.status_code == 201:
                 return result.json()
         except cloud.sdk.requests.exceptions.ConnectionError:
             app.logger.error(
@@ -389,6 +389,10 @@ class AzureCloudProvider(CloudProviderInterface):
     def create_policies(self, payload: PoliciesCSPPayload):
         """
         Creates and applies the default JEDI Policy Set to a portfolio's root management group.
+        
+        The underlying API calls seem to be idempotent, despite the fact that most of them repeatedly
+        return 201. The _create_policy_set API call is the one exception. It returns 201 on initial 
+        creation, and then 200 thereafter
         """
 
         sp_token = self._get_tenant_principal_token(payload.tenant_id)
