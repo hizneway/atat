@@ -1645,13 +1645,13 @@ def test_create_policies(mock_azure: AzureCloudProvider, monkeypatch):
     final_assignment_id = "whatever"
     put_results = [
         mock_requests_response(
-            json_data={"id": "foo", "properties": {"displayName": "foo"}}
+            json_data={"id": "foo", "properties": {"displayName": "foo"}}, status=201
         ),
         mock_requests_response(
-            json_data={"id": "bar", "properties": {"displayName": "bar"}}
+            json_data={"id": "bar", "properties": {"displayName": "bar"}}, status=201
         ),
         mock_requests_response(
-            json_data={"id": "baz", "properties": {"displayName": "baz"}}
+            json_data={"id": "baz", "properties": {"displayName": "baz"}}, status=201
         ),
         mock_requests_response(
             json_data={
@@ -1659,9 +1659,10 @@ def test_create_policies(mock_azure: AzureCloudProvider, monkeypatch):
                 "policyType": "Custom",
                 "name": "test_name",
                 "properties": {"displayName": "test_display_name"},
-            }
+            },
+            status=201,
         ),
-        mock_requests_response(json_data={"id": final_assignment_id}),
+        mock_requests_response(json_data={"id": final_assignment_id}, status=201),
     ]
     mock_session = Mock
     mock_session.put = Mock(side_effect=put_results)
