@@ -162,3 +162,54 @@ def test_get_many():
 
     result = ApplicationRoles.get_many([ar1.id, ar2.id])
     assert result == [ar1, ar2]
+
+
+class TestGetCloudIdForUser:
+    @pytest.fixture
+    def user(self):
+        return UserFactory.create(dod_id=1234567890)
+
+    @pytest.fixture
+    def portfolio(self):
+        return PortfolioFactory.create()
+
+    def test_app_role_provisioned_same_portfolio(self, user, portfolio):
+        cloud_id = "123456"
+        # create two application roles in the same portfolio, one of which has been provisioned
+        ApplicationRoleFactory.create(
+            user=user,
+            cloud_id=cloud_id,
+            application=ApplicationFactory.create(portfolio=portfolio),
+        )
+        ApplicationRoleFactory.create(
+            user=user, application=ApplicationFactory.create(portfolio=portfolio)
+        )
+        existing_cloud_id = ApplicationRoles.get_cloud_id_for_user(
+            user.dod_id, portfolio.id
+        )
+        assert existing_cloud_id == cloud_id
+
+    def test_app_role_provisioned_new_portfolio(self, user, portfolio):
+        cloud_id = "123456"
+        # create two application roles in two different portfolios, one of which has been provisioned
+        ApplicationRoleFactory.create(
+            user=user,
+            cloud_id=cloud_id,
+            application=ApplicationFactory.create(portfolio=portfolio),
+        )
+        portfolio_2 = PortfolioFactory.create()
+        ApplicationRoleFactory.create(
+            user=user, application=ApplicationFactory.create(portfolio=portfolio_2)
+        )
+        assert (
+            ApplicationRoles.get_cloud_id_for_user(user.dod_id, portfolio_2.id) is None
+        )
+
+    def test_no_application_roles(self, user, portfolio):
+        assert ApplicationRoles.get_cloud_id_for_user(user.dod_id, portfolio.id) is None
+
+    def test_app_role_not_provisioned(self, user, portfolio):
+        ApplicationRoleFactory.create(
+            user=user, application=ApplicationFactory.create(portfolio=portfolio)
+        )
+        assert ApplicationRoles.get_cloud_id_for_user(user.dod_id, portfolio.id) is None

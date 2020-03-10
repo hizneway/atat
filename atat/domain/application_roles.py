@@ -7,7 +7,13 @@ from sqlalchemy import func, and_, or_
 
 from atat.database import db
 from atat.domain.environment_roles import EnvironmentRoles
-from atat.models import Application, ApplicationRole, ApplicationRoleStatus, Portfolio
+from atat.models import (
+    Application,
+    ApplicationRole,
+    ApplicationRoleStatus,
+    Portfolio,
+    User,
+)
 from .permission_sets import PermissionSets
 from .exceptions import NotFoundError
 
@@ -140,3 +146,21 @@ class ApplicationRoles(object):
             groups.append(group)
 
         return groups
+
+    @classmethod
+    def get_cloud_id_for_user(cls, dod_id, portfolio_id):
+        app_role = (
+            db.session.query(ApplicationRole)
+            .join(Application, Application.id == ApplicationRole.application_id)
+            .join(Portfolio, Portfolio.id == Application.portfolio_id)
+            .join(User, User.id == ApplicationRole.user_id)
+            .filter(
+                and_(
+                    Portfolio.id == portfolio_id,
+                    User.dod_id == dod_id,
+                    ApplicationRole.cloud_id.isnot(None),
+                )
+            )
+        ).one_or_none()
+
+        return getattr(app_role, "cloud_id", None)

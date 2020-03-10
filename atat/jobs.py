@@ -19,7 +19,6 @@ from atat.domain.csp.cloud.models import (
 from atat.domain.environments import Environments
 from atat.domain.environment_roles import EnvironmentRoles
 from atat.domain.portfolios import Portfolios
-from atat.domain.users import Users
 from atat.models import CSPRole, JobFailure
 from atat.models.mixins.state_machines import FSMStates
 from atat.domain.task_orders import TaskOrders
@@ -101,7 +100,9 @@ def do_create_user(csp: CloudProviderInterface, application_role_ids=None):
 
         csp_details = app_roles[0].application.portfolio.csp_data
         user = app_roles[0].user
-        cloud_id = Users.get_cloud_id(user.dod_id, app_roles[0].portfolio_id)
+        cloud_id = ApplicationRoles.get_cloud_id_for_user(
+            user.dod_id, app_roles[0].portfolio_id
+        )
 
         payload = UserCSPPayload(
             tenant_id=csp_details.get("tenant_id"),
