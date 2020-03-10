@@ -80,6 +80,8 @@ from .policy import AzurePolicyManager
 AZURE_SKU_ID = "0001"  # probably a static sku specific to ATAT/JEDI
 REMOTE_ROOT_ROLE_DEF_ID = "/providers/Microsoft.Authorization/roleDefinitions/00000000-0000-4000-8000-000000000000"
 
+DEFAULT_POLICY_SET_DEFINITION_NAME = "Default JEDI Policy Set"
+
 
 class AzureSDKProvider(object):
     def __init__(self):
@@ -414,7 +416,7 @@ class AzureCloudProvider(CloudProviderInterface):
         policy_set_definition = self._create_policy_set(
             policy_session,
             payload.root_management_group_id,
-            "Default JEDI Policy Set",
+            DEFAULT_POLICY_SET_DEFINITION_NAME,
             definition_references,
         )
         assign_policy_set = self._create_policy_set_assignment(
