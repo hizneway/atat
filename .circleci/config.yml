@@ -66,8 +66,8 @@ commands:
       - run:
           name: Build image
           command: |
-            docker build . --build-arg CSP=azure --build-arg CDN_URL=<< parameters.cdn_url >> -f ./Dockerfile -t atat:builder --target builder
-            docker build . --build-arg CSP=azure --build-arg CDN_URL=<< parameters.cdn_url >> -f ./Dockerfile -t atat:latest
+            docker build . --build-arg AZURE_ACCOUNT_NAME=$AZURE_ACCOUNT_NAME --build-arg CSP=azure --build-arg CDN_URL=<< parameters.cdn_url >> -f ./Dockerfile -t atat:builder --target builder
+            docker build . --build-arg AZURE_ACCOUNT_NAME=$AZURE_ACCOUNT_NAME --build-arg CSP=azure --build-arg CDN_URL=<< parameters.cdn_url >> -f ./Dockerfile -t atat:latest
       - cache_docker_image
 
   deploy:

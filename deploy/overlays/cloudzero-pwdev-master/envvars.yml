@@ -19,3 +19,4 @@ data:
   CELERY_DEFAULT_QUEUE: celery-master
   FLASK_ENV: master
   PGDATABASE: cloudzero_pwdev_atat_master
+  STATIC_URL: "https://azure.atat.code.mil/static/"

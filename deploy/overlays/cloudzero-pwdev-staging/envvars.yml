@@ -21,6 +21,7 @@ metadata:
 data:
   ASSETS_URL: ""
   AZURE_ACCOUNT_NAME: pwdevtasks
+  BLOB_STORAGE_URL: https://pwdevtasks.blob.core.windows.net/
   CAC_URL: https://auth-staging.atat.cloud.mil
   CDN_ORIGIN: https://staging.atat.cloud.mil
   CELERY_DEFAULT_QUEUE: celery-staging
@@ -31,4 +32,4 @@ data:
   PGSSLMODE: require
   REDIS_HOST: 10.1.3.171:6380
   SESSION_COOKIE_DOMAIN: atat.code.mil
-  STATIC_URL: "/static/"
+  STATIC_URL: "https://staging.atat.code.mil/static/"
