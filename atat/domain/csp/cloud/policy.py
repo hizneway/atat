@@ -16,14 +16,6 @@ class AzurePolicyManager:
 
         return self._portfolio_definitions
 
-    @property
-    def application_definitions(self):
-        pass
-
-    @property
-    def environment_definitions(self):
-        pass
-
     def _glob_json(self, path):
         return glob(path_join(self._static_policy_location, "portfolios", "*.json"))
 

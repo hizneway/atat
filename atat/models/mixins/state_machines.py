@@ -30,6 +30,7 @@ class AzureStages(Enum):
     TENANT_PRINCIPAL_OWNERSHIP = "tenant principial ownership"
     BILLING_OWNER = "billing owner"
     TENANT_ADMIN_CREDENTIAL_RESET = "tenant admin credential reset"
+    POLICIES = "policies"
 
 
 def _build_csp_states(csp_stages):

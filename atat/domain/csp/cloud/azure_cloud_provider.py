@@ -37,6 +37,8 @@ from .models import (
     EnvironmentCSPPayload,
     EnvironmentCSPResult,
     KeyVaultCredentials,
+    PoliciesCSPPayload,
+    PoliciesCSPResult,
     PrincipalAdminRoleCSPPayload,
     PrincipalAdminRoleCSPResult,
     ProductPurchaseCSPPayload,
@@ -77,6 +79,8 @@ from .policy import AzurePolicyManager
 # TODO: Extract these from sdk msrestazure.azure_cloud import AZURE_PUBLIC_CLOUD
 AZURE_SKU_ID = "0001"  # probably a static sku specific to ATAT/JEDI
 REMOTE_ROOT_ROLE_DEF_ID = "/providers/Microsoft.Authorization/roleDefinitions/00000000-0000-4000-8000-000000000000"
+
+DEFAULT_POLICY_SET_DEFINITION_NAME = "Default JEDI Policy Set"
 
 
 class AzureSDKProvider(object):
@@ -271,48 +275,158 @@ class AzureCloudProvider(CloudProviderInterface):
         response = mgmgt_group_client.management_groups.get(management_group_id)
         return response
 
-    def _create_policy_definition(
-        self, credentials, subscription_id, management_group_id, properties,
+    def _create_policy_definition(self, session, root_management_group_id, policy):
+        create_policy_definition_uri = f"{self.sdk.cloud.endpoints.resource_manager}providers/Microsoft.Management/managementgroups/{root_management_group_id}/providers/Microsoft.Authorization/policyDefinitions/{policy.definition['properties']['displayName']}?api-version=2019-09-01"
+        body = policy.definition
+        try:
+            result = session.put(create_policy_definition_uri, json=body, timeout=30,)
+            result.raise_for_status()
+            if result.status_code == 201:
+                return result.json()
+
+        except self.sdk.requests.exceptions.ConnectionError:
+            app.logger.error(
+                f"Could not create policy definition. Connection Error", exc_info=1,
+            )
+            raise ConnectionException("connection error creating policy definition")
+        except self.sdk.requests.exceptions.Timeout:
+            app.logger.error(
+                f"Could not create policy definition. Request timed out.", exc_info=1,
+            )
+            raise ConnectionException("timout error creating policy definition")
+        except self.sdk.requests.exceptions.HTTPError as exc:
+            app.logger.error(
+                result.status_code,
+                "azure application error creating policy definition",
+                exc_info=1,
+            )
+            raise UnknownServerException(
+                result.status_code,
+                f"azure application error creating policy definition. {str(exc)}",
+            )
+
+    def _create_policy_set(
+        self,
+        session,
+        root_management_group_id,
+        policy_set_definition_name,
+        definition_references,
     ):
+        create_policy_set_uri = f"{self.sdk.cloud.endpoints.resource_manager}providers/Microsoft.Management/managementgroups/{root_management_group_id}/providers/Microsoft.Authorization/policySetDefinitions/{policy_set_definition_name}?api-version=2019-09-01"
+        body = {
+            "properties": {
+                "displayName": policy_set_definition_name,
+                "policyDefinitions": definition_references,
+                "policyType": "Custom",
+            }
+        }
+
+        try:
+            result = session.put(create_policy_set_uri, json=body, timeout=30,)
+            result.raise_for_status()
+            if result.status_code in [200, 201]:
+                return result.json()
+        except self.sdk.requests.exceptions.ConnectionError:
+            app.logger.error(
+                f"Could not create policy set definition. Connection Error", exc_info=1,
+            )
+            raise ConnectionException("connection error creating policy set definition")
+        except self.sdk.requests.exceptions.Timeout:
+            app.logger.error(
+                f"Could not create policy set definition. Request timed out.",
+                exc_info=1,
+            )
+            raise ConnectionException("timout error creating policy set definition")
+        except self.sdk.requests.exceptions.HTTPError as exc:
+            app.logger.error(
+                result.status_code,
+                "azure application error creating policy set definition",
+                exc_info=1,
+            )
+            raise UnknownServerException(
+                result.status_code,
+                f"azure application error creating policy set definition. {str(exc)}",
+            )
+
+    def _create_policy_set_assignment(
+        self, session, root_management_group_id, policy_set_definition
+    ):
+        create_policy_assignment_uri = f"{self.sdk.cloud.endpoints.resource_manager}providers/Microsoft.Management/managementgroups/{root_management_group_id}/providers/Microsoft.Authorization/policyAssignments/{policy_set_definition['properties']['displayName']}?api-version=2019-09-01"
+        body = {
+            "properties": {
+                "displayName": policy_set_definition["properties"]["displayName"],
+                "policyDefinitionId": policy_set_definition["id"],
+            }
+        }
+
+        try:
+            result = session.put(create_policy_assignment_uri, json=body, timeout=30,)
+            result.raise_for_status()
+            if result.status_code == 201:
+                return result.json()
+        except cloud.sdk.requests.exceptions.ConnectionError:
+            app.logger.error(
+                f"Could not create policy set assignment. Connection Error", exc_info=1,
+            )
+            raise ConnectionException("connection error creating policy set assignment")
+        except cloud.sdk.requests.exceptions.Timeout:
+            app.logger.error(
+                f"Could not create policy set assignment. Request timed out.",
+                exc_info=1,
+            )
+            raise ConnectionException("timout error creating policy set assignment")
+        except cloud.sdk.requests.exceptions.HTTPError as exc:
+            app.logger.error(
+                result.status_code,
+                "azure application error creating policy set assignment",
+                exc_info=1,
+            )
+            raise UnknownServerException(
+                result.status_code,
+                f"azure application error creating policy set assignment. {str(exc)}",
+            )
+
+    def create_policies(self, payload: PoliciesCSPPayload):
         """
-        Requires credentials that have AZURE_MANAGEMENT_API
-        specified as the resource. The Service Principal
-        specified in the credentials must have the "Resource
-        Policy Contributor" role assigned with a scope at least
-        as high as the management group specified by
-        management_group_id.
-
-        Arguments:
-            credentials -- ServicePrincipalCredentials
-            subscription_id -- str, ID of the subscription (just the UUID, not the path)
-            management_group_id -- str, ID of the management group (just the UUID, not the path)
-            properties -- dictionary, the "properties" section of a valid Azure policy definition document
-
-        Returns:
-            azure.mgmt.resource.policy.[api version].models.PolicyDefinition: the PolicyDefinition object provided to Azure
-
-        Raises:
-            TBD
+        Creates and applies the default JEDI Policy Set to a portfolio's root management group.
+        
+        The underlying API calls seem to be idempotent, despite the fact that most of them repeatedly
+        return 201. The _create_policy_set API call is the one exception. It returns 201 on initial 
+        creation, and then 200 thereafter
         """
-        # TODO: which subscription would this be?
-        client = self.sdk.policy.PolicyClient(credentials, subscription_id)
 
-        definition = client.policy_definitions.models.PolicyDefinition(
-            policy_type=properties.get("policyType"),
-            mode=properties.get("mode"),
-            display_name=properties.get("displayName"),
-            description=properties.get("description"),
-            policy_rule=properties.get("policyRule"),
-            parameters=properties.get("parameters"),
+        sp_token = self._get_tenant_principal_token(payload.tenant_id)
+        if sp_token is None:
+            raise AuthenticationException("Could not resolve token in disable user")
+        headers = {
+            "Authorization": f"Bearer {sp_token}",
+        }
+        policy_session = self.sdk.requests.Session()
+        policy_session.headers.update(headers)
+        definition_references = []
+        for policy in self.policy_manager.portfolio_definitions:
+            definition = self._create_policy_definition(
+                policy_session, payload.root_management_group_id, policy,
+            )
+            definition_references.append(
+                {
+                    "policyDefinitionId": definition["id"],
+                    "policyDefinitionReferenceId": definition["properties"][
+                        "displayName"
+                    ],
+                    "parameters": policy.parameters,
+                }
+            )
+        policy_set_definition = self._create_policy_set(
+            policy_session,
+            payload.root_management_group_id,
+            DEFAULT_POLICY_SET_DEFINITION_NAME,
+            definition_references,
         )
-
-        name = properties.get("displayName")
-
-        return client.policy_definitions.create_or_update_at_management_group(
-            policy_definition_name=name,
-            parameters=definition,
-            management_group_id=management_group_id,
+        assign_policy_set = self._create_policy_set_assignment(
+            policy_session, payload.root_management_group_id, policy_set_definition
         )
+        return PoliciesCSPResult(**assign_policy_set)
 
     def disable_user(self, tenant_id, role_assignment_cloud_id):
         sp_token = self._get_tenant_principal_token(tenant_id)
