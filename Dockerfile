@@ -2,6 +2,7 @@ FROM python:3.7.3-alpine3.9 AS builder
 
 ARG CSP
 ARG CDN_URL=/static/assets/
+ARG AZURE_ACCOUNT_NAME=atat
 ENV TZ UTC
 
 RUN mkdir -p /install/.venv
