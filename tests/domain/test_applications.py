@@ -135,49 +135,80 @@ def test_for_user():
     assert len(user_applications) == 2
 
 
-def test_invite():
-    application = ApplicationFactory.create()
-    env1 = EnvironmentFactory.create(application=application)
-    env2 = EnvironmentFactory.create(application=application)
-    user_data = UserFactory.dictionary()
-    permission_sets_names = [PermissionSets.EDIT_APPLICATION_TEAM]
+class TestInvite:
+    @pytest.fixture
+    def application(self):
+        return ApplicationFactory.create()
 
-    invitation = Applications.invite(
-        application=application,
-        inviter=application.portfolio.owner,
-        user_data=user_data,
-        permission_sets_names=permission_sets_names,
-        environment_roles_data=[
-            {"environment_id": env1.id, "role": CSPRole.ADMIN},
-            {"environment_id": env2.id, "role": None},
-        ],
-    )
+    @pytest.fixture
+    def env1(self, application):
+        return EnvironmentFactory.create(application=application)
 
-    member_role = invitation.role
-    assert invitation.dod_id == user_data["dod_id"]
-    # view application AND edit application team
-    assert len(member_role.permission_sets) == 2
+    @pytest.fixture
+    def env2(self, application):
+        return EnvironmentFactory.create(application=application)
 
-    env_roles = member_role.environment_roles
-    assert len(env_roles) == 1
-    assert env_roles[0].environment == env1
+    @pytest.fixture
+    def user_data(self):
+        return UserFactory.dictionary()
 
-
-def test_invite_to_nonexistent_environment():
-    application = ApplicationFactory.create()
-    env1 = EnvironmentFactory.create(application=application)
-    user_data = UserFactory.dictionary()
-
-    with pytest.raises(NotFoundError):
-        Applications.invite(
+    def test_success(self, application, env1, env2, user_data):
+        invitation = Applications.invite(
             application=application,
             inviter=application.portfolio.owner,
             user_data=user_data,
+            permission_sets_names=[PermissionSets.EDIT_APPLICATION_TEAM],
             environment_roles_data=[
                 {"environment_id": env1.id, "role": CSPRole.ADMIN},
-                {"environment_id": uuid4(), "role": CSPRole.ADMIN},
+                {"environment_id": env2.id, "role": None},
             ],
+            cloud_id="123",
         )
+
+        member_role = invitation.role
+        assert invitation.dod_id == user_data["dod_id"]
+        # view application AND edit application team
+        assert len(member_role.permission_sets) == 2
+
+        env_roles = member_role.environment_roles
+        assert len(env_roles) == 1
+        assert env_roles[0].environment == env1
+
+    def test_nonexistent_environment(self, application, env1, user_data):
+        with pytest.raises(NotFoundError):
+            Applications.invite(
+                application=application,
+                inviter=application.portfolio.owner,
+                user_data=user_data,
+                environment_roles_data=[
+                    {"environment_id": env1.id, "role": CSPRole.ADMIN},
+                    {"environment_id": uuid4(), "role": CSPRole.ADMIN},
+                ],
+                cloud_id="123",
+            )
+
+    def test_no_cloud_id(self, application, user_data):
+        invitation = Applications.invite(
+            application=application,
+            inviter=application.portfolio.owner,
+            user_data=user_data,
+            permission_sets_names=[PermissionSets.EDIT_APPLICATION_TEAM],
+            cloud_id=None,
+        )
+
+        assert invitation.role.cloud_id is None
+
+    def test_cloud_id_set_in_app_role(self, application, user_data):
+        cloud_id = "123456"
+        invitation = Applications.invite(
+            application=application,
+            inviter=application.portfolio.owner,
+            user_data=user_data,
+            permission_sets_names=[PermissionSets.EDIT_APPLICATION_TEAM],
+            cloud_id=cloud_id,
+        )
+
+        assert invitation.role.cloud_id == cloud_id
 
 
 def test_create_does_not_duplicate_names_within_portfolio():

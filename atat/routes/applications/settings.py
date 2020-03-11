@@ -15,7 +15,6 @@ from atat.domain.applications import Applications
 from atat.domain.application_roles import ApplicationRoles
 from atat.domain.audit_log import AuditLog
 from atat.domain.csp.cloud.exceptions import GeneralCSPException
-
 from atat.domain.csp.cloud.models import SubscriptionCreationCSPPayload
 from atat.domain.common import Paginator
 from atat.domain.environment_roles import EnvironmentRoles
@@ -195,6 +194,9 @@ def handle_create_member(application_id, form_data):
     form = NewMemberForm(form_data)
 
     if form.validate():
+        cloud_id = ApplicationRoles.get_cloud_id_for_user(
+            form.user_data.data["dod_id"], application.portfolio_id
+        )
         try:
             invite = Applications.invite(
                 application=application,
@@ -202,6 +204,7 @@ def handle_create_member(application_id, form_data):
                 user_data=form.user_data.data,
                 permission_sets_names=form.data["permission_sets"],
                 environment_roles_data=form.environment_roles.data,
+                cloud_id=cloud_id,
             )
 
             send_application_invitation(

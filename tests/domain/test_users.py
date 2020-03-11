@@ -5,7 +5,12 @@ from atat.domain.users import Users
 from atat.domain.exceptions import NotFoundError, AlreadyExistsError, UnauthorizedError
 from atat.utils import pick
 
-from tests.factories import UserFactory
+from tests.factories import (
+    ApplicationFactory,
+    ApplicationRoleFactory,
+    PortfolioFactory,
+    UserFactory,
+)
 
 DOD_ID = "my_dod_id"
 REQUIRED_KWARGS = {"first_name": "Luke", "last_name": "Skywalker"}

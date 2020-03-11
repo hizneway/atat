@@ -87,14 +87,15 @@ class Applications(BaseDomainClass):
         inviter,
         user_data,
         permission_sets_names=None,
-        environment_roles_data=None,
+        environment_roles_data=[],
+        cloud_id=None,
     ):
         permission_sets_names = permission_sets_names or []
         permission_sets = ApplicationRoles._permission_sets_for_names(
             permission_sets_names
         )
         app_role = ApplicationRole(
-            application=application, permission_sets=permission_sets
+            application=application, permission_sets=permission_sets, cloud_id=cloud_id,
         )
 
         db.session.add(app_role)

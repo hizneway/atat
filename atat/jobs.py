@@ -100,6 +100,9 @@ def do_create_user(csp: CloudProviderInterface, application_role_ids=None):
 
         csp_details = app_roles[0].application.portfolio.csp_data
         user = app_roles[0].user
+        cloud_id = ApplicationRoles.get_cloud_id_for_user(
+            user.dod_id, app_roles[0].portfolio_id
+        )
 
         payload = UserCSPPayload(
             tenant_id=csp_details.get("tenant_id"),
@@ -107,9 +110,13 @@ def do_create_user(csp: CloudProviderInterface, application_role_ids=None):
             display_name=user.full_name,
             email=user.email,
         )
-        result = csp.create_user(payload)
+
+        if cloud_id is None:
+            result = csp.create_user(payload)
+            cloud_id = result.id
+
         for app_role in app_roles:
-            app_role.cloud_id = result.id
+            app_role.cloud_id = cloud_id
             db.session.add(app_role)
 
         db.session.commit()
