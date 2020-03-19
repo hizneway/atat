@@ -25,6 +25,10 @@ from cryptography.x509.oid import NameOID
 dictConfig({"version": 1, "handlers": {"wsgi": {"class": "logging.NullHandler"}}})
 
 
+def pytest_addoption(parser):
+    parser.addoption("--hybrid-test", default="False")
+
+
 @pytest.fixture(scope="session")
 def app(request):
     config = make_config()
