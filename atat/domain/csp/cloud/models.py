@@ -245,7 +245,7 @@ class TenantAdminOwnershipCSPResult(AliasModel):
 
 
 class TenantAdminCredentialResetCSPPayload(BaseCSPPayload):
-    user_id: str
+    user_object_id: str
     new_password: Optional[str]
 
 

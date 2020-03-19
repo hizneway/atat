@@ -1430,7 +1430,7 @@ def test_update_active_directory_user_password_profile(mock_azure: AzureCloudPro
     ]
     payload = TenantAdminCredentialResetCSPPayload(
         tenant_id="6d2d2d6c-a6d6-41e1-8bb1-73d11475f8f4",
-        user_id="admin",
+        user_object_id="acf1c3bb-2b64-4f74-8689-fb6521ae10f8",
         new_password="asdfghjkl",  # pragma: allowlist secret
     )
     with pytest.raises(ConnectionException):
