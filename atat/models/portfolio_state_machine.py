@@ -82,9 +82,12 @@ class PortfolioStateMachine(
         nullable=False,
     )
 
-    def __init__(self, portfolio, csp=None, **kwargs):
+    def __init__(self, portfolio, cloud=None, **kwargs):
         self.portfolio = portfolio
         self.attach_machine()
+
+        # TODO: Determine best place to do this, maybe @reconstructor
+        self.cloud = cloud if cloud else app.csp.cloud
 
     def after_state_change(self, event):
         db.session.add(self)
@@ -206,12 +209,9 @@ class PortfolioStateMachine(
             app.logger.info(payload)
             self.fail_stage(current_stage)
 
-        # TODO: Determine best place to do this, maybe @reconstructor
-        self.csp = app.csp.cloud
-
         try:
             func_name = f"create_{current_stage}"
-            response = getattr(self.csp, func_name)(payload_data)
+            response = getattr(self.cloud, func_name)(payload_data)
             if self.portfolio.csp_data is None:
                 self.portfolio.csp_data = {}
             self.portfolio.csp_data.update(response.dict())
