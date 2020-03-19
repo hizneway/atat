@@ -148,7 +148,7 @@ class AzureCloudProvider(CloudProviderInterface):
                 f"Could not SET secret in Azure keyvault for key {secret_key}.",
                 exc_info=1,
             )
-            creds = self._source_creds()
+            creds = self._source_root_creds()
             raise SecretException(
                 creds.tenant_id,
                 f"Could not SET secret in Azure keyvault for key {secret_key}.",
@@ -166,14 +166,14 @@ class AzureCloudProvider(CloudProviderInterface):
                 f"Could not GET secret in Azure keyvault for key {secret_key}.",
                 exc_info=1,
             )
-            creds = self._source_creds()
+            creds = self._source_root_creds()
             raise SecretException(
                 creds.tenant_id,
                 f"Could not GET secret in Azure keyvault for key {secret_key}.",
             )
 
     def create_environment(self, payload: EnvironmentCSPPayload):
-        creds = self._source_creds(payload.tenant_id)
+        creds = self._source_tenant_creds(payload.tenant_id)
         credentials = self._get_credential_obj(
             {
                 "client_id": creds.tenant_sp_client_id,
@@ -193,7 +193,7 @@ class AzureCloudProvider(CloudProviderInterface):
         return EnvironmentCSPResult(**response)
 
     def create_application(self, payload: ApplicationCSPPayload):
-        creds = self._source_creds(payload.tenant_id)
+        creds = self._source_tenant_creds(payload.tenant_id)
         credentials = self._get_credential_obj(
             {
                 "client_id": creds.tenant_sp_client_id,
@@ -213,7 +213,7 @@ class AzureCloudProvider(CloudProviderInterface):
         return ApplicationCSPResult(**response)
 
     def create_initial_mgmt_group(self, payload: InitialMgmtGroupCSPPayload):
-        creds = self._source_creds(payload.tenant_id)
+        creds = self._source_tenant_creds(payload.tenant_id)
         credentials = self._get_credential_obj(
             {
                 "client_id": creds.root_sp_client_id,
@@ -231,7 +231,7 @@ class AzureCloudProvider(CloudProviderInterface):
     def create_initial_mgmt_group_verification(
         self, payload: InitialMgmtGroupVerificationCSPPayload
     ):
-        creds = self._source_creds(payload.tenant_id)
+        creds = self._source_tenant_creds(payload.tenant_id)
         credentials = self._get_credential_obj(
             {
                 "client_id": creds.root_sp_client_id,
@@ -1813,12 +1813,12 @@ class AzureCloudProvider(CloudProviderInterface):
         return self._get_up_token_for_resource(
             creds.tenant_admin_username,
             creds.tenant_admin_password,
-            tenant_id,
+            creds.tenant_id,
             resource,
         )
 
     def _get_root_provisioning_token(self):
-        creds = self._source_creds()
+        creds = self._source_root_creds()
         return self._get_sp_token(
             creds.root_tenant_id, creds.root_sp_client_id, creds.root_sp_key
         )
@@ -1859,9 +1859,9 @@ class AzureCloudProvider(CloudProviderInterface):
         )
 
     def _get_client_secret_credential_obj(self):
-        creds = self._source_creds()
+        creds = self._source_root_creds()
         return self.sdk.identity.ClientSecretCredential(
-            tenant_id=creds.tenant_id,
+            tenant_id=creds.root_tenant_id,
             client_id=creds.root_sp_client_id,
             client_secret=creds.root_sp_key,
         )
@@ -1875,7 +1875,7 @@ class AzureCloudProvider(CloudProviderInterface):
         }
 
     def _get_tenant_principal_token(self, tenant_id, resource=None):
-        creds = self._source_creds(tenant_id)
+        creds = self._source_tenant_creds(tenant_id)
         return self._get_sp_token(
             creds.tenant_id,
             creds.tenant_sp_client_id,
@@ -1929,15 +1929,12 @@ class AzureCloudProvider(CloudProviderInterface):
                 f"azure application error getting elevated management token. {str(exc)}",
             )
 
-    def _source_creds(self, tenant_id=None) -> KeyVaultCredentials:
-        if tenant_id:
-            return self._source_tenant_creds(tenant_id)
-        else:
-            return KeyVaultCredentials(
-                root_tenant_id=self._root_creds.get("tenant_id"),
-                root_sp_client_id=self._root_creds.get("client_id"),
-                root_sp_key=self._root_creds.get("secret_key"),
-            )
+    def _source_root_creds(self):
+        return KeyVaultCredentials(
+            root_tenant_id=self._root_creds.get("tenant_id"),
+            root_sp_client_id=self._root_creds.get("client_id"),
+            root_sp_key=self._root_creds.get("secret_key"),
+        )
 
     def update_tenant_creds(self, tenant_id, secret: KeyVaultCredentials):
         hashed = sha256_hex(tenant_id)
