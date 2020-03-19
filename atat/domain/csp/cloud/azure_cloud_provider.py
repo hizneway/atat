@@ -275,8 +275,8 @@ class AzureCloudProvider(CloudProviderInterface):
         response = mgmgt_group_client.management_groups.get(management_group_id)
         return response
 
-    def _create_policy_definition(self, session, root_management_group_id, policy):
-        create_policy_definition_uri = f"{self.sdk.cloud.endpoints.resource_manager}providers/Microsoft.Management/managementgroups/{root_management_group_id}/providers/Microsoft.Authorization/policyDefinitions/{policy.definition['properties']['displayName']}?api-version=2019-09-01"
+    def _create_policy_definition(self, session, root_management_group_name, policy):
+        create_policy_definition_uri = f"{self.sdk.cloud.endpoints.resource_manager}providers/Microsoft.Management/managementGroups/{root_management_group_name}/providers/Microsoft.Authorization/policyDefinitions/{policy.definition['properties']['displayName']}?api-version=2019-09-01"
         body = policy.definition
         try:
             result = session.put(create_policy_definition_uri, json=body, timeout=30,)
@@ -308,11 +308,11 @@ class AzureCloudProvider(CloudProviderInterface):
     def _create_policy_set(
         self,
         session,
-        root_management_group_id,
+        root_management_group_name,
         policy_set_definition_name,
         definition_references,
     ):
-        create_policy_set_uri = f"{self.sdk.cloud.endpoints.resource_manager}providers/Microsoft.Management/managementgroups/{root_management_group_id}/providers/Microsoft.Authorization/policySetDefinitions/{policy_set_definition_name}?api-version=2019-09-01"
+        create_policy_set_uri = f"{self.sdk.cloud.endpoints.resource_manager}providers/Microsoft.Management/managementGroups/{root_management_group_name}/providers/Microsoft.Authorization/policySetDefinitions/{policy_set_definition_name}?api-version=2019-09-01"
         body = {
             "properties": {
                 "displayName": policy_set_definition_name,
@@ -349,9 +349,9 @@ class AzureCloudProvider(CloudProviderInterface):
             )
 
     def _create_policy_set_assignment(
-        self, session, root_management_group_id, policy_set_definition
+        self, session, root_management_group_name, policy_set_definition
     ):
-        create_policy_assignment_uri = f"{self.sdk.cloud.endpoints.resource_manager}providers/Microsoft.Management/managementgroups/{root_management_group_id}/providers/Microsoft.Authorization/policyAssignments/{policy_set_definition['properties']['displayName']}?api-version=2019-09-01"
+        create_policy_assignment_uri = f"{self.sdk.cloud.endpoints.resource_manager}providers/Microsoft.Management/managementGroups/{root_management_group_name}/providers/Microsoft.Authorization/policyAssignments/{policy_set_definition['properties']['displayName']}?api-version=2019-09-01"
         body = {
             "properties": {
                 "displayName": policy_set_definition["properties"]["displayName"],
@@ -406,7 +406,7 @@ class AzureCloudProvider(CloudProviderInterface):
         definition_references = []
         for policy in self.policy_manager.portfolio_definitions:
             definition = self._create_policy_definition(
-                policy_session, payload.root_management_group_id, policy,
+                policy_session, payload.root_management_group_name, policy,
             )
             definition_references.append(
                 {
@@ -419,12 +419,12 @@ class AzureCloudProvider(CloudProviderInterface):
             )
         policy_set_definition = self._create_policy_set(
             policy_session,
-            payload.root_management_group_id,
+            payload.root_management_group_name,
             DEFAULT_POLICY_SET_DEFINITION_NAME,
             definition_references,
         )
         assign_policy_set = self._create_policy_set_assignment(
-            policy_session, payload.root_management_group_id, policy_set_definition
+            policy_session, payload.root_management_group_name, policy_set_definition
         )
         return PoliciesCSPResult(**assign_policy_set)
 

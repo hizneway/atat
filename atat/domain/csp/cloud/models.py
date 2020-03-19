@@ -387,13 +387,18 @@ class InitialMgmtGroupCSPPayload(ManagementGroupCSPPayload):
 
 class InitialMgmtGroupCSPResult(AliasModel):
     root_management_group_id: str
+    root_management_group_name: str
 
     class Config:
-        fields = {"root_management_group_id": "id"}
+        fields = {
+            "root_management_group_id": "id",
+            "root_management_group_name": "name",
+        }
 
 
 class InitialMgmtGroupVerificationCSPPayload(ManagementGroupGetCSPPayload):
-    pass
+    class Config:
+        fields = {"management_group_name": "root_management_group_name"}
 
 
 class InitialMgmtGroupVerificationCSPResult(ManagementGroupGetCSPResponse):
@@ -634,7 +639,7 @@ class BillingOwnerCSPResult(AliasModel):
 
 
 class PoliciesCSPPayload(AliasModel):
-    root_management_group_id: str
+    root_management_group_name: str
     tenant_id: str
 
 

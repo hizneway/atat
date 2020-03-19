@@ -152,7 +152,7 @@ def test_create_application_succeeds(mock_azure: AzureCloudProvider):
 
 def test_create_initial_mgmt_group_succeeds(mock_azure: AzureCloudProvider):
     application = ApplicationFactory.create()
-    mock_management_group_create(mock_azure, {"id": "Test Id"})
+    mock_management_group_create(mock_azure, {"id": "Test Id", "name": "Test Name"})
     mock_azure = mock_get_secret(mock_azure)
 
     payload = InitialMgmtGroupCSPPayload(
@@ -163,6 +163,7 @@ def test_create_initial_mgmt_group_succeeds(mock_azure: AzureCloudProvider):
     result: InitialMgmtGroupCSPResult = mock_azure.create_initial_mgmt_group(payload)
 
     assert result.root_management_group_id == "Test Id"
+    assert result.root_management_group_name == "Test Name"
 
 
 def test_create_initial_mgmt_group_verification_succeeds(
@@ -1674,7 +1675,7 @@ def test_create_policies(mock_azure: AzureCloudProvider, monkeypatch):
     monkeypatch.setattr("requests.Session", mock_session)
 
     payload = PoliciesCSPPayload(
-        tenant_id="1234", root_management_group_id=str(uuid4()),
+        tenant_id="1234", root_management_group_name=str(uuid4()),
     )
     result: PoliciesCSPResult = mock_azure.create_policies(payload)
     assert result.policy_assignment_id == final_assignment_id

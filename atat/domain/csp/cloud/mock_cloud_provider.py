@@ -294,6 +294,7 @@ class MockCloudProvider(CloudProviderInterface):
 
         return InitialMgmtGroupCSPResult(
             id=f"{AZURE_MGMNT_PATH}{payload.management_group_name}",
+            name=payload.management_group_name,
         )
 
     def create_initial_mgmt_group_verification(
@@ -304,10 +305,7 @@ class MockCloudProvider(CloudProviderInterface):
         self._maybe_raise(self.UNAUTHORIZED_RATE, self.AUTHORIZATION_EXCEPTION)
 
         return InitialMgmtGroupVerificationCSPResult(
-            **dict(
-                id="Test Id"
-                # id=f"{AZURE_MGMNT_PATH}{payload.management_group_name}"
-            )
+            **dict(id=f"{AZURE_MGMNT_PATH}{payload.management_group_name}")
         )
 
     def create_product_purchase(self, payload: ProductPurchaseCSPPayload):
@@ -537,5 +535,5 @@ class MockCloudProvider(CloudProviderInterface):
         self._maybe_raise(self.UNAUTHORIZED_RATE, self.AUTHORIZATION_EXCEPTION)
 
         return PoliciesCSPResult(
-            policy_assignment_id=f"{AZURE_MGMNT_PATH}{payload.root_management_group_id}/providers/Microsoft.Authorization/policyAssignments/Default JEDI Policy Set",
+            policy_assignment_id=f"{AZURE_MGMNT_PATH}{payload.root_management_group_name}/providers/Microsoft.Authorization/policyAssignments/Default JEDI Policy Set",
         )
