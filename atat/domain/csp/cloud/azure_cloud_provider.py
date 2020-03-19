@@ -1188,7 +1188,9 @@ class AzureCloudProvider(CloudProviderInterface):
                 "Could not resolve graph token for tenant admin"
             )
 
-        request_body = {"displayName": "ATAT Remote Admin"}
+        request_body = {
+            "displayName": f"ATAT Remote Admin :: Portfolio {payload.display_name}"
+        }
 
         auth_header = {
             "Authorization": f"Bearer {graph_token}",

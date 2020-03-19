@@ -771,7 +771,10 @@ def test_create_tenant_principal_app(mock_azure: AzureCloudProvider):
         mock_azure = mock_get_secret(mock_azure)
 
         payload = TenantPrincipalAppCSPPayload(
-            **{"tenant_id": "6d2d2d6c-a6d6-41e1-8bb1-73d11475f8f4"}
+            **{
+                "tenant_id": "6d2d2d6c-a6d6-41e1-8bb1-73d11475f8f4",
+                "display_name": "ATAT Remote Admin :: Test",
+            }
         )
         with pytest.raises(ConnectionException):
             mock_azure.create_tenant_principal_app(payload)

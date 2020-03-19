@@ -265,7 +265,7 @@ class TenantPrincipalOwnershipCSPResult(AliasModel):
 
 
 class TenantPrincipalAppCSPPayload(BaseCSPPayload):
-    pass
+    display_name: str
 
 
 class TenantPrincipalAppCSPResult(AliasModel):
