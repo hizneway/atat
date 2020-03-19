@@ -242,6 +242,7 @@ class AzureCloudProvider(CloudProviderInterface):
         )
 
         response = self._get_management_group(credentials, creds.tenant_id)
+        return InitialMgmtGroupVerificationCSPResult(**response.as_dict())
 
     def _create_management_group(
         self, credentials, management_group_id, display_name, parent_id=None,

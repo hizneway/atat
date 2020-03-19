@@ -101,7 +101,7 @@ def mock_management_group_create(mock_azure, spec_dict):
 
 
 def mock_management_group_get(mock_azure, spec_dict):
-    mock_azure.sdk.managementgroups.ManagementGroupsAPI.return_value.management_groups.get.return_value.result.return_value = (
+    mock_azure.sdk.managementgroups.ManagementGroupsAPI.return_value.management_groups.get.return_value.as_dict.return_value = (
         spec_dict
     )
 
