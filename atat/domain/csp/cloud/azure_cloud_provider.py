@@ -1087,7 +1087,7 @@ class AzureCloudProvider(CloudProviderInterface):
 
         assignment_guid = str(uuid4())
 
-        url = f"{self.sdk.cloud.endpoints.resource_manager}/providers/Microsoft.Management/managementGroups/{payload.tenant_id}/providers/Microsoft.Authorization/roleAssignments/{assignment_guid}?api-version=2015-07-01"
+        url = f"{self.sdk.cloud.endpoints.resource_manager}providers/Microsoft.Management/managementGroups/{payload.tenant_id}/providers/Microsoft.Authorization/roleAssignments/{assignment_guid}?api-version=2015-07-01"
 
         try:
             result = self.sdk.requests.put(
@@ -1143,7 +1143,7 @@ class AzureCloudProvider(CloudProviderInterface):
 
         assignment_guid = str(uuid4())
 
-        url = f"{self.sdk.cloud.endpoints.resource_manager}/providers/Microsoft.Management/managementGroups/{payload.tenant_id}/providers/Microsoft.Authorization/roleAssignments/{assignment_guid}?api-version=2015-07-01"
+        url = f"{self.sdk.cloud.endpoints.resource_manager}providers/Microsoft.Management/managementGroups/{payload.tenant_id}/providers/Microsoft.Authorization/roleAssignments/{assignment_guid}?api-version=2015-07-01"
 
         try:
             result = self.sdk.requests.put(
@@ -1636,7 +1636,7 @@ class AzureCloudProvider(CloudProviderInterface):
             "Authorization": f"Bearer {graph_token}",
         }
 
-        url = f"{self.graph_resource}v1.0/users"
+        url = f"{self.graph_resource}/v1.0/users"
 
         try:
             result = self.sdk.requests.post(
@@ -1675,7 +1675,7 @@ class AzureCloudProvider(CloudProviderInterface):
             "Authorization": f"Bearer {graph_token}",
         }
 
-        url = f"{self.graph_resource}v1.0/users/{user_id}"
+        url = f"{self.graph_resource}/v1.0/users/{user_id}"
 
         try:
             result = self.sdk.requests.patch(
@@ -1730,7 +1730,7 @@ class AzureCloudProvider(CloudProviderInterface):
             "Authorization": f"Bearer {graph_token}",
         }
 
-        url = f"{self.graph_resource}v1.0/users/{payload.user_id}"
+        url = f"{self.graph_resource}/v1.0/users/{payload.user_object_id}"
 
         try:
             result = self.sdk.requests.patch(
