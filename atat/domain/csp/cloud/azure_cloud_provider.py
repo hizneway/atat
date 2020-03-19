@@ -654,7 +654,7 @@ class AzureCloudProvider(CloudProviderInterface):
         request_body = {
             "properties": {
                 "principalTenantId": payload.tenant_id,  # from tenant creation
-                "principalId": payload.user_object_id,  # from tenant creationn
+                "principalId": payload.user_object_id,  # from tenant creation
                 "roleDefinitionId": f"/providers/Microsoft.Billing/billingAccounts/{payload.billing_account_name}/billingProfiles/{payload.billing_profile_name}/billingRoleDefinitions/40000000-aaaa-bbbb-cccc-100000000000",
             }
         }
