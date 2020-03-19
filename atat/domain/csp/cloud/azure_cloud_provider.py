@@ -528,9 +528,13 @@ class AzureCloudProvider(CloudProviderInterface):
         result_dict = result.json()
         tenant_id = result_dict.get("tenantId")
         tenant_admin_username = f"{payload.user_id}@{payload.domain_name}.{self.config.get('OFFICE_365_DOMAIN')}"
-        self.update_tenant_creds(
+
+        self.create_tenant_creds(
             tenant_id,
             KeyVaultCredentials(
+                root_tenant_id=self.tenant_id,
+                root_sp_client_id=self.client_id,
+                root_sp_key=self.secret_key,
                 tenant_id=tenant_id,
                 tenant_admin_username=tenant_admin_username,
                 tenant_admin_password=payload.password,
@@ -1936,7 +1940,16 @@ class AzureCloudProvider(CloudProviderInterface):
             root_sp_key=self._root_creds.get("secret_key"),
         )
 
-    def update_tenant_creds(self, tenant_id, secret: KeyVaultCredentials):
+    def create_tenant_creds(
+        self, tenant_id, secret: KeyVaultCredentials
+    ) -> KeyVaultCredentials:
+        hashed = sha256_hex(tenant_id)
+        self.set_secret(hashed, json.dumps(secret.dict()))
+        return secret
+
+    def update_tenant_creds(
+        self, tenant_id, secret: KeyVaultCredentials
+    ) -> KeyVaultCredentials:
         hashed = sha256_hex(tenant_id)
         curr_secrets = self._source_tenant_creds(tenant_id)
         updated_secrets = curr_secrets.merge_credentials(secret)
