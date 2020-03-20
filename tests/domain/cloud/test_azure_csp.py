@@ -47,7 +47,7 @@ from atat.domain.csp.cloud.models import (
     ProductPurchaseCSPResult,
     ProductPurchaseVerificationCSPPayload,
     ProductPurchaseVerificationCSPResult,
-    ReportingCSPPayload,
+    CostManagementQueryCSPPayload,
     SubscriptionCreationCSPPayload,
     SubscriptionCreationCSPResult,
     SubscriptionVerificationCSPPayload,
@@ -1215,7 +1215,7 @@ def test_get_reporting_data(mock_azure: AzureCloudProvider):
             ],
         },
     }
-    payload = ReportingCSPPayload(
+    payload = CostManagementQueryCSPPayload(
         from_date=pendulum.now().subtract(years=1).add(days=1).format("YYYY-MM-DD"),
         to_date=pendulum.now().format("YYYY-MM-DD"),
         **csp_data,
@@ -1266,7 +1266,7 @@ def test_get_reporting_data_malformed_payload(mock_azure: AzureCloudProvider):
     for malformed_payload in [key_error, index_error]:
         with pytest.raises(pydantic.ValidationError):
             assert mock_azure.get_reporting_data(
-                ReportingCSPPayload(
+                CostManagementQueryCSPPayload(
                     from_date="foo", to_date="bar", **malformed_payload,
                 )
             )

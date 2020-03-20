@@ -598,7 +598,7 @@ class CostManagementQueryCSPResult(AliasModel):
     properties: CostManagementQueryProperties
 
 
-class ReportingCSPPayload(BaseCSPPayload):
+class CostManagementQueryCSPPayload(BaseCSPPayload):
     invoice_section_id: str
     from_date: str
     to_date: str

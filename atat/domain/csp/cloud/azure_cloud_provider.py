@@ -45,7 +45,7 @@ from .models import (
     ProductPurchaseCSPResult,
     ProductPurchaseVerificationCSPPayload,
     ProductPurchaseVerificationCSPResult,
-    ReportingCSPPayload,
+    CostManagementQueryCSPPayload,
     SubscriptionCreationCSPPayload,
     SubscriptionCreationCSPResult,
     SubscriptionVerificationCSPPayload,
@@ -1963,7 +1963,7 @@ class AzureCloudProvider(CloudProviderInterface):
         raw_creds = self.get_secret(hashed)
         return KeyVaultCredentials(**json.loads(raw_creds))
 
-    def get_reporting_data(self, payload: ReportingCSPPayload):
+    def get_reporting_data(self, payload: CostManagementQueryCSPPayload):
         """
         Queries the Cost Management API for an invoice section's raw reporting data
 

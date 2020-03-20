@@ -31,7 +31,6 @@ from .models import (
     InitialMgmtGroupVerificationCSPPayload,
     InitialMgmtGroupVerificationCSPResult,
     CostManagementQueryCSPResult,
-    CostManagementQueryProperties,
     PoliciesCSPPayload,
     PoliciesCSPResult,
     ProductPurchaseCSPPayload,
@@ -40,7 +39,7 @@ from .models import (
     ProductPurchaseVerificationCSPResult,
     PrincipalAdminRoleCSPPayload,
     PrincipalAdminRoleCSPResult,
-    ReportingCSPPayload,
+    CostManagementQueryCSPPayload,
     SubscriptionCreationCSPPayload,
     SubscriptionCreationCSPResult,
     SubscriptionVerificationCSPPayload,
@@ -496,7 +495,7 @@ class MockCloudProvider(CloudProviderInterface):
     def update_tenant_creds(self, tenant_id, secret):
         return secret
 
-    def get_reporting_data(self, payload: ReportingCSPPayload):
+    def get_reporting_data(self, payload: CostManagementQueryCSPPayload):
         self._maybe_raise(self.NETWORK_FAILURE_PCT, self.NETWORK_EXCEPTION)
         self._maybe_raise(self.SERVER_FAILURE_PCT, self.SERVER_EXCEPTION)
         self._maybe_raise(self.UNAUTHORIZED_RATE, self.AUTHORIZATION_EXCEPTION)
@@ -507,27 +506,23 @@ class MockCloudProvider(CloudProviderInterface):
         last_month = start_of_month.subtract(months=1).to_atom_string()
         two_months_ago = start_of_month.subtract(months=2).to_atom_string()
 
-        properties = CostManagementQueryProperties(
-            **dict(
-                columns=[
-                    {"name": "PreTaxCost", "type": "Number"},
-                    {"name": "BillingMonth", "type": "Datetime"},
-                    {"name": "InvoiceId", "type": "String"},
-                    {"name": "Currency", "type": "String"},
-                ],
-                rows=[
-                    [1.0, two_months_ago, "", "USD"],
-                    [500.0, two_months_ago, "e05009w9sf", "USD"],
-                    [50.0, last_month, "", "USD"],
-                    [1000.0, last_month, "e0500a4qhw", "USD"],
-                    [500.0, this_month, "", "USD"],
-                ],
-            )
-        )
+        properties = {
+            "columns": [
+                {"name": "PreTaxCost", "type": "Number"},
+                {"name": "BillingMonth", "type": "Datetime"},
+                {"name": "InvoiceId", "type": "String"},
+                {"name": "Currency", "type": "String"},
+            ],
+            "rows": [
+                [1.0, two_months_ago, "", "USD"],
+                [500.0, two_months_ago, "e05009w9sf", "USD"],
+                [50.0, last_month, "", "USD"],
+                [1000.0, last_month, "e0500a4qhw", "USD"],
+                [500.0, this_month, "", "USD"],
+            ],
+        }
 
-        return CostManagementQueryCSPResult(
-            **dict(name=object_id, properties=properties,)
-        )
+        return CostManagementQueryCSPResult(name=object_id, properties=properties)
 
     def create_policies(self, payload: PoliciesCSPPayload):
         self._maybe_raise(self.NETWORK_FAILURE_PCT, self.NETWORK_EXCEPTION)
