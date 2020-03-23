@@ -85,7 +85,7 @@ def upgrade():
     )
     op.add_column(
         "portfolios",
-        sa.Column("csp_data", sqlalchemy_json.NestedMutableJson(), nullable=True),
+        sa.Column("csp_data", sqlalchemy_json.NestedMutableJson, nullable=True),
     )
     op.add_column(
         "portfolios", sa.Column("dev_team", sa.ARRAY(sa.String()), nullable=True)
