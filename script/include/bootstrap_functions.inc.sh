@@ -3,7 +3,7 @@
 install_python_packages() {
   local install_flags="${1}"
 
-  pipenv install ${install_flags}
+  poetry install ${install_flags}
   return $?
 }
 
