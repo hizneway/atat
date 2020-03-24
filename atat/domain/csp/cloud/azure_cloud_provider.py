@@ -1621,7 +1621,7 @@ class AzureCloudProvider(CloudProviderInterface):
 
         return result
 
-    def _create_active_directory_user(self, graph_token, payload):
+    def _create_active_directory_user(self, graph_token, payload) -> UserCSPResult:
         request_body = {
             "accountEnabled": True,
             "displayName": payload.display_name,
