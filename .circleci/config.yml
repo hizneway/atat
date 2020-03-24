@@ -160,7 +160,7 @@ jobs:
               -e REDIS_HOST=redis:6379 \
               --network atat \
               atat:builder \
-              /bin/sh -c "pipenv install --dev && /bin/sh script/cibuild"
+              /bin/sh -c "poetry install --no-root && /bin/sh script/cibuild"
 
   integration-tests:
     docker:
@@ -241,7 +241,7 @@ jobs:
               -e REDIS_HOST=redis:6379 \
               --network atat \
               atat:builder \
-              /bin/sh -c "pipenv install --dev && /bin/sh script/sync-crls && pipenv run pytest --no-cov tests/check_crl_parse.py"
+              /bin/sh -c "poetry install --no-root && /bin/sh script/sync-crls && poetry run pytest --no-cov tests/check_crl_parse.py"
 
   deploy-staging:
     docker:

@@ -5,7 +5,6 @@ ARG CDN_URL=/static/assets/
 ARG AZURE_ACCOUNT_NAME=atat
 ENV TZ UTC
 
-RUN mkdir -p /install/.venv
 WORKDIR /install
 
 # Install basic Alpine packages
@@ -38,8 +37,8 @@ COPY . .
 
 # Install app dependencies
 RUN ./script/write_dotenv && \
-      pip install pipenv uwsgi && \
-      PIPENV_VENV_IN_PROJECT=1 pipenv sync && \
+      pip install uwsgi "poetry==1.0.5" && \
+      poetry install --no-root --no-dev && \
       yarn install && \
       rm -r ./static/fonts/ &> /dev/null || true && \
       cp -rf ./node_modules/uswds/src/fonts ./static/ && \
