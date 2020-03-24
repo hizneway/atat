@@ -91,7 +91,12 @@ class HybridCloudProvider(object):
         return self.mock.create_product_purchase_verification(payload)
 
     def create_tenant_principal_app(self, payload):
-        return self.azure.create_tenant_principal_app(payload)
+        with monkeypatched(
+            self.azure,
+            "tenant_principal_app_display_name",
+            f"Hybrid ATAT Remote Admin :: {payload.display_name}",
+        ):
+            return self.azure.create_tenant_principal_app(payload)
 
     def create_tenant_principal(self, payload):
         return self.azure.create_tenant_principal(payload)

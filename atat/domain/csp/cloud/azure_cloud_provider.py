@@ -128,6 +128,7 @@ class AzureCloudProvider(CloudProviderInterface):
             "contributor": config["AZURE_ROLE_DEF_ID_CONTRIBUTOR"],
             "billing": config["AZURE_ROLE_DEF_ID_BILLING_READER"],
         }
+        self.tenant_principal_app_display_name = "Hybrid ATAT Remote Admin"
 
         if azure_sdk_provider is None:
             self.sdk = AzureSDKProvider()
@@ -1188,9 +1189,7 @@ class AzureCloudProvider(CloudProviderInterface):
                 "Could not resolve graph token for tenant admin"
             )
 
-        request_body = {
-            "displayName": f"ATAT Remote Admin :: Portfolio {payload.display_name}"
-        }
+        request_body = {"displayName": self.tenant_principal_app_display_name}
 
         auth_header = {
             "Authorization": f"Bearer {graph_token}",
