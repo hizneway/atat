@@ -1,5 +1,4 @@
 import contextlib
-import os
 from uuid import uuid4
 
 from atat.domain.csp.cloud.azure_cloud_provider import AzureCloudProvider
@@ -35,8 +34,9 @@ class HybridCloudProvider(object):
         # This is the username and password for the primary point of contact
         # for a portfolio. These are normally generated for the tenant, but
         # but here we just inject existing and valid credentials.
-        tenant_admin_username = os.environ.get("TENANT_ADMIN_USERNAME")
-        tenant_admin_password = os.environ.get("TENANT_ADMIN_PASSWORD")
+        tenant_admin_username = self.azure.config["AZURE_TENANT_ADMIN_USERNAME"]
+        tenant_admin_password = self.azure.config["AZURE_TENANT_ADMIN_PASSWORD"]
+        user_object_id = self.azure.config["AZURE_USER_OBJECT_ID"]
 
         self.tenant_id = str(uuid4())
 
@@ -45,7 +45,7 @@ class HybridCloudProvider(object):
         result_dict = {
             "tenant_id": self.tenant_id,
             "user_id": "HybridCSPIntegrationTestUser",
-            "user_object_id": os.environ.get("USER_OBJECT_ID"),
+            "user_object_id": user_object_id,
             "tenant_admin_username": tenant_admin_username,
             "tenant_admin_password": tenant_admin_password,
         }
@@ -142,7 +142,7 @@ class HybridCloudProvider(object):
                 return self.azure.create_tenant_admin_ownership(payload)
             except UnknownServerException:
                 return TenantAdminOwnershipCSPResult(
-                    id="/providers/Microsoft.Management/managementGroups/b5ab0e1e-09f8-4258-afb7-fb17654bc5b3/providers/Microsoft.Authorization/roleAssignments/4a6c2abb-6a58-407e-8bc0-084a9731aed5"
+                    id=self.azure.config["AZURE_ADMIN_ROLE_ASSIGNMENT_ID"]
                 )
 
     def create_tenant_principal_ownership(self, payload):

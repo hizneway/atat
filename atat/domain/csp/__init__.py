@@ -26,17 +26,6 @@ class AzureCSP:
 
 class HybridCSP:
     def __init__(self, app, test_mode=False):
-        app.config.update(
-            {
-                "AZURE_CLIENT_ID": os.environ.get("AZURE_CLIENT_ID"),
-                "AZURE_SECRET_KEY": os.environ.get("AZURE_SECRET_KEY"),
-                "AZURE_TENANT_ID": os.environ.get("AZURE_TENANT_ID"),
-                "AZURE_VAULT_URL": os.environ.get("AZURE_VAULT_URL"),
-                "AZURE_POWERSHELL_CLIENT_ID": os.environ.get(
-                    "AZURE_POWERSHELL_CLIENT_ID"
-                ),
-            }
-        )
         azure = AzureCloudProvider(app.config)
         mock = MockCloudProvider(
             app.config,
