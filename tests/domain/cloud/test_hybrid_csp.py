@@ -39,10 +39,8 @@ def state_machine(app, portfolio):
     )
 
 
+@pytest.mark.hybrid
 def test_hybrid_cloud(pytestconfig, state_machine: PortfolioStateMachine):
-    if pytestconfig.getoption("--hybrid-test") != "True":
-        pytest.skip("Skip test_hybrid_cloud")
-
     csp_data = {}
     config = {"billing_account_name": "billing_account_name"}
 
