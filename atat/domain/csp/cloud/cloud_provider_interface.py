@@ -85,3 +85,6 @@ class CloudProviderInterface:  # pragma: no cover
         This may move to be a computed property on the Environment domain object
         """
         raise NotImplementedError()
+
+    def create_application(payload):
+        raise NotImplementedError()

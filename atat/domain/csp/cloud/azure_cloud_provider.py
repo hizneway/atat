@@ -280,6 +280,7 @@ class AzureCloudProvider(CloudProviderInterface):
             display_name=display_name,
             details=create_mgmt_grp_details,
         )
+
         create_request = mgmgt_group_client.management_groups.create_or_update(
             management_group_id, mgmt_grp_create
         )

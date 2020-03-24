@@ -20,6 +20,7 @@ from atat.domain.environments import Environments
 from atat.domain.environment_roles import EnvironmentRoles
 from atat.domain.portfolios import Portfolios
 from atat.models import CSPRole, JobFailure
+from atat.models.application import Application
 from atat.models.mixins.state_machines import FSMStates
 from atat.domain.task_orders import TaskOrders
 from atat.models.utils import claim_for_update, claim_many_for_update
@@ -67,16 +68,19 @@ def send_notification_mail(recipients, subject, body):
 
 
 def do_create_application(csp: CloudProviderInterface, application_id=None):
-    application = Applications.get(application_id)
+    application: Application = Applications.get(application_id)
 
     with claim_for_update(application) as application:
 
         if application.cloud_id:
+            app.logger.warning(
+                f"Attempted to create application {application.cloud_id} when it already exists."
+            )
             return
 
         csp_details = application.portfolio.csp_data
-        parent_id = csp_details.get("root_management_group_id")
-        tenant_id = csp_details.get("tenant_id")
+        parent_id = csp_details["root_management_group_id"]
+        tenant_id = csp_details["tenant_id"]
         payload = ApplicationCSPPayload(
             tenant_id=tenant_id, display_name=application.name, parent_id=parent_id
         )

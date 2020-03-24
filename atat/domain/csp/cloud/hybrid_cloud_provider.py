@@ -225,3 +225,6 @@ class HybridCloudProvider(object):
 
     def create_policies(self, payload: PoliciesCSPPayload) -> PoliciesCSPResult:
         return self.azure.create_policies(payload)
+
+    def create_application(self, payload):
+        return self.azure.create_application(payload)
