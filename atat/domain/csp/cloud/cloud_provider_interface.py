@@ -86,5 +86,5 @@ class CloudProviderInterface:  # pragma: no cover
         """
         raise NotImplementedError()
 
-    def create_application(payload):
+    def create_application(self, payload):
         raise NotImplementedError()
