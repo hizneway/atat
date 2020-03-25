@@ -23,7 +23,7 @@ pip_install () {
 run_command () {
   local cmd="${1}"
 
-  pipenv run ${cmd}
+  poetry run ${cmd}
   return $?
 }
 

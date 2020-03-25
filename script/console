@@ -6,4 +6,4 @@ set -e
 # Ensure we are in the app root directory (not the /script directory)
 cd "$(dirname "${0}")/.."
 
-pipenv run ipython -i ./ipython_setup.py
+poetry run ipython -i ./ipython_setup.py

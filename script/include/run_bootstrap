@@ -4,20 +4,14 @@
 source ./script/include/bootstrap_functions.inc.sh
 
 ## Set option defaults
-# If PIPENV_INSTALL_FLAGS is not set, give it the default value of "--dev"
-if [ -z "${PIPENV_INSTALL_FLAGS+is_set}" ]; then
-  PIPENV_INSTALL_FLAGS="--dev"
-fi
-
-# If this is a CI build, only use the latest lock file for dep install
-if [ "${CIBUILD}" = "true" ] || [ "${FLASK_ENV}" = "ci" ]; then
-  PIPENV_INSTALL_FLAGS+=" --ignore-pipfile"
+# If POETRY_INSTALL_FLAGS is not set, give it the default value of "--no-root"
+if [ -z "${POETRY_INSTALL_FLAGS+is_set}" ]; then
+  POETRY_INSTALL_FLAGS="--no-root"
 fi
 
 ## Main
 if [ "${INSTALL_PYTHON_PACKAGES}" = "true" ]; then
-  install_python_packages "${PIPENV_INSTALL_FLAGS}"
-  pipenv clean --verbose
+  install_python_packages "${POETRY_INSTALL_FLAGS}"
 fi
 
 if [ "${INSTALL_NODE_PACKAGES}" = "true" ]; then

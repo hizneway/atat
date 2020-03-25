@@ -19,16 +19,16 @@ Before running the setup scripts, a couple of dependencies need to be installed
 locally:
 
 * `python` == 3.7.3
-  Python version 3.7.3 **must** be installed on your machine before installing `pipenv`.
+  Python version 3.7.3 **must** be installed on your machine before installing `poetry`.
   You can download Python 3.7.3 [from python.org](https://www.python.org/downloads/)
   or use your preferred system package manager. Multiple versions of Python can exist on one
   computer, but 3.7.3 is required for ATAT.
 
-* `pipenv`
-  ATAT requires `pipenv` to be installed for python dependency management. `pipenv`
+* `poetry`
+  ATAT requires `poetry` to be installed for python dependency management. `poetry`
   will create the virtual environment that the app requires. [See
-  `pipenv`'s documentation for instructions on installing `pipenv`](
-  https://pipenv.readthedocs.io/en/latest/install/#installing-pipenv).
+  `poetry`'s documentation for instructions on installing `poetry`](
+  https://python-poetry.org/docs/#installation).
 
 * `yarn`
   ATAT requires `yarn` for installing and managing Javascript
@@ -63,10 +63,9 @@ set them up with the following command:
     git submodule update --init --recursive
 
 ### Setup
-This application uses Pipenv to manage Python dependencies and a virtual
-environment. Instead of the classic `requirements.txt` file, pipenv uses a
-Pipfile and Pipfile.lock, making it more similar to other modern package managers
-like yarn or mix.
+This application uses `poetry` to manage Python dependencies and a virtual
+environment. Instead of the classic `requirements.txt` file, `poetry` uses a
+`pyproject.toml` and `poetry.lock`, making it more similar to other modern package managers like yarn or mix.
 
 To perform the installation, run the setup script:
 
@@ -77,7 +76,7 @@ to install all of the Python and Node dependencies and run database migrations.
 
 To enter the virtualenv manually (a la `source .venv/bin/activate`):
 
-    pipenv shell
+    poetry shell
 
 If you want to automatically load the virtual environment whenever you enter the
 project directory, take a look at [direnv](https://direnv.net/).  An `.envrc`
@@ -143,7 +142,7 @@ Once this user is created, you can log in as them again the future using the DoD
 We have a helper script that will seed the database with requests, portfolios and
 applications for all of the test users:
 
-`pipenv run python script/seed_sample.py`
+`poetry run python script/seed_sample.py`
 
 ### Email Notifications
 
@@ -197,11 +196,7 @@ To run lint, static analysis, and Python unit tests:
 
 To run only the Python unit tests:
 
-    pipenv run python -m pytest
-
-To re-run Python tests each time a file is changed:
-
-    pipenv run ptw
+    poetry run python -m pytest
 
 This project also runs Javascript tests using jest. To run the Javascript tests:
 
@@ -343,13 +338,13 @@ This project uses [detect-secrets](https://github.com/Yelp/detect-secrets) to he
 If you need to check in a file that raises false positives from `detect-secrets`, you can add it to the whitelist. Run:
 
 ```
-pipenv run detect-secrets scan --no-aws-key-scan --no-stripe-scan --no-slack-scan --no-artifactory-scan --update .secrets.baseline
+poetry run detect-secrets scan --no-aws-key-scan --no-stripe-scan --no-slack-scan --no-artifactory-scan --update .secrets.baseline
 ```
 
 and then:
 
 ```
-pipenv run detect-secrets audit .secrets.baseline
+poetry run detect-secrets audit .secrets.baseline
 ```
 
 The audit will open an interactive prompt where you can whitelist the file. This is useful if you're checking in an entire file that looks like or is a secret (like a sample PKI file).

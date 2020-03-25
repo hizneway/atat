@@ -38,8 +38,8 @@ alpine_setup specific functions.
 
 ## Requirements
 
-- **[Python 3.6](https://www.python.org/downloads/)**
-- **[Pipenv](https://docs.pipenv.org/install/#installing-pipenv)**
+- **[Python 3.7.3](https://www.python.org/downloads/)**
+- **[poetry](https://python-poetry.org/docs/)**
 
 **Note:** None of these script fragments are designed to be run by themselves. 
 They should be sourced by the relevant bash script in an application's /script 
@@ -54,7 +54,7 @@ curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
 python3 get-pip.py --user
 ```
 
-Install pipenv:
+Install poetry:
 ```
-pip install --user pipenv
+curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python
 ```
