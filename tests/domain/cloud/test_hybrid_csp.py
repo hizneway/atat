@@ -75,6 +75,7 @@ def test_hybrid_cloud(pytestconfig, state_machine: PortfolioStateMachine):
         csp_data = state_machine.portfolio.csp_data
 
 
+@pytest.mark.hybrid
 def test_hybrid_create_application_job(session, csp):
     payload = TenantCSPPayload(
         **dict(
