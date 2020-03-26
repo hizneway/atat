@@ -117,7 +117,7 @@ class HybridCloudProvider(object):
         with monkeypatched(
             self.azure,
             "tenant_principal_app_display_name",
-            f"Hybrid ATAT Remote Admin :: {payload.display_name}",
+            f"Hybrid :: {payload.display_name} :: ATAT Remote Admin",
         ):
             return self.azure.create_tenant_principal_app(payload)
 
@@ -215,6 +215,7 @@ class HybridCloudProvider(object):
         with monkeypatched(
             self.azure, "_get_tenant_principal_token", lambda *a, **kw: token
         ):
+            payload.display_name = f"Hybrid {payload.display_name} Billing"
             return self.azure.create_billing_owner(payload)
 
     def create_tenant_admin_credential_reset(

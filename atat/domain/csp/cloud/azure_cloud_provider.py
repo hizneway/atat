@@ -128,7 +128,7 @@ class AzureCloudProvider(CloudProviderInterface):
             "contributor": config["AZURE_ROLE_DEF_ID_CONTRIBUTOR"],
             "billing": config["AZURE_ROLE_DEF_ID_BILLING_READER"],
         }
-        self.tenant_principal_app_display_name = "Hybrid ATAT Remote Admin"
+        self.tenant_principal_app_display_name = "ATAT Remote Admin"
 
         if azure_sdk_provider is None:
             self.sdk = AzureSDKProvider()
