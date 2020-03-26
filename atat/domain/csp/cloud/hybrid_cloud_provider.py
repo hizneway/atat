@@ -1,10 +1,10 @@
 import contextlib
-from uuid import uuid4
-
 from atat.domain.csp.cloud.azure_cloud_provider import AzureCloudProvider
 from atat.domain.csp.cloud.exceptions import UnknownServerException
 from atat.domain.csp.cloud.mock_cloud_provider import MockCloudProvider
 from atat.domain.csp.cloud.models import *
+from typing import Union
+from uuid import uuid4
 
 
 @contextlib.contextmanager
@@ -23,7 +23,7 @@ class HybridCloudProvider(object):
         self.mock = mock
         self.tenant_id = None
 
-    def create_tenant(self, payload):
+    def create_tenant(self, payload: TenantCSPPayload) -> TenantCSPResult:
         """In this step, we store a tenant ID with a username and password
         provided to the application ahead of time. Normally the tenant is
         created through API calls to Azure, however for the hybrid mock we
@@ -66,31 +66,88 @@ class HybridCloudProvider(object):
 
         return TenantCSPResult(domain_name="dancorriganpromptworks", **result_dict)
 
-    def create_billing_profile_creation(self, payload):
+    def create_billing_profile_creation(
+        self, payload: BillingProfileCreationCSPPayload
+    ) -> Union[BillingProfileCreationCSPResult, BillingProfileVerificationCSPResult]:
+        """Billing profiles specify which products are included in an invoice,
+        and how the invoice is paid for.
+
+        Billing profiles include:
+        - Payment methods
+        - Contact info
+        - Permissions
+
+        https://docs.microsoft.com/en-us/microsoft-store/billing-profile
+        """
+
         return self.mock.create_billing_profile_creation(payload)
 
-    def create_billing_profile_verification(self, payload):
+    def create_billing_profile_verification(
+        self, payload: BillingProfileVerificationCSPPayload
+    ) -> Union[BillingProfileCreationCSPResult, BillingProfileVerificationCSPResult]:
+        """Verify that a billing profile has been created.
+        """
+
         return self.mock.create_billing_profile_verification(payload)
 
-    def create_billing_profile_tenant_access(self, payload):
+    def create_billing_profile_tenant_access(
+        self, payload: BillingProfileTenantAccessCSPPayload
+    ) -> BillingProfileTenantAccessCSPResult:
+        """?
+        """
+
         return self.mock.create_billing_profile_tenant_access(payload)
 
-    def create_task_order_billing_creation(self, payload):
+    def create_task_order_billing_creation(
+        self, payload: TaskOrderBillingCreationCSPPayload
+    ) -> Union[
+        TaskOrderBillingCreationCSPResult, TaskOrderBillingVerificationCSPResult
+    ]:
+        """?
+        """
+
         return self.mock.create_task_order_billing_creation(payload)
 
-    def create_task_order_billing_verification(self, payload):
+    def create_task_order_billing_verification(
+        self, payload: TaskOrderBillingVerificationCSPPayload
+    ) -> Union[
+        TaskOrderBillingCreationCSPResult, TaskOrderBillingVerificationCSPResult
+    ]:
+        """?
+        """
+
         return self.mock.create_task_order_billing_verification(payload)
 
-    def create_billing_instruction(self, payload):
+    def create_billing_instruction(
+        self, payload: BillingInstructionCSPPayload
+    ) -> BillingInstructionCSPResult:
+        """?
+        """
+
         return self.mock.create_billing_instruction(payload)
 
-    def create_product_purchase(self, payload):
+    def create_product_purchase(
+        self, payload: ProductPurchaseCSPPayload
+    ) -> Union[ProductPurchaseCSPResult, ProductPurchaseVerificationCSPResult]:
+        """?
+        """
+
         return self.mock.create_product_purchase(payload)
 
-    def create_product_purchase_verification(self, payload):
+    def create_product_purchase_verification(
+        self, payload: ProductPurchaseVerificationCSPPayload
+    ) -> Union[ProductPurchaseCSPResult, ProductPurchaseVerificationCSPResult]:
+        """?
+        """
+
         return self.mock.create_product_purchase_verification(payload)
 
-    def create_tenant_principal_app(self, payload):
+    def create_tenant_principal_app(
+        self, payload: TenantPrincipalAppCSPPayload
+    ) -> TenantPrincipalAppCSPResult:
+        """?
+        """
+
         with monkeypatched(
             self.azure,
             "tenant_principal_app_display_name",
@@ -98,10 +155,20 @@ class HybridCloudProvider(object):
         ):
             return self.azure.create_tenant_principal_app(payload)
 
-    def create_tenant_principal(self, payload):
+    def create_tenant_principal(
+        self, payload: TenantPrincipalCSPPayload
+    ) -> TenantPrincipalCSPResult:
+        """
+        """
+
         return self.azure.create_tenant_principal(payload)
 
-    def create_tenant_principal_credential(self, payload):
+    def create_tenant_principal_credential(
+        self, payload: TenantPrincipalCredentialCSPPayload
+    ) -> TenantPrincipalCredentialCSPResult:
+        """?
+        """
+
         token = self.azure._get_tenant_admin_token(
             payload.tenant_id, self.azure.graph_resource
         )
@@ -121,23 +188,46 @@ class HybridCloudProvider(object):
             ):
                 return self.azure.create_tenant_principal_credential(payload)
 
-    def create_admin_role_definition(self, payload):
+    def create_admin_role_definition(
+        self, payload: AdminRoleDefinitionCSPPayload
+    ) -> AdminRoleDefinitionCSPResult:
+        """?
+        """
+
         return self.azure.create_admin_role_definition(payload)
 
-    def create_principal_admin_role(self, payload):
+    def create_principal_admin_role(
+        self, payload: PrincipalAdminRoleCSPPayload
+    ) -> PrincipalAdminRoleCSPResult:
+        """?
+        """
+
         return self.azure.create_principal_admin_role(payload)
 
-    def create_initial_mgmt_group(self, payload):
+    def create_initial_mgmt_group(
+        self, payload: InitialMgmtGroupCSPPayload
+    ) -> InitialMgmtGroupCSPResult:
+        """?
+        """
+
         return self.azure.create_initial_mgmt_group(payload)
 
-    def create_initial_mgmt_group_verification(self, payload):
+    def create_initial_mgmt_group_verification(
+        self, payload: InitialMgmtGroupVerificationCSPPayload
+    ) -> InitialMgmtGroupVerificationCSPResult:
+        """?
+        """
+
         return self.azure.create_initial_mgmt_group_verification(payload)
 
-    def create_tenant_admin_ownership(self, payload):
+    def create_tenant_admin_ownership(
+        self, payload: TenantAdminOwnershipCSPPayload
+    ) -> TenantAdminOwnershipCSPResult:
         """For this step, we needed to be able to retrieve the elevated management 
         token from KeyVault with the original tenant id, but make the role assignment 
         request with the root credentials.
         """
+
         token = self.azure._get_elevated_management_token(payload.tenant_id)
         payload.tenant_id = self.azure.tenant_id
         with monkeypatched(
@@ -150,7 +240,12 @@ class HybridCloudProvider(object):
                     id=self.azure.config["AZURE_ADMIN_ROLE_ASSIGNMENT_ID"]
                 )
 
-    def create_tenant_principal_ownership(self, payload):
+    def create_tenant_principal_ownership(
+        self, payload: TenantPrincipalOwnershipCSPPayload
+    ) -> TenantPrincipalOwnershipCSPResult:
+        """?
+        """
+
         token = self.azure._get_elevated_management_token(payload.tenant_id)
         payload.tenant_id = self.azure.tenant_id
         with monkeypatched(
@@ -158,7 +253,12 @@ class HybridCloudProvider(object):
         ):
             return self.azure.create_tenant_principal_ownership(payload)
 
-    def create_billing_owner(self, payload):
+    def create_billing_owner(
+        self, payload: BillingOwnerCSPPayload
+    ) -> BillingOwnerCSPResult:
+        """?
+        """
+
         token = self.azure._get_tenant_principal_token(
             payload.tenant_id, resource=self.azure.graph_resource
         )
@@ -168,8 +268,20 @@ class HybridCloudProvider(object):
         ):
             return self.azure.create_billing_owner(payload)
 
-    def create_tenant_admin_credential_reset(self, payload):
+    def create_tenant_admin_credential_reset(
+        self, payload: TenantAdminCredentialResetCSPPayload
+    ) -> TenantAdminCredentialResetCSPResult:
+        """?
+        """
+
         return self.azure.create_tenant_admin_credential_reset(payload)
 
-    def create_policies(self, payload):
+    def create_policies(self, payload: PoliciesCSPPayload) -> PoliciesCSPResul:
+        """Creates and applies the default JEDI Policy Set to a portfolio's root management group.
+        
+        The underlying API calls seem to be idempotent, despite the fact that most of them repeatedly
+        return 201. The _create_policy_set API call is the one exception. It returns 201 on initial 
+        creation, and then 200 thereafter.
+        """
+
         return self.azure.create_policies(payload)
