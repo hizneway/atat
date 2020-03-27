@@ -1,32 +1,26 @@
-import pytest
 from uuid import uuid4
 
-from atat.domain.exceptions import NotFoundError, UnauthorizedError
-from atat.domain.portfolios import (
-    Portfolios,
-    PortfolioError,
-    PortfolioDeletionApplicationsExistError,
-    PortfolioStateMachines,
-)
-from atat.domain.portfolio_roles import PortfolioRoles
-from atat.domain.applications import Applications
-from atat.domain.application_roles import ApplicationRoles
-from atat.domain.environments import Environments
-from atat.domain.permission_sets import PermissionSets, PORTFOLIO_PERMISSION_SETS
-from atat.models.application_role import Status as ApplicationRoleStatus
-from atat.models.portfolio_role import Status as PortfolioRoleStatus
-from atat.models import FSMStates
-
+import pytest
 from tests.factories import (
     ApplicationFactory,
     ApplicationRoleFactory,
-    UserFactory,
-    PortfolioRoleFactory,
     PortfolioFactory,
-    PortfolioStateMachineFactory,
+    PortfolioRoleFactory,
+    UserFactory,
     get_all_portfolio_permission_sets,
 )
 from tests.utils import EnvQueryTest
+
+from atat.domain.applications import Applications
+from atat.domain.exceptions import NotFoundError
+from atat.domain.permission_sets import PermissionSets
+from atat.domain.portfolios import (
+    PortfolioDeletionApplicationsExistError,
+    Portfolios,
+    PortfolioStateMachines,
+)
+from atat.models.application_role import Status as ApplicationRoleStatus
+from atat.models.portfolio_role import Status as PortfolioRoleStatus
 
 
 @pytest.fixture(scope="function")
