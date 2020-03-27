@@ -1,32 +1,26 @@
-import pytest
 from uuid import uuid4
 
-from atat.domain.exceptions import NotFoundError, UnauthorizedError
-from atat.domain.portfolios import (
-    Portfolios,
-    PortfolioError,
-    PortfolioDeletionApplicationsExistError,
-    PortfolioStateMachines,
-)
-from atat.domain.portfolio_roles import PortfolioRoles
-from atat.domain.applications import Applications
-from atat.domain.application_roles import ApplicationRoles
-from atat.domain.environments import Environments
-from atat.domain.permission_sets import PermissionSets, PORTFOLIO_PERMISSION_SETS
-from atat.models.application_role import Status as ApplicationRoleStatus
-from atat.models.portfolio_role import Status as PortfolioRoleStatus
-from atat.models import FSMStates
-
+import pytest
 from tests.factories import (
     ApplicationFactory,
     ApplicationRoleFactory,
-    UserFactory,
-    PortfolioRoleFactory,
     PortfolioFactory,
-    PortfolioStateMachineFactory,
+    PortfolioRoleFactory,
+    UserFactory,
     get_all_portfolio_permission_sets,
 )
 from tests.utils import EnvQueryTest
+
+from atat.domain.applications import Applications
+from atat.domain.exceptions import NotFoundError
+from atat.domain.permission_sets import PermissionSets
+from atat.domain.portfolios import (
+    PortfolioDeletionApplicationsExistError,
+    Portfolios,
+    PortfolioStateMachines,
+)
+from atat.models.application_role import Status as ApplicationRoleStatus
+from atat.models.portfolio_role import Status as PortfolioRoleStatus
 
 
 @pytest.fixture(scope="function")
@@ -265,43 +259,102 @@ def test_create_state_machine(portfolio):
 
 
 class TestGetPortfoliosPendingCreate(EnvQueryTest):
+    """Portfolios.get_portfolios_pending_provisioning should return portfolios that
+       are in their period of performace AND with a state machine is in one of the
+       following states: 
+         - not created i.e. portfolio.state_machine is `None`
+         - "UNSTARTED"
+         - a "_CREATED" state """
+
     def test_finds_unstarted(self):
-        for x in range(5):
-            if x == 2:
-                state = "COMPLETED"
-            else:
-                state = "UNSTARTED"
-            self.create_portfolio_with_clins(
-                [(self.YESTERDAY, self.TOMORROW)], state_machine_status=state
-            )
-        assert len(Portfolios.get_portfolios_pending_provisioning(self.NOW)) == 4
+        # Given: A portfolio is in its period of performance
+        # Given: The portfolio's state machine is in its "UNSTARTED" stage
+        self.create_portfolio_with_clins(
+            [(self.YESTERDAY, self.TOMORROW)], state_machine_status="UNSTARTED"
+        )
+        # When I query for portfolios pending provisioning
+        portfolios_pending = Portfolios.get_portfolios_pending_provisioning(self.NOW)
+        # Then the query will return the portfolio
+        assert len(portfolios_pending) == 1
 
     def test_finds_created(self):
+        # Given: A portfolio is in its period of performance
+        # Given: The portfolio's state machine is in a _CREATED stage
         self.create_portfolio_with_clins(
             [(self.YESTERDAY, self.TOMORROW)], state_machine_status="TENANT_CREATED"
         )
-        assert len(Portfolios.get_portfolios_pending_provisioning(self.NOW)) == 1
+        # When I query for portfolios pending provisioning
+        portfolios_pending = Portfolios.get_portfolios_pending_provisioning(self.NOW)
+        # Then the query will return the portfolio
+        assert len(portfolios_pending) == 1
 
     def test_does_not_find_failed(self):
+        # Given: A portfolio is in its period of performance
+        # Given: The portfolio's state machine is in a _FAILED stage
         self.create_portfolio_with_clins(
             [(self.YESTERDAY, self.TOMORROW)], state_machine_status="TENANT_FAILED"
         )
-        assert len(Portfolios.get_portfolios_pending_provisioning(self.NOW)) == 0
+        # When I query for portfolios pending provisioning
+        portfolios_pending = Portfolios.get_portfolios_pending_provisioning(self.NOW)
+        # Then the query will not return the portfolio
+        assert len(portfolios_pending) == 0
 
-    def test_with_expired_clins(self):
-        self.create_portfolio_with_clins([(self.YESTERDAY, self.YESTERDAY)])
-        assert len(Portfolios.get_portfolios_pending_provisioning(self.NOW)) == 0
-
-    def test_with_active_clins(self):
-        portfolio = self.create_portfolio_with_clins([(self.YESTERDAY, self.TOMORROW)])
-        Portfolios.get_portfolios_pending_provisioning(self.NOW) == [portfolio.id]
-
-    def test_with_future_clins(self):
+    def test_with_future_clins_and_no_state_machine(self):
+        # Given: The portfolio has not entered its period of performance
+        # Given: The portfolio has not begun the provisioning process
         self.create_portfolio_with_clins([(self.TOMORROW, self.TOMORROW)])
-        assert len(Portfolios.get_portfolios_pending_provisioning(self.NOW)) == 0
+        # When I query for portfolios pending provisioning
+        portfolios_pending = Portfolios.get_portfolios_pending_provisioning(self.NOW)
+        # Then the query will return 0 portfolios
+        assert len(portfolios_pending) == 0
 
-    def test_with_already_provisioned_env(self):
+    def test_with_future_clins_and_state_machine(self):
+        # Given: The portfolio has not entered a period of performance
+        # Given: The portfolio has begun the provisioning process
         self.create_portfolio_with_clins(
-            [(self.YESTERDAY, self.TOMORROW)], env_data={"cloud_id": uuid4().hex}
+            [(self.TOMORROW, self.TOMORROW)], state_machine_status="TENANT_CREATED"
         )
-        assert len(Portfolios.get_portfolios_pending_provisioning(self.NOW)) == 0
+        # When I query for portfolios pending provisioning
+        portfolios_pending = Portfolios.get_portfolios_pending_provisioning(self.NOW)
+        # Then the query will return 0 portfolios
+        assert len(portfolios_pending) == 0
+
+    def test_with_expired_clins_and_no_state_machine(self):
+        # Given: A portfolio has exited its period of performance
+        # Given: The portfolio has not started the provisioning process
+        self.create_portfolio_with_clins([(self.YESTERDAY, self.YESTERDAY)])
+        # When I query for portfolios pending provisioning
+        portfolios_pending = Portfolios.get_portfolios_pending_provisioning(self.NOW)
+        # Then the query will return 0 portfolios
+        assert len(portfolios_pending) == 0
+
+    def test_with_expired_clins_and_state_machine(self):
+        # Given: A portfolio has exited its period of performance
+        # Given: The portfolio is in the middle of the provisioning process
+        self.create_portfolio_with_clins(
+            [(self.YESTERDAY, self.YESTERDAY)], state_machine_status="TENANT_CREATED"
+        )
+        # When I query for portfolios pending provisioning
+        portfolios_pending = Portfolios.get_portfolios_pending_provisioning(self.NOW)
+        # Then the query will return 0 portfolios
+        assert len(portfolios_pending) == 0
+
+    def test_with_active_clins_and_no_state_machine(self):
+        # Given: A portfolio is in its period of performance
+        # Given: The portfolio has begun the provisioning process
+        self.create_portfolio_with_clins([(self.YESTERDAY, self.TOMORROW)])
+        # When I query for portfolios pending provisioning
+        pending_portfolios = Portfolios.get_portfolios_pending_provisioning(self.NOW)
+        # Then the query will return the pending portfolio
+        assert len(pending_portfolios) == 1
+
+    def test_with_active_clins_and_state_machine(self):
+        # Given: A portfolio is in its period of performance
+        # Given: The portfolio has begun the provisioning process
+        self.create_portfolio_with_clins(
+            [(self.YESTERDAY, self.TOMORROW)], state_machine_status="TENANT_CREATED"
+        )
+        # When I query for portfolios pending provisioning
+        portfolios_pending = Portfolios.get_portfolios_pending_provisioning(self.NOW)
+        # Then the query will return the pending portfolio
+        assert len(portfolios_pending) == 1

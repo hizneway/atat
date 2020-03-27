@@ -156,7 +156,7 @@ class Portfolios(object):
 
         results = (
             db.session.query(Portfolio.id)
-            .join(PortfolioStateMachine)
+            .outerjoin(PortfolioStateMachine)
             .join(TaskOrder)
             .join(CLIN)
             .filter(Portfolio.deleted == False)
@@ -164,6 +164,7 @@ class Portfolios(object):
             .filter(CLIN.end_date > now)
             .filter(
                 or_(
+                    Portfolio.state_machine == None,
                     PortfolioStateMachine.state == FSMStates.UNSTARTED,
                     PortfolioStateMachine.state.like("%CREATED"),
                 )
