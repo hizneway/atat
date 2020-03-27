@@ -69,33 +69,17 @@ class HybridCloudProvider(object):
     def create_billing_profile_creation(
         self, payload: BillingProfileCreationCSPPayload
     ) -> Union[BillingProfileCreationCSPResult, BillingProfileVerificationCSPResult]:
-        """Billing profiles specify which products are included in an invoice,
-        and how the invoice is paid for.
-
-        Billing profiles include:
-        - Payment methods
-        - Contact info
-        - Permissions
-
-        https://docs.microsoft.com/en-us/microsoft-store/billing-profile
-        """
-
         return self.mock.create_billing_profile_creation(payload)
 
     def create_billing_profile_verification(
         self, payload: BillingProfileVerificationCSPPayload
     ) -> Union[BillingProfileCreationCSPResult, BillingProfileVerificationCSPResult]:
-        """Verify that a billing profile has been created.
-        """
 
         return self.mock.create_billing_profile_verification(payload)
 
     def create_billing_profile_tenant_access(
         self, payload: BillingProfileTenantAccessCSPPayload
     ) -> BillingProfileTenantAccessCSPResult:
-        """?
-        """
-
         return self.mock.create_billing_profile_tenant_access(payload)
 
     def create_task_order_billing_creation(
@@ -103,9 +87,6 @@ class HybridCloudProvider(object):
     ) -> Union[
         TaskOrderBillingCreationCSPResult, TaskOrderBillingVerificationCSPResult
     ]:
-        """?
-        """
-
         return self.mock.create_task_order_billing_creation(payload)
 
     def create_task_order_billing_verification(
@@ -113,41 +94,26 @@ class HybridCloudProvider(object):
     ) -> Union[
         TaskOrderBillingCreationCSPResult, TaskOrderBillingVerificationCSPResult
     ]:
-        """?
-        """
-
         return self.mock.create_task_order_billing_verification(payload)
 
     def create_billing_instruction(
         self, payload: BillingInstructionCSPPayload
     ) -> BillingInstructionCSPResult:
-        """?
-        """
-
         return self.mock.create_billing_instruction(payload)
 
     def create_product_purchase(
         self, payload: ProductPurchaseCSPPayload
     ) -> Union[ProductPurchaseCSPResult, ProductPurchaseVerificationCSPResult]:
-        """?
-        """
-
         return self.mock.create_product_purchase(payload)
 
     def create_product_purchase_verification(
         self, payload: ProductPurchaseVerificationCSPPayload
     ) -> Union[ProductPurchaseCSPResult, ProductPurchaseVerificationCSPResult]:
-        """?
-        """
-
         return self.mock.create_product_purchase_verification(payload)
 
     def create_tenant_principal_app(
         self, payload: TenantPrincipalAppCSPPayload
     ) -> TenantPrincipalAppCSPResult:
-        """?
-        """
-
         with monkeypatched(
             self.azure,
             "tenant_principal_app_display_name",
@@ -158,17 +124,11 @@ class HybridCloudProvider(object):
     def create_tenant_principal(
         self, payload: TenantPrincipalCSPPayload
     ) -> TenantPrincipalCSPResult:
-        """
-        """
-
         return self.azure.create_tenant_principal(payload)
 
     def create_tenant_principal_credential(
         self, payload: TenantPrincipalCredentialCSPPayload
     ) -> TenantPrincipalCredentialCSPResult:
-        """?
-        """
-
         token = self.azure._get_tenant_admin_token(
             payload.tenant_id, self.azure.graph_resource
         )
@@ -191,33 +151,22 @@ class HybridCloudProvider(object):
     def create_admin_role_definition(
         self, payload: AdminRoleDefinitionCSPPayload
     ) -> AdminRoleDefinitionCSPResult:
-        """?
-        """
-
         return self.azure.create_admin_role_definition(payload)
 
     def create_principal_admin_role(
         self, payload: PrincipalAdminRoleCSPPayload
     ) -> PrincipalAdminRoleCSPResult:
-        """?
-        """
-
         return self.azure.create_principal_admin_role(payload)
 
     def create_initial_mgmt_group(
         self, payload: InitialMgmtGroupCSPPayload
     ) -> InitialMgmtGroupCSPResult:
-        """?
-        """
-
+        payload.display_name = f"Hybrid :: {payload.display_name}"
         return self.azure.create_initial_mgmt_group(payload)
 
     def create_initial_mgmt_group_verification(
         self, payload: InitialMgmtGroupVerificationCSPPayload
     ) -> InitialMgmtGroupVerificationCSPResult:
-        """?
-        """
-
         return self.azure.create_initial_mgmt_group_verification(payload)
 
     def create_tenant_admin_ownership(
@@ -243,7 +192,10 @@ class HybridCloudProvider(object):
     def create_tenant_principal_ownership(
         self, payload: TenantPrincipalOwnershipCSPPayload
     ) -> TenantPrincipalOwnershipCSPResult:
-        """?
+
+        """For this step, we needed to be able to retrieve the elevated 
+        management token from KeyVault with the original tenant id, but make 
+        the tenant principal ownership request with the root credentials.
         """
 
         token = self.azure._get_elevated_management_token(payload.tenant_id)
@@ -256,9 +208,6 @@ class HybridCloudProvider(object):
     def create_billing_owner(
         self, payload: BillingOwnerCSPPayload
     ) -> BillingOwnerCSPResult:
-        """?
-        """
-
         token = self.azure._get_tenant_principal_token(
             payload.tenant_id, resource=self.azure.graph_resource
         )
@@ -271,17 +220,7 @@ class HybridCloudProvider(object):
     def create_tenant_admin_credential_reset(
         self, payload: TenantAdminCredentialResetCSPPayload
     ) -> TenantAdminCredentialResetCSPResult:
-        """?
-        """
-
         return self.azure.create_tenant_admin_credential_reset(payload)
 
-    def create_policies(self, payload: PoliciesCSPPayload) -> PoliciesCSPResul:
-        """Creates and applies the default JEDI Policy Set to a portfolio's root management group.
-        
-        The underlying API calls seem to be idempotent, despite the fact that most of them repeatedly
-        return 201. The _create_policy_set API call is the one exception. It returns 201 on initial 
-        creation, and then 200 thereafter.
-        """
-
+    def create_policies(self, payload: PoliciesCSPPayload) -> PoliciesCSPResult:
         return self.azure.create_policies(payload)

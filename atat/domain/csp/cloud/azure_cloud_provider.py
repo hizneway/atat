@@ -214,6 +214,18 @@ class AzureCloudProvider(CloudProviderInterface):
         return ApplicationCSPResult(**response)
 
     def create_initial_mgmt_group(self, payload: InitialMgmtGroupCSPPayload):
+        """Creates the root management group for the Portfolio tenant.
+
+        The management group created in this step is the parent to all future 
+        management groups created for applications and environments.
+        
+        A management group is a collection of subscriptions and management 
+        groups to which "governance conditions" can be applied. These resources
+        can be nested.
+
+        https://docs.microsoft.com/en-us/azure/governance/management-groups/overview
+        """
+
         creds = self._source_tenant_creds(payload.tenant_id)
         credentials = self._get_credential_obj(
             {
@@ -232,6 +244,14 @@ class AzureCloudProvider(CloudProviderInterface):
     def create_initial_mgmt_group_verification(
         self, payload: InitialMgmtGroupVerificationCSPPayload
     ):
+        """Verify the creation of the root management group.
+        
+        A management group is a collection of subscriptions and management 
+        groups to which "governance conditions" can be applied. These resources
+        can be nested.
+
+        https://docs.microsoft.com/en-us/azure/governance/management-groups/overview
+        """
         creds = self._source_tenant_creds(payload.tenant_id)
         credentials = self._get_credential_obj(
             {
@@ -547,6 +567,16 @@ class AzureCloudProvider(CloudProviderInterface):
     def create_billing_profile_creation(
         self, payload: BillingProfileCreationCSPPayload
     ):
+        """Create a billing profile which specifies which products are included 
+            in an invoice, and how the invoice is paid for.
+
+            Billing profiles include:
+            - Payment methods
+            - Contact info
+            - Permissions
+
+            https://docs.microsoft.com/en-us/microsoft-store/billing-profile
+            """
         sp_token = self._get_root_provisioning_token()
         if sp_token is None:
             raise AuthenticationException(
@@ -600,6 +630,16 @@ class AzureCloudProvider(CloudProviderInterface):
     def create_billing_profile_verification(
         self, payload: BillingProfileVerificationCSPPayload
     ):
+        """Verify that a billing profile has been created.
+
+            A billing profile specifies which products are included in an invoice, 
+            and how the invoice is paid for. They include:
+            - Payment methods
+            - Contact info
+            - Permissions
+
+            https://docs.microsoft.com/en-us/microsoft-store/billing-profile
+            """
         sp_token = self._get_root_provisioning_token()
         if sp_token is None:
             raise AuthenticationException(
@@ -1057,6 +1097,12 @@ class AzureCloudProvider(CloudProviderInterface):
     def create_tenant_admin_credential_reset(
         self, payload: TenantAdminCredentialResetCSPPayload
     ):
+        """Reset tenant admin password to random value.
+
+        The purpose of this call is to set the password for the tenant admin 
+        user to a value that is not stored anywhere. You're essentially making 
+        ATAT "forget" the human admin's login creds when it's done with them.
+        """
 
         graph_token = self._get_tenant_admin_token(
             payload.tenant_id, self.graph_resource
@@ -1071,6 +1117,8 @@ class AzureCloudProvider(CloudProviderInterface):
         return TenantAdminCredentialResetCSPResult()
 
     def create_tenant_admin_ownership(self, payload: TenantAdminOwnershipCSPPayload):
+        """Gives the tenant admin (human user) the Owner role on the root management group."""
+
         mgmt_token = self._get_elevated_management_token(payload.tenant_id)
 
         role_definition_id = f"/providers/Microsoft.Management/managementGroups/{payload.tenant_id}/providers/Microsoft.Authorization/roleDefinitions/{self.roles['owner']}"
@@ -1126,6 +1174,14 @@ class AzureCloudProvider(CloudProviderInterface):
     def create_tenant_principal_ownership(
         self, payload: TenantPrincipalOwnershipCSPPayload
     ):
+        """Gives the service principal the owner role over the root management group.
+
+        The security principal object defines the access policy and permissions 
+        for the user/application in the Azure AD tenant.
+
+        https://docs.microsoft.com/en-us/azure/active-directory/develop/app-objects-and-service-principals
+        """
+
         mgmt_token = self._get_elevated_management_token(payload.tenant_id)
 
         # NOTE: the tenant_id is also the id of the root management group, once it is created
@@ -1181,6 +1237,16 @@ class AzureCloudProvider(CloudProviderInterface):
             )
 
     def create_tenant_principal_app(self, payload: TenantPrincipalAppCSPPayload):
+        """Creates an app registration for a Profile.
+        
+        An Azure AD application is defined by its one and only application 
+        object, which resides in the Azure AD tenant where the application was 
+        registered, known as the application's "home" tenant.
+        
+        https://docs.microsoft.com/en-us/azure/active-directory/develop/app-objects-and-service-principals
+        https://docs.microsoft.com/en-us/graph/api/resources/application?view=graph-rest-1.0
+        """
+
         graph_token = self._get_tenant_admin_token(
             payload.tenant_id, self.graph_resource
         )
@@ -1227,6 +1293,13 @@ class AzureCloudProvider(CloudProviderInterface):
             )
 
     def create_tenant_principal(self, payload: TenantPrincipalCSPPayload):
+        """Creates a service principal for a Profile.
+        A service principal represents an instance of an application in a 
+        directory.
+
+        https://docs.microsoft.com/en-us/graph/api/resources/serviceprincipal?view=graph-rest-beta
+        https://docs.microsoft.com/en-us/azure/active-directory/develop/app-objects-and-service-principals
+        """
         graph_token = self._get_tenant_admin_token(
             payload.tenant_id, self.graph_resource
         )
@@ -1339,6 +1412,8 @@ class AzureCloudProvider(CloudProviderInterface):
             )
 
     def create_admin_role_definition(self, payload: AdminRoleDefinitionCSPPayload):
+        """Fetch the UUID for the "Global Admin" / "Company Admin" role."""
+
         graph_token = self._get_tenant_admin_token(
             payload.tenant_id, self.graph_resource
         )
@@ -1394,6 +1469,10 @@ class AzureCloudProvider(CloudProviderInterface):
             )
 
     def create_principal_admin_role(self, payload: PrincipalAdminRoleCSPPayload):
+        """Grant the "Global Admin" / "Company Admin" role to the service 
+        principal (create a role assignment).
+        """
+
         graph_token = self._get_tenant_admin_token(
             payload.tenant_id, self.graph_resource
         )
@@ -1444,6 +1523,12 @@ class AzureCloudProvider(CloudProviderInterface):
             )
 
     def create_billing_owner(self, payload: BillingOwnerCSPPayload):
+        """Create a billing account owner, which is a billing role that can 
+        manage everything for a billing account.
+
+        https://docs.microsoft.com/en-us/azure/cost-management-billing/manage/understand-mca-roles
+        """
+
         graph_token = self._get_tenant_principal_token(
             payload.tenant_id, resource=self.graph_resource
         )
