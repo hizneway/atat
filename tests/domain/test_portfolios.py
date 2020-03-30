@@ -19,8 +19,7 @@ from atat.domain.portfolios import (
     Portfolios,
     PortfolioStateMachines,
 )
-from atat.models.application_role import Status as ApplicationRoleStatus
-from atat.models.portfolio_role import Status as PortfolioRoleStatus
+from atat.models import ApplicationRoleStatus, PortfolioRoleStatus, FSMStates
 
 
 @pytest.fixture(scope="function")
@@ -261,16 +260,43 @@ def test_create_state_machine(portfolio):
 class TestGetPortfoliosPendingCreate(EnvQueryTest):
     """Portfolios.get_portfolios_pending_provisioning should return portfolios that
        are in their period of performace AND with a state machine is in one of the
-       following states: 
+       following states:
          - not created i.e. portfolio.state_machine is `None`
          - "UNSTARTED"
+         - "STARTING"
+         - "STARTED"
          - a "_CREATED" state """
 
     def test_finds_unstarted(self):
         # Given: A portfolio is in its period of performance
         # Given: The portfolio's state machine is in its "UNSTARTED" stage
         self.create_portfolio_with_clins(
-            [(self.YESTERDAY, self.TOMORROW)], state_machine_status="UNSTARTED"
+            [(self.YESTERDAY, self.TOMORROW)],
+            state_machine_status=FSMStates.UNSTARTED.name,
+        )
+        # When I query for portfolios pending provisioning
+        portfolios_pending = Portfolios.get_portfolios_pending_provisioning(self.NOW)
+        # Then the query will return the portfolio
+        assert len(portfolios_pending) == 1
+
+    def test_finds_starting(self):
+        # Given: A portfolio is in its period of performance
+        # Given: The portfolio's state machine is in its "STARTING" stage
+        self.create_portfolio_with_clins(
+            [(self.YESTERDAY, self.TOMORROW)],
+            state_machine_status=FSMStates.STARTING.name,
+        )
+        # When I query for portfolios pending provisioning
+        portfolios_pending = Portfolios.get_portfolios_pending_provisioning(self.NOW)
+        # Then the query will return the portfolio
+        assert len(portfolios_pending) == 1
+
+    def test_finds_started(self):
+        # Given: A portfolio is in its period of performance
+        # Given: The portfolio's state machine is in its "STARTED" stage
+        self.create_portfolio_with_clins(
+            [(self.YESTERDAY, self.TOMORROW)],
+            state_machine_status=FSMStates.STARTED.name,
         )
         # When I query for portfolios pending provisioning
         portfolios_pending = Portfolios.get_portfolios_pending_provisioning(self.NOW)
@@ -281,7 +307,8 @@ class TestGetPortfoliosPendingCreate(EnvQueryTest):
         # Given: A portfolio is in its period of performance
         # Given: The portfolio's state machine is in a _CREATED stage
         self.create_portfolio_with_clins(
-            [(self.YESTERDAY, self.TOMORROW)], state_machine_status="TENANT_CREATED"
+            [(self.YESTERDAY, self.TOMORROW)],
+            state_machine_status=FSMStates.TENANT_CREATED.name,
         )
         # When I query for portfolios pending provisioning
         portfolios_pending = Portfolios.get_portfolios_pending_provisioning(self.NOW)
@@ -292,7 +319,8 @@ class TestGetPortfoliosPendingCreate(EnvQueryTest):
         # Given: A portfolio is in its period of performance
         # Given: The portfolio's state machine is in a _FAILED stage
         self.create_portfolio_with_clins(
-            [(self.YESTERDAY, self.TOMORROW)], state_machine_status="TENANT_FAILED"
+            [(self.YESTERDAY, self.TOMORROW)],
+            state_machine_status=FSMStates.TENANT_FAILED.name,
         )
         # When I query for portfolios pending provisioning
         portfolios_pending = Portfolios.get_portfolios_pending_provisioning(self.NOW)
@@ -312,7 +340,8 @@ class TestGetPortfoliosPendingCreate(EnvQueryTest):
         # Given: The portfolio has not entered a period of performance
         # Given: The portfolio has begun the provisioning process
         self.create_portfolio_with_clins(
-            [(self.TOMORROW, self.TOMORROW)], state_machine_status="TENANT_CREATED"
+            [(self.TOMORROW, self.TOMORROW)],
+            state_machine_status=FSMStates.TENANT_CREATED.name,
         )
         # When I query for portfolios pending provisioning
         portfolios_pending = Portfolios.get_portfolios_pending_provisioning(self.NOW)
@@ -332,7 +361,8 @@ class TestGetPortfoliosPendingCreate(EnvQueryTest):
         # Given: A portfolio has exited its period of performance
         # Given: The portfolio is in the middle of the provisioning process
         self.create_portfolio_with_clins(
-            [(self.YESTERDAY, self.YESTERDAY)], state_machine_status="TENANT_CREATED"
+            [(self.YESTERDAY, self.YESTERDAY)],
+            state_machine_status=FSMStates.TENANT_CREATED.name,
         )
         # When I query for portfolios pending provisioning
         portfolios_pending = Portfolios.get_portfolios_pending_provisioning(self.NOW)
@@ -352,7 +382,8 @@ class TestGetPortfoliosPendingCreate(EnvQueryTest):
         # Given: A portfolio is in its period of performance
         # Given: The portfolio has begun the provisioning process
         self.create_portfolio_with_clins(
-            [(self.YESTERDAY, self.TOMORROW)], state_machine_status="TENANT_CREATED"
+            [(self.YESTERDAY, self.TOMORROW)],
+            state_machine_status=FSMStates.TENANT_CREATED.name,
         )
         # When I query for portfolios pending provisioning
         portfolios_pending = Portfolios.get_portfolios_pending_provisioning(self.NOW)

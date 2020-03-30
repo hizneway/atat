@@ -86,9 +86,6 @@ class PortfolioStateMachine(
         self.portfolio = portfolio
         self.attach_machine()
 
-        # TODO: Determine best place to do this, maybe @reconstructor
-        self.cloud = cloud if cloud else app.csp.cloud
-
     def after_state_change(self, event):
         db.session.add(self)
         db.session.commit()
@@ -96,8 +93,18 @@ class PortfolioStateMachine(
     def __repr__(self):
         return f"<PortfolioStateMachine(state='{self.current_state.name}', portfolio='{self.portfolio.name}'"
 
+    @property
+    def state_str(self):
+        """
+        If the state column has not been serialized to the database,
+        it's an instance of FSMStates. If it has been serialized and
+        deserialized, it's a string. This property will always return
+        it as a string.
+        """
+        return getattr(self.state, "name", self.state)
+
     @reconstructor
-    def attach_machine(self, stages=AzureStages):
+    def attach_machine(self, stages=AzureStages, cloud=None):
         """
         This is called as a result of a sqlalchemy query.
         Attach a machine depending on the current state.
@@ -110,6 +117,7 @@ class PortfolioStateMachine(
             after_state_change="after_state_change",
         )
         states, transitions = _build_transitions(stages)
+        self.cloud = cloud if cloud else app.csp.cloud
         self.machine.add_states(self.system_states + states)
         self.machine.add_transitions(self.system_transitions + transitions)
 
@@ -178,7 +186,7 @@ class PortfolioStateMachine(
             create_trigger = next(
                 filter(
                     lambda trigger: trigger.startswith("create_"),
-                    self.machine.get_triggers(self.state.name),
+                    self.machine.get_triggers(self.state_str),
                 ),
                 None,
             )
