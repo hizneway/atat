@@ -37,7 +37,10 @@ COPY . .
 
 # Install app dependencies
 RUN ./script/write_dotenv && \
-      pip install uwsgi "poetry==1.0.5" && \
+      pip3 install uwsgi poetry && \ 
+      # TODO: Remove this when this issue is resolved:
+      #  https://github.com/sdispater/pendulum/issues/454#issuecomment-605519477
+      pip3 install --no-build-isolation pendulum && \
       poetry install --no-root --no-dev && \
       yarn install && \
       rm -r ./static/fonts/ &> /dev/null || true && \
