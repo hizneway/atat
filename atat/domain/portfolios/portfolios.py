@@ -148,10 +148,15 @@ class Portfolios(object):
     @classmethod
     def get_portfolios_pending_provisioning(cls, now) -> List[UUID]:
         """
-        Any portfolio with a corresponding State Machine that is either:
-            not started yet,
-            failed in creating a tenant
-            failed
+        Any portfolio with
+            - Active CLINs (within the period of performance)
+            - Not soft-deleted
+            - No state machine attached OR
+            - An attached state machine with a state of
+              - UNSTARTED
+              - STARTING
+              - STARTED
+              - any that string-match /*CREATED$/
         """
 
         results = (

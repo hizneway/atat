@@ -264,6 +264,8 @@ class TestGetPortfoliosPendingCreate(EnvQueryTest):
        following states:
          - not created i.e. portfolio.state_machine is `None`
          - "UNSTARTED"
+         - "STARTING"
+         - "STARTED"
          - a "_CREATED" state """
 
     def test_finds_unstarted(self):
