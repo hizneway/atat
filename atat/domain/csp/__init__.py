@@ -44,6 +44,6 @@ def make_csp_provider(app, csp=None):
     elif csp == "mock-test":
         app.csp = MockCSP(app, test_mode=True)
     elif csp == "hybrid":
-        app.csp = HybridCSP(app, test_mode=True)
+        app.csp = HybridCSP(app, test_mode=False)
     else:
         app.csp = MockCSP(app)
