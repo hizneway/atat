@@ -269,6 +269,7 @@ To generate coverage reports for the Javascript tests:
 - `SESSION_TYPE`: String value specifying the cookie storage backend. https://pythonhosted.org/Flask-Session/
 - `SESSION_COOKIE_SECURE`: https://flask.palletsprojects.com/en/1.1.x/config/#SESSION_COOKIE_SECURE
 - `SESSION_USE_SIGNER`: Boolean value specifying if the cookie sid should be signed.
+- `SIMULATE_API_FAILURES`: Boolean value specifying if a non-production CSP should randomly produce API failures.
 - `SQLALCHEMY_ECHO`: Boolean value specifying if SQLAlchemy should log queries to stdout.
 - `STATIC_URL`: URL specifying where static assets are hosted.
 - `USE_AUDIT_LOG`: Boolean value describing if ATAT should write to the audit log table in the database. Set to "false" by default for performance reasons.

@@ -6,12 +6,12 @@ from .reports import MockReportingProvider
 
 
 class MockCSP:
-    def __init__(self, app, test_mode=False):
+    def __init__(self, app, simulate_failures=False):
         self.cloud = MockCloudProvider(
             app.config,
-            with_delay=(not test_mode),
-            with_failure=(not test_mode),
-            with_authorization=(not test_mode),
+            with_delay=simulate_failures,
+            with_failure=simulate_failures,
+            with_authorization=simulate_failures,
         )
         self.files = MockFileService(app)
         self.reports = MockReportingProvider()
@@ -25,13 +25,13 @@ class AzureCSP:
 
 
 class HybridCSP:
-    def __init__(self, app, test_mode=False):
+    def __init__(self, app, simulate_failures=False):
         azure = AzureCloudProvider(app.config)
         mock = MockCloudProvider(
             app.config,
-            with_delay=(not test_mode),
-            with_failure=(not test_mode),
-            with_authorization=(not test_mode),
+            with_delay=simulate_failures,
+            with_failure=simulate_failures,
+            with_authorization=simulate_failures,
         )
         self.cloud = HybridCloudProvider(azure, mock)
         self.files = MockFileService(app)
@@ -39,11 +39,12 @@ class HybridCSP:
 
 
 def make_csp_provider(app, csp=None):
+    simulate_failures = app.config.get("SIMULATE_API_FAILURE")
     if csp == "azure":
         app.csp = AzureCSP(app)
     elif csp == "mock-test":
-        app.csp = MockCSP(app, test_mode=True)
+        app.csp = MockCSP(app, simulate_failures=simulate_failures)
     elif csp == "hybrid":
-        app.csp = HybridCSP(app, test_mode=False)
+        app.csp = HybridCSP(app, simulate_failures=simulate_failures)
     else:
         app.csp = MockCSP(app)
