@@ -25,6 +25,7 @@ from atat.jobs import (
     do_create_environment,
     do_create_environment_role,
     do_create_application,
+    make_initial_csp_data,
     send_PPOC_email,
     send_task_order_files,
 )
@@ -596,3 +597,32 @@ class TestCreateBillingInstructions:
         assert new_clin.last_sent_at
         assert sent_clin.last_sent_at != new_clin.last_sent_at
         session.rollback()
+
+
+class Test_make_initial_csp_data:
+    @pytest.fixture
+    def portfolio(self):
+        return PortfolioFactory.create()
+
+    def contains_dictionary(self, subset, superset):
+        return all(item in superset.items() for item in subset.items())
+
+    def test_no_csp_data(self, portfolio):
+        data = make_initial_csp_data(portfolio)
+        assert portfolio.csp_data is None
+        assert isinstance(data, dict)
+
+    def test_has_csp_data(self):
+        extra_csp_data = {"foo": "bar"}
+        portfolio = PortfolioFactory.create(csp_data=extra_csp_data)
+        data = make_initial_csp_data(portfolio)
+        assert self.contains_dictionary(extra_csp_data, data)
+
+    def test_includes_portfolio_details(self, portfolio):
+        data = make_initial_csp_data(portfolio)
+        assert self.contains_dictionary(portfolio.to_dictionary(), data)
+
+    def test_includes_billing_account_name(self, app, portfolio):
+        data = make_initial_csp_data(portfolio)
+        billing_account = app.config.get("AZURE_BILLING_ACCOUNT_NAME")
+        assert data.get("billing_account_name") == billing_account

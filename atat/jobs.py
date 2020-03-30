@@ -232,8 +232,10 @@ def send_PPOC_email(portfolio_dict):
 
 
 def make_initial_csp_data(portfolio):
+    csp_data = portfolio.csp_data or {}
     return {
         **portfolio.to_dictionary(),
+        **csp_data,
         "billing_account_name": app.config.get("AZURE_BILLING_ACCOUNT_NAME"),
     }
 
