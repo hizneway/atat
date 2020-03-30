@@ -228,3 +228,8 @@ class HybridCloudProvider(object):
 
     def create_application(self, payload):
         return self.azure.create_application(payload)
+
+    def create_environment(
+        self, payload: EnvironmentCSPPayload
+    ) -> EnvironmentCSPResult:
+        return self.azure.create_environment(payload)
