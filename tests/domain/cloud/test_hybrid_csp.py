@@ -77,22 +77,8 @@ def test_hybrid_cloud(pytestconfig, state_machine: PortfolioStateMachine):
 
 @pytest.mark.hybrid
 def test_hybrid_create_application_job(session, csp):
-    payload = TenantCSPPayload(
-        **dict(
-            user_id="admin",
-            password="JediJan13$coot",  # pragma: allowlist secret
-            domain_name="jediccpospawnedtenant2",
-            first_name="Tedry",
-            last_name="Tenet",
-            country_code="US",
-            password_recovery_email_address="thomas@promptworks.com",
-        )
-    )
-
-    csp.tenant_id = csp.azure.tenant_id
-
     csp.azure.create_tenant_creds(
-        csp.tenant_id,
+        csp.azure.tenant_id,
         KeyVaultCredentials(
             root_tenant_id=csp.azure.tenant_id,
             root_sp_client_id=csp.azure.client_id,
