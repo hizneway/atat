@@ -68,7 +68,7 @@ def send_notification_mail(recipients, subject, body):
 
 
 def do_create_application(csp: CloudProviderInterface, application_id=None):
-    application: Application = Applications.get(application_id)
+    application = Applications.get(application_id)
 
     with claim_for_update(application) as application:
 
