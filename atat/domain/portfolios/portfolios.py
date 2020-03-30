@@ -166,6 +166,8 @@ class Portfolios(object):
                 or_(
                     Portfolio.state_machine == None,
                     PortfolioStateMachine.state == FSMStates.UNSTARTED,
+                    PortfolioStateMachine.state == FSMStates.STARTING,
+                    PortfolioStateMachine.state == FSMStates.STARTED,
                     PortfolioStateMachine.state.like("%CREATED"),
                 )
             )

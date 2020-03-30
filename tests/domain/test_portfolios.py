@@ -261,7 +261,7 @@ def test_create_state_machine(portfolio):
 class TestGetPortfoliosPendingCreate(EnvQueryTest):
     """Portfolios.get_portfolios_pending_provisioning should return portfolios that
        are in their period of performace AND with a state machine is in one of the
-       following states: 
+       following states:
          - not created i.e. portfolio.state_machine is `None`
          - "UNSTARTED"
          - a "_CREATED" state """
@@ -271,6 +271,28 @@ class TestGetPortfoliosPendingCreate(EnvQueryTest):
         # Given: The portfolio's state machine is in its "UNSTARTED" stage
         self.create_portfolio_with_clins(
             [(self.YESTERDAY, self.TOMORROW)], state_machine_status="UNSTARTED"
+        )
+        # When I query for portfolios pending provisioning
+        portfolios_pending = Portfolios.get_portfolios_pending_provisioning(self.NOW)
+        # Then the query will return the portfolio
+        assert len(portfolios_pending) == 1
+
+    def test_finds_starting(self):
+        # Given: A portfolio is in its period of performance
+        # Given: The portfolio's state machine is in its "STARTING" stage
+        self.create_portfolio_with_clins(
+            [(self.YESTERDAY, self.TOMORROW)], state_machine_status="STARTING"
+        )
+        # When I query for portfolios pending provisioning
+        portfolios_pending = Portfolios.get_portfolios_pending_provisioning(self.NOW)
+        # Then the query will return the portfolio
+        assert len(portfolios_pending) == 1
+
+    def test_finds_started(self):
+        # Given: A portfolio is in its period of performance
+        # Given: The portfolio's state machine is in its "STARTED" stage
+        self.create_portfolio_with_clins(
+            [(self.YESTERDAY, self.TOMORROW)], state_machine_status="STARTED"
         )
         # When I query for portfolios pending provisioning
         portfolios_pending = Portfolios.get_portfolios_pending_provisioning(self.NOW)
