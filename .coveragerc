@@ -4,6 +4,7 @@ omit =
   atat/domain/audit_log.py
   atat/models/mixins/auditable.py
   atat/models/audit_event.py
+  atat/domain/csp/cloud/hybrid_cloud_provider.py
 branch = True
 
 [report]

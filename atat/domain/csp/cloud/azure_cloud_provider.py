@@ -45,7 +45,7 @@ from .models import (
     ProductPurchaseCSPResult,
     ProductPurchaseVerificationCSPPayload,
     ProductPurchaseVerificationCSPResult,
-    ReportingCSPPayload,
+    CostManagementQueryCSPPayload,
     SubscriptionCreationCSPPayload,
     SubscriptionCreationCSPResult,
     SubscriptionVerificationCSPPayload,
@@ -128,6 +128,7 @@ class AzureCloudProvider(CloudProviderInterface):
             "contributor": config["AZURE_ROLE_DEF_ID_CONTRIBUTOR"],
             "billing": config["AZURE_ROLE_DEF_ID_BILLING_READER"],
         }
+        self.tenant_principal_app_display_name = "ATAT Remote Admin"
 
         if azure_sdk_provider is None:
             self.sdk = AzureSDKProvider()
@@ -148,7 +149,7 @@ class AzureCloudProvider(CloudProviderInterface):
                 f"Could not SET secret in Azure keyvault for key {secret_key}.",
                 exc_info=1,
             )
-            creds = self._source_creds()
+            creds = self._source_root_creds()
             raise SecretException(
                 creds.tenant_id,
                 f"Could not SET secret in Azure keyvault for key {secret_key}.",
@@ -166,14 +167,14 @@ class AzureCloudProvider(CloudProviderInterface):
                 f"Could not GET secret in Azure keyvault for key {secret_key}.",
                 exc_info=1,
             )
-            creds = self._source_creds()
+            creds = self._source_root_creds()
             raise SecretException(
                 creds.tenant_id,
                 f"Could not GET secret in Azure keyvault for key {secret_key}.",
             )
 
     def create_environment(self, payload: EnvironmentCSPPayload):
-        creds = self._source_creds(payload.tenant_id)
+        creds = self._source_tenant_creds(payload.tenant_id)
         credentials = self._get_credential_obj(
             {
                 "client_id": creds.tenant_sp_client_id,
@@ -193,7 +194,7 @@ class AzureCloudProvider(CloudProviderInterface):
         return EnvironmentCSPResult(**response)
 
     def create_application(self, payload: ApplicationCSPPayload):
-        creds = self._source_creds(payload.tenant_id)
+        creds = self._source_tenant_creds(payload.tenant_id)
         credentials = self._get_credential_obj(
             {
                 "client_id": creds.tenant_sp_client_id,
@@ -213,7 +214,19 @@ class AzureCloudProvider(CloudProviderInterface):
         return ApplicationCSPResult(**response)
 
     def create_initial_mgmt_group(self, payload: InitialMgmtGroupCSPPayload):
-        creds = self._source_creds(payload.tenant_id)
+        """Creates the root management group for the Portfolio tenant.
+
+        The management group created in this step is the parent to all future 
+        management groups created for applications and environments.
+        
+        A management group is a collection of subscriptions and management 
+        groups to which "governance conditions" can be applied. These resources
+        can be nested.
+
+        https://docs.microsoft.com/en-us/azure/governance/management-groups/overview
+        """
+
+        creds = self._source_tenant_creds(payload.tenant_id)
         credentials = self._get_credential_obj(
             {
                 "client_id": creds.root_sp_client_id,
@@ -231,7 +244,15 @@ class AzureCloudProvider(CloudProviderInterface):
     def create_initial_mgmt_group_verification(
         self, payload: InitialMgmtGroupVerificationCSPPayload
     ):
-        creds = self._source_creds(payload.tenant_id)
+        """Verify the creation of the root management group.
+        
+        A management group is a collection of subscriptions and management 
+        groups to which "governance conditions" can be applied. These resources
+        can be nested.
+
+        https://docs.microsoft.com/en-us/azure/governance/management-groups/overview
+        """
+        creds = self._source_tenant_creds(payload.tenant_id)
         credentials = self._get_credential_obj(
             {
                 "client_id": creds.root_sp_client_id,
@@ -241,8 +262,8 @@ class AzureCloudProvider(CloudProviderInterface):
             resource=self.sdk.cloud.endpoints.resource_manager,
         )
 
-        response = self._get_management_group(credentials, payload.tenant_id,)
-        return InitialMgmtGroupVerificationCSPResult(**response.result())
+        response = self._get_management_group(credentials, creds.tenant_id)
+        return InitialMgmtGroupVerificationCSPResult(**response.as_dict())
 
     def _create_management_group(
         self, credentials, management_group_id, display_name, parent_id=None,
@@ -275,8 +296,8 @@ class AzureCloudProvider(CloudProviderInterface):
         response = mgmgt_group_client.management_groups.get(management_group_id)
         return response
 
-    def _create_policy_definition(self, session, root_management_group_id, policy):
-        create_policy_definition_uri = f"{self.sdk.cloud.endpoints.resource_manager}providers/Microsoft.Management/managementgroups/{root_management_group_id}/providers/Microsoft.Authorization/policyDefinitions/{policy.definition['properties']['displayName']}?api-version=2019-09-01"
+    def _create_policy_definition(self, session, root_management_group_name, policy):
+        create_policy_definition_uri = f"{self.sdk.cloud.endpoints.resource_manager}providers/Microsoft.Management/managementGroups/{root_management_group_name}/providers/Microsoft.Authorization/policyDefinitions/{policy.definition['properties']['displayName']}?api-version=2019-09-01"
         body = policy.definition
         try:
             result = session.put(create_policy_definition_uri, json=body, timeout=30,)
@@ -308,11 +329,11 @@ class AzureCloudProvider(CloudProviderInterface):
     def _create_policy_set(
         self,
         session,
-        root_management_group_id,
+        root_management_group_name,
         policy_set_definition_name,
         definition_references,
     ):
-        create_policy_set_uri = f"{self.sdk.cloud.endpoints.resource_manager}providers/Microsoft.Management/managementgroups/{root_management_group_id}/providers/Microsoft.Authorization/policySetDefinitions/{policy_set_definition_name}?api-version=2019-09-01"
+        create_policy_set_uri = f"{self.sdk.cloud.endpoints.resource_manager}providers/Microsoft.Management/managementGroups/{root_management_group_name}/providers/Microsoft.Authorization/policySetDefinitions/{policy_set_definition_name}?api-version=2019-09-01"
         body = {
             "properties": {
                 "displayName": policy_set_definition_name,
@@ -349,9 +370,9 @@ class AzureCloudProvider(CloudProviderInterface):
             )
 
     def _create_policy_set_assignment(
-        self, session, root_management_group_id, policy_set_definition
+        self, session, root_management_group_name, policy_set_definition
     ):
-        create_policy_assignment_uri = f"{self.sdk.cloud.endpoints.resource_manager}providers/Microsoft.Management/managementgroups/{root_management_group_id}/providers/Microsoft.Authorization/policyAssignments/{policy_set_definition['properties']['displayName']}?api-version=2019-09-01"
+        create_policy_assignment_uri = f"{self.sdk.cloud.endpoints.resource_manager}providers/Microsoft.Management/managementGroups/{root_management_group_name}/providers/Microsoft.Authorization/policyAssignments/{policy_set_definition['properties']['displayName']}?api-version=2019-09-01"
         body = {
             "properties": {
                 "displayName": policy_set_definition["properties"]["displayName"],
@@ -406,7 +427,7 @@ class AzureCloudProvider(CloudProviderInterface):
         definition_references = []
         for policy in self.policy_manager.portfolio_definitions:
             definition = self._create_policy_definition(
-                policy_session, payload.root_management_group_id, policy,
+                policy_session, payload.root_management_group_name, policy,
             )
             definition_references.append(
                 {
@@ -419,12 +440,12 @@ class AzureCloudProvider(CloudProviderInterface):
             )
         policy_set_definition = self._create_policy_set(
             policy_session,
-            payload.root_management_group_id,
+            payload.root_management_group_name,
             DEFAULT_POLICY_SET_DEFINITION_NAME,
             definition_references,
         )
         assign_policy_set = self._create_policy_set_assignment(
-            policy_session, payload.root_management_group_id, policy_set_definition
+            policy_session, payload.root_management_group_name, policy_set_definition
         )
         return PoliciesCSPResult(**assign_policy_set)
 
@@ -528,9 +549,13 @@ class AzureCloudProvider(CloudProviderInterface):
         result_dict = result.json()
         tenant_id = result_dict.get("tenantId")
         tenant_admin_username = f"{payload.user_id}@{payload.domain_name}.{self.config.get('OFFICE_365_DOMAIN')}"
-        self.update_tenant_creds(
+
+        self.create_tenant_creds(
             tenant_id,
             KeyVaultCredentials(
+                root_tenant_id=self.tenant_id,
+                root_sp_client_id=self.client_id,
+                root_sp_key=self.secret_key,
                 tenant_id=tenant_id,
                 tenant_admin_username=tenant_admin_username,
                 tenant_admin_password=payload.password,
@@ -542,6 +567,16 @@ class AzureCloudProvider(CloudProviderInterface):
     def create_billing_profile_creation(
         self, payload: BillingProfileCreationCSPPayload
     ):
+        """Create a billing profile which specifies which products are included 
+            in an invoice, and how the invoice is paid for.
+
+            Billing profiles include:
+            - Payment methods
+            - Contact info
+            - Permissions
+
+            https://docs.microsoft.com/en-us/microsoft-store/billing-profile
+            """
         sp_token = self._get_root_provisioning_token()
         if sp_token is None:
             raise AuthenticationException(
@@ -595,6 +630,16 @@ class AzureCloudProvider(CloudProviderInterface):
     def create_billing_profile_verification(
         self, payload: BillingProfileVerificationCSPPayload
     ):
+        """Verify that a billing profile has been created.
+
+            A billing profile specifies which products are included in an invoice, 
+            and how the invoice is paid for. They include:
+            - Payment methods
+            - Contact info
+            - Permissions
+
+            https://docs.microsoft.com/en-us/microsoft-store/billing-profile
+            """
         sp_token = self._get_root_provisioning_token()
         if sp_token is None:
             raise AuthenticationException(
@@ -650,7 +695,7 @@ class AzureCloudProvider(CloudProviderInterface):
         request_body = {
             "properties": {
                 "principalTenantId": payload.tenant_id,  # from tenant creation
-                "principalId": payload.user_object_id,  # from tenant creationn
+                "principalId": payload.user_object_id,  # from tenant creation
                 "roleDefinitionId": f"/providers/Microsoft.Billing/billingAccounts/{payload.billing_account_name}/billingProfiles/{payload.billing_profile_name}/billingRoleDefinitions/40000000-aaaa-bbbb-cccc-100000000000",
             }
         }
@@ -1052,6 +1097,12 @@ class AzureCloudProvider(CloudProviderInterface):
     def create_tenant_admin_credential_reset(
         self, payload: TenantAdminCredentialResetCSPPayload
     ):
+        """Reset tenant admin password to random value.
+
+        The purpose of this call is to set the password for the tenant admin 
+        user to a value that is not stored anywhere. You're essentially making 
+        ATAT "forget" the human admin's login creds when it's done with them.
+        """
 
         graph_token = self._get_tenant_admin_token(
             payload.tenant_id, self.graph_resource
@@ -1066,6 +1117,8 @@ class AzureCloudProvider(CloudProviderInterface):
         return TenantAdminCredentialResetCSPResult()
 
     def create_tenant_admin_ownership(self, payload: TenantAdminOwnershipCSPPayload):
+        """Gives the tenant admin (human user) the Owner role on the root management group."""
+
         mgmt_token = self._get_elevated_management_token(payload.tenant_id)
 
         role_definition_id = f"/providers/Microsoft.Management/managementGroups/{payload.tenant_id}/providers/Microsoft.Authorization/roleDefinitions/{self.roles['owner']}"
@@ -1083,7 +1136,7 @@ class AzureCloudProvider(CloudProviderInterface):
 
         assignment_guid = str(uuid4())
 
-        url = f"{self.sdk.cloud.endpoints.resource_manager}/providers/Microsoft.Management/managementGroups/{payload.tenant_id}/providers/Microsoft.Authorization/roleAssignments/{assignment_guid}?api-version=2015-07-01"
+        url = f"{self.sdk.cloud.endpoints.resource_manager}providers/Microsoft.Management/managementGroups/{payload.tenant_id}/providers/Microsoft.Authorization/roleAssignments/{assignment_guid}?api-version=2015-07-01"
 
         try:
             result = self.sdk.requests.put(
@@ -1121,6 +1174,14 @@ class AzureCloudProvider(CloudProviderInterface):
     def create_tenant_principal_ownership(
         self, payload: TenantPrincipalOwnershipCSPPayload
     ):
+        """Gives the service principal the owner role over the root management group.
+
+        The security principal object defines the access policy and permissions 
+        for the user/application in the Azure AD tenant.
+
+        https://docs.microsoft.com/en-us/azure/active-directory/develop/app-objects-and-service-principals
+        """
+
         mgmt_token = self._get_elevated_management_token(payload.tenant_id)
 
         # NOTE: the tenant_id is also the id of the root management group, once it is created
@@ -1139,7 +1200,7 @@ class AzureCloudProvider(CloudProviderInterface):
 
         assignment_guid = str(uuid4())
 
-        url = f"{self.sdk.cloud.endpoints.resource_manager}/providers/Microsoft.Management/managementGroups/{payload.tenant_id}/providers/Microsoft.Authorization/roleAssignments/{assignment_guid}?api-version=2015-07-01"
+        url = f"{self.sdk.cloud.endpoints.resource_manager}providers/Microsoft.Management/managementGroups/{payload.tenant_id}/providers/Microsoft.Authorization/roleAssignments/{assignment_guid}?api-version=2015-07-01"
 
         try:
             result = self.sdk.requests.put(
@@ -1176,6 +1237,16 @@ class AzureCloudProvider(CloudProviderInterface):
             )
 
     def create_tenant_principal_app(self, payload: TenantPrincipalAppCSPPayload):
+        """Creates an app registration for a Profile.
+        
+        An Azure AD application is defined by its one and only application 
+        object, which resides in the Azure AD tenant where the application was 
+        registered, known as the application's "home" tenant.
+        
+        https://docs.microsoft.com/en-us/azure/active-directory/develop/app-objects-and-service-principals
+        https://docs.microsoft.com/en-us/graph/api/resources/application?view=graph-rest-1.0
+        """
+
         graph_token = self._get_tenant_admin_token(
             payload.tenant_id, self.graph_resource
         )
@@ -1184,7 +1255,7 @@ class AzureCloudProvider(CloudProviderInterface):
                 "Could not resolve graph token for tenant admin"
             )
 
-        request_body = {"displayName": "ATAT Remote Admin"}
+        request_body = {"displayName": self.tenant_principal_app_display_name}
 
         auth_header = {
             "Authorization": f"Bearer {graph_token}",
@@ -1222,6 +1293,13 @@ class AzureCloudProvider(CloudProviderInterface):
             )
 
     def create_tenant_principal(self, payload: TenantPrincipalCSPPayload):
+        """Creates a service principal for a Profile.
+        A service principal represents an instance of an application in a 
+        directory.
+
+        https://docs.microsoft.com/en-us/graph/api/resources/serviceprincipal?view=graph-rest-beta
+        https://docs.microsoft.com/en-us/azure/active-directory/develop/app-objects-and-service-principals
+        """
         graph_token = self._get_tenant_admin_token(
             payload.tenant_id, self.graph_resource
         )
@@ -1334,6 +1412,8 @@ class AzureCloudProvider(CloudProviderInterface):
             )
 
     def create_admin_role_definition(self, payload: AdminRoleDefinitionCSPPayload):
+        """Fetch the UUID for the "Global Admin" / "Company Admin" role."""
+
         graph_token = self._get_tenant_admin_token(
             payload.tenant_id, self.graph_resource
         )
@@ -1389,6 +1469,10 @@ class AzureCloudProvider(CloudProviderInterface):
             )
 
     def create_principal_admin_role(self, payload: PrincipalAdminRoleCSPPayload):
+        """Grant the "Global Admin" / "Company Admin" role to the service 
+        principal (create a role assignment).
+        """
+
         graph_token = self._get_tenant_admin_token(
             payload.tenant_id, self.graph_resource
         )
@@ -1439,6 +1523,12 @@ class AzureCloudProvider(CloudProviderInterface):
             )
 
     def create_billing_owner(self, payload: BillingOwnerCSPPayload):
+        """Create a billing account owner, which is a billing role that can 
+        manage everything for a billing account.
+
+        https://docs.microsoft.com/en-us/azure/cost-management-billing/manage/understand-mca-roles
+        """
+
         graph_token = self._get_tenant_principal_token(
             payload.tenant_id, resource=self.graph_resource
         )
@@ -1616,7 +1706,7 @@ class AzureCloudProvider(CloudProviderInterface):
 
         return result
 
-    def _create_active_directory_user(self, graph_token, payload):
+    def _create_active_directory_user(self, graph_token, payload) -> UserCSPResult:
         request_body = {
             "accountEnabled": True,
             "displayName": payload.display_name,
@@ -1632,7 +1722,7 @@ class AzureCloudProvider(CloudProviderInterface):
             "Authorization": f"Bearer {graph_token}",
         }
 
-        url = f"{self.graph_resource}v1.0/users"
+        url = f"{self.graph_resource}/v1.0/users"
 
         try:
             result = self.sdk.requests.post(
@@ -1671,7 +1761,7 @@ class AzureCloudProvider(CloudProviderInterface):
             "Authorization": f"Bearer {graph_token}",
         }
 
-        url = f"{self.graph_resource}v1.0/users/{user_id}"
+        url = f"{self.graph_resource}/v1.0/users/{user_id}"
 
         try:
             result = self.sdk.requests.patch(
@@ -1726,7 +1816,7 @@ class AzureCloudProvider(CloudProviderInterface):
             "Authorization": f"Bearer {graph_token}",
         }
 
-        url = f"{self.graph_resource}v1.0/users/{payload.user_id}"
+        url = f"{self.graph_resource}/v1.0/users/{payload.user_object_id}"
 
         try:
             result = self.sdk.requests.patch(
@@ -1813,12 +1903,12 @@ class AzureCloudProvider(CloudProviderInterface):
         return self._get_up_token_for_resource(
             creds.tenant_admin_username,
             creds.tenant_admin_password,
-            tenant_id,
+            creds.tenant_id,
             resource,
         )
 
     def _get_root_provisioning_token(self):
-        creds = self._source_creds()
+        creds = self._source_root_creds()
         return self._get_sp_token(
             creds.root_tenant_id, creds.root_sp_client_id, creds.root_sp_key
         )
@@ -1859,9 +1949,9 @@ class AzureCloudProvider(CloudProviderInterface):
         )
 
     def _get_client_secret_credential_obj(self):
-        creds = self._source_creds()
+        creds = self._source_root_creds()
         return self.sdk.identity.ClientSecretCredential(
-            tenant_id=creds.tenant_id,
+            tenant_id=creds.root_tenant_id,
             client_id=creds.root_sp_client_id,
             client_secret=creds.root_sp_key,
         )
@@ -1875,7 +1965,7 @@ class AzureCloudProvider(CloudProviderInterface):
         }
 
     def _get_tenant_principal_token(self, tenant_id, resource=None):
-        creds = self._source_creds(tenant_id)
+        creds = self._source_tenant_creds(tenant_id)
         return self._get_sp_token(
             creds.tenant_id,
             creds.tenant_sp_client_id,
@@ -1929,17 +2019,23 @@ class AzureCloudProvider(CloudProviderInterface):
                 f"azure application error getting elevated management token. {str(exc)}",
             )
 
-    def _source_creds(self, tenant_id=None) -> KeyVaultCredentials:
-        if tenant_id:
-            return self._source_tenant_creds(tenant_id)
-        else:
-            return KeyVaultCredentials(
-                root_tenant_id=self._root_creds.get("tenant_id"),
-                root_sp_client_id=self._root_creds.get("client_id"),
-                root_sp_key=self._root_creds.get("secret_key"),
-            )
+    def _source_root_creds(self):
+        return KeyVaultCredentials(
+            root_tenant_id=self._root_creds.get("tenant_id"),
+            root_sp_client_id=self._root_creds.get("client_id"),
+            root_sp_key=self._root_creds.get("secret_key"),
+        )
 
-    def update_tenant_creds(self, tenant_id, secret: KeyVaultCredentials):
+    def create_tenant_creds(
+        self, tenant_id, secret: KeyVaultCredentials
+    ) -> KeyVaultCredentials:
+        hashed = sha256_hex(tenant_id)
+        self.set_secret(hashed, json.dumps(secret.dict()))
+        return secret
+
+    def update_tenant_creds(
+        self, tenant_id, secret: KeyVaultCredentials
+    ) -> KeyVaultCredentials:
         hashed = sha256_hex(tenant_id)
         curr_secrets = self._source_tenant_creds(tenant_id)
         updated_secrets = curr_secrets.merge_credentials(secret)
@@ -1951,7 +2047,7 @@ class AzureCloudProvider(CloudProviderInterface):
         raw_creds = self.get_secret(hashed)
         return KeyVaultCredentials(**json.loads(raw_creds))
 
-    def get_reporting_data(self, payload: ReportingCSPPayload):
+    def get_reporting_data(self, payload: CostManagementQueryCSPPayload):
         """
         Queries the Cost Management API for an invoice section's raw reporting data
 

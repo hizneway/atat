@@ -47,7 +47,7 @@ from atat.domain.csp.cloud.models import (
     ProductPurchaseCSPResult,
     ProductPurchaseVerificationCSPPayload,
     ProductPurchaseVerificationCSPResult,
-    ReportingCSPPayload,
+    CostManagementQueryCSPPayload,
     SubscriptionCreationCSPPayload,
     SubscriptionCreationCSPResult,
     SubscriptionVerificationCSPPayload,
@@ -101,7 +101,7 @@ def mock_management_group_create(mock_azure, spec_dict):
 
 
 def mock_management_group_get(mock_azure, spec_dict):
-    mock_azure.sdk.managementgroups.ManagementGroupsAPI.return_value.management_groups.get.return_value.result.return_value = (
+    mock_azure.sdk.managementgroups.ManagementGroupsAPI.return_value.management_groups.get.return_value.as_dict.return_value = (
         spec_dict
     )
 
@@ -152,7 +152,7 @@ def test_create_application_succeeds(mock_azure: AzureCloudProvider):
 
 def test_create_initial_mgmt_group_succeeds(mock_azure: AzureCloudProvider):
     application = ApplicationFactory.create()
-    mock_management_group_create(mock_azure, {"id": "Test Id"})
+    mock_management_group_create(mock_azure, {"id": "Test Id", "name": "Test Name"})
     mock_azure = mock_get_secret(mock_azure)
 
     payload = InitialMgmtGroupCSPPayload(
@@ -163,6 +163,7 @@ def test_create_initial_mgmt_group_succeeds(mock_azure: AzureCloudProvider):
     result: InitialMgmtGroupCSPResult = mock_azure.create_initial_mgmt_group(payload)
 
     assert result.root_management_group_id == "Test Id"
+    assert result.root_management_group_name == "Test Name"
 
 
 def test_create_initial_mgmt_group_verification_succeeds(
@@ -770,7 +771,10 @@ def test_create_tenant_principal_app(mock_azure: AzureCloudProvider):
         mock_azure = mock_get_secret(mock_azure)
 
         payload = TenantPrincipalAppCSPPayload(
-            **{"tenant_id": "6d2d2d6c-a6d6-41e1-8bb1-73d11475f8f4"}
+            **{
+                "tenant_id": "6d2d2d6c-a6d6-41e1-8bb1-73d11475f8f4",
+                "display_name": "ATAT Remote Admin :: Test",
+            }
         )
         with pytest.raises(ConnectionException):
             mock_azure.create_tenant_principal_app(payload)
@@ -1211,7 +1215,7 @@ def test_get_reporting_data(mock_azure: AzureCloudProvider):
             ],
         },
     }
-    payload = ReportingCSPPayload(
+    payload = CostManagementQueryCSPPayload(
         from_date=pendulum.now().subtract(years=1).add(days=1).format("YYYY-MM-DD"),
         to_date=pendulum.now().format("YYYY-MM-DD"),
         **csp_data,
@@ -1262,7 +1266,7 @@ def test_get_reporting_data_malformed_payload(mock_azure: AzureCloudProvider):
     for malformed_payload in [key_error, index_error]:
         with pytest.raises(pydantic.ValidationError):
             assert mock_azure.get_reporting_data(
-                ReportingCSPPayload(
+                CostManagementQueryCSPPayload(
                     from_date="foo", to_date="bar", **malformed_payload,
                 )
             )
@@ -1426,7 +1430,7 @@ def test_update_active_directory_user_password_profile(mock_azure: AzureCloudPro
     ]
     payload = TenantAdminCredentialResetCSPPayload(
         tenant_id="6d2d2d6c-a6d6-41e1-8bb1-73d11475f8f4",
-        user_id="admin",
+        user_object_id="acf1c3bb-2b64-4f74-8689-fb6521ae10f8",
         new_password="asdfghjkl",  # pragma: allowlist secret
     )
     with pytest.raises(ConnectionException):
@@ -1674,7 +1678,7 @@ def test_create_policies(mock_azure: AzureCloudProvider, monkeypatch):
     monkeypatch.setattr("requests.Session", mock_session)
 
     payload = PoliciesCSPPayload(
-        tenant_id="1234", root_management_group_id=str(uuid4()),
+        tenant_id="1234", root_management_group_name=str(uuid4()),
     )
     result: PoliciesCSPResult = mock_azure.create_policies(payload)
     assert result.policy_assignment_id == final_assignment_id

@@ -277,13 +277,7 @@ def test_state_machine_initialization(state_machine):
 
 
 @pytest.mark.state_machine
-@patch("atat.domain.csp.cloud.MockCloudProvider")
-def test_fsm_transition_start(
-    mock_cloud_provider, state_machine: PortfolioStateMachine
-):
-    mock_cloud_provider._authorize.return_value = None
-    mock_cloud_provider._maybe_raise.return_value = None
-    portfolio = state_machine.portfolio
+def test_fsm_transition_start(state_machine: PortfolioStateMachine):
 
     expected_states = [
         FSMStates.STARTING,
@@ -312,27 +306,19 @@ def test_fsm_transition_start(
         FSMStates.COMPLETED,
     ]
 
-    if portfolio.csp_data is not None:
-        csp_data = portfolio.csp_data
-    else:
-        csp_data = {}
-
     config = {"billing_account_name": "billing_account_name"}
 
     assert state_machine.state == FSMStates.UNSTARTED
-    portfolio_data = {
-        **portfolio.to_dictionary(),
-        "display_name": "mgmt group display name",
-        "management_group_name": "mgmt-group-uuid",
-    }
 
     for expected_state in expected_states:
+        if state_machine.portfolio.csp_data is not None:
+            csp_data = state_machine.portfolio.csp_data
+        else:
+            csp_data = {}
         collected_data = dict(
-            list(csp_data.items()) + list(portfolio_data.items()) + list(config.items())
+            list(csp_data.items())
+            + list(state_machine.portfolio.to_dictionary().items())
+            + list(config.items())
         )
         state_machine.trigger_next_transition(csp_data=collected_data)
         assert state_machine.state == expected_state
-        if portfolio.csp_data is not None:
-            csp_data = portfolio.csp_data
-        else:
-            csp_data = {}

@@ -13,6 +13,16 @@ from .utils import (
 from atat.utils import snake_to_camel
 
 
+AZURE_MGMNT_PATH = "/providers/Microsoft.Management/managementGroups/"
+
+MANAGEMENT_GROUP_NAME_REGEX = "^[a-zA-Z0-9\-_\(\)\.]+$"
+
+SUBSCRIPTION_ID_REGEX = re.compile(
+    "\/?subscriptions\/([0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})",
+    re.I,
+)
+
+
 class AliasModel(BaseModel):
     """
     This provides automatic camel <-> snake conversion for serializing to/from json
@@ -245,7 +255,7 @@ class TenantAdminOwnershipCSPResult(AliasModel):
 
 
 class TenantAdminCredentialResetCSPPayload(BaseCSPPayload):
-    user_id: str
+    user_object_id: str
     new_password: Optional[str]
 
 
@@ -265,7 +275,7 @@ class TenantPrincipalOwnershipCSPResult(AliasModel):
 
 
 class TenantPrincipalAppCSPPayload(BaseCSPPayload):
-    pass
+    display_name: str
 
 
 class TenantPrincipalAppCSPResult(AliasModel):
@@ -315,11 +325,6 @@ class PrincipalAdminRoleCSPResult(AliasModel):
 
     class Config:
         fields = {"principal_assignment_id": "id"}
-
-
-AZURE_MGMNT_PATH = "/providers/Microsoft.Management/managementGroups/"
-
-MANAGEMENT_GROUP_NAME_REGEX = "^[a-zA-Z0-9\-_\(\)\.]+$"
 
 
 class ManagementGroupCSPPayload(AliasModel):
@@ -387,13 +392,18 @@ class InitialMgmtGroupCSPPayload(ManagementGroupCSPPayload):
 
 class InitialMgmtGroupCSPResult(AliasModel):
     root_management_group_id: str
+    root_management_group_name: str
 
     class Config:
-        fields = {"root_management_group_id": "id"}
+        fields = {
+            "root_management_group_id": "id",
+            "root_management_group_name": "name",
+        }
 
 
 class InitialMgmtGroupVerificationCSPPayload(ManagementGroupGetCSPPayload):
-    pass
+    class Config:
+        fields = {"management_group_name": "root_management_group_name"}
 
 
 class InitialMgmtGroupVerificationCSPResult(ManagementGroupGetCSPResponse):
@@ -492,12 +502,6 @@ class SubscriptionVerificationCSPPayload(BaseCSPPayload):
     subscription_verify_url: str
 
 
-SUBSCRIPTION_ID_REGEX = re.compile(
-    "\/?subscriptions\/([0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})",
-    re.I,
-)
-
-
 class SuscriptionVerificationCSPResult(AliasModel):
     subscription_id: str
 
@@ -593,7 +597,7 @@ class CostManagementQueryCSPResult(AliasModel):
     properties: CostManagementQueryProperties
 
 
-class ReportingCSPPayload(BaseCSPPayload):
+class CostManagementQueryCSPPayload(BaseCSPPayload):
     invoice_section_id: str
     from_date: str
     to_date: str
@@ -634,7 +638,7 @@ class BillingOwnerCSPResult(AliasModel):
 
 
 class PoliciesCSPPayload(AliasModel):
-    root_management_group_id: str
+    root_management_group_name: str
     tenant_id: str
 
 
@@ -643,3 +647,68 @@ class PoliciesCSPResult(AliasModel):
 
     class Config:
         fields = {"policy_assignment_id": "id"}
+
+
+__all__ = [
+    "AdminRoleDefinitionCSPPayload",
+    "AdminRoleDefinitionCSPResult",
+    "ApplicationCSPPayload",
+    "ApplicationCSPResult",
+    "BillingInstructionCSPPayload",
+    "BillingInstructionCSPResult",
+    "BillingOwnerCSPPayload",
+    "BillingOwnerCSPResult",
+    "BillingProfileCreationCSPPayload",
+    "BillingProfileCreationCSPResult",
+    "BillingProfileTenantAccessCSPPayload",
+    "BillingProfileTenantAccessCSPResult",
+    "BillingProfileVerificationCSPPayload",
+    "BillingProfileVerificationCSPResult",
+    "CostManagementQueryCSPPayload",
+    "CostManagementQueryCSPResult",
+    "EnvironmentCSPPayload",
+    "EnvironmentCSPResult",
+    "InitialMgmtGroupCSPPayload",
+    "InitialMgmtGroupCSPResult",
+    "InitialMgmtGroupVerificationCSPPayload",
+    "InitialMgmtGroupVerificationCSPResult",
+    "KeyVaultCredentials",
+    "ManagementGroupCSPPayload",
+    "ManagementGroupCSPResponse",
+    "ManagementGroupGetCSPPayload",
+    "ManagementGroupGetCSPResponse",
+    "PoliciesCSPPayload",
+    "PoliciesCSPResult",
+    "PrincipalAdminRoleCSPPayload",
+    "PrincipalAdminRoleCSPResult",
+    "ProductPurchaseCSPPayload",
+    "ProductPurchaseCSPResult",
+    "ProductPurchaseVerificationCSPPayload",
+    "ProductPurchaseVerificationCSPResult",
+    "SubscriptionCreationCSPPayload",
+    "SubscriptionCreationCSPResult",
+    "SubscriptionVerificationCSPPayload",
+    "SuscriptionVerificationCSPResult",
+    "TaskOrderBillingCreationCSPPayload",
+    "TaskOrderBillingCreationCSPResult",
+    "TaskOrderBillingVerificationCSPPayload",
+    "TaskOrderBillingVerificationCSPResult",
+    "TenantAdminCredentialResetCSPPayload",
+    "TenantAdminCredentialResetCSPResult",
+    "TenantAdminOwnershipCSPPayload",
+    "TenantAdminOwnershipCSPResult",
+    "TenantCSPPayload",
+    "TenantCSPResult",
+    "TenantPrincipalAppCSPPayload",
+    "TenantPrincipalAppCSPResult",
+    "TenantPrincipalCredentialCSPPayload",
+    "TenantPrincipalCredentialCSPResult",
+    "TenantPrincipalCSPPayload",
+    "TenantPrincipalCSPResult",
+    "TenantPrincipalOwnershipCSPPayload",
+    "TenantPrincipalOwnershipCSPResult",
+    "UserCSPPayload",
+    "UserCSPResult",
+    "UserRoleCSPPayload",
+    "UserRoleCSPResult",
+]

@@ -205,6 +205,7 @@ class Portfolio(
                 f"{self.owner.first_name[0]}{self.owner.last_name}"
             ),
             "password": "",
+            "display_name": self.name,
             "domain_name": self.domain_name,
             "first_name": self.owner.first_name,
             "last_name": self.owner.last_name,

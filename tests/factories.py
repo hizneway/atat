@@ -112,7 +112,7 @@ class PortfolioFactory(Base):
     class Meta:
         model = Portfolio
 
-    name = factory.Faker("domain_word")
+    name = factory.Faker("company")
     defense_component = factory.LazyFunction(random_defense_component)
     description = factory.Faker("sentence")
 

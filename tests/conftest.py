@@ -25,6 +25,19 @@ from cryptography.x509.oid import NameOID
 dictConfig({"version": 1, "handlers": {"wsgi": {"class": "logging.NullHandler"}}})
 
 
+def pytest_addoption(parser):
+    parser.addoption("--hybrid", action="store_true", default=False)
+
+
+def pytest_collection_modifyitems(config, items):
+    if config.getoption("--hybrid"):
+        return
+    skip_hybrid = pytest.mark.skip(reason="need --hybrid option to run")
+    for item in items:
+        if "hybrid" in item.keywords:
+            item.add_marker(skip_hybrid)
+
+
 @pytest.fixture(scope="session")
 def app(request):
     config = make_config()

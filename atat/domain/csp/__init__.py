@@ -1,4 +1,6 @@
-from .cloud import MockCloudProvider
+import os
+
+from .cloud import MockCloudProvider, HybridCloudProvider, AzureCloudProvider
 from .files import AzureFileService, MockFileService
 from .reports import MockReportingProvider
 
@@ -22,10 +24,26 @@ class AzureCSP:
         self.reports = MockReportingProvider()
 
 
+class HybridCSP:
+    def __init__(self, app, test_mode=False):
+        azure = AzureCloudProvider(app.config)
+        mock = MockCloudProvider(
+            app.config,
+            with_delay=(not test_mode),
+            with_failure=(not test_mode),
+            with_authorization=(not test_mode),
+        )
+        self.cloud = HybridCloudProvider(azure, mock)
+        self.files = MockFileService(app)
+        self.reports = MockReportingProvider()
+
+
 def make_csp_provider(app, csp=None):
     if csp == "azure":
         app.csp = AzureCSP(app)
     elif csp == "mock-test":
         app.csp = MockCSP(app, test_mode=True)
+    elif csp == "hybrid":
+        app.csp = HybridCSP(app, test_mode=True)
     else:
         app.csp = MockCSP(app)

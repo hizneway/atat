@@ -1,6 +1,6 @@
 from flask import current_app
 from atat.domain.csp.cloud.models import (
-    ReportingCSPPayload,
+    CostManagementQueryCSPPayload,
     CostManagementQueryCSPResult,
 )
 from atat.domain.csp.reports import prepare_azure_reporting_data
@@ -22,7 +22,7 @@ class Reports:
         rows = []
 
         if portfolio.csp_data:
-            payload = ReportingCSPPayload(
+            payload = CostManagementQueryCSPPayload(
                 from_date=from_date, to_date=to_date, **portfolio.csp_data
             )
             response: CostManagementQueryCSPResult = current_app.csp.cloud.get_reporting_data(
