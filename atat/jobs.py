@@ -20,7 +20,6 @@ from atat.domain.environments import Environments
 from atat.domain.environment_roles import EnvironmentRoles
 from atat.domain.portfolios import Portfolios
 from atat.models import CSPRole, JobFailure
-from atat.models.application import Application
 from atat.models.mixins.state_machines import FSMStates
 from atat.domain.task_orders import TaskOrders
 from atat.models.utils import claim_for_update, claim_many_for_update
