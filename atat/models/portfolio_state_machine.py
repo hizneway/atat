@@ -93,6 +93,16 @@ class PortfolioStateMachine(
     def __repr__(self):
         return f"<PortfolioStateMachine(state='{self.current_state.name}', portfolio='{self.portfolio.name}'"
 
+    @property
+    def state_str(self):
+        """
+        If the state column has not been serialized to the database,
+        it's an instance of FSMStates. If it has been serialized and
+        deserialized, it's a string. This property will always return
+        it as a string.
+        """
+        return getattr(self.state, "name", self.state)
+
     @reconstructor
     def attach_machine(self, stages=AzureStages, cloud=None):
         """
@@ -176,7 +186,7 @@ class PortfolioStateMachine(
             create_trigger = next(
                 filter(
                     lambda trigger: trigger.startswith("create_"),
-                    self.machine.get_triggers(self.state.name),
+                    self.machine.get_triggers(self.state_str),
                 ),
                 None,
             )
