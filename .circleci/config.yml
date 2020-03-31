@@ -33,7 +33,7 @@ commands:
         default: -e PGHOST=postgres -e REDIS_HOST=redis:6379
     steps:
       - run:
-          nane: Remove left over temporary docker network
+          name: Remove left over temporary docker network
           command: |
             set +e
             docker network rm atat
