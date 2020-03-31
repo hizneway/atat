@@ -34,7 +34,9 @@ commands:
     steps:
       - run:
           nane: Remove left over temporary docker network
-          command: docker network rm atat
+          command: |
+            set +e
+            docker network rm atat
       - run:
           name: Set up temporary docker network
           command: docker network create atat
