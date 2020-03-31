@@ -32,7 +32,7 @@ commands:
         type: string
         default: -e PGHOST=postgres -e REDIS_HOST=redis:6379
     steps:
-      - run: 
+      - run:
           nane: Remove left over temporary docker network
           command: docker network rm atat
       - run:
@@ -284,6 +284,7 @@ workflows:
           filters:
             branches:
               only:
+                - fix-docker_network_fails_on_build
                 - staging
                 - master
       - deploy-staging:
