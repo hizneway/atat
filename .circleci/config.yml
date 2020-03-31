@@ -33,6 +33,9 @@ commands:
         default: -e PGHOST=postgres -e REDIS_HOST=redis:6379
     steps:
       - run:
+          nane: Remove left over temporary docker network
+          command: docker network rm atat
+      - run:
           name: Set up temporary docker network
           command: docker network create atat
       - run:
