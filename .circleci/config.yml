@@ -33,12 +33,11 @@ commands:
         default: -e PGHOST=postgres -e REDIS_HOST=redis:6379
     steps:
       - run:
-          name: Remove left over temporary docker network
-          shell: /bin/bash -o pipefail
-          command: docker network rm atat
+         name: remove temp network if exists
+         command: if docker network ls | grep atat  ; then docker network rm atat; fi
       - run:
           name: Set up temporary docker network
-          command: docker network create atat
+          command: if [[ ! -z $(docker network ls | grep atat) ]] then; docker network create atat; fi
       - run:
           name: Start redis
           command: docker run -d --network atat --link redis:redis -p 6379:6379 --name redis circleci/redis:4-alpine3.8
