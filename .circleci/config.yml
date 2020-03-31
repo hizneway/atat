@@ -79,7 +79,7 @@ commands:
             apk add --virtual=build \
               linux-headers gcc libffi-dev musl-dev openssl-dev python-dev make
             pip --no-cache-dir install -U pip
-            pip --no-cache-dir install azure-cli
+            pip --no-cache-dir install --pre azure-cli
             apk del --purge build
       - run:
           name: Login to Azure CLI
@@ -284,6 +284,7 @@ workflows:
           filters:
             branches:
               only:
+                - fix-azure-cli-install
                 - staging
                 - master
       - deploy-staging:
@@ -301,6 +302,7 @@ workflows:
           filters:
             branches:
               only:
+                - fix-azure-cli-install
                 - master
 
   test-crl-parser:
