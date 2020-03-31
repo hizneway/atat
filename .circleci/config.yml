@@ -37,7 +37,7 @@ commands:
          command: if docker network ls | grep atat  ; then docker network rm atat; fi
       - run:
           name: Set up temporary docker network
-          command: if [[ ! -z $(docker network ls | grep atat) ]] then; docker network create atat; fi
+          command:  docker network create atat
       - run:
           name: Start redis
           command: docker run -d --network atat --link redis:redis -p 6379:6379 --name redis circleci/redis:4-alpine3.8
