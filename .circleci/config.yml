@@ -34,9 +34,8 @@ commands:
     steps:
       - run:
           name: Remove left over temporary docker network
-          command: |
-            set +e
-            docker network rm atat
+          shell: /bin/bash -o pipefail
+          command: docker network rm atat
       - run:
           name: Set up temporary docker network
           command: docker network create atat
