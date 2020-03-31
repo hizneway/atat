@@ -1,18 +1,18 @@
-import re
 import operator
 import random
 import string
-import factory
+from typing import Callable
 from uuid import uuid4
-import pendulum
 
-from atat.forms import data
-from atat.models import *
-from atat.models.mixins.state_machines import FSMStates
+import factory
+import pendulum
 
 from atat.domain.invitations import PortfolioInvitations
 from atat.domain.permission_sets import PermissionSets
 from atat.domain.portfolio_roles import PortfolioRoles
+from atat.forms import data
+from atat.models import *
+from atat.models.mixins.state_machines import FSMStates
 
 
 def random_choice(choices):
@@ -27,20 +27,8 @@ def random_defense_component():
     return [random_choice(data.SERVICE_BRANCHES)]
 
 
-def random_dod_id():
-    return "".join(random.choices(string.digits, k=10))
-
-
 def random_phone_number():
     return "".join(random.choices(string.digits, k=10))
-
-
-def random_task_order_number():
-    return "".join(random.choices(string.digits, k=10))
-
-
-def random_clin_number():
-    return "".join(random.choices(string.digits, k=4))
 
 
 def random_past_date(year_min=1, year_max=5):
@@ -62,6 +50,22 @@ def _random_date(year_min, year_max, operation):
         random.randrange(1, 12),
         random.randrange(1, 28),
     )
+
+
+def lazy_email(cls) -> str:
+    """factory.LazyAttribute logic to generate an email address for a model with
+    a first_name and last_name property.
+    """
+    return f"{cls.first_name}.{cls.last_name}@example.com".lower()
+
+
+def left_pad_sequence(length: int) -> Callable:
+    """Returns a function which, given a number, left pads it with 0s so it 
+    reaches the given length.
+    
+    To be used in factory.Sequence().
+    """
+    return lambda n: str(n).zfill(length)
 
 
 def base_portfolio_permission_sets():
@@ -89,18 +93,17 @@ class UserFactory(Base):
     class Meta:
         model = User
 
-    id = factory.Sequence(lambda x: uuid4())
-    email = factory.Faker("email")
     first_name = factory.Faker("first_name")
     last_name = factory.Faker("last_name")
+    email = factory.LazyAttribute(lazy_email)
     permission_sets = []
-    dod_id = factory.LazyFunction(random_dod_id)
+    dod_id = factory.Sequence(left_pad_sequence(10))
     phone_number = factory.LazyFunction(random_phone_number)
     service_branch = factory.LazyFunction(random_service_branch)
     citizenship = "United States"
     designation = "military"
     date_latest_training = factory.LazyFunction(
-        lambda: pendulum.today().add(days=-(random.randrange(1, 365)))
+        lambda: pendulum.today().subtract(days=(random.randrange(1, 365)))
     )
 
     @classmethod
@@ -179,7 +182,7 @@ class ApplicationFactory(Base):
         model = Application
 
     portfolio = factory.SubFactory(PortfolioFactory)
-    name = factory.Faker("domain_word")
+    name = factory.Sequence(lambda n: f"Application Name {n}")
     description = "A test application"
 
     @classmethod
@@ -200,7 +203,7 @@ class EnvironmentFactory(Base):
     class Meta:
         model = Environment
 
-    name = factory.Faker("domain_word")
+    name = factory.Sequence(lambda n: f"Environment Name {n}")
     application = factory.SubFactory(ApplicationFactory)
     creator = factory.SubFactory(UserFactory)
 
@@ -275,12 +278,12 @@ class PortfolioInvitationFactory(Base):
     class Meta:
         model = PortfolioInvitation
 
-    email = factory.Faker("email")
-    status = InvitationStatus.PENDING
-    expiration_time = PortfolioInvitations.current_expiration_time()
-    dod_id = factory.LazyFunction(random_dod_id)
     first_name = factory.Faker("first_name")
     last_name = factory.Faker("last_name")
+    email = factory.LazyAttribute(lazy_email)
+    status = InvitationStatus.PENDING
+    expiration_time = PortfolioInvitations.current_expiration_time()
+    dod_id = factory.Sequence(left_pad_sequence(10))
 
     @classmethod
     def _create(cls, model_class, *args, **kwargs):
@@ -292,13 +295,13 @@ class ApplicationInvitationFactory(Base):
     class Meta:
         model = ApplicationInvitation
 
-    email = factory.Faker("email")
+    first_name = factory.Faker("first_name")
+    last_name = factory.Faker("last_name")
+    email = factory.LazyAttribute(lazy_email)
     status = InvitationStatus.PENDING
     expiration_time = PortfolioInvitations.current_expiration_time()
     role = factory.SubFactory(ApplicationRoleFactory, invite=False)
-    dod_id = factory.LazyFunction(random_dod_id)
-    first_name = factory.Faker("first_name")
-    last_name = factory.Faker("last_name")
+    dod_id = factory.Sequence(left_pad_sequence(10))
 
     @classmethod
     def _create(cls, model_class, *args, **kwargs):
@@ -319,7 +322,7 @@ class TaskOrderFactory(Base):
         model = TaskOrder
 
     portfolio = factory.SubFactory(PortfolioFactory)
-    number = factory.LazyFunction(random_task_order_number)
+    number = factory.Sequence(left_pad_sequence(10))
     signed_at = None
     _pdf = factory.SubFactory(AttachmentFactory)
     pdf_last_sent_at = None
@@ -340,7 +343,7 @@ class CLINFactory(Base):
         model = CLIN
 
     task_order = factory.SubFactory(TaskOrderFactory)
-    number = factory.LazyFunction(random_clin_number)
+    number = factory.Sequence(left_pad_sequence(4))
     start_date = pendulum.today()
     end_date = factory.LazyFunction(random_future_date)
     total_amount = factory.LazyFunction(lambda *args: random.randint(50000, 999999))

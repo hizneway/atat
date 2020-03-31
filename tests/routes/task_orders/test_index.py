@@ -34,7 +34,8 @@ def task_order():
 
 
 def test_view_task_order_not_draft(client, user_session, task_order):
-    TaskOrders.sign(task_order=task_order, signer_dod_id=random_dod_id())
+    user = UserFactory()
+    TaskOrders.sign(task_order=task_order, signer_dod_id=user.dod_id)
     user_session(task_order.portfolio.owner)
     response = client.get(
         url_for("task_orders.view_task_order", task_order_id=task_order.id)
