@@ -234,3 +234,19 @@ class HybridCloudProvider(object):
     ) -> EnvironmentCSPResult:
         payload.management_group_name = f"hybrid-{payload.management_group_name}"
         return self.azure.create_environment(payload)
+
+    def create_user(self, payload: UserCSPPayload) -> UserCSPResult:
+        """Create a user in an Azure Active Directory instance.
+        Unlike most of the methods on this interface, this requires
+        two API calls: one POST to create the user and one PATCH to
+        set the alternate email address. The email address cannot
+        be set on the first API call. The email address is
+        necessary so that users can do Self-Service Password
+        Recovery.
+        Arguments:
+            payload {UserCSPPayload} -- a payload object with the
+            data necessary for both calls
+        Returns:
+            UserCSPResult -- a result object containing the AAD ID.
+        """
+        return self.azure.create_user(payload)
