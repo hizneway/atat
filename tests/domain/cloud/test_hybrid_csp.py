@@ -3,15 +3,15 @@ import pytest
 
 from atat.domain.csp import HybridCSP
 from atat.domain.csp.cloud.models import (
+    EnvironmentCSPPayload,
     KeyVaultCredentials,
-    TenantCSPPayload,
-    InitialMgmtGroupCSPPayload,
 )
 from atat.jobs import do_create_application
 from atat.models import FSMStates, PortfolioStateMachine
 from tests.factories import (
     ApplicationFactory,
     CLINFactory,
+    EnvironmentFactory,
     PortfolioFactory,
     PortfolioStateMachineFactory,
     TaskOrderFactory,
@@ -41,7 +41,7 @@ def portfolio():
 
 @pytest.fixture(scope="function")
 def csp(app):
-    return HybridCSP(app, test_mode=True).cloud
+    return HybridCSP(app, simulate_failures=True).cloud
 
 
 @pytest.fixture(scope="function")
@@ -50,7 +50,7 @@ def state_machine(app, csp, portfolio):
 
 
 @pytest.mark.hybrid
-def test_hybrid_cloud(pytestconfig, state_machine: PortfolioStateMachine):
+def test_hybrid_provision_portfolio(pytestconfig, state_machine: PortfolioStateMachine):
     csp_data = {}
     config = {"billing_account_name": "billing_account_name"}
 
@@ -101,3 +101,30 @@ def test_hybrid_create_application_job(session, csp):
     session.refresh(application)
 
     assert application.cloud_id
+
+
+@pytest.mark.hybrid
+def test_hybrid_create_environment_job(session, csp):
+    environment = EnvironmentFactory.create()
+
+    csp.azure.create_tenant_creds(
+        csp.azure.tenant_id,
+        KeyVaultCredentials(
+            root_tenant_id=csp.azure.tenant_id,
+            root_sp_client_id=csp.azure.client_id,
+            root_sp_key=csp.azure.secret_key,
+            tenant_id=csp.azure.tenant_id,
+            tenant_sp_key=csp.azure.secret_key,
+            tenant_sp_client_id=csp.azure.client_id,
+        ),
+    )
+
+    payload = EnvironmentCSPPayload(
+        tenant_id=csp.azure.tenant_id,
+        display_name=environment.name,
+        parent_id=csp.azure.config["AZURE_ROOT_MGMT_GROUP_ID"],
+    )
+
+    result = csp.create_environment(payload)
+
+    assert result.id
