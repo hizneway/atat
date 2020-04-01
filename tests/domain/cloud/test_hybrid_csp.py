@@ -1,15 +1,19 @@
 import pendulum
 import pytest
+from unittest.mock import Mock
+from uuid import uuid4
 
 from atat.domain.csp import HybridCSP
 from atat.domain.csp.cloud.models import (
     EnvironmentCSPPayload,
     KeyVaultCredentials,
 )
-from atat.jobs import do_create_application
+from atat.jobs import do_create_application, do_create_user
 from atat.models import FSMStates, PortfolioStateMachine
 from tests.factories import (
     ApplicationFactory,
+    ApplicationRoleFactory,
+    ApplicationRoleStatus,
     CLINFactory,
     EnvironmentFactory,
     PortfolioFactory,
@@ -17,7 +21,6 @@ from tests.factories import (
     TaskOrderFactory,
     UserFactory,
 )
-from uuid import uuid4
 
 
 @pytest.fixture(scope="function")
@@ -128,3 +131,96 @@ def test_hybrid_create_environment_job(session, csp):
     result = csp.create_environment(payload)
 
     assert result.id
+
+
+@pytest.mark.hybrid
+class TestHybridCreateUserJob:
+    @pytest.fixture
+    def portfolio(self, app, csp):
+        return PortfolioFactory.create(
+            csp_data={
+                "tenant_id": csp.azure.tenant_id,
+                "domain_name": f"dancorriganpromptworks",
+            }
+        )
+
+    @pytest.fixture
+    def app_1(self, portfolio):
+        return ApplicationFactory.create(portfolio=portfolio, cloud_id="321")
+
+    @pytest.fixture
+    def app_2(self, portfolio):
+        return ApplicationFactory.create(portfolio=portfolio, cloud_id="123")
+
+    @pytest.fixture
+    def user(self):
+        return UserFactory.create(
+            first_name=f"test-user-{uuid4()}", last_name="Solo", email="han@example.com"
+        )
+
+    @pytest.fixture
+    def app_role_1(self, app_1, user):
+        return ApplicationRoleFactory.create(
+            application=app_1,
+            user=user,
+            status=ApplicationRoleStatus.ACTIVE,
+            cloud_id=None,
+        )
+
+    @pytest.fixture
+    def app_role_2(self, app_2, user):
+        return ApplicationRoleFactory.create(
+            application=app_2,
+            user=user,
+            status=ApplicationRoleStatus.ACTIVE,
+            cloud_id=None,
+        )
+
+    @pytest.fixture
+    def csp(self, app):
+        return HybridCSP(app).cloud
+
+    def test_hybrid_create_user_job(self, session, csp, app_role_1, portfolio):
+        csp.azure.create_tenant_creds(
+            csp.azure.tenant_id,
+            KeyVaultCredentials(
+                root_tenant_id=csp.azure.tenant_id,
+                root_sp_client_id=csp.azure.client_id,
+                root_sp_key=csp.azure.secret_key,
+                tenant_id=csp.azure.tenant_id,
+                tenant_sp_key=csp.azure.secret_key,
+                tenant_sp_client_id=csp.azure.client_id,
+            ),
+        )
+
+        assert not app_role_1.cloud_id
+
+        session.begin_nested()
+        do_create_user(csp, [app_role_1.id])
+        session.rollback()
+
+        assert app_role_1.cloud_id
+
+    def test_hybrid_create_user_sends_email(
+        self, monkeypatch, csp, app_role_1, app_role_2
+    ):
+        mock = Mock()
+        monkeypatch.setattr("atat.jobs.send_mail", mock)
+
+        do_create_user(csp, [app_role_1.id, app_role_2.id])
+        assert mock.call_count == 1
+
+    def test_hybrid_user_has_tenant(self, session, csp, app_role_1, app_1, user):
+        cloud_id = "123456"
+        ApplicationRoleFactory.create(
+            user=user,
+            status=ApplicationRoleStatus.ACTIVE,
+            cloud_id=cloud_id,
+            application=ApplicationFactory.create(portfolio=app_1.portfolio),
+        )
+
+        session.begin_nested()
+        do_create_user(csp, [app_role_1.id])
+        session.rollback()
+
+        assert app_role_1.cloud_id == cloud_id
