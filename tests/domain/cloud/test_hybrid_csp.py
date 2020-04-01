@@ -8,7 +8,7 @@ from atat.domain.csp.cloud.models import (
     EnvironmentCSPPayload,
     KeyVaultCredentials,
 )
-from atat.jobs import do_create_application, do_create_user
+from atat.jobs import do_create_application, do_create_environment_role, do_create_user
 from atat.models import FSMStates, PortfolioStateMachine
 from tests.factories import (
     ApplicationFactory,
@@ -16,6 +16,7 @@ from tests.factories import (
     ApplicationRoleStatus,
     CLINFactory,
     EnvironmentFactory,
+    EnvironmentRoleFactory,
     PortfolioFactory,
     PortfolioStateMachineFactory,
     TaskOrderFactory,
@@ -224,3 +225,29 @@ class TestHybridCreateUserJob:
         session.rollback()
 
         assert app_role_1.cloud_id == cloud_id
+
+
+def test_hybrid_do_create_environment_role_job(session, csp, portfolio, app):
+    environment_role = EnvironmentRoleFactory.create()
+    environment_role.environment.cloud_id = app.config["AZURE_ROOT_MGMT_GROUP_ID"]
+    environment_role.application_role.cloud_id = app.config["AZURE_USER_OBJECT_ID"]
+    environment_role.environment.portfolio.csp_data = {
+        "tenant_id": csp.azure.tenant_id,
+        "domain_name": "dancorriganpromptworks",
+    }
+
+    session.commit()
+
+    csp.azure.create_tenant_creds(
+        csp.azure.tenant_id,
+        KeyVaultCredentials(
+            root_tenant_id=csp.azure.tenant_id,
+            root_sp_client_id=csp.azure.client_id,
+            root_sp_key=csp.azure.secret_key,
+            tenant_id=csp.azure.tenant_id,
+            tenant_sp_key=csp.azure.secret_key,
+            tenant_sp_client_id=csp.azure.client_id,
+        ),
+    )
+
+    do_create_environment_role(csp, environment_role.id)

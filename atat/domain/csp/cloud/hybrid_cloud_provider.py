@@ -250,3 +250,9 @@ class HybridCloudProvider(object):
             UserCSPResult -- a result object containing the AAD ID.
         """
         return self.azure.create_user(payload)
+
+    def create_user_role(self, payload: UserRoleCSPPayload) -> UserRoleCSPResult:
+        return self.azure.create_user_role(payload)
+
+    def disable_user(self, tenant_id: str, role_assignment_cloud_id: str) -> object:
+        return self.azure.disable_user(tenant_id, role_assignment_cloud_id)
