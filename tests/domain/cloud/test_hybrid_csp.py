@@ -2,6 +2,12 @@ import pendulum
 import pytest
 
 from atat.domain.csp import HybridCSP
+from atat.domain.csp.cloud.models import (
+    KeyVaultCredentials,
+    TenantCSPPayload,
+    InitialMgmtGroupCSPPayload,
+)
+from atat.jobs import do_create_application
 from atat.models import FSMStates, PortfolioStateMachine
 from tests.factories import (
     ApplicationFactory,
@@ -11,6 +17,7 @@ from tests.factories import (
     TaskOrderFactory,
     UserFactory,
 )
+from uuid import uuid4
 
 
 @pytest.fixture(scope="function")
@@ -33,10 +40,13 @@ def portfolio():
 
 
 @pytest.fixture(scope="function")
-def state_machine(app, portfolio):
-    return PortfolioStateMachineFactory.create(
-        portfolio=portfolio, cloud=HybridCSP(app, test_mode=True).cloud
-    )
+def csp(app):
+    return HybridCSP(app, test_mode=True).cloud
+
+
+@pytest.fixture(scope="function")
+def state_machine(app, csp, portfolio):
+    return PortfolioStateMachineFactory.create(portfolio=portfolio, cloud=csp)
 
 
 @pytest.mark.hybrid
@@ -63,3 +73,31 @@ def test_hybrid_cloud(pytestconfig, state_machine: PortfolioStateMachine):
         )
 
         csp_data = state_machine.portfolio.csp_data
+
+
+@pytest.mark.hybrid
+def test_hybrid_create_application_job(session, csp):
+    csp.azure.create_tenant_creds(
+        csp.azure.tenant_id,
+        KeyVaultCredentials(
+            root_tenant_id=csp.azure.tenant_id,
+            root_sp_client_id=csp.azure.client_id,
+            root_sp_key=csp.azure.secret_key,
+            tenant_id=csp.azure.tenant_id,
+            tenant_sp_key=csp.azure.secret_key,
+            tenant_sp_client_id=csp.azure.client_id,
+        ),
+    )
+
+    portfolio = PortfolioFactory.create(
+        csp_data={
+            "tenant_id": csp.azure.tenant_id,
+            "root_management_group_id": csp.azure.config["AZURE_ROOT_MGMT_GROUP_ID"],
+        }
+    )
+
+    application = ApplicationFactory.create(portfolio=portfolio, cloud_id=None)
+    do_create_application(csp, application.id)
+    session.refresh(application)
+
+    assert application.cloud_id
