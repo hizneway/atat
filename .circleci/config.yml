@@ -294,6 +294,7 @@ workflows:
           filters:
             branches:
               only:
+		- fix-azure-cli-install
                 - staging
       - deploy-master:
           requires:
@@ -302,7 +303,6 @@ workflows:
           filters:
             branches:
               only:
-                - fix-azure-cli-install
                 - master
 
   test-crl-parser:
