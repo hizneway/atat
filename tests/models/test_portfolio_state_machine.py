@@ -1,9 +1,5 @@
-import pytest
-import pydantic
-
-from unittest.mock import Mock, patch
 from enum import Enum
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 
 import pendulum
 import pydantic
@@ -17,7 +13,7 @@ from tests.factories import (
     UserFactory,
 )
 
-from atat.models import FSMStates, PortfolioStateMachine, TaskOrder
+from atat.models import FSMStates, PortfolioStateMachine
 from atat.models.mixins.state_machines import (
     AzureStages,
     StageStates,
@@ -25,7 +21,6 @@ from atat.models.mixins.state_machines import (
     _build_transitions,
     compose_state,
 )
-from atat.models.portfolio import Portfolio
 from atat.models.portfolio_state_machine import (
     StateMachineMisconfiguredError,
     _stage_state_to_stage_name,
@@ -40,7 +35,7 @@ class AzureStagesTest(Enum):
     TENANT = "tenant"
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 def portfolio():
     today = pendulum.today()
     yesterday = today.subtract(days=1)
@@ -59,7 +54,7 @@ def portfolio():
     return portfolio
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 def state_machine(portfolio):
     return PortfolioStateMachineFactory.create(portfolio=portfolio)
 
@@ -111,7 +106,7 @@ def test_get_stage_csp_class():
 @pytest.mark.state_machine
 def test_get_stage_csp_class_import_fail():
     with pytest.raises(StateMachineMisconfiguredError):
-        csp_class = get_stage_csp_class("doesnotexist", "payload")
+        get_stage_csp_class("doesnotexist", "payload")
 
 
 @pytest.mark.state_machine
@@ -205,7 +200,6 @@ def test_fail_stage_invalid_triggers(state_machine):
 def test_fail_stage_invalid_stage(state_machine):
     state_machine.state = FSMStates.TENANT_IN_PROGRESS
     state_machine.portfolio.csp_data = {}
-    portfolio.csp_data = {}
     state_machine.fail_stage("invalid stage")
     assert state_machine.state == FSMStates.TENANT_IN_PROGRESS
 
@@ -315,10 +309,10 @@ def test_fsm_transition_start(state_machine: PortfolioStateMachine):
             csp_data = state_machine.portfolio.csp_data
         else:
             csp_data = {}
-        collected_data = dict(
-            list(csp_data.items())
-            + list(state_machine.portfolio.to_dictionary().items())
-            + list(config.items())
-        )
+        collected_data = {
+            **state_machine.portfolio.to_dictionary(),
+            **csp_data,
+            **config,
+        }
         state_machine.trigger_next_transition(csp_data=collected_data)
         assert state_machine.state == expected_state
