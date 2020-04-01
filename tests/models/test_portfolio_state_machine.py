@@ -1,4 +1,3 @@
-from enum import Enum
 from unittest.mock import Mock
 
 import pendulum
@@ -13,26 +12,16 @@ from tests.factories import (
     UserFactory,
 )
 
-from atat.models import FSMStates, PortfolioStateMachine
-from atat.models.mixins.state_machines import (
-    AzureStages,
-    StageStates,
-    _build_csp_states,
-    _build_transitions,
-    compose_state,
-)
+from atat.models.mixins.state_machines import AzureStages, StageStates, FSMStates
 from atat.models.portfolio_state_machine import (
     StateMachineMisconfiguredError,
     _stage_state_to_stage_name,
     _stage_to_classname,
     get_stage_csp_class,
+    PortfolioStateMachine,
 )
 
 # TODO: Write failure case tests
-
-
-class AzureStagesTest(Enum):
-    TENANT = "tenant"
 
 
 @pytest.fixture
@@ -82,14 +71,6 @@ def test_state_machine_trigger_next_transition(state_machine):
 
 
 @pytest.mark.state_machine
-def test_state_machine_compose_state():
-    assert (
-        compose_state(AzureStages.TENANT, StageStates.CREATED)
-        == FSMStates.TENANT_CREATED
-    )
-
-
-@pytest.mark.state_machine
 def test_stage_to_classname():
     assert (
         _stage_to_classname(AzureStages.BILLING_PROFILE_CREATION.name)
@@ -110,43 +91,6 @@ def test_get_stage_csp_class_import_fail():
 
 
 @pytest.mark.state_machine
-def test_build_transitions():
-    states, transitions = _build_transitions(AzureStagesTest)
-    assert [s.get("name").name for s in states] == [
-        "TENANT_CREATED",
-        "TENANT_IN_PROGRESS",
-        "TENANT_FAILED",
-    ]
-    assert [s.get("tags") for s in states] == [
-        ["TENANT", "CREATED"],
-        ["TENANT", "IN_PROGRESS"],
-        ["TENANT", "FAILED"],
-    ]
-    assert [t.get("trigger") for t in transitions] == [
-        "complete",
-        "create_tenant",
-        "finish_tenant",
-        "fail_tenant",
-        "resume_progress_tenant",
-    ]
-
-
-@pytest.mark.state_machine
-def test_build_csp_states():
-    states = _build_csp_states(AzureStagesTest)
-    assert list(states) == [
-        "UNSTARTED",
-        "STARTING",
-        "STARTED",
-        "COMPLETED",
-        "FAILED",
-        "TENANT_CREATED",
-        "TENANT_IN_PROGRESS",
-        "TENANT_FAILED",
-    ]
-
-
-@pytest.mark.state_machine
 def test_state_machine_valid_data_classes_for_stages():
     for stage in AzureStages:
         assert get_stage_csp_class(stage.name.lower(), "payload") is not None
@@ -155,19 +99,18 @@ def test_state_machine_valid_data_classes_for_stages():
 
 @pytest.mark.state_machine
 def test_attach_machine(state_machine):
-    state_machine.machine = None
-    state_machine.attach_machine(stages=AzureStagesTest)
-    assert list(state_machine.machine.events) == [
+    initial_stages = [
         "init",
         "start",
         "reset",
         "fail",
-        "complete",
         "create_tenant",
         "finish_tenant",
         "fail_tenant",
         "resume_progress_tenant",
     ]
+    state_machine.attach_machine()
+    assert list(state_machine.machine.events)[: len(initial_stages)] == initial_stages
 
 
 @pytest.mark.state_machine
