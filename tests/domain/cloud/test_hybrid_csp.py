@@ -133,6 +133,7 @@ def test_hybrid_create_environment_job(session, csp):
     assert result.id
 
 
+@pytest.mark.hybrid
 class TestHybridCreateUserJob:
     @pytest.fixture
     def portfolio(self, app, csp):
