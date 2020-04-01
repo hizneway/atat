@@ -36,10 +36,6 @@ def _stage_to_classname(stage):
     return "".join(map(lambda word: word.capitalize(), stage.split("_")))
 
 
-def _stage_state_to_stage_name(state, stage_state):
-    return state.name.split(f"_{stage_state.name}")[0].lower()
-
-
 def get_stage_csp_class(stage, class_type):
     """
     given a stage name and class_type return the class
@@ -193,21 +189,21 @@ class PortfolioStateMachine(
             if create_trigger is not None:
                 self.trigger(create_trigger, **kwargs)
 
-    def _get_payload_data_class(self, current_stage):
+    def _get_payload_data_class(self):
         """Retrieves the appropriate payload class for the current provisioning step.
         """
 
-        payload_data_cls = get_stage_csp_class(current_stage, "payload")
+        payload_data_cls = get_stage_csp_class(self.current_stage, "payload")
 
         if payload_data_cls is None:
             app.logger.info(
-                f"could not resolve payload data class for stage {current_stage}"
+                f"could not resolve payload data class for stage {self.current_stage}"
             )
-            self.fail_stage(current_stage)
+            self.fail_stage(self.current_stage)
 
         return payload_data_cls
 
-    def _get_payload_data(self, payload_data_class, payload, current_stage):
+    def _get_payload_data(self, payload_data_class, payload):
         try:
             return payload_data_class(**payload)
         except PydanticValidationError as exc:
@@ -217,11 +213,11 @@ class PortfolioStateMachine(
             app.logger.info(exc.json())
             print(exc.json())
             app.logger.info(payload)
-            self.fail_stage(current_stage)
+            self.fail_stage(self.current_stage)
 
-    def _provision_stage(self, payload_data, current_stage):
+    def _provision_stage(self, payload_data):
         try:
-            func_name = f"create_{current_stage}"
+            func_name = f"create_{self.current_stage}"
             response = getattr(self.cloud, func_name)(payload_data)
             return response
         except PydanticValidationError as exc:
@@ -233,7 +229,7 @@ class PortfolioStateMachine(
             print(exc.json())
             app.logger.info(payload_data)
             # TODO: Ensure that failing the stage does not preclude a Celery retry
-            self.fail_stage(current_stage)
+            self.fail_stage(self.current_stage)
 
         # TODO: catch and handle general CSP exception here
         except (ConnectionException, UnknownServerException) as exc:
@@ -241,25 +237,27 @@ class PortfolioStateMachine(
                 f"CSP api call. Caught exception for {self.__repr__()}.", exc_info=1,
             )
             # TODO: Ensure that failing the stage does not preclude a Celery retry
-            self.fail_stage(current_stage)
+            self.fail_stage(self.current_stage)
+
+    def _stage_state_to_stage_name(self, stage_state):
+        return self.current_state.name.split(f"_{stage_state.name}")[0].lower()
+
+    @property
+    def current_stage(self):
+        return self._stage_state_to_stage_name(StageStates.IN_PROGRESS)
 
     def after_in_progress_callback(self, event):
-        current_stage = _stage_state_to_stage_name(
-            self.current_state, StageStates.IN_PROGRESS
-        )
         payload = event.kwargs.get("csp_data")
-        payload_data_class = self._get_payload_data_class(current_stage)
-        payload_data = self._get_payload_data(
-            payload_data_class, payload, current_stage
-        )
-        response = self._provision_stage(payload_data, current_stage)
+        payload_data_class = self._get_payload_data_class()
+        payload_data = self._get_payload_data(payload_data_class, payload)
+        response = self._provision_stage(payload_data)
         if self.portfolio.csp_data is None:
             self.portfolio.csp_data = {}
         self.portfolio.csp_data.update(response.dict())
         db.session.add(self.portfolio)
         db.session.commit()
 
-        self.finish_stage(current_stage)
+        self.finish_stage(self.current_stage)
 
     def is_csp_data_valid(self, event):
         """

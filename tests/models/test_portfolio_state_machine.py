@@ -15,7 +15,6 @@ from tests.factories import (
 from atat.models.mixins.state_machines import AzureStages, StageStates, FSMStates
 from atat.models.portfolio_state_machine import (
     StateMachineMisconfiguredError,
-    _stage_state_to_stage_name,
     _stage_to_classname,
     get_stage_csp_class,
     PortfolioStateMachine,
@@ -175,11 +174,9 @@ def test_finish_stage_invalid_stage(state_machine):
 
 
 @pytest.mark.state_machine
-def test_stage_state_to_stage_name():
-    stage = _stage_state_to_stage_name(
-        FSMStates.TENANT_IN_PROGRESS, StageStates.IN_PROGRESS
-    )
-    assert stage == "tenant"
+def test_stage_state_to_stage_name(state_machine):
+    state_machine.state = FSMStates.TENANT_IN_PROGRESS
+    assert state_machine.current_stage == "tenant"
 
 
 @pytest.mark.state_machine
