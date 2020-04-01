@@ -284,7 +284,6 @@ workflows:
           filters:
             branches:
               only:
-                - fix-azure-cli-install
                 - staging
                 - master
       - deploy-staging:
@@ -294,7 +293,6 @@ workflows:
           filters:
             branches:
               only:
-                - fix-azure-cli-install
                 - staging
       - deploy-master:
           requires:
