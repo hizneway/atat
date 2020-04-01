@@ -4,6 +4,7 @@ from unittest.mock import Mock
 from uuid import uuid4
 
 from atat.domain.csp import HybridCSP
+from atat.domain.csp.cloud.exceptions import UserProvisioningException
 from atat.domain.csp.cloud.models import (
     EnvironmentCSPPayload,
     KeyVaultCredentials,
@@ -250,4 +251,8 @@ def test_hybrid_do_create_environment_role_job(session, csp, portfolio, app):
         ),
     )
 
-    do_create_environment_role(csp, environment_role.id)
+    try:
+        do_create_environment_role(csp, environment_role.id)
+    except UserProvisioningException as e:
+        if "RoleAssignmentExists" not in str(e):
+            raise e
