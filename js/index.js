@@ -32,12 +32,14 @@ import ToForm from './components/forms/to_form'
 import ClinFields from './components/clin_fields'
 import PopDateRange from './components/pop_date_range'
 import ToggleMenu from './components/toggle_menu'
+import ExpandSidenav from './mixins/expand_sidenav'
 
 Vue.config.productionTip = false
 
 Vue.use(VTooltip)
 
 Vue.mixin(Modal)
+Vue.mixin(ExpandSidenav)
 
 const app = new Vue({
   el: '#app-root',
@@ -65,6 +67,12 @@ const app = new Vue({
     ClinFields,
     PopDateRange,
     ToggleMenu,
+  },
+
+  data: function() {
+    return {
+      sidenavExpanded: this.defaultVisible,
+    }
   },
 
   mounted: function() {
@@ -105,6 +113,10 @@ const app = new Vue({
         }
       })
     })
+
+    this.$on('sidenavToggle', data => {
+      this.sidenavExpanded = data
+    })
   },
   delimiters: ['!{', '}'],
 
@@ -117,6 +129,18 @@ const app = new Vue({
         }
         stickybits(el, customAttributes)
       },
+    },
+  },
+
+  methods: {
+    logout: function(e) {
+      // clear all cookies
+      var cookies = document.cookie.split(';')
+
+      for (var i = 0; i < cookies.length; i++) {
+        document.cookie =
+          cookies[i].split('=')[0] + '=; expires=Thu, 01 Jan 1970 00:00:01 GMT;'
+      }
     },
   },
 })

@@ -16,7 +16,7 @@
 <meta name="ghost-inspector-screenshotTarget" content="" />
 <meta name="ghost-inspector-screenshotExclusions" content="div.global-navigation, time" />
 <meta name="ghost-inspector-screenshotCompareEnabled" content="true" />
-<meta name="ghost-inspector-screenshotCompareThreshold" content="0.02" />
+<meta name="ghost-inspector-screenshotCompareThreshold" content="0.04" />
 </head>
 <body>
 <table cellpadding="1" cellspacing="1" border="1">
@@ -169,7 +169,7 @@ Imported from: AT-AT CI - New Portfolio-->
 <tr>
 <td>assertText</td>
 <td>css=.sticky-cta-text > h3</td>
-<td>*Create New Portfolio*</td>
+<td>*Name and Describe Portfolio*</td>
 </tr>
 <tr>
 <td>waitForPageToLoad</td>
@@ -186,7 +186,7 @@ Imported from: AT-AT CI - New Portfolio-->
 <tr>
 <td>type</td>
 <td>css=#name</td>
-<td>Tatooine Energy Maintenance Systems</td>
+<td>Tatooine Energy Maintenance Systems ${alphanumeric}</td>
 </tr>
 <tr>
 <td>waitForPageToLoad</td>
@@ -237,7 +237,7 @@ Imported from: AT-AT CI - New Portfolio-->
 <tr>
 <td>assertText</td>
 <td>css=.empty-state > h3</td>
-<td>*You don't have any Applications yet*</td>
+<td>*You don’t have any Applications yet*</td>
 </tr>
 <tr>
 <td>waitForPageToLoad</td>
@@ -439,29 +439,13 @@ Imported from: AT-AT CI - New Portfolio-->
 <!--Imported from: AT-AT CI - Create New Application-->
 <tr>
 <td>waitForElementPresent</td>
-<td>css=.application-perms > div:nth-of-type(3) > .usa-input.input__inline-fields > fieldset.usa-input__choices > legend > label</td>
-<td></td>
-</tr>
-<tr original-target=".application-perms > div:nth-of-type(3) > .usa-input.input__inline-fields > fieldset.usa-input__choices > legend > label,xpath=//label[contains(text(), "Delete Application")]">
-<td>click</td>
-<td>css=.application-perms > div:nth-of-type(3) > .usa-input.input__inline-fields > fieldset.usa-input__choices > legend > label</td>
-<td></td>
-</tr>
-<tr>
-<td>waitForPageToLoad</td>
-<td></td>
-<td></td>
-</tr>
-<!--Imported from: AT-AT CI - Create New Application-->
-<tr>
-<td>waitForElementPresent</td>
 <td>css=#environment_roles-0-role-None</td>
 <td></td>
 </tr>
 <tr>
 <td>type</td>
 <td>css=#environment_roles-0-role-None</td>
-<td>Basic Access</td>
+<td>ADMIN</td>
 </tr>
 <tr>
 <td>waitForPageToLoad</td>
@@ -477,7 +461,7 @@ Imported from: AT-AT CI - New Portfolio-->
 <tr>
 <td>type</td>
 <td>css=#environment_roles-1-role-None</td>
-<td>Network Admin</td>
+<td>BILLING_READ</td>
 </tr>
 <tr>
 <td>waitForPageToLoad</td>
@@ -503,12 +487,12 @@ Imported from: AT-AT CI - New Portfolio-->
 <!--Imported from: AT-AT CI - Create New Application-->
 <tr>
 <td>waitForElementPresent</td>
-<td>css=span.action-group-footer > a.usa-button</td>
+<td>css=.action-group-footer > .action-group-footer--container > a.usa-button</td>
 <td></td>
 </tr>
-<tr original-target="span.action-group-footer > a.usa-button,xpath=//a[contains(text(), "Return to Application Settings")]">
+<tr original-target=".action-group-footer > .action-group-footer--container > a.usa-button,xpath=//a[contains(text(), "Save Application")]">
 <td>click</td>
-<td>css=span.action-group-footer > a.usa-button</td>
+<td>css=.action-group-footer > .action-group-footer--container > a.usa-button</td>
 <td></td>
 </tr>
 <tr>
@@ -551,12 +535,12 @@ Imported from: AT-AT CI - New Portfolio-->
 <!--Imported from: AT-AT CI - Create New Application-->
 <tr>
 <td>waitForElementPresent</td>
-<td>css=.accordion-table__items > .accordion-table__item:nth-of-type(1) > .accordion-table__item-content > .environment-list__item > .label.label--below</td>
+<td>css=.accordion-table__items > .accordion-table__item:nth-of-type(1) > .accordion-table__item-content > .environment-list__item > .label</td>
 <td></td>
 </tr>
 <tr>
 <td>assertElementPresent</td>
-<td>css=.accordion-table__items > .accordion-table__item:nth-of-type(1) > .accordion-table__item-content > .environment-list__item > .label.label--below</td>
+<td>css=.accordion-table__items > .accordion-table__item:nth-of-type(1) > .accordion-table__item-content > .environment-list__item > .label</td>
 <td></td>
 </tr>
 <tr>
@@ -581,12 +565,12 @@ Imported from: AT-AT CI - New Portfolio-->
 </tr>
 <tr>
 <td>waitForElementPresent</td>
-<td>css=.accordion-table__item-toggle-content.app-member-menu__toggle > a:nth-of-type(1)</td>
+<td>css=.accordion-table__item-toggle-content.toggle-menu__toggle > a:nth-of-type(1)</td>
 <td></td>
 </tr>
 <tr>
 <td>click</td>
-<td>css=.accordion-table__item-toggle-content.app-member-menu__toggle > a:nth-of-type(1)</td>
+<td>css=.accordion-table__item-toggle-content.toggle-menu__toggle > a:nth-of-type(1)</td>
 <td></td>
 </tr>
 <tr>
@@ -596,12 +580,12 @@ Imported from: AT-AT CI - New Portfolio-->
 </tr>
 <tr>
 <td>waitForElementPresent</td>
-<td>css=.panel > div:nth-of-type(1) > .modal.form-content--app-mem > .modal__container > .modal__dialog > .modal__body > .modal__form--header > h1</td>
+<td>css=.panel > div:nth-of-type(1) > .modal.form-content--member-form > .modal__container > .modal__dialog > .modal__body > .modal__form--header > h1</td>
 <td></td>
 </tr>
 <tr>
 <td>assertText</td>
-<td>css=.panel > div:nth-of-type(1) > .modal.form-content--app-mem > .modal__container > .modal__dialog > .modal__body > .modal__form--header > h1</td>
+<td>css=.panel > div:nth-of-type(1) > .modal.form-content--member-form > .modal__container > .modal__dialog > .modal__body > .modal__form--header > h1</td>
 <td>*Manage Brandon Buchannan's Access*</td>
 </tr>
 <tr>
@@ -671,12 +655,12 @@ Imported from: AT-AT CI - New Portfolio-->
 </tr>
 <tr>
 <td>waitForElementPresent</td>
-<td>css=.action-group > input[type="submit"].usa-button.usa-button-primary.action-group__action</td>
+<td>css=.action-group > input[type="submit"].usa-button.action-group__action</td>
 <td></td>
 </tr>
 <tr>
 <td>click</td>
-<td>css=.action-group > input[type="submit"].usa-button.usa-button-primary.action-group__action</td>
+<td>css=.action-group > input[type="submit"].usa-button.action-group__action</td>
 <td></td>
 </tr>
 <tr>
@@ -686,12 +670,12 @@ Imported from: AT-AT CI - New Portfolio-->
 </tr>
 <tr>
 <td>waitForElementPresent</td>
-<td>css=table.atat-table > tbody > tr:nth-of-type(1) > td.env_role--td > .row:nth-of-type(1) > .env-role__role</td>
+<td>css=table.atat-table > tbody > tr:nth-of-type(1) > td.toggle-menu__container > .row:nth-of-type(1) > .env-role__role</td>
 <td></td>
 </tr>
 <tr>
 <td>assertText</td>
-<td>css=table.atat-table > tbody > tr:nth-of-type(1) > td.env_role--td > .row:nth-of-type(1) > .env-role__role</td>
+<td>css=table.atat-table > tbody > tr:nth-of-type(1) > td.toggle-menu__container > .row:nth-of-type(1) > .env-role__role</td>
 <td>*None*</td>
 </tr>
 </tbody>

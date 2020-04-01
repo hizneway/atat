@@ -1,17 +1,17 @@
-import datetime
 import pytest
 import re
+import pendulum
 
-from atst.domain.audit_log import AuditLog
-from atst.domain.invitations import (
+from atat.domain.audit_log import AuditLog
+from atat.domain.invitations import (
     ExpiredError,
     InvitationError,
     NotFoundError,
     PortfolioInvitations,
     WrongUserError,
 )
-from atst.models import InvitationStatus
-from atst.models.portfolio_role import Status as PortfolioRoleStatus
+from atat.models import InvitationStatus
+from atat.models.portfolio_role import Status as PortfolioRoleStatus
 
 from tests.factories import (
     PortfolioFactory,
@@ -53,7 +53,7 @@ def test_accept_expired_invitation():
     portfolio = PortfolioFactory.create()
     role = PortfolioRoleFactory.create(portfolio=portfolio)
     increment = PortfolioInvitations.EXPIRATION_LIMIT_MINUTES + 1
-    expiration_time = datetime.datetime.now() - datetime.timedelta(minutes=increment)
+    expiration_time = pendulum.now(tz="utc").subtract(minutes=increment)
     invite = PortfolioInvitationFactory.create(
         expiration_time=expiration_time,
         status=InvitationStatus.PENDING,

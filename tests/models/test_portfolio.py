@@ -6,7 +6,51 @@ from tests.factories import (
     random_future_date,
     random_past_date,
 )
-import datetime
+import pendulum
+from decimal import Decimal
+import pytest
+
+
+@pytest.fixture(scope="function")
+def upcoming_task_order():
+    return dict(
+        signed_at=pendulum.today().subtract(days=3),
+        create_clins=[
+            dict(
+                start_date=pendulum.today().add(days=2),
+                end_date=pendulum.today().add(days=3),
+                obligated_amount=Decimal(700.0),
+            )
+        ],
+    )
+
+
+@pytest.fixture(scope="function")
+def current_task_order():
+    return dict(
+        signed_at=pendulum.today().subtract(days=3),
+        create_clins=[
+            dict(
+                start_date=pendulum.today().subtract(days=1),
+                end_date=pendulum.today().add(days=1),
+                obligated_amount=Decimal(1000.0),
+            )
+        ],
+    )
+
+
+@pytest.fixture(scope="function")
+def past_task_order():
+    return dict(
+        signed_at=pendulum.today().subtract(days=3),
+        create_clins=[
+            dict(
+                start_date=pendulum.today().subtract(days=3),
+                end_date=pendulum.today().subtract(days=2),
+                obligated_amount=Decimal(500.0),
+            )
+        ],
+    )
 
 
 def test_portfolio_applications_excludes_deleted():
@@ -38,7 +82,7 @@ def test_funding_duration(session):
         portfolio=portfolio,
         signed_at=random_past_date(),
         create_clins=[
-            {"start_date": datetime.datetime.now(), "end_date": funding_end_date,}
+            {"start_date": pendulum.now(tz="utc"), "end_date": funding_end_date,}
         ],
     )
 
@@ -61,7 +105,7 @@ def test_days_remaining(session):
 
     assert (
         portfolio.days_to_funding_expiration
-        == (funding_end_date - datetime.date.today()).days
+        == (funding_end_date - pendulum.today()).days
     )
 
     # empty portfolio
@@ -76,8 +120,8 @@ def test_active_task_orders(session):
         signed_at=random_past_date(),
         create_clins=[
             {
-                "start_date": datetime.date(2019, 1, 1),
-                "end_date": datetime.date(2019, 10, 31),
+                "start_date": pendulum.date(2019, 1, 1),
+                "end_date": pendulum.date(2019, 10, 31),
             }
         ],
     )
@@ -85,3 +129,108 @@ def test_active_task_orders(session):
         portfolio=portfolio, signed_at=random_past_date(), clins=[CLINFactory.create()]
     )
     assert len(portfolio.active_task_orders) == 1
+
+
+class TestCurrentObligatedFunds:
+    """
+    Tests the current_obligated_funds property
+    """
+
+    def test_no_task_orders(self):
+        portfolio = PortfolioFactory()
+        assert portfolio.total_obligated_funds == Decimal(0)
+
+    def test_with_current(self, current_task_order):
+        portfolio = PortfolioFactory(
+            task_orders=[current_task_order, current_task_order]
+        )
+        assert portfolio.total_obligated_funds == Decimal(2000.0)
+
+    def test_with_others(
+        self, past_task_order, current_task_order, upcoming_task_order
+    ):
+        portfolio = PortfolioFactory(
+            task_orders=[past_task_order, current_task_order, upcoming_task_order,]
+        )
+        # Only sums the current task order
+        assert portfolio.total_obligated_funds == Decimal(1000.0)
+
+
+class TestUpcomingObligatedFunds:
+    """
+    Tests the upcoming_obligated_funds property
+    """
+
+    def test_no_task_orders(self):
+        portfolio = PortfolioFactory()
+        assert portfolio.upcoming_obligated_funds == Decimal(0)
+
+    def test_with_upcoming(self, upcoming_task_order):
+        portfolio = PortfolioFactory(
+            task_orders=[upcoming_task_order, upcoming_task_order]
+        )
+        assert portfolio.upcoming_obligated_funds == Decimal(1400.0)
+
+    def test_with_others(
+        self, past_task_order, current_task_order, upcoming_task_order
+    ):
+        portfolio = PortfolioFactory(
+            task_orders=[past_task_order, current_task_order, upcoming_task_order]
+        )
+        # Only sums the upcoming task order
+        assert portfolio.upcoming_obligated_funds == Decimal(700.0)
+
+
+class TestInitialClinDict:
+    def test_formats_dict_correctly(self):
+        portfolio = PortfolioFactory()
+        task_order = TaskOrderFactory(
+            portfolio=portfolio, number="1234567890123", signed_at=pendulum.now()
+        )
+        clin = CLINFactory(task_order=task_order)
+        initial_clin = portfolio.initial_clin_dict
+
+        assert initial_clin["initial_clin_amount"] == clin.obligated_amount
+        assert initial_clin["initial_clin_start_date"] == clin.start_date.strftime(
+            "%Y/%m/%d"
+        )
+        assert initial_clin["initial_clin_end_date"] == clin.end_date.strftime(
+            "%Y/%m/%d"
+        )
+        assert initial_clin["initial_clin_type"] == clin.jedi_clin_number
+        assert initial_clin["initial_clin_number"] == clin.number
+        assert initial_clin["initial_task_order_id"] == task_order.number
+
+    def test_no_valid_clins(self):
+        portfolio = PortfolioFactory()
+        assert portfolio.initial_clin_dict == {}
+
+    def test_picks_the_initial_clin(self):
+        yesterday = pendulum.now().subtract(days=1).date()
+        tomorrow = pendulum.now().add(days=1).date()
+        portfolio = PortfolioFactory(
+            task_orders=[
+                {
+                    "signed_at": pendulum.now(),
+                    "create_clins": [
+                        {
+                            "number": "0001",
+                            "start_date": yesterday.subtract(days=1),
+                            "end_date": yesterday,
+                        },
+                        {
+                            "number": "1001",
+                            "start_date": yesterday,
+                            "end_date": tomorrow,
+                        },
+                        {
+                            "number": "0002",
+                            "start_date": yesterday,
+                            "end_date": tomorrow,
+                        },
+                    ],
+                },
+                {"create_clins": [{"number": "0003"}]},
+            ],
+        )
+        assert portfolio.initial_clin_dict["initial_clin_number"] == "1001"

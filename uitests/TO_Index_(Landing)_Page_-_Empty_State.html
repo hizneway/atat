@@ -16,7 +16,7 @@
 <meta name="ghost-inspector-screenshotTarget" content="" />
 <meta name="ghost-inspector-screenshotExclusions" content="div.global-navigation, time" />
 <meta name="ghost-inspector-screenshotCompareEnabled" content="true" />
-<meta name="ghost-inspector-screenshotCompareThreshold" content="0.02" />
+<meta name="ghost-inspector-screenshotCompareThreshold" content="0.04" />
 </head>
 <body>
 <table cellpadding="1" cellspacing="1" border="1">
@@ -101,7 +101,7 @@ Imported from: AT-AT CI - login-->
 <tr>
 <td>assertText</td>
 <td>css=.sticky-cta-text > h3</td>
-<td>*Create New Portfolio*</td>
+<td>*Name and Describe Portfolio*</td>
 </tr>
 <tr>
 <td>waitForPageToLoad</td>
@@ -117,7 +117,7 @@ Imported from: AT-AT CI - login-->
 <tr>
 <td>type</td>
 <td>css=#name</td>
-<td>Tatooine Energy Maintenance Systems</td>
+<td>Tatooine Energy Maintenance Systems ${alphanumeric}</td>
 </tr>
 <tr>
 <td>waitForPageToLoad</td>
@@ -165,7 +165,7 @@ Imported from: AT-AT CI - login-->
 <tr>
 <td>assertText</td>
 <td>css=.empty-state > h3</td>
-<td>*You don't have any Applications yet*</td>
+<td>*You don’t have any Applications yet*</td>
 </tr>
 <tr>
 <td>waitForPageToLoad</td>
@@ -235,21 +235,6 @@ Imported from: AT-AT CI - login-->
 <tr>
 <td>assertElementPresent</td>
 <td>css=.empty-state__footer > a.usa-button.usa-button-primary</td>
-<td></td>
-</tr>
-<tr>
-<td>waitForPageToLoad</td>
-<td></td>
-<td></td>
-</tr>
-<tr>
-<td>waitForElementPresent</td>
-<td>css=.sticky-cta-buttons > a.usa-button.usa-button-primary</td>
-<td></td>
-</tr>
-<tr>
-<td>assertElementPresent</td>
-<td>css=.sticky-cta-buttons > a.usa-button.usa-button-primary</td>
 <td></td>
 </tr>
 </tbody>

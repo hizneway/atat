@@ -1,11 +1,11 @@
-import datetime
+import pendulum
 from unittest.mock import Mock
 
 from flask import url_for
 
-from atst.domain.portfolios import Portfolios
-from atst.models import InvitationStatus, PortfolioRoleStatus
-from atst.domain.permission_sets import PermissionSets
+from atat.domain.portfolios import Portfolios
+from atat.models import InvitationStatus, PortfolioRoleStatus
+from atat.domain.permission_sets import PermissionSets
 
 from tests.factories import *
 
@@ -45,7 +45,7 @@ def test_new_member_accepts_valid_invite(monkeypatch, client, user_session):
     invite = PortfolioInvitationFactory.create(role=role, dod_id=user_info["dod_id"])
 
     monkeypatch.setattr(
-        "atst.domain.auth.should_redirect_to_user_profile", lambda *args: False
+        "atat.domain.auth.should_redirect_to_user_profile", lambda *args: False
     )
     user_session(UserFactory.create(dod_id=user_info["dod_id"]))
     response = client.get(
@@ -123,7 +123,7 @@ def test_user_accepts_expired_invite(client, user_session):
         user_id=user.id,
         role=ws_role,
         status=InvitationStatus.REJECTED_EXPIRED,
-        expiration_time=datetime.datetime.now() - datetime.timedelta(seconds=1),
+        expiration_time=pendulum.now(tz="utc").subtract(seconds=1),
     )
     user_session(user)
     response = client.get(
@@ -143,7 +143,7 @@ def test_revoke_invitation(client, user_session):
         user_id=user.id,
         role=ws_role,
         status=InvitationStatus.REJECTED_EXPIRED,
-        expiration_time=datetime.datetime.now() - datetime.timedelta(seconds=1),
+        expiration_time=pendulum.now(tz="utc").subtract(seconds=1),
     )
     user_session(portfolio.owner)
     response = client.post(
@@ -169,7 +169,7 @@ def test_user_can_only_revoke_invites_in_their_portfolio(client, user_session):
         user_id=user.id,
         role=portfolio_role,
         status=InvitationStatus.REJECTED_EXPIRED,
-        expiration_time=datetime.datetime.now() - datetime.timedelta(seconds=1),
+        expiration_time=pendulum.now(tz="utc").subtract(seconds=1),
     )
     user_session(portfolio.owner)
     response = client.post(
@@ -188,7 +188,7 @@ def test_user_can_only_resend_invites_in_their_portfolio(
     monkeypatch, client, user_session
 ):
     job_mock = Mock()
-    monkeypatch.setattr("atst.jobs.send_mail.delay", job_mock)
+    monkeypatch.setattr("atat.jobs.send_mail.delay", job_mock)
     portfolio = PortfolioFactory.create()
     other_portfolio = PortfolioFactory.create()
     user = UserFactory.create()
@@ -199,7 +199,7 @@ def test_user_can_only_resend_invites_in_their_portfolio(
         user_id=user.id,
         role=portfolio_role,
         status=InvitationStatus.REJECTED_EXPIRED,
-        expiration_time=datetime.datetime.now() - datetime.timedelta(seconds=1),
+        expiration_time=pendulum.now(tz="utc").subtract(seconds=1),
     )
     user_session(portfolio.owner)
     response = client.post(
@@ -216,14 +216,14 @@ def test_user_can_only_resend_invites_in_their_portfolio(
 
 def test_resend_invitation_sends_email(monkeypatch, client, user_session):
     job_mock = Mock()
-    monkeypatch.setattr("atst.jobs.send_mail.delay", job_mock)
+    monkeypatch.setattr("atat.jobs.send_mail.delay", job_mock)
     user = UserFactory.create()
     portfolio = PortfolioFactory.create()
-    ws_role = PortfolioRoleFactory.create(
+    portfolio_role = PortfolioRoleFactory.create(
         user=user, portfolio=portfolio, status=PortfolioRoleStatus.PENDING
     )
     invite = PortfolioInvitationFactory.create(
-        user_id=user.id, role=ws_role, status=InvitationStatus.PENDING
+        user_id=user.id, role=portfolio_role, status=InvitationStatus.PENDING
     )
     user_session(portfolio.owner)
     client.post(
@@ -231,48 +231,23 @@ def test_resend_invitation_sends_email(monkeypatch, client, user_session):
             "portfolios.resend_invitation",
             portfolio_id=portfolio.id,
             portfolio_token=invite.token,
-        )
+        ),
+        data={
+            "user_data-dod_id": user.dod_id,
+            "user_data-first_name": user.first_name,
+            "user_data-last_name": user.last_name,
+            "user_data-email": user.email,
+        },
     )
 
     assert job_mock.called
 
 
-def test_existing_member_invite_resent_to_email_submitted_in_form(
-    monkeypatch, client, user_session
-):
-    job_mock = Mock()
-    monkeypatch.setattr("atst.jobs.send_mail.delay", job_mock)
-    portfolio = PortfolioFactory.create()
-    user = UserFactory.create()
-    ws_role = PortfolioRoleFactory.create(
-        user=user, portfolio=portfolio, status=PortfolioRoleStatus.PENDING
-    )
-    invite = PortfolioInvitationFactory.create(
-        user_id=user.id,
-        role=ws_role,
-        status=InvitationStatus.PENDING,
-        email="example@example.com",
-    )
-    user_session(portfolio.owner)
-    client.post(
-        url_for(
-            "portfolios.resend_invitation",
-            portfolio_id=portfolio.id,
-            portfolio_token=invite.token,
-        )
-    )
-
-    assert user.email != "example@example.com"
-    ordered_args, _unordered_args = job_mock.call_args
-    recipients, _subject, _message = ordered_args
-    assert recipients[0] == "example@example.com"
-
-
 _DEFAULT_PERMS_FORM_DATA = {
-    "permission_sets-perms_app_mgmt": False,
-    "permission_sets-perms_funding": False,
-    "permission_sets-perms_reporting": False,
-    "permission_sets-perms_portfolio_mgmt": False,
+    "permission_sets-perms_app_mgmt": "n",
+    "permission_sets-perms_funding": "n",
+    "permission_sets-perms_reporting": "n",
+    "permission_sets-perms_portfolio_mgmt": "n",
 }
 
 
@@ -289,7 +264,7 @@ def test_user_with_permission_has_add_member_link(client, user_session):
 
 def test_invite_member(monkeypatch, client, user_session, session):
     job_mock = Mock()
-    monkeypatch.setattr("atst.jobs.send_mail.delay", job_mock)
+    monkeypatch.setattr("atat.jobs.send_mail.delay", job_mock)
     user_data = UserFactory.dictionary()
     portfolio = PortfolioFactory.create()
     user_session(portfolio.owner)

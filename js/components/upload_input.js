@@ -1,5 +1,13 @@
 import { buildUploader } from '../lib/upload'
 import { emitFieldChange } from '../lib/emitters'
+import inputValidations from '../lib/input_validations'
+
+function uploadResponseOkay(response) {
+  // check BlobUploadCommonResponse: https://docs.microsoft.com/en-us/javascript/api/@azure/storage-blob/blobuploadcommonresponse?view=azure-node-latest
+  // The upload operation is a PUT that should return a 201
+  // https://docs.microsoft.com/en-us/rest/api/storageservices/put-blob#status-code
+  return response._response.status === 201
+}
 
 export default {
   name: 'uploadinput',
@@ -9,7 +17,7 @@ export default {
     filename: {
       type: String,
     },
-    objectName: {
+    initialObjectName: {
       type: String,
     },
     initialErrors: {
@@ -18,6 +26,9 @@ export default {
     },
     portfolioId: {
       type: String,
+    },
+    sizeLimit: {
+      type: Number,
     },
   },
 
@@ -28,7 +39,10 @@ export default {
       changed: false,
       uploadError: false,
       sizeError: false,
+      filenameError: false,
       downloadLink: '',
+      fileSizeLimit: this.sizeLimit,
+      objectName: this.initialObjectName,
     }
   },
 
@@ -46,15 +60,20 @@ export default {
       this.clearErrors()
 
       const file = e.target.files[0]
-      if (file.size > 64000000) {
+      if (file.size > this.fileSizeLimit) {
         this.sizeError = true
+        return
+      }
+      if (!this.validateFileName(file.name)) {
+        this.filenameError = true
         return
       }
 
       const uploader = await this.getUploader()
       const response = await uploader.upload(file)
-      if (response.ok) {
-        this.attachment = e.target.value
+      if (uploadResponseOkay(response)) {
+        this.attachment = file.name
+        this.objectName = uploader.objectName
         this.$refs.attachmentFilename.value = file.name
         this.$refs.attachmentObjectName.value = response.objectName
         this.$refs.attachmentInput.disabled = true
@@ -63,13 +82,17 @@ export default {
 
         this.downloadLink = await this.getDownloadLink(
           file.name,
-          response.objectName
+          uploader.objectName
         )
       } else {
         emitFieldChange(this)
         this.changed = true
         this.uploadError = true
       }
+    },
+    validateFileName: function(name) {
+      const regex = inputValidations.restrictedFileName.match
+      return regex.test(name)
     },
     removeAttachment: function(e) {
       e.preventDefault()
@@ -118,7 +141,8 @@ export default {
       return (
         (!this.changed && this.initialErrors) ||
         this.uploadError ||
-        this.sizeError
+        this.sizeError ||
+        this.filenameError
       )
     },
     valid: function() {

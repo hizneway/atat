@@ -1,13 +1,23 @@
 import pytest
 from unittest.mock import Mock
 
-from atst.domain.csp.cloud import AzureCloudProvider
+from atat.domain.csp.cloud import AzureCloudProvider
 
 AZURE_CONFIG = {
+    "AZURE_CALC_CLIENT_ID": "MOCK",
+    "AZURE_CALC_SECRET": "MOCK",  # pragma: allowlist secret
+    "AZURE_CALC_RESOURCE": "http://calc",
     "AZURE_CLIENT_ID": "MOCK",
     "AZURE_SECRET_KEY": "MOCK",
     "AZURE_TENANT_ID": "MOCK",
     "AZURE_POLICY_LOCATION": "policies",
+    "AZURE_VAULT_URL": "http://vault",
+    "AZURE_POWERSHELL_CLIENT_ID": "MOCK",
+    "AZURE_ROLE_DEF_ID_OWNER": "MOCK",
+    "AZURE_ROLE_DEF_ID_CONTRIBUTOR": "MOCK",
+    "AZURE_ROLE_DEF_ID_BILLING_READER": "MOCK",
+    "AZURE_GRAPH_RESOURCE": "MOCK",
+    "AZURE_AADP_QTY": 5,
 }
 
 AUTH_CREDENTIALS = {
@@ -47,24 +57,67 @@ def mock_credentials():
     return Mock(spec=credentials)
 
 
+def mock_identity():
+    import azure.identity as identity
+
+    return Mock(spec=identity)
+
+
 def mock_policy():
     from azure.mgmt.resource import policy
 
     return Mock(spec=policy)
 
 
+def mock_azure_exceptions():
+    from azure.core import exceptions
+
+    return exceptions
+
+
+def mock_adal():
+    import adal
+
+    return Mock(spec=adal)
+
+
+def mock_requests():
+    import requests
+
+    mock_requests = Mock(wraps=requests)
+    mock_requests.exceptions = requests.exceptions
+    return mock_requests
+
+
+def mock_secrets():
+    from azure.keyvault import secrets
+
+    return Mock(spec=secrets)
+
+
+def mock_cloud_details():
+    from msrestazure.azure_cloud import AZURE_PUBLIC_CLOUD
+
+    return AZURE_PUBLIC_CLOUD
+
+
 class MockAzureSDK(object):
     def __init__(self):
-        from msrestazure.azure_cloud import AZURE_PUBLIC_CLOUD
 
         self.subscription = mock_subscription()
         self.authorization = mock_authorization()
+        self.policy = mock_policy()
+        self.adal = mock_adal()
         self.managementgroups = mock_managementgroups()
         self.graphrbac = mock_graphrbac()
         self.credentials = mock_credentials()
+        self.identity = mock_identity()
+        self.azure_exceptions = mock_azure_exceptions()
         self.policy = mock_policy()
-        # may change to a JEDI cloud
-        self.cloud = AZURE_PUBLIC_CLOUD
+        self.secrets = mock_secrets()
+        self.requests = mock_requests()
+        self.cloud = mock_cloud_details()
+        self.identity = mock_identity()
 
 
 @pytest.fixture(scope="function")

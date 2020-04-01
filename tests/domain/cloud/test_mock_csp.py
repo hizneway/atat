@@ -1,6 +1,14 @@
 import pytest
 
-from atst.domain.csp import MockCloudProvider
+from atat.domain.csp import MockCloudProvider
+from atat.domain.csp.cloud.models import (
+    EnvironmentCSPPayload,
+    EnvironmentCSPResult,
+    TenantCSPPayload,
+    TenantCSPResult,
+    BillingProfileCreationCSPPayload,
+    BillingProfileCreationCSPResult,
+)
 
 from tests.factories import EnvironmentFactory, EnvironmentRoleFactory, UserFactory
 
@@ -14,20 +22,54 @@ def mock_csp():
 
 def test_create_environment(mock_csp: MockCloudProvider):
     environment = EnvironmentFactory.create()
-    user = UserFactory.create()
-    environment_id = mock_csp.create_environment(CREDENTIALS, user, environment)
-    assert isinstance(environment_id, str)
+    environment.application.cloud_id = "parent_id"
+    environment.portfolio.csp_data = {"tenant_id": "fake"}
+    payload = EnvironmentCSPPayload(
+        **dict(
+            tenant_id=environment.portfolio.csp_data.get("tenant_id"),
+            display_name=environment.name,
+            parent_id=environment.application.cloud_id,
+        )
+    )
+    result = mock_csp.create_environment(payload)
+    assert isinstance(result, EnvironmentCSPResult)
 
 
-def test_create_admin_user(mock_csp: MockCloudProvider):
-    admin_user = mock_csp.create_atat_admin_user(CREDENTIALS, "env_id")
-    assert isinstance(admin_user["id"], str)
-    assert isinstance(admin_user["credentials"], dict)
+def test_create_tenant(mock_csp: MockCloudProvider):
+    payload = TenantCSPPayload(
+        **dict(
+            user_id="admin",
+            password="JediJan13$coot",  # pragma: allowlist secret
+            domain_name="jediccpospawnedtenant2",
+            first_name="Tedry",
+            last_name="Tenet",
+            country_code="US",
+            password_recovery_email_address="thomas@promptworks.com",
+        )
+    )
+    result = mock_csp.create_tenant(payload)
+    assert isinstance(result, TenantCSPResult)
 
 
-def test_create_environment_baseline(mock_csp: MockCloudProvider):
-    baseline = mock_csp.create_atat_admin_user(CREDENTIALS, "env_id")
-    assert isinstance(baseline, dict)
+def test_create_billing_profile_creation(mock_csp: MockCloudProvider):
+
+    payload = BillingProfileCreationCSPPayload(
+        **dict(
+            address=dict(
+                address_line_1="123 S Broad Street, Suite 2400",
+                company_name="Promptworks",
+                city="Philadelphia",
+                region="PA",
+                country="US",
+                postal_code="19109",
+            ),
+            tenant_id="60ff9d34-82bf-4f21-b565-308ef0533435",
+            billing_profile_display_name="Test Billing Profile",
+            billing_account_name="123123",
+        )
+    )
+    result = mock_csp.create_billing_profile_creation(payload)
+    assert isinstance(result, BillingProfileCreationCSPResult)
 
 
 def test_create_or_update_user(mock_csp: MockCloudProvider):
@@ -37,4 +79,4 @@ def test_create_or_update_user(mock_csp: MockCloudProvider):
 
 
 def test_disable_user(mock_csp: MockCloudProvider):
-    assert mock_csp.disable_user(CREDENTIALS, "csp_user_id")
+    assert mock_csp.disable_user("tenant_id", "role_assignment_cloud_id")

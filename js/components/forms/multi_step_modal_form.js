@@ -34,8 +34,10 @@ export default {
 
   methods: {
     next: function() {
+      this.submitted = true
       if (this.validateFields()) {
         this.step += 1
+        this.submitted = false
       }
     },
     previous: function() {
@@ -53,6 +55,10 @@ export default {
       return this.step === this.steps - 1
     },
     handleSubmit: function(e) {
+      if (this._onLastPage) {
+        this.submitted = true
+      }
+
       if (!this.validateFields() || !this._onLastPage()) {
         e.preventDefault()
         this.next()

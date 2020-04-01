@@ -1,7 +1,7 @@
 {
-  "name": "atst",
+  "name": "atat",
   "version": "1.0.0",
-  "description": "ATST Stateless Services",
+  "description": "ATAT Stateless Services",
   "main": "index.js",
   "scripts": {
     "watch": "parcel watch js/index.js -d static/assets --public-url /static/assets -o index.js --no-autoinstall",
@@ -14,9 +14,9 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "@azure/storage-blob": "^12.0.2",
     "ally.js": "^1.4.1",
     "autoprefixer": "^9.1.3",
-    "azure-storage": "^2.10.3",
     "babel-polyfill": "^6.26.0",
     "date-fns": "^1.29.0",
     "ramda": "^0.25.0",
@@ -42,7 +42,10 @@
     "vue-template-compiler": "2.5.15"
   },
   "resolutions": {
-    "parcel-bundler/**/lodash": "^4.17.13"
+    "parcel-bundler/**/lodash": "^4.17.13",
+    "minimist": ">=1.2.2",
+    "acorn": ">=5.7.4 <6.0.0 || >=6.4.1 <7.0.0 || >=7.1.1",
+    "uswds/**/acorn":"^6.4.1"
   },
   "browserslist": [
     "last 3 version",

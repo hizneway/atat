@@ -1,0 +1,77 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: atst
+spec:
+  template:
+    spec:
+      volumes:
+        - name: nginx-secret
+          flexVolume:
+            options:
+              usepodidentity: "false"
+              usevmmanagedidentity: "true"
+              vmmanagedidentityclientid: $VMSS_CLIENT_ID
+              keyvaultname: "cz-pwdev-keyvault"
+              keyvaultobjectnames: "dhparam4096;stagingcert;stagingcert"
+        - name: flask-secret
+          flexVolume:
+            options:
+              usepodidentity: "false"
+              usevmmanagedidentity: "true"
+              vmmanagedidentityclientid: $VMSS_CLIENT_ID
+              keyvaultname: "cz-pwdev-keyvault"
+              keyvaultobjectnames: "AZURE-STORAGE-KEY;MAIL-PASSWORD;PGPASSWORD;REDIS-PASSWORD;SECRET-KEY"
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: atst-worker
+spec:
+  template:
+    spec:
+      volumes:
+        - name: flask-secret
+          flexVolume:
+            options:
+              usepodidentity: "false"
+              usevmmanagedidentity: "true"
+              vmmanagedidentityclientid: $VMSS_CLIENT_ID
+              keyvaultname: "cz-pwdev-keyvault"
+              keyvaultobjectnames: "AZURE-STORAGE-KEY;MAIL-PASSWORD;PGPASSWORD;REDIS-PASSWORD;SECRET-KEY"
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: atst-beat
+spec:
+  template:
+    spec:
+      volumes:
+        - name: flask-secret
+          flexVolume:
+            options:
+              usepodidentity: "false"
+              usevmmanagedidentity: "true"
+              vmmanagedidentityclientid: $VMSS_CLIENT_ID
+              keyvaultname: "cz-pwdev-keyvault"
+              keyvaultobjectnames: "AZURE-STORAGE-KEY;MAIL-PASSWORD;PGPASSWORD;REDIS-PASSWORD;SECRET-KEY"
+---
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: crls
+spec:
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          volumes:
+            - name: flask-secret
+              flexVolume:
+                options:
+                  usepodidentity: "false"
+                  usevmmanagedidentity: "true"
+                  vmmanagedidentityclientid: $VMSS_CLIENT_ID
+                  keyvaultname: "cz-pwdev-keyvault"
+                  keyvaultobjectnames: "AZURE-STORAGE-KEY;MAIL-PASSWORD;PGPASSWORD;REDIS-PASSWORD;SECRET-KEY"

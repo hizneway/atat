@@ -4,18 +4,22 @@
   height: $topbar-height;
   position: fixed;
   top: $usa-banner-height;
-  width: 100%;
   z-index: 10;
+  width: 100%;
 
   &__navigation {
     display: flex;
     flex-direction: row;
     align-items: stretch;
     justify-content: space-between;
+    max-width: $max-page-width;
+
+    a {
+      color: $color-white;
+    }
   }
 
   &__link {
-    color: $color-white !important;
     display: inline-flex;
     align-items: center;
     height: $topbar-height;
@@ -23,20 +27,28 @@
     text-decoration: none;
 
     &-label {
-      @include h5;
-      text-decoration: underline;
-      padding-left: $gap;
+      font-size: $h5-font-size;
+      font-weight: $font-semibold;
       text-decoration: none;
     }
 
     &-icon {
-      margin-left: $gap;
-
+      margin: 0 $gap 0 0;
       @include icon-color($color-white);
     }
 
+    .icon--logout {
+      margin: 0 0 0 $gap;
+    }
+
     &--home {
-      padding-left: $gap / 2;
+      padding: 0 ($gap * 2);
+
+      .topbar__link-label {
+        font-size: $base-font-size;
+        font-weight: $font-bold;
+        text-transform: uppercase;
+      }
     }
 
     &:hover {
@@ -52,4 +64,12 @@
     align-items: stretch;
     justify-content: flex-end;
   }
+}
+
+.login-topbar .topbar__navigation {
+  max-width: 100%;
+}
+
+.login-topbar .topbar__context .topbar__link-icon {
+  margin: 0 0 0 0.8rem;
 }

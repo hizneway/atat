@@ -6,16 +6,10 @@
   }
 
   .input__inline-fields {
-    text-align: left;
-
-    .usa-input__choices label {
-      font-weight: $font-bold;
-    }
-  }
-
-  .input__inline-fields {
     padding: $gap * 2;
     border: 1px solid $color-gray-lighter;
+    text-align: left;
+    max-width: 100%;
 
     &.checked {
       border: 1px solid $color-blue;
@@ -33,7 +27,7 @@
 
   .user-info {
     .usa-input {
-      width: 45rem;
+      max-width: $max-input-width;
 
       input,
       label,
@@ -53,8 +47,7 @@
   }
 }
 
-#modal--add-app-mem,
-#modal--add-portfolio-manager {
+.form-content--member-form {
   .modal__body {
     min-width: 75rem;
   }

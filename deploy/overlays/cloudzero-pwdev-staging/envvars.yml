@@ -1,0 +1,35 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: atst-worker-envvars
+data:
+  AZURE_ACCOUNT_NAME: jeditasksatat
+  CELERY_DEFAULT_QUEUE: celery-staging
+  FLASK_ENV: staging
+  PGDATABASE: cloudzero_pwdev_atat
+  PGHOST: 191.238.6.43
+  PGUSER: atat@cloudzero-pwdev-sql
+  PGSSLMODE: require
+  REDIS_HOST: cloudzero-pwdev-redis.redis.cache.windows.net:6380
+  SERVER_NAME: staging.atat.cloud.mil
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: atst-envvars
+data:
+  ASSETS_URL: ""
+  AZURE_ACCOUNT_NAME: pwdevtasks
+  BLOB_STORAGE_URL: https://pwdevtasks.blob.core.windows.net/
+  CAC_URL: https://auth-staging.atat.cloud.mil
+  CDN_ORIGIN: https://staging.atat.cloud.mil
+  CELERY_DEFAULT_QUEUE: celery-staging
+  FLASK_ENV: staging
+  PGDATABASE: cloudzero_pwdev_atat
+  PGHOST: 191.238.6.43
+  PGUSER: atat@cloudzero-pwdev-sql
+  PGSSLMODE: require
+  REDIS_HOST: cloudzero-pwdev-redis.redis.cache.windows.net:6380
+  SESSION_COOKIE_DOMAIN: atat.code.mil
+  STATIC_URL: "https://staging.atat.code.mil/static/"

@@ -1,3 +1,4 @@
+# TODO: change this to use overlays
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -16,6 +17,8 @@ spec:
       containers:
       - name: migration
         image: $CONTAINER_IMAGE
+        securityContext:
+          allowPrivilegeEscalation: false
         command: [
           "/bin/sh", "-c"
         ]
@@ -50,9 +53,11 @@ spec:
           flexVolume:
             driver: "azure/kv"
             options:
-              usepodidentity: "true"
-              keyvaultname: "atat-vault-test"
-              keyvaultobjectnames: "master-AZURE-STORAGE-KEY;master-MAIL-PASSWORD;master-PGPASSWORD;master-REDIS-PASSWORD;master-SECRET-KEY"
+              usepodidentity: "false"
+              usevmmanagedidentity: "true"
+              vmmanagedidentityclientid: $VMSS_CLIENT_ID
+              keyvaultname: "cz-pwdev-keyvault"
+              keyvaultobjectnames: "AZURE-STORAGE-KEY;MAIL-PASSWORD;PGPASSWORD;REDIS-PASSWORD;SECRET-KEY"
               keyvaultobjectaliases: "AZURE_STORAGE_KEY;MAIL_PASSWORD;PGPASSWORD;REDIS_PASSWORD;SECRET_KEY"
               keyvaultobjecttypes: "secret;secret;secret;secret;key"
               tenantid: $TENANT_ID

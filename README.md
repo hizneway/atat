@@ -1,4 +1,4 @@
-# ATST
+# ATAT
 
 [![Build Status](https://circleci.com/gh/dod-ccpo/atst.svg?style=svg)](https://circleci.com/gh/dod-ccpo/atst)
 
@@ -9,7 +9,7 @@ This is the user-facing web application for ATAT.
 ## Installation
 
 ### System Requirements
-ATST uses the [Scripts to Rule Them All](https://github.com/github/scripts-to-rule-them-all)
+ATAT uses the [Scripts to Rule Them All](https://github.com/github/scripts-to-rule-them-all)
 pattern for setting up and running the project. The scripts are located in the
 `script` directory and use script fragments in the
 [scriptz](https://github.com/dod-ccpo/scriptz) repository that are shared across
@@ -19,23 +19,23 @@ Before running the setup scripts, a couple of dependencies need to be installed
 locally:
 
 * `python` == 3.7.3
-  Python version 3.7.3 **must** be installed on your machine before installing `pipenv`.
+  Python version 3.7.3 **must** be installed on your machine before installing `poetry`.
   You can download Python 3.7.3 [from python.org](https://www.python.org/downloads/)
   or use your preferred system package manager. Multiple versions of Python can exist on one
   computer, but 3.7.3 is required for ATAT.
 
-* `pipenv`
-  ATST requires `pipenv` to be installed for python dependency management. `pipenv`
+* `poetry`
+  ATAT requires `poetry` to be installed for python dependency management. `poetry`
   will create the virtual environment that the app requires. [See
-  `pipenv`'s documentation for instructions on installing `pipenv`](
-  https://pipenv.readthedocs.io/en/latest/install/#installing-pipenv).
+  `poetry`'s documentation for instructions on installing `poetry`](
+  https://python-poetry.org/docs/#installation).
 
 * `yarn`
-  ATST requires `yarn` for installing and managing Javascript
+  ATAT requires `yarn` for installing and managing Javascript
   dependencies: https://yarnpkg.com/en/
 
 * `postgres` >= 9.6
-  ATST requires a PostgreSQL instance (>= 9.6) for persistence. Have PostgresSQL installed
+  ATAT requires a PostgreSQL instance (>= 9.6) for persistence. Have PostgresSQL installed
   and running on the default port of 5432. (A good resource for installing and running
   PostgreSQL for Macs is [Postgres.app](https://postgresapp.com/). Follow the instructions,
   including the optional Step 3, and add `/Applications/Postgres.app/Contents/Versions/latest/bin`
@@ -43,7 +43,7 @@ locally:
   by executing `psql` and ensuring that a connection is successfully made.
 
 * `redis`
-  ATST also requires a Redis instance for session management. Have Redis installed and
+  ATAT also requires a Redis instance for session management. Have Redis installed and
   running on the default port of 6379. You can ensure that Redis is running by
   executing `redis-cli` with no options and ensuring a connection is succesfully made.
 
@@ -63,10 +63,9 @@ set them up with the following command:
     git submodule update --init --recursive
 
 ### Setup
-This application uses Pipenv to manage Python dependencies and a virtual
-environment. Instead of the classic `requirements.txt` file, pipenv uses a
-Pipfile and Pipfile.lock, making it more similar to other modern package managers
-like yarn or mix.
+This application uses `poetry` to manage Python dependencies and a virtual
+environment. Instead of the classic `requirements.txt` file, `poetry` uses a
+`pyproject.toml` and `poetry.lock`, making it more similar to other modern package managers like yarn or mix.
 
 To perform the installation, run the setup script:
 
@@ -77,7 +76,7 @@ to install all of the Python and Node dependencies and run database migrations.
 
 To enter the virtualenv manually (a la `source .venv/bin/activate`):
 
-    pipenv shell
+    poetry shell
 
 If you want to automatically load the virtual environment whenever you enter the
 project directory, take a look at [direnv](https://direnv.net/).  An `.envrc`
@@ -143,7 +142,7 @@ Once this user is created, you can log in as them again the future using the DoD
 We have a helper script that will seed the database with requests, portfolios and
 applications for all of the test users:
 
-`pipenv run python script/seed_sample.py`
+`poetry run python script/seed_sample.py`
 
 ### Email Notifications
 
@@ -197,11 +196,11 @@ To run lint, static analysis, and Python unit tests:
 
 To run only the Python unit tests:
 
-    pipenv run python -m pytest
+    poetry run python -m pytest
 
-To re-run Python tests each time a file is changed:
+Integration tests that use the hybrid cloud provider are skipped by default. To run these tests, add a `--hybrid` flag when running pytest:
 
-    pipenv run ptw
+    poetry run python -m pytest --hybrid
 
 This project also runs Javascript tests using jest. To run the Javascript tests:
 
@@ -219,8 +218,18 @@ To generate coverage reports for the Javascript tests:
 
 - `ASSETS_URL`: URL to host which serves static assets (such as a CDN).
 - `AZURE_ACCOUNT_NAME`: The name for the Azure blob storage account
+- `AZURE_ADMIN_ROLE_ASSIGNMENT_ID`: The fully pathed role assignment ID that associates a user with admin privileges to the root tenant of the Hybrid Cloud
+- `AZURE_BILLING_ACCOUNT_NAME`: The name for the root Azure billing account
+- `AZURE_CALC_CLIENT_ID`: The client id used to generate a token for the Azure pricing calculator
+- `AZURE_CALC_RESOURCE`: The resource URL used to generate a token for the Azure pricing calculator
+- `AZURE_CALC_SECRET`: The secret key used to generate a token for the Azure pricing calculator
+- `AZURE_CALC_URL`: The redirect URL for the Azure pricing calculator
+- `AZURE_LOGIN_URL`: The URL used to login for an Azure instance.
 - `AZURE_STORAGE_KEY`: A valid secret key for the Azure blob storage account
 - `AZURE_TO_BUCKET_NAME`: The Azure blob storage container name for task order uploads
+- `AZURE_TENANT_ADMIN_USERNAME`: Username of an admin user associated with the "root" tenant id used in the Hybrid Cloud Provider
+- `AZURE_TENANT_ADMIN_PASSWORD`: Password associated with the "root" tenant id used in the Hybrid Cloud Provider
+- `AZURE_USER_OBJECT_ID`: Object Id of an admin user associated with the "root" tenant id used in the Hybrid Cloud Provider
 - `BLOB_STORAGE_URL`: URL to Azure blob storage container.
 - `CAC_URL`: URL for the CAC authentication route.
 - `CA_CHAIN`: Path to the CA chain file.
@@ -241,6 +250,7 @@ To generate coverage reports for the Javascript tests:
 - `MAIL_SENDER`: String. Email address to send outgoing mail from.
 - `MAIL_SERVER`: The SMTP host
 - `MAIL_TLS`: Boolean. Use TLS to connect to the SMTP server.
+- `MICROSOFT_TASK_ORDER_EMAIL_ADDRESS`: String. Email address for Microsoft to receive PDFs of new and updated task orders.
 - `PERMANENT_SESSION_LIFETIME`: Integer specifying how many seconds a user's session can stay valid for. https://flask.palletsprojects.com/en/1.1.x/config/#PERMANENT_SESSION_LIFETIME
 - `PGDATABASE`: String specifying the name of the postgres database.
 - `PGHOST`: String specifying the hostname of the postgres database.
@@ -255,8 +265,11 @@ To generate coverage reports for the Javascript tests:
 - `SERVER_NAME`: Hostname for ATAT. Only needs to be specified in contexts where the hostname cannot be inferred from the request, such as Celery workers. https://flask.palletsprojects.com/en/1.1.x/config/#SERVER_NAME
 - `SESSION_COOKIE_NAME`: String value specifying the name to use for the session cookie. https://flask.palletsprojects.com/en/1.1.x/config/#SESSION_COOKIE_NAME
 - `SESSION_COOKIE_DOMAIN`: String value specifying the name to use for the session cookie. This should be set to the root domain so that it is valid for both the main site and the authentication subdomain. https://flask.palletsprojects.com/en/1.1.x/config/#SESSION_COOKIE_DOMAIN
+- `SESSION_KEY_PREFIX`: A prefix that is added before all session keys: https://pythonhosted.org/Flask-Session/#configuration
 - `SESSION_TYPE`: String value specifying the cookie storage backend. https://pythonhosted.org/Flask-Session/
+- `SESSION_COOKIE_SECURE`: https://flask.palletsprojects.com/en/1.1.x/config/#SESSION_COOKIE_SECURE
 - `SESSION_USE_SIGNER`: Boolean value specifying if the cookie sid should be signed.
+- `SIMULATE_API_FAILURES`: Boolean value specifying if a non-production CSP should randomly produce API failures.
 - `SQLALCHEMY_ECHO`: Boolean value specifying if SQLAlchemy should log queries to stdout.
 - `STATIC_URL`: URL specifying where static assets are hosted.
 - `USE_AUDIT_LOG`: Boolean value describing if ATAT should write to the audit log table in the database. Set to "false" by default for performance reasons.
@@ -334,13 +347,13 @@ This project uses [detect-secrets](https://github.com/Yelp/detect-secrets) to he
 If you need to check in a file that raises false positives from `detect-secrets`, you can add it to the whitelist. Run:
 
 ```
-pipenv run detect-secrets scan --no-aws-key-scan --no-stripe-scan --no-slack-scan --no-artifactory-scan --update .secrets.baseline
+poetry run detect-secrets scan --no-aws-key-scan --no-stripe-scan --no-slack-scan --no-artifactory-scan --update .secrets.baseline
 ```
 
 and then:
 
 ```
-pipenv run detect-secrets audit .secrets.baseline
+poetry run detect-secrets audit .secrets.baseline
 ```
 
 The audit will open an interactive prompt where you can whitelist the file. This is useful if you're checking in an entire file that looks like or is a secret (like a sample PKI file).
@@ -361,51 +374,3 @@ fi
 ```
 
 Also note that if the line number of a previously whitelisted secret changes, the whitelist file, `.secrets.baseline`, will be updated and needs to be committed.
-
-## Local Kubernetes Setup
-
-A modified version of the Kubernetes cluster can be deployed locally for
-testing and development purposes.
-
-It is strongly recommended that you backup your local K8s config (usually
-`~/.kube/config`) before launching Minikube for the first time.
-
-Before beginning:
-
-- install the [Docker CLI](https://docs.docker.com/v17.12/install/)
-- install [Minikube](https://kubernetes.io/docs/tasks/tools/install-minikube/)
-  (this will also require installing a Hypervisor, such as VirtualBox)
-
-### Setup
-
-Run
-
-```
-script/minikube_setup
-```
-
-Once the script exits successfully, run
-
-```
-minikube service list
-```
-
-### Access the site
-
-One of the two URLs given for the `atat-auth` service will load an HTTP version
-of the application.
-
-For HTTP basic auth, the username and password are both `minikube`.
-
-### Differences from the main config
-
-As of the time of writing, this setup does not include the following:
-
-- SSL/TLS or the complete DoD PKI
-- the cronjob for syncing CRLs and the peristent storage
-- production configuration
-
-In order for the application to run, the K8s config for Minikube includes an
-additional deployment resource called `datastores`. This includes Postgres
-and Redis containers. It also includes hard-coded versions of the K8s secrets
-used in the regular clusters.

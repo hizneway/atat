@@ -1,14 +1,12 @@
-from datetime import date
 from flask import url_for
 import pytest
-from datetime import timedelta, date
 
-from atst.domain.permission_sets import PermissionSets
-from atst.domain.task_orders import TaskOrders
-from atst.models import *
-from atst.models.portfolio_role import Status as PortfolioStatus
-from atst.models.task_order import Status as TaskOrderStatus
-from atst.utils.localization import translate
+from atat.domain.permission_sets import PermissionSets
+from atat.domain.task_orders import TaskOrders
+from atat.models import *
+from atat.models.portfolio_role import Status as PortfolioStatus
+from atat.models.task_order import Status as TaskOrderStatus
+from atat.utils.localization import translate
 
 from tests.factories import *
 from tests.utils import captured_templates
@@ -36,7 +34,8 @@ def task_order():
 
 
 def test_view_task_order_not_draft(client, user_session, task_order):
-    TaskOrders.sign(task_order=task_order, signer_dod_id=random_dod_id())
+    user = UserFactory()
+    TaskOrders.sign(task_order=task_order, signer_dod_id=user.dod_id)
     user_session(task_order.portfolio.owner)
     response = client.get(
         url_for("task_orders.view_task_order", task_order_id=task_order.id)

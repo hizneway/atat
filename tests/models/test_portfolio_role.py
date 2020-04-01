@@ -1,15 +1,15 @@
 import pytest
-import datetime
+import pendulum
 
-from atst.domain.environments import Environments
-from atst.domain.portfolios import Portfolios
-from atst.domain.portfolio_roles import PortfolioRoles
-from atst.domain.applications import Applications
-from atst.domain.permission_sets import PermissionSets
-from atst.models import AuditEvent, InvitationStatus, PortfolioRoleStatus, CSPRole
+from atat.domain.environments import Environments
+from atat.domain.portfolios import Portfolios
+from atat.domain.portfolio_roles import PortfolioRoles
+from atat.domain.applications import Applications
+from atat.domain.permission_sets import PermissionSets
+from atat.models import AuditEvent, InvitationStatus, PortfolioRoleStatus, CSPRole
 
 from tests.factories import *
-from atst.domain.portfolio_roles import PortfolioRoles
+from atat.domain.portfolio_roles import PortfolioRoles
 
 
 @pytest.mark.audit_log
@@ -204,7 +204,7 @@ def test_status_when_invitation_is_expired():
     PortfolioInvitationFactory.create(
         role=portfolio_role,
         status=InvitationStatus.PENDING,
-        expiration_time=datetime.datetime.now() - datetime.timedelta(seconds=1),
+        expiration_time=pendulum.now(tz="utc").subtract(seconds=1),
     )
     assert portfolio_role.display_status == "invite_expired"
 

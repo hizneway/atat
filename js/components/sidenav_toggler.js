@@ -1,30 +1,22 @@
+import ExpandSidenavMixin from '../mixins/expand_sidenav'
 import ToggleMixin from '../mixins/toggle'
-
-const cookieName = 'expandSidenav'
+import { sidenavCookieName } from '../lib/constants'
 
 export default {
   name: 'sidenav-toggler',
 
-  mixins: [ToggleMixin],
+  mixins: [ExpandSidenavMixin, ToggleMixin],
 
-  props: {
-    defaultVisible: {
-      type: Boolean,
-      default: function() {
-        if (document.cookie.match(cookieName)) {
-          return !!document.cookie.match(cookieName + ' *= *true')
-        } else {
-          return true
-        }
-      },
-    },
+  mounted: function() {
+    this.$parent.$emit('sidenavToggle', this.isVisible)
   },
 
   methods: {
     toggle: function(e) {
       e.preventDefault()
       this.isVisible = !this.isVisible
-      document.cookie = cookieName + '=' + this.isVisible + '; path=/'
+      document.cookie = sidenavCookieName + '=' + this.isVisible + '; path=/'
+      this.$parent.$emit('sidenavToggle', this.isVisible)
     },
   },
 }

@@ -27,7 +27,7 @@
             <div class="usa-input__title{% if not field.description %}-inline{% endif %}">
               {{ field.label | striptags}}
               {% if optional %}
-                <span class="usa-input-label-helper">(optional)</span>
+                <span class="usa-input-label-helper">{{ "common.optional" | translate }}</span>
               {% endif %}
               {% if tooltip %}{{ Tooltip(tooltip) }}{% endif %}
             </div>
@@ -48,7 +48,7 @@
         {{ field(disabled=disabled) }}
 
         <template v-if='showError'>
-          <span class='usa-input__message' v-html='validationError'></span>
+          <span class='usa-input__message' v-text='validationError'></span>
         </template>
 
       </fieldset>

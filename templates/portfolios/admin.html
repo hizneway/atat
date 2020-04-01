@@ -13,16 +13,16 @@
   <div v-cloak class="portfolio-admin">
     {% include "fragments/flash.html" %}
     <!-- max width of this section is 460px -->
-    <section class="form-container__half">
+    <section class="form-container--narrow">
       <h3>Portfolio name and component</h3>
       {% if user_can(permissions.EDIT_PORTFOLIO_NAME) %}
         <base-form inline-template>
           <form method="POST" action="{{ url_for('portfolios.edit', portfolio_id=portfolio.id) }}" autocomplete="false">
             {{ portfolio_form.csrf_token }}
             {{ TextInput(portfolio_form.name, validation="portfolioName", optional=False) }}
-            {{ TextInput(portfolio_form.description, paragraph=True) }}
+            {{ TextInput(portfolio_form.description, validation="defaultTextAreaField", paragraph=True) }}
             <div class='edit-portfolio-name action-group'>
-              {{ SaveButton(text='Save Changes', additional_classes='usa-button-big') }}
+              {{ SaveButton(text='Save Changes') }}
             </div>
           </form>
         </base-form>
@@ -40,28 +40,23 @@
         </div>
       {% endif %}
 
-        <div class='defense-row'>
-          <div>
-            <div class='admin-title'>{{ "portfolios.admin.defense_component_label" | translate }}</div>
-            {% if portfolio.defense_component %}
-              <div class='admin-content'>
-                {% for component in portfolio.defense_component %}
-                  {{ "forms.portfolio.defense_component.choices.%s" | format(component) | translate }}<br>
-                {% endfor %}
-              </div>
-            {% else %}
-              <div class='admin-content'>{{ "fragments.portfolio_admin.none" | translate }}</div>
-            {% endif %}
-          </div>
+      <div class='defense-row'>
+        <div>
+          <div class='admin-title'>{{ "portfolios.admin.defense_component_label" | translate }}</div>
+          {% if portfolio.defense_component %}
+            <div class='admin-content'>
+              {% for component in portfolio.defense_component %}
+                {{ "forms.portfolio.defense_component.choices.%s" | format(component) | translate }}<br>
+              {% endfor %}
+            </div>
+          {% else %}
+            <div class='admin-content'>{{ "fragments.portfolio_admin.none" | translate }}</div>
+          {% endif %}
         </div>
       </div>
     </section>
 
     <hr>
-
-    {% if user_can(permissions.VIEW_PORTFOLIO_POC) %}
-      {% include "portfolios/fragments/primary_point_of_contact.html" %}
-    {% endif %}
 
     {% if user_can(permissions.VIEW_PORTFOLIO_USERS) %}
       {% include "portfolios/fragments/portfolio_members.html" %}

@@ -140,6 +140,10 @@
   &__confirmation {
     margin-left: $gap * 8;
   }
+
+  .usa-input {
+    max-width: 100%;
+  }
 }
 
 .task-order__modal-cancel {

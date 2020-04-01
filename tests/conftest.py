@@ -7,13 +7,13 @@ from werkzeug.datastructures import FileStorage
 from collections import OrderedDict
 from unittest.mock import Mock
 
-from atst.app import make_app, make_config
-from atst.database import db as _db
+from atat.app import make_app, make_config
+from atat.database import db as _db
 import tests.factories as factories
 from tests.mocks import PDF_FILENAME, PDF_FILENAME2
 from tests.utils import FakeLogger, FakeNotificationSender
 
-from datetime import datetime, timedelta
+import pendulum
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
@@ -23,6 +23,31 @@ from cryptography.x509.oid import NameOID
 
 
 dictConfig({"version": 1, "handlers": {"wsgi": {"class": "logging.NullHandler"}}})
+
+
+def pytest_addoption(parser):
+    parser.addoption("--hybrid", action="store_true", default=False)
+    parser.addoption(
+        "--repeat", action="store", help="Number of times to repeat each test"
+    )
+
+
+def pytest_generate_tests(metafunc):
+    if metafunc.config.option.repeat is not None:
+        count = int(metafunc.config.option.repeat)
+
+        # Append fixture that accepts how many times each test should be repeated
+        metafunc.fixturenames.append("tmp_ct")
+        metafunc.parametrize("tmp_ct", range(count))
+
+
+def pytest_collection_modifyitems(config, items):
+    if config.getoption("--hybrid"):
+        return
+    skip_hybrid = pytest.mark.skip(reason="need --hybrid option to run")
+    for item in items:
+        if "hybrid" in item.keywords:
+            item.add_marker(skip_hybrid)
 
 
 @pytest.fixture(scope="session")
@@ -145,7 +170,7 @@ def dummy_field():
 def user_session(monkeypatch, session):
     def set_user_session(user=None):
         monkeypatch.setattr(
-            "atst.domain.auth.get_current_user",
+            "atat.domain.auth.get_current_user",
             lambda *args: user or factories.UserFactory.create(),
         )
 
@@ -165,11 +190,17 @@ def pdf_upload2():
 
 
 @pytest.fixture
+def downloaded_task_order():
+    with open(PDF_FILENAME, "rb") as fp:
+        yield {"name": "mock.pdf", "content": fp.read()}
+
+
+@pytest.fixture
 def extended_financial_verification_data(pdf_upload):
     return {
         "funding_type": "RDTE",
         "funding_type_other": "other",
-        "expiration_date": "1/1/{}".format(datetime.date.today().year + 1),
+        "expiration_date": "1/1/{}".format(pendulum.today().year + 1),
         "clin_0001": "50000",
         "clin_0003": "13000",
         "clin_1001": "30000",
@@ -208,7 +239,6 @@ def make_x509():
         if signer_key is None:
             signer_key = private_key
 
-        one_day = timedelta(1, 0, 0)
         public_key = private_key.public_key()
         builder = x509.CertificateBuilder()
         builder = builder.subject_name(
@@ -221,8 +251,8 @@ def make_x509():
             builder = builder.add_extension(
                 x509.BasicConstraints(ca=True, path_length=None), critical=True
             )
-        builder = builder.not_valid_before(datetime.today() - (one_day * 2))
-        builder = builder.not_valid_after(datetime.today() + (one_day * 30))
+        builder = builder.not_valid_before(pendulum.today().subtract(days=2))
+        builder = builder.not_valid_after(pendulum.today().add(days=30))
         builder = builder.serial_number(x509.random_serial_number())
         builder = builder.public_key(public_key)
         certificate = builder.sign(
@@ -243,13 +273,12 @@ def make_crl():
         cn="ATAT",
         expired_serials=None,
     ):
-        one_day = timedelta(1, 0, 0)
         builder = x509.CertificateRevocationListBuilder()
         builder = builder.issuer_name(
             x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, cn)])
         )
-        last_update = datetime.today() + (one_day * last_update_days)
-        next_update = datetime.today() + (one_day * next_update_days)
+        last_update = pendulum.today().add(days=last_update_days)
+        next_update = pendulum.today().add(days=next_update_days)
         builder = builder.last_update(last_update)
         builder = builder.next_update(next_update)
         if expired_serials:

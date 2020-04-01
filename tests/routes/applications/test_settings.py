@@ -1,34 +1,41 @@
+import pendulum
 import uuid
-from flask import url_for, get_flashed_messages
-from unittest.mock import Mock
-import datetime
-from werkzeug.datastructures import ImmutableMultiDict
+from unittest.mock import Mock, patch
+
 import pytest
-
+from flask import get_flashed_messages, url_for
 from tests.factories import *
+from tests.mock_azure import mock_azure
+from tests.utils import captured_templates
+from werkzeug.datastructures import ImmutableMultiDict
 
-from atst.domain.applications import Applications
-from atst.domain.application_roles import ApplicationRoles
-from atst.domain.environment_roles import EnvironmentRoles
-from atst.domain.invitations import ApplicationInvitations
-from atst.domain.common import Paginator
-from atst.domain.csp.cloud import GeneralCSPException
-from atst.domain.permission_sets import PermissionSets
-from atst.models.application_role import Status as ApplicationRoleStatus
-from atst.models.environment_role import CSPRole, EnvironmentRole
-from atst.models.permissions import Permissions
-from atst.forms.application import EditEnvironmentForm
-from atst.forms.application_member import UpdateMemberForm
-from atst.forms.data import ENV_ROLE_NO_ACCESS as NO_ACCESS
-from atst.routes.applications.settings import (
-    filter_env_roles_form_data,
+from atat.database import db
+from atat.domain.application_roles import ApplicationRoles
+from atat.domain.applications import Applications
+from atat.domain.common import Paginator
+from atat.domain.csp.cloud.azure_cloud_provider import AzureCloudProvider
+from atat.domain.csp.cloud.exceptions import GeneralCSPException
+from atat.domain.csp.cloud.models import (
+    SubscriptionCreationCSPResult,
+    SubscriptionCreationCSPPayload,
+)
+from atat.domain.environment_roles import EnvironmentRoles
+from atat.domain.invitations import ApplicationInvitations
+from atat.domain.permission_sets import PermissionSets
+from atat.forms.application import EditEnvironmentForm
+from atat.forms.application_member import UpdateMemberForm
+from atat.forms.data import ENV_ROLE_NO_ACCESS as NO_ACCESS
+from atat.models.application_role import Status as ApplicationRoleStatus
+from atat.models.environment_role import CSPRole, EnvironmentRole
+from atat.models.permissions import Permissions
+from atat.routes.applications.settings import (
+    build_subscription_payload,
     filter_env_roles_data,
+    filter_env_roles_form_data,
     get_environments_obj_for_app,
     handle_create_member,
     handle_update_member,
 )
-
-from tests.utils import captured_templates
 
 
 def test_updating_application_environments_success(client, user_session):
@@ -129,11 +136,11 @@ def test_edit_application_environments_obj(app, client, user_session):
     env = application.environments[0]
     app_role1 = ApplicationRoleFactory.create(application=application)
     env_role1 = EnvironmentRoleFactory.create(
-        application_role=app_role1, environment=env, role=CSPRole.BASIC_ACCESS.value
+        application_role=app_role1, environment=env, role=CSPRole.ADMIN
     )
     app_role2 = ApplicationRoleFactory.create(application=application, user=None)
     env_role2 = EnvironmentRoleFactory.create(
-        application_role=app_role2, environment=env, role=CSPRole.NETWORK_ADMIN.value
+        application_role=app_role2, environment=env, role=CSPRole.CONTRIBUTOR
     )
 
     user_session(portfolio.owner)
@@ -180,7 +187,7 @@ def test_get_members_data(app, client, user_session):
         environments=[
             {
                 "name": "testing",
-                "members": [{"user": user, "role_name": CSPRole.BASIC_ACCESS.value}],
+                "members": [{"user": user, "role_name": CSPRole.ADMIN}],
             }
         ],
     )
@@ -206,13 +213,12 @@ def test_get_members_data(app, client, user_session):
         assert member["permission_sets"] == {
             "perms_team_mgmt": False,
             "perms_env_mgmt": False,
-            "perms_del_env": False,
         }
         assert member["environment_roles"] == [
             {
                 "environment_id": str(environment.id),
                 "environment_name": environment.name,
-                "role": env_role.role,
+                "role": env_role.role.value,
             }
         ]
         assert member["role_status"]
@@ -384,7 +390,7 @@ def test_delete_environment(client, user_session):
 
 def test_create_member(monkeypatch, client, user_session, session):
     job_mock = Mock()
-    monkeypatch.setattr("atst.jobs.send_mail.delay", job_mock)
+    monkeypatch.setattr("atat.jobs.send_mail.delay", job_mock)
     user = UserFactory.create()
     application = ApplicationFactory.create(
         environments=[{"name": "Naboo"}, {"name": "Endor"}]
@@ -401,15 +407,14 @@ def test_create_member(monkeypatch, client, user_session, session):
             "user_data-last_name": user.last_name,
             "user_data-dod_id": user.dod_id,
             "user_data-email": user.email,
-            "environment_roles-0-environment_id": env.id,
-            "environment_roles-0-role": "Basic Access",
+            "environment_roles-0-environment_id": str(env.id),
+            "environment_roles-0-role": "ADMIN",
             "environment_roles-0-environment_name": env.name,
-            "environment_roles-1-environment_id": env_1.id,
+            "environment_roles-1-environment_id": str(env_1.id),
             "environment_roles-1-role": NO_ACCESS,
             "environment_roles-1-environment_name": env_1.name,
             "perms_env_mgmt": True,
             "perms_team_mgmt": True,
-            "perms_del_env": True,
         },
     )
 
@@ -511,10 +516,10 @@ def test_update_member(client, user_session, session):
     env_2 = EnvironmentFactory.create(application=application)
     # add user to two of the environments: env and env_1
     updated_role = EnvironmentRoleFactory.create(
-        environment=env, application_role=app_role, role=CSPRole.BASIC_ACCESS.value
+        environment=env, application_role=app_role, role=CSPRole.ADMIN
     )
     suspended_role = EnvironmentRoleFactory.create(
-        environment=env_1, application_role=app_role, role=CSPRole.BASIC_ACCESS.value
+        environment=env_1, application_role=app_role, role=CSPRole.ADMIN
     )
 
     user_session(application.portfolio.owner)
@@ -527,18 +532,17 @@ def test_update_member(client, user_session, session):
             application_role_id=app_role.id,
         ),
         data={
-            "environment_roles-0-environment_id": env.id,
-            "environment_roles-0-role": CSPRole.TECHNICAL_READ.value,
+            "environment_roles-0-environment_id": str(env.id),
+            "environment_roles-0-role": "CONTRIBUTOR",
             "environment_roles-0-environment_name": env.name,
-            "environment_roles-1-environment_id": env_1.id,
+            "environment_roles-1-environment_id": str(env_1.id),
             "environment_roles-1-environment_name": env_1.name,
             "environment_roles-1-disabled": "True",
-            "environment_roles-2-environment_id": env_2.id,
-            "environment_roles-2-role": CSPRole.NETWORK_ADMIN.value,
+            "environment_roles-2-environment_id": str(env_2.id),
+            "environment_roles-2-role": "BILLING_READ",
             "environment_roles-2-environment_name": env_2.name,
             "perms_env_mgmt": True,
             "perms_team_mgmt": True,
-            "perms_del_env": True,
         },
     )
 
@@ -558,14 +562,11 @@ def test_update_member(client, user_session, session):
     assert bool(
         app_role.has_permission_set(PermissionSets.EDIT_APPLICATION_ENVIRONMENTS)
     )
-    assert bool(
-        app_role.has_permission_set(PermissionSets.DELETE_APPLICATION_ENVIRONMENTS)
-    )
 
     environment_roles = application.roles[0].environment_roles
     # check that the user has roles in the correct envs
     assert len(environment_roles) == 3
-    assert updated_role.role == CSPRole.TECHNICAL_READ.value
+    assert updated_role.role == CSPRole.CONTRIBUTOR
     assert suspended_role.disabled
 
 
@@ -616,7 +617,7 @@ def test_filter_environment_roles():
         user = UserFactory.create()
         # need to set the time created to yesterday, otherwise the original invite and resent
         # invite have the same time_created and then we can't rely on time to order the invites
-        yesterday = datetime.date.today() - datetime.timedelta(days=1)
+        yesterday = pendulum.today().subtract(days=1)
         invite = ApplicationInvitationFactory.create(
             user=user, time_created=yesterday, email="original@example.com"
         )
@@ -666,8 +667,8 @@ def test_filter_env_roles_data():
 @pytest.fixture
 def set_g(monkeypatch):
     _g = Mock()
-    monkeypatch.setattr("atst.app.g", _g)
-    monkeypatch.setattr("atst.routes.applications.settings.g", _g)
+    monkeypatch.setattr("atat.app.g", _g)
+    monkeypatch.setattr("atat.routes.applications.settings.g", _g)
 
     def _set_g(attr, val):
         setattr(_g, attr, val)
@@ -683,7 +684,7 @@ def test_handle_create_member(monkeypatch, set_g, session):
     (env, env_1) = application.environments
 
     job_mock = Mock()
-    monkeypatch.setattr("atst.jobs.send_mail.delay", job_mock)
+    monkeypatch.setattr("atat.jobs.send_mail.delay", job_mock)
     set_g("current_user", application.portfolio.owner)
     set_g("portfolio", application.portfolio)
     set_g("application", application)
@@ -694,15 +695,14 @@ def test_handle_create_member(monkeypatch, set_g, session):
             "user_data-last_name": user.last_name,
             "user_data-dod_id": user.dod_id,
             "user_data-email": user.email,
-            "environment_roles-0-environment_id": env.id,
-            "environment_roles-0-role": "Basic Access",
+            "environment_roles-0-environment_id": str(env.id),
+            "environment_roles-0-role": "ADMIN",
             "environment_roles-0-environment_name": env.name,
-            "environment_roles-1-environment_id": env_1.id,
+            "environment_roles-1-environment_id": str(env_1.id),
             "environment_roles-1-role": NO_ACCESS,
             "environment_roles-1-environment_name": env_1.name,
             "perms_env_mgmt": True,
             "perms_team_mgmt": True,
-            "perms_del_env": True,
         }
     )
     handle_create_member(application.id, form_data)
@@ -718,7 +718,7 @@ def test_handle_create_member(monkeypatch, set_g, session):
     assert job_mock.called
 
 
-def test_handle_update_member(set_g):
+def test_handle_update_member_success(set_g):
     user = UserFactory.create()
     application = ApplicationFactory.create(
         environments=[{"name": "Naboo"}, {"name": "Endor"}]
@@ -731,17 +731,17 @@ def test_handle_update_member(set_g):
 
     form_data = ImmutableMultiDict(
         {
-            "environment_roles-0-environment_id": env.id,
-            "environment_roles-0-role": "Basic Access",
+            "environment_roles-0-environment_id": str(env.id),
+            "environment_roles-0-role": "ADMIN",
             "environment_roles-0-environment_name": env.name,
-            "environment_roles-1-environment_id": env_1.id,
+            "environment_roles-1-environment_id": str(env_1.id),
             "environment_roles-1-role": NO_ACCESS,
             "environment_roles-1-environment_name": env_1.name,
             "perms_env_mgmt": True,
             "perms_team_mgmt": True,
-            "perms_del_env": True,
         }
     )
+
     handle_update_member(application.id, app_role.id, form_data)
 
     assert len(application.roles) == 1
@@ -756,7 +756,7 @@ def test_handle_update_member_with_error(set_g, monkeypatch, mock_logger):
         raise GeneralCSPException(exception)
 
     monkeypatch.setattr(
-        "atst.domain.environments.Environments.update_env_role", _raise_csp_exception
+        "atat.domain.environments.Environments.update_env_role", _raise_csp_exception
     )
 
     user = UserFactory.create()
@@ -771,17 +771,144 @@ def test_handle_update_member_with_error(set_g, monkeypatch, mock_logger):
 
     form_data = ImmutableMultiDict(
         {
-            "environment_roles-0-environment_id": env.id,
-            "environment_roles-0-role": "Basic Access",
+            "environment_roles-0-environment_id": str(env.id),
+            "environment_roles-0-role": "ADMIN",
             "environment_roles-0-environment_name": env.name,
-            "environment_roles-1-environment_id": env_1.id,
+            "environment_roles-1-environment_id": str(env_1.id),
             "environment_roles-1-role": NO_ACCESS,
             "environment_roles-1-environment_name": env_1.name,
             "perms_env_mgmt": True,
             "perms_team_mgmt": True,
-            "perms_del_env": True,
         }
     )
     handle_update_member(application.id, app_role.id, form_data)
 
     assert mock_logger.messages[-1] == exception
+
+
+def test_create_subscription_success(
+    client, user_session, mock_azure: AzureCloudProvider
+):
+    environment = EnvironmentFactory.create()
+    user_session(environment.portfolio.owner)
+    environment.cloud_id = "management/group/id"
+    environment.portfolio.csp_data = {
+        "billing_account_name": "xxxx-xxxx-xxx-xxx",
+        "billing_profile_name": "xxxxxxxxxxx:xxxxxxxxxxxxx_xxxxxx",
+        "tenant_id": "xxxxxxxxxxx-xxxxxxxxxx-xxxxxxx-xxxxx",
+        "billing_profile_properties": {
+            "invoice_sections": [{"invoice_section_name": "xxxx-xxxx-xxx-xxx"}]
+        },
+    }
+
+    with patch.object(
+        AzureCloudProvider, "create_subscription", wraps=mock_azure.create_subscription,
+    ) as create_subscription:
+        create_subscription.return_value = SubscriptionCreationCSPResult(
+            subscription_verify_url="https://zombo.com", subscription_retry_after=10
+        )
+
+        response = client.post(
+            url_for("applications.create_subscription", environment_id=environment.id),
+        )
+
+        assert response.status_code == 302
+        assert response.location == url_for(
+            "applications.settings",
+            application_id=environment.application.id,
+            _external=True,
+            fragment="application-environments",
+            _anchor="application-environments",
+        )
+
+
+def test_create_subscription_failure(client, user_session, monkeypatch):
+    environment = EnvironmentFactory.create()
+
+    def _raise_csp_exception(*args, **kwargs):
+        raise GeneralCSPException("An error occurred.")
+
+    monkeypatch.setattr(
+        "atat.domain.csp.cloud.MockCloudProvider.create_subscription",
+        _raise_csp_exception,
+    )
+
+    user_session(environment.portfolio.owner)
+    environment.cloud_id = "management/group/id"
+    environment.portfolio.csp_data = {
+        "billing_account_name": "xxxx-xxxx-xxx-xxx",
+        "billing_profile_name": "xxxxxxxxxxx:xxxxxxxxxxxxx_xxxxxx",
+        "tenant_id": "xxxxxxxxxxx-xxxxxxxxxx-xxxxxxx-xxxxx",
+        "billing_profile_properties": {
+            "invoice_sections": [{"invoice_section_name": "xxxx-xxxx-xxx-xxx"}]
+        },
+    }
+
+    response = client.post(
+        url_for("applications.create_subscription", environment_id=environment.id),
+    )
+
+    assert response.status_code == 400
+
+
+class TestBuildSubscriptionPayload:
+    def test_unique_display_name(self):
+        # Create 2 Applications with the same name that both have an environment named 'Environment'
+        app_1 = ApplicationFactory.create(
+            name="Application", environments=[{"name": "Environment", "cloud_id": 123}]
+        )
+        env_1 = app_1.environments[0]
+        app_2 = ApplicationFactory.create(
+            name="Application", environments=[{"name": "Environment", "cloud_id": 456}]
+        )
+        env_2 = app_2.environments[0]
+        env_1.portfolio.csp_data = {
+            "billing_account_name": "xxxx-xxxx-xxx-xxx",
+            "billing_profile_name": "xxxxxxxxxxx:xxxxxxxxxxxxx_xxxxxx",
+            "tenant_id": "xxxxxxxxxxx-xxxxxxxxxx-xxxxxxx-xxxxx",
+            "billing_profile_properties": {
+                "invoice_sections": [{"invoice_section_name": "xxxx-xxxx-xxx-xxx"}]
+            },
+        }
+        env_2.portfolio.csp_data = {
+            "billing_account_name": "xxxx-xxxx-xxx-xxx",
+            "billing_profile_name": "xxxxxxxxxxx:xxxxxxxxxxxxx_xxxxxx",
+            "tenant_id": "xxxxxxxxxxx-xxxxxxxxxx-xxxxxxx-xxxxx",
+            "billing_profile_properties": {
+                "invoice_sections": [{"invoice_section_name": "xxxx-xxxx-xxx-xxx"}]
+            },
+        }
+
+        # Create subscription payload for each environment
+        payload_1 = build_subscription_payload(env_1)
+        payload_2 = build_subscription_payload(env_2)
+
+        assert payload_1.display_name != payload_2.display_name
+
+    def test_populates_payload_correctly(self):
+        app = ApplicationFactory.create(
+            name="Application", environments=[{"name": "Environment", "cloud_id": 123}]
+        )
+        environment = app.environments[0]
+        account_name = "fake-account-name"
+        profile_name = "fake-profile-name"
+        tenant_id = "123"
+        section_name = "fake-section-name"
+        environment.portfolio.csp_data = {
+            "billing_account_name": account_name,
+            "billing_profile_name": profile_name,
+            "tenant_id": tenant_id,
+            "billing_profile_properties": {
+                "invoice_sections": [{"invoice_section_name": section_name}]
+            },
+        }
+        payload = build_subscription_payload(environment)
+        assert type(payload) == SubscriptionCreationCSPPayload
+        # Check all key/value pairs except for display_name because of the appended random string
+        assert {
+            "tenant_id": tenant_id,
+            "parent_group_id": environment.cloud_id,
+            "billing_account_name": account_name,
+            "billing_profile_name": profile_name,
+            "invoice_section_name": section_name,
+        }.items() <= payload.dict().items()

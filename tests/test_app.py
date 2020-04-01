@@ -3,10 +3,11 @@ import os
 from configparser import ConfigParser
 import pytest
 
-from atst.app import (
+from atat.app import (
     make_crl_validator,
     apply_config_from_directory,
     apply_config_from_environment,
+    make_config,
 )
 
 
@@ -67,3 +68,18 @@ def test_apply_config_from_environment_skips_unknown_settings(
     monkeypatch.setenv("FLARF", "MAYO")
     apply_config_from_environment(config_object)
     assert "FLARF" not in config_object.options("default")
+
+
+class TestMakeConfig:
+    def test_redis_ssl_connection(self):
+        config = make_config({"REDIS_TLS": True})
+        uri = config.get("REDIS_URI")
+        assert "rediss" in uri
+        assert "ssl_cert_reqs" in uri
+
+    def test_non_redis_ssl_connection(self):
+        config = make_config({"REDIS_TLS": False})
+        uri = config.get("REDIS_URI")
+        assert "rediss" not in uri
+        assert "redis" in uri
+        assert "ssl_cert_reqs" not in uri

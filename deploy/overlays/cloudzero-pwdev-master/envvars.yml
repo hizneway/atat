@@ -1,0 +1,22 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: atst-worker-envvars
+data:
+  CELERY_DEFAULT_QUEUE: celery-master
+  FLASK_ENV: master
+  SERVER_NAME: azure.atat.cloud.mil
+  PGDATABASE: cloudzero_pwdev_atat_master
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: atst-envvars
+data:
+  CAC_URL: https://auth-azure.atat.cloud.mil
+  CDN_ORIGIN: https://azure.atat.cloud.mil
+  CELERY_DEFAULT_QUEUE: celery-master
+  FLASK_ENV: master
+  PGDATABASE: cloudzero_pwdev_atat_master
+  STATIC_URL: "https://azure.atat.code.mil/static/"

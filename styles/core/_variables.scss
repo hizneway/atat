@@ -16,8 +16,13 @@ $footer-height: 5rem;
 $usa-banner-height: 2.8rem;
 $sidenav-expanded-width: 25rem;
 $sidenav-collapsed-width: 10rem;
-$max-panel-width: 80rem;
+$max-panel-width: 90rem;
 $home-pg-icon-width: 6rem;
+$large-spacing: 4rem;
+$max-page-width: $max-panel-width + $sidenav-expanded-width + $large-spacing;
+$action-footer-height: 6rem;
+$max-input-width: 46rem;
+$max-form-width: 62.5rem;
 
 /*
  * USWDS Variables
@@ -33,7 +38,7 @@ $title-font-size: 5.2rem;
 $h1-font-size: 4rem;
 $h2-font-size: 3rem;
 $h3-font-size: 2.3rem;
-$h4-font-size: 1.7rem;
+$h4-font-size: 1.9rem;
 $h5-font-size: 1.5rem;
 $h6-font-size: 1.3rem;
 $base-line-height: 1.5;
@@ -44,6 +49,7 @@ $font-sans: "Source Sans Pro", sans-serif;
 $font-serif: "Merriweather", serif;
 
 $font-normal: 400;
+$font-semibold: 600;
 $font-bold: 700;
 
 // Color
@@ -188,4 +194,4 @@ $spacing-x-small: 0.5rem;
 $spacing-small: 1rem;
 $spacing-md-small: 1.5rem;
 $spacing-medium: 2rem;
-$spacing-large: 3rem;
+$spacing-large: 4rem;

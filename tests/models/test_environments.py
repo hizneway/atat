@@ -1,9 +1,9 @@
 import pytest
 
-from atst.models import AuditEvent
-from atst.models.environment_role import CSPRole
-from atst.domain.applications import Applications
-from atst.domain.environment_roles import EnvironmentRoles
+from atat.models import AuditEvent
+from atat.models.environment_role import CSPRole
+from atat.domain.applications import Applications
+from atat.domain.environment_roles import EnvironmentRoles
 
 from tests.factories import *
 
@@ -28,7 +28,7 @@ def test_add_user_to_environment():
     EnvironmentRoleFactory.create(
         application_role=application_role,
         environment=dev_environment,
-        role=CSPRole.BASIC_ACCESS.value,
+        role=CSPRole.ADMIN,
     )
     assert developer in dev_environment.users
 
@@ -51,33 +51,11 @@ def test_audit_event_for_environment_deletion(session):
     assert after
 
 
-@pytest.mark.parametrize(
-    "env_data,expected_status",
-    [
-        [
-            {"cloud_id": None, "root_user_info": None},
-            Environment.ProvisioningStatus.PENDING,
-        ],
-        [
-            {"cloud_id": 1, "root_user_info": None},
-            Environment.ProvisioningStatus.PENDING,
-        ],
-        [
-            {"cloud_id": 1, "root_user_info": {}},
-            Environment.ProvisioningStatus.COMPLETED,
-        ],
-    ],
-)
-def test_environment_provisioning_status(env_data, expected_status):
-    environment = EnvironmentFactory.create(**env_data)
-    assert environment.provisioning_status == expected_status
-
-
 def test_environment_roles_do_not_include_deleted():
     member_list = [
-        {"role_name": CSPRole.BASIC_ACCESS.value},
-        {"role_name": CSPRole.BASIC_ACCESS.value},
-        {"role_name": CSPRole.BASIC_ACCESS.value},
+        {"role_name": CSPRole.ADMIN},
+        {"role_name": CSPRole.ADMIN},
+        {"role_name": CSPRole.ADMIN},
     ]
     env = EnvironmentFactory.create(members=member_list)
     role_1 = env.roles[0]

@@ -15,7 +15,6 @@ spec:
   selector:
     matchLabels:
       role: web
-  replicas: 4
   strategy:
     type: RollingUpdate
   template:
@@ -30,6 +29,15 @@ spec:
       containers:
         - name: atst
           image: $CONTAINER_IMAGE
+          securityContext:
+            allowPrivilegeEscalation: false
+          env:
+            - name: UWSGI_PROCESSES
+              value: "2"
+            - name: UWSGI_THREADS
+              value: "2"
+            - name: UWSGI_ENABLE_THREADS
+              value: "1"
           envFrom:
             - configMapRef:
                 name: atst-envvars
@@ -49,8 +57,17 @@ spec:
               subPath: uwsgi.ini
             - name: flask-secret
               mountPath: "/config"
+          resources:
+            requests:
+              memory: 400Mi
+              cpu: 940m
+            limits:
+              memory: 400Mi
+              cpu: 940m
         - name: nginx
           image: nginx:alpine
+          securityContext:
+            allowPrivilegeEscalation: false
           ports:
             - containerPort: 8342
               name: main-upgrade
@@ -77,6 +94,13 @@ spec:
               mountPath: "/etc/nginx/snippets/"
             - name: nginx-secret
               mountPath: "/etc/ssl/"
+          resources:
+            requests:
+              memory: 20Mi
+              cpu: 25m
+            limits:
+              memory: 20Mi
+              cpu: 25m
       volumes:
         - name: nginx-client-ca-bundle
           configMap:
@@ -155,7 +179,6 @@ spec:
   selector:
     matchLabels:
       role: worker
-  replicas: 2
   strategy:
     type: RollingUpdate
   template:
@@ -170,6 +193,8 @@ spec:
       containers:
         - name: atst-worker
           image: $CONTAINER_IMAGE
+          securityContext:
+            allowPrivilegeEscalation: false
           args:
             [
               "/opt/atat/atst/.venv/bin/python",
@@ -190,6 +215,13 @@ spec:
               subPath: pgsslrootcert.crt
             - name: flask-secret
               mountPath: "/config"
+          resources:
+            requests:
+              memory: 280Mi
+              cpu: 400m
+            limits:
+              memory: 280Mi
+              cpu: 400m
       volumes:
         - name: pgsslrootcert
           configMap:
@@ -235,6 +267,8 @@ spec:
       containers:
         - name: atst-beat
           image: $CONTAINER_IMAGE
+          securityContext:
+            allowPrivilegeEscalation: false
           args:
             [
               "/opt/atat/atst/.venv/bin/python",
@@ -255,6 +289,13 @@ spec:
               subPath: pgsslrootcert.crt
             - name: flask-secret
               mountPath: "/config"
+          resources:
+            requests:
+              memory: 80Mi
+              cpu: 10m
+            limits:
+              memory: 80Mi
+              cpu: 10m
       volumes:
         - name: pgsslrootcert
           configMap:
@@ -283,6 +324,7 @@ metadata:
   namespace: atat
 spec:
   loadBalancerIP: 13.92.235.6
+  externalTrafficPolicy: Local
   ports:
     - port: 80
       targetPort: 8342
@@ -303,6 +345,7 @@ metadata:
   namespace: atat
 spec:
   loadBalancerIP: 23.100.24.41
+  externalTrafficPolicy: Local
   ports:
     - port: 80
       targetPort: 8343

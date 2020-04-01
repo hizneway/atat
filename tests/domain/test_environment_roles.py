@@ -1,7 +1,7 @@
 import pytest
 
-from atst.domain.environment_roles import EnvironmentRoles
-from atst.models.environment_role import EnvironmentRole
+from atat.domain.environment_roles import EnvironmentRoles
+from atat.models import EnvironmentRole, ApplicationRoleStatus
 
 from tests.factories import *
 
@@ -93,36 +93,34 @@ def test_disable_completed(application_role, environment):
 
 def test_disable_checks_env_provisioning_status(session):
     environment = EnvironmentFactory.create()
-    assert environment.is_pending
+    assert not environment.cloud_id
     env_role1 = EnvironmentRoleFactory.create(environment=environment)
     env_role1 = EnvironmentRoles.disable(env_role1.id)
     assert env_role1.disabled
 
     environment.cloud_id = "cloud-id"
-    environment.root_user_info = {"credentials": "credentials"}
     session.add(environment)
     session.commit()
     session.refresh(environment)
 
-    assert not environment.is_pending
+    assert environment.cloud_id
     env_role2 = EnvironmentRoleFactory.create(environment=environment)
     env_role2 = EnvironmentRoles.disable(env_role2.id)
     assert env_role2.disabled
 
 
 def test_disable_checks_env_role_provisioning_status():
-    environment = EnvironmentFactory.create(
-        cloud_id="cloud-id", root_user_info={"credentials": "credentials"}
-    )
+    environment = EnvironmentFactory.create(cloud_id="cloud-id")
+    environment.portfolio.csp_data = {"tenant_id": uuid4().hex}
     env_role1 = EnvironmentRoleFactory.create(environment=environment)
-    assert not env_role1.csp_user_id
+    assert not env_role1.cloud_id
     env_role1 = EnvironmentRoles.disable(env_role1.id)
     assert env_role1.disabled
 
     env_role2 = EnvironmentRoleFactory.create(
-        environment=environment, csp_user_id="123456"
+        environment=environment, cloud_id="123456"
     )
-    assert env_role2.csp_user_id
+    assert env_role2.cloud_id
     env_role2 = EnvironmentRoles.disable(env_role2.id)
     assert env_role2.disabled
 
@@ -161,3 +159,34 @@ def test_for_user(application_role):
     assert len(env_roles) == 3
     assert env_roles == [env_role_1, env_role_2, env_role_3]
     assert not rando_env_role in env_roles
+
+
+class TestPendingCreation:
+    def test_pending_role(self):
+        appr = ApplicationRoleFactory.create(cloud_id="123")
+        envr = EnvironmentRoleFactory.create(application_role=appr)
+        assert EnvironmentRoles.get_pending_creation() == [envr.id]
+
+    def test_deleted_role(self):
+        appr = ApplicationRoleFactory.create(cloud_id="123")
+        envr = EnvironmentRoleFactory.create(application_role=appr, deleted=True)
+        assert EnvironmentRoles.get_pending_creation() == []
+
+    def test_not_ready_role(self):
+        appr = ApplicationRoleFactory.create(cloud_id=None)
+        envr = EnvironmentRoleFactory.create(application_role=appr)
+        assert EnvironmentRoles.get_pending_creation() == []
+
+    def test_disabled_app_role(self):
+        appr = ApplicationRoleFactory.create(
+            cloud_id="123", status=ApplicationRoleStatus.DISABLED
+        )
+        envr = EnvironmentRoleFactory.create(application_role=appr)
+        assert EnvironmentRoles.get_pending_creation() == []
+
+    def test_disabled_env_role(self):
+        appr = ApplicationRoleFactory.create(cloud_id="123")
+        envr = EnvironmentRoleFactory.create(
+            application_role=appr, status=EnvironmentRole.Status.DISABLED
+        )
+        assert EnvironmentRoles.get_pending_creation() == []

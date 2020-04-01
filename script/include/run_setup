@@ -35,13 +35,13 @@ fi
 rm -rf ./node_modules
 
 if [ "${CREATE_VENV}" = "true" ]; then
-  # Ensure pipenv is installed
-  if ! pipenv --version >/dev/null 2>&1 ; then
-    echo "ERROR: pipenv is malfunctioning or not present"
+  # Ensure poetry is installed
+  if ! poetry --version >/dev/null 2>&1 ; then
+    echo "ERROR: poetry is malfunctioning or not present"
     exit 1
   fi
 
-  python_version=$(grep python_version ./Pipfile | cut -d '"' -f 2)
+  python_version=$(python --version | cut -d ' ' -f 2)
   if ! check_for_existing_virtual_environment "${python_version}" || \
        [ "${KEEP_EXISTING_VENV}" = "false" ]
   then

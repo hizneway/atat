@@ -1,7 +1,11 @@
 #!/bin/sh
 
-if [ -z "${CSP+is_set}" ]; then
+if [ -z "${CSP:+is_set}" ]; then
   CSP=mock
+fi
+
+if [ -z "${AZURE_ACCOUNT_NAME:+is_set}" ]; then
+  AZURE_ACCOUNT_NAME=atat
 fi
 
 if [ $CSP = "aws" ]; then
@@ -9,7 +13,7 @@ if [ $CSP = "aws" ]; then
 elif [ $CSP = "azure" ]; then
   cat << EOF > .env
 CLOUD_PROVIDER=azure
-AZURE_ACCOUNT_NAME=atat
+AZURE_ACCOUNT_NAME=${AZURE_ACCOUNT_NAME}
 AZURE_CONTAINER_NAME=task-order-pdfs
 EOF
 else

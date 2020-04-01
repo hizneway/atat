@@ -14,9 +14,15 @@
 
 
 {% macro TaskOrderList(task_orders, status) %}
+  {% set show_task_orders = task_orders|length > 0 %}
   <div class="accordion">
-    {% call Accordion(title=("task_orders.status_list_title"|translate({'status': status})), id=status, heading_tag="h4") %}
-      {% if task_orders|length > 0 %}
+    {% call Accordion(
+      title=("task_orders.status_list_title"|translate({'status': status})),
+      id=status,
+      heading_tag="h4",
+      default_visible=show_task_orders
+    ) %}
+      {% if show_task_orders %}
         {% for task_order in task_orders %}
           {% set to_number %}
             {% if task_order.number != None %}
@@ -28,8 +34,8 @@
           <div class="accordion__content--list-item">
             <h4><a href="{{ url_for('task_orders.view_task_order', task_order_id=task_order.id) }}">{{ to_number }} {{ Icon("caret_right", classes="icon--tiny icon--primary" ) }}</a></h4>
             {% if status != 'Expired' -%}
-              <div class="row">
-                <div class="col col--grow">
+              <div class="usa-grid">
+                <div class="usa-width-one-fourth">
                   <h5>
                     Current Period of Performance
                   </h5>
@@ -39,17 +45,13 @@
                     {{ task_order.end_date | formattedDate(formatter="%b %d, %Y") }}
                   </p>
                 </div>
-                <div class="col col--grow">
+                <div class="usa-width-one-fourth">
                   <h5>Total Value</h5>
                   <p>{{ task_order.total_contract_amount | dollars }}</p>
                 </div>
-                <div class="col col--grow">
+                <div class="usa-width-one-fourth">
                   <h5>Total Obligated</h5>
                   <p>{{ task_order.total_obligated_funds | dollars }}</p>
-                </div>
-                <div class="col col--grow">
-                  <h5>Total Expended</h5>
-                  <p>{{ task_order.invoiced_funds | dollars }}</p>
                 </div>
               </div>
             {%- endif %}
@@ -66,7 +68,7 @@
 
 
 {% call StickyCTA(text="common.task_orders"|translate) %}
-    {% if user_can(permissions.CREATE_TASK_ORDER) and task_orders %}
+    {% if user_can(permissions.CREATE_TASK_ORDER) and to_count > 0 %}
       <a href="{{ url_for("task_orders.form_step_one_add_pdf", portfolio_id=portfolio.id) }}" class="usa-button usa-button-primary">
         {{ "task_orders.add_new_button" | translate }}
       </a>
@@ -85,11 +87,8 @@
     {% endcall %}
   {% else %}
     {{ EmptyState(
-      header="task_orders.empty_state.header"|translate,
-      message="task_orders.empty_state.message"|translate,
+      resource="task_orders",
       button_link=url_for('task_orders.form_step_one_add_pdf', portfolio_id=portfolio.id),
-      button_text="task_orders.empty_state.button_text"|translate,
-      view_only_text="task_orders.empty_state.view_only_text"|translate,
       user_can_create=user_can(permissions.CREATE_TASK_ORDER),
     ) }}
   {% endif %}

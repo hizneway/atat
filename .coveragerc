@@ -1,9 +1,10 @@
 [run]
 omit =
-  atst/routes/dev.py
-  atst/domain/audit_log.py
-  atst/models/mixins/auditable.py
-  atst/models/audit_event.py
+  atat/routes/dev.py
+  atat/domain/audit_log.py
+  atat/models/mixins/auditable.py
+  atat/models/audit_event.py
+  atat/domain/csp/cloud/hybrid_cloud_provider.py
 branch = True
 
 [report]

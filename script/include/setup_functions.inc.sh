@@ -1,14 +1,15 @@
 # setup_functions.inc.sh: Functions used by the setup script
 
-install_pipenv() {
+install_poetry() {
   return_code=0
 
   # Ensure we are not in a virtual env already
   if [ -z "${VIRTUAL_ENV+is_set}" ]; then
-    if ! check_system_pip_for pipenv; then
-      # pipenv is not installed, so install it
-      echo "Installing pipenv..."
-      pip install pipenv
+    if ! poetry --version >/dev/null 2>&1; then
+      # poetry is not installed, so install it
+      echo "Installing poetry..."
+      # pip install poetry
+      pip install --user poetry
       # Capture pip exit code
       return_code="${?}"
     fi
@@ -22,7 +23,7 @@ check_for_existing_virtual_environment() {
   local target_python_version_regex="^Python ${python_version}"
 
   # Check for existing venv, and if one exists, save the Python version string
-  existing_venv_version=$($(pipenv --py) --version)
+  existing_venv_version=$($(poetry env info --path)/bin/python --version 2> /dev/null)
   if [ "$?" = "0" ]; then
     # Existing venv; see if the Python version matches
     if [[ "${existing_venv_version}" =~ ${target_python_version_regex} ]]; then
@@ -42,7 +43,7 @@ create_virtual_environment() {
   # The environment will be in a directory called .venv off the app
   # root directory
   echo "Creating virtual environment using Python version ${python_version}..."
-  PIPENV_VENV_IN_PROJECT=true pipenv --python "${python_version}"
+  poetry install --no-root
   return $?
 }
 

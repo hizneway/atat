@@ -10,5 +10,5 @@ resources:
   - volume-claim.yml
   - nginx-client-ca-bundle.yml
   - acme-challenges.yml
-  - aadpodidentity.yml
   - nginx-snippets.yml
+  - autoscaling.yml

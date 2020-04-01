@@ -2,9 +2,9 @@ FROM python:3.7.3-alpine3.9 AS builder
 
 ARG CSP
 ARG CDN_URL=/static/assets/
+ARG AZURE_ACCOUNT_NAME=atat
 ENV TZ UTC
 
-RUN mkdir -p /install/.venv
 WORKDIR /install
 
 # Install basic Alpine packages
@@ -37,8 +37,11 @@ COPY . .
 
 # Install app dependencies
 RUN ./script/write_dotenv && \
-      pip install pipenv uwsgi && \
-      PIPENV_VENV_IN_PROJECT=1 pipenv sync && \
+      pip3 install uwsgi poetry && \ 
+      # TODO: Remove this when this issue is resolved:
+      #  https://github.com/sdispater/pendulum/issues/454#issuecomment-605519477
+      pip3 install --no-build-isolation pendulum && \
+      poetry install --no-root --no-dev && \
       yarn install && \
       rm -r ./static/fonts/ &> /dev/null || true && \
       cp -rf ./node_modules/uswds/src/fonts ./static/ && \
@@ -73,13 +76,14 @@ RUN apk update && \
       postgresql-client \
       postgresql-dev \
       postgresql-libs \
-      uwsgi-logfile
+      uwsgi-logfile \
+      uwsgi-python3
 
 COPY --from=builder /install/.venv/ ./.venv/
 COPY --from=builder /install/alembic/ ./alembic/
 COPY --from=builder /install/alembic.ini .
 COPY --from=builder /install/app.py .
-COPY --from=builder /install/atst/ ./atst/
+COPY --from=builder /install/atat/ ./atat/
 COPY --from=builder /install/celery_worker.py ./celery_worker.py
 COPY --from=builder /install/config/ ./config/
 COPY --from=builder /install/templates/ ./templates/
@@ -99,6 +103,8 @@ CMD ["uwsgi", "--ini", "uwsgi.ini"]
 RUN mkdir /var/run/uwsgi && \
       chown -R atst:atat /var/run/uwsgi && \
       chown -R atst:atat "${APP_DIR}"
+
+RUN update-ca-certificates
 
 # Run as the unprivileged APP user
 USER atst

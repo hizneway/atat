@@ -1,29 +1,25 @@
-import pytest
-import random
 from uuid import uuid4
 
-from atst.domain.exceptions import NotFoundError, UnauthorizedError
-from atst.domain.portfolios import (
-    Portfolios,
-    PortfolioError,
-    PortfolioDeletionApplicationsExistError,
-)
-from atst.domain.portfolio_roles import PortfolioRoles
-from atst.domain.applications import Applications
-from atst.domain.application_roles import ApplicationRoles
-from atst.domain.environments import Environments
-from atst.domain.permission_sets import PermissionSets, PORTFOLIO_PERMISSION_SETS
-from atst.models.application_role import Status as ApplicationRoleStatus
-from atst.models.portfolio_role import Status as PortfolioRoleStatus
-
+import pytest
 from tests.factories import (
     ApplicationFactory,
     ApplicationRoleFactory,
-    UserFactory,
-    PortfolioRoleFactory,
     PortfolioFactory,
+    PortfolioRoleFactory,
+    UserFactory,
     get_all_portfolio_permission_sets,
 )
+from tests.utils import EnvQueryTest
+
+from atat.domain.applications import Applications
+from atat.domain.exceptions import NotFoundError
+from atat.domain.permission_sets import PermissionSets
+from atat.domain.portfolios import (
+    PortfolioDeletionApplicationsExistError,
+    Portfolios,
+    PortfolioStateMachines,
+)
+from atat.models import ApplicationRoleStatus, PortfolioRoleStatus, FSMStates
 
 
 @pytest.fixture(scope="function")
@@ -94,11 +90,11 @@ def test_scoped_portfolio_for_admin_missing_view_apps_perms(portfolio_owner, por
 def test_scoped_portfolio_returns_all_applications_for_portfolio_admin(
     portfolio, portfolio_owner
 ):
-    for _ in range(5):
+    for i in range(5):
         Applications.create(
             portfolio.owner,
             portfolio,
-            "My Application %s" % (random.randrange(1, 1000)),
+            f"My Application {i}",
             "My application",
             ["dev", "staging", "prod"],
         )
@@ -117,11 +113,11 @@ def test_scoped_portfolio_returns_all_applications_for_portfolio_admin(
 def test_scoped_portfolio_returns_all_applications_for_portfolio_owner(
     portfolio, portfolio_owner
 ):
-    for _ in range(5):
+    for i in range(5):
         Applications.create(
             portfolio.owner,
             portfolio,
-            "My Application %s" % (random.randrange(1, 1000)),
+            f"My Application {i}",
             "My application",
             ["dev", "staging", "prod"],
         )
@@ -254,3 +250,142 @@ def test_for_user_does_not_include_deleted_application_roles():
         status=ApplicationRoleStatus.ACTIVE, user=user2, application=app, deleted=True
     )
     assert len(Portfolios.for_user(user2)) == 0
+
+
+def test_create_state_machine(portfolio):
+    fsm = PortfolioStateMachines.create(portfolio)
+    assert fsm
+
+
+class TestGetPortfoliosPendingCreate(EnvQueryTest):
+    """Portfolios.get_portfolios_pending_provisioning should return portfolios that
+       are in their period of performace AND with a state machine is in one of the
+       following states:
+         - not created i.e. portfolio.state_machine is `None`
+         - "UNSTARTED"
+         - "STARTING"
+         - "STARTED"
+         - a "_CREATED" state """
+
+    def test_finds_unstarted(self):
+        # Given: A portfolio is in its period of performance
+        # Given: The portfolio's state machine is in its "UNSTARTED" stage
+        self.create_portfolio_with_clins(
+            [(self.YESTERDAY, self.TOMORROW)],
+            state_machine_status=FSMStates.UNSTARTED.name,
+        )
+        # When I query for portfolios pending provisioning
+        portfolios_pending = Portfolios.get_portfolios_pending_provisioning(self.NOW)
+        # Then the query will return the portfolio
+        assert len(portfolios_pending) == 1
+
+    def test_finds_starting(self):
+        # Given: A portfolio is in its period of performance
+        # Given: The portfolio's state machine is in its "STARTING" stage
+        self.create_portfolio_with_clins(
+            [(self.YESTERDAY, self.TOMORROW)],
+            state_machine_status=FSMStates.STARTING.name,
+        )
+        # When I query for portfolios pending provisioning
+        portfolios_pending = Portfolios.get_portfolios_pending_provisioning(self.NOW)
+        # Then the query will return the portfolio
+        assert len(portfolios_pending) == 1
+
+    def test_finds_started(self):
+        # Given: A portfolio is in its period of performance
+        # Given: The portfolio's state machine is in its "STARTED" stage
+        self.create_portfolio_with_clins(
+            [(self.YESTERDAY, self.TOMORROW)],
+            state_machine_status=FSMStates.STARTED.name,
+        )
+        # When I query for portfolios pending provisioning
+        portfolios_pending = Portfolios.get_portfolios_pending_provisioning(self.NOW)
+        # Then the query will return the portfolio
+        assert len(portfolios_pending) == 1
+
+    def test_finds_created(self):
+        # Given: A portfolio is in its period of performance
+        # Given: The portfolio's state machine is in a _CREATED stage
+        self.create_portfolio_with_clins(
+            [(self.YESTERDAY, self.TOMORROW)],
+            state_machine_status=FSMStates.TENANT_CREATED.name,
+        )
+        # When I query for portfolios pending provisioning
+        portfolios_pending = Portfolios.get_portfolios_pending_provisioning(self.NOW)
+        # Then the query will return the portfolio
+        assert len(portfolios_pending) == 1
+
+    def test_does_not_find_failed(self):
+        # Given: A portfolio is in its period of performance
+        # Given: The portfolio's state machine is in a _FAILED stage
+        self.create_portfolio_with_clins(
+            [(self.YESTERDAY, self.TOMORROW)],
+            state_machine_status=FSMStates.TENANT_FAILED.name,
+        )
+        # When I query for portfolios pending provisioning
+        portfolios_pending = Portfolios.get_portfolios_pending_provisioning(self.NOW)
+        # Then the query will not return the portfolio
+        assert len(portfolios_pending) == 0
+
+    def test_with_future_clins_and_no_state_machine(self):
+        # Given: The portfolio has not entered its period of performance
+        # Given: The portfolio has not begun the provisioning process
+        self.create_portfolio_with_clins([(self.TOMORROW, self.TOMORROW)])
+        # When I query for portfolios pending provisioning
+        portfolios_pending = Portfolios.get_portfolios_pending_provisioning(self.NOW)
+        # Then the query will return 0 portfolios
+        assert len(portfolios_pending) == 0
+
+    def test_with_future_clins_and_state_machine(self):
+        # Given: The portfolio has not entered a period of performance
+        # Given: The portfolio has begun the provisioning process
+        self.create_portfolio_with_clins(
+            [(self.TOMORROW, self.TOMORROW)],
+            state_machine_status=FSMStates.TENANT_CREATED.name,
+        )
+        # When I query for portfolios pending provisioning
+        portfolios_pending = Portfolios.get_portfolios_pending_provisioning(self.NOW)
+        # Then the query will return 0 portfolios
+        assert len(portfolios_pending) == 0
+
+    def test_with_expired_clins_and_no_state_machine(self):
+        # Given: A portfolio has exited its period of performance
+        # Given: The portfolio has not started the provisioning process
+        self.create_portfolio_with_clins([(self.YESTERDAY, self.YESTERDAY)])
+        # When I query for portfolios pending provisioning
+        portfolios_pending = Portfolios.get_portfolios_pending_provisioning(self.NOW)
+        # Then the query will return 0 portfolios
+        assert len(portfolios_pending) == 0
+
+    def test_with_expired_clins_and_state_machine(self):
+        # Given: A portfolio has exited its period of performance
+        # Given: The portfolio is in the middle of the provisioning process
+        self.create_portfolio_with_clins(
+            [(self.YESTERDAY, self.YESTERDAY)],
+            state_machine_status=FSMStates.TENANT_CREATED.name,
+        )
+        # When I query for portfolios pending provisioning
+        portfolios_pending = Portfolios.get_portfolios_pending_provisioning(self.NOW)
+        # Then the query will return 0 portfolios
+        assert len(portfolios_pending) == 0
+
+    def test_with_active_clins_and_no_state_machine(self):
+        # Given: A portfolio is in its period of performance
+        # Given: The portfolio has begun the provisioning process
+        self.create_portfolio_with_clins([(self.YESTERDAY, self.TOMORROW)])
+        # When I query for portfolios pending provisioning
+        pending_portfolios = Portfolios.get_portfolios_pending_provisioning(self.NOW)
+        # Then the query will return the pending portfolio
+        assert len(pending_portfolios) == 1
+
+    def test_with_active_clins_and_state_machine(self):
+        # Given: A portfolio is in its period of performance
+        # Given: The portfolio has begun the provisioning process
+        self.create_portfolio_with_clins(
+            [(self.YESTERDAY, self.TOMORROW)],
+            state_machine_status=FSMStates.TENANT_CREATED.name,
+        )
+        # When I query for portfolios pending provisioning
+        portfolios_pending = Portfolios.get_portfolios_pending_provisioning(self.NOW)
+        # Then the query will return the pending portfolio
+        assert len(portfolios_pending) == 1

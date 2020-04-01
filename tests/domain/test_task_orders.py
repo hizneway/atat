@@ -1,12 +1,33 @@
 import pytest
-from datetime import date, timedelta
+import pendulum
 from decimal import Decimal
 
-from atst.domain.exceptions import AlreadyExistsError
-from atst.domain.task_orders import TaskOrders
-from atst.models import Attachment
-from atst.models.task_order import TaskOrder, SORT_ORDERING, Status
+from atat.domain.exceptions import AlreadyExistsError
+from atat.domain.task_orders import TaskOrders
+from atat.models import Attachment
+from atat.models.task_order import TaskOrder, SORT_ORDERING, Status
 from tests.factories import TaskOrderFactory, CLINFactory, PortfolioFactory
+
+
+@pytest.fixture
+def new_task_order():
+    return TaskOrderFactory.create(create_clins=[{}])
+
+
+@pytest.fixture
+def updated_task_order():
+    return TaskOrderFactory.create(
+        create_clins=[{"last_sent_at": pendulum.date(2020, 2, 1)}],
+        pdf_last_sent_at=pendulum.date(2020, 1, 1),
+    )
+
+
+@pytest.fixture
+def sent_task_order():
+    return TaskOrderFactory.create(
+        create_clins=[{"last_sent_at": pendulum.date(2020, 1, 1)}],
+        pdf_last_sent_at=pendulum.date(2020, 1, 1),
+    )
 
 
 def test_create_adds_clins():
@@ -15,16 +36,16 @@ def test_create_adds_clins():
         {
             "jedi_clin_type": "JEDI_CLIN_1",
             "number": "12312",
-            "start_date": date(2020, 1, 1),
-            "end_date": date(2021, 1, 1),
+            "start_date": pendulum.date(2020, 1, 1),
+            "end_date": pendulum.date(2021, 1, 1),
             "obligated_amount": Decimal("5000"),
             "total_amount": Decimal("10000"),
         },
         {
             "jedi_clin_type": "JEDI_CLIN_1",
             "number": "12312",
-            "start_date": date(2020, 1, 1),
-            "end_date": date(2021, 1, 1),
+            "start_date": pendulum.date(2020, 1, 1),
+            "end_date": pendulum.date(2021, 1, 1),
             "obligated_amount": Decimal("5000"),
             "total_amount": Decimal("10000"),
         },
@@ -45,16 +66,16 @@ def test_update_adds_clins():
         {
             "jedi_clin_type": "JEDI_CLIN_1",
             "number": "12312",
-            "start_date": date(2020, 1, 1),
-            "end_date": date(2021, 1, 1),
+            "start_date": pendulum.date(2020, 1, 1),
+            "end_date": pendulum.date(2021, 1, 1),
             "obligated_amount": Decimal("5000"),
             "total_amount": Decimal("10000"),
         },
         {
             "jedi_clin_type": "JEDI_CLIN_1",
             "number": "12312",
-            "start_date": date(2020, 1, 1),
-            "end_date": date(2021, 1, 1),
+            "start_date": pendulum.date(2020, 1, 1),
+            "end_date": pendulum.date(2021, 1, 1),
             "obligated_amount": Decimal("5000"),
             "total_amount": Decimal("10000"),
         },
@@ -71,29 +92,29 @@ def test_update_adds_clins():
 
 def test_update_does_not_duplicate_clins():
     task_order = TaskOrderFactory.create(
-        number="3453453456", create_clins=[{"number": "123"}, {"number": "456"}]
+        number="3453453456123", create_clins=[{"number": "123"}, {"number": "456"}]
     )
     clins = [
         {
             "jedi_clin_type": "JEDI_CLIN_1",
             "number": "123",
-            "start_date": date(2020, 1, 1),
-            "end_date": date(2021, 1, 1),
+            "start_date": pendulum.date(2020, 1, 1),
+            "end_date": pendulum.date(2021, 1, 1),
             "obligated_amount": Decimal("5000"),
             "total_amount": Decimal("10000"),
         },
         {
             "jedi_clin_type": "JEDI_CLIN_1",
             "number": "111",
-            "start_date": date(2020, 1, 1),
-            "end_date": date(2021, 1, 1),
+            "start_date": pendulum.date(2020, 1, 1),
+            "end_date": pendulum.date(2021, 1, 1),
             "obligated_amount": Decimal("5000"),
             "total_amount": Decimal("10000"),
         },
     ]
     task_order = TaskOrders.update(
         task_order_id=task_order.id,
-        number="0000000000",
+        number="0000000000000",
         clins=clins,
         pdf={"filename": "sample.pdf", "object_name": "1234567"},
     )
@@ -114,9 +135,9 @@ def test_delete_task_order_with_clins(session):
 
 
 def test_task_order_sort_by_status():
-    today = date.today()
-    yesterday = today - timedelta(days=1)
-    future = today + timedelta(days=100)
+    today = pendulum.today()
+    yesterday = today.subtract(days=1)
+    future = today.add(days=100)
 
     initial_to_list = [
         # Draft
@@ -149,11 +170,12 @@ def test_task_order_sort_by_status():
     ]
 
     sorted_by_status = TaskOrders.sort_by_status(initial_to_list)
-    assert len(sorted_by_status["Draft"]) == 3
+    assert len(sorted_by_status["Draft"]) == 4
     assert len(sorted_by_status["Active"]) == 1
     assert len(sorted_by_status["Upcoming"]) == 1
     assert len(sorted_by_status["Expired"]) == 2
-    assert len(sorted_by_status["Unsigned"]) == 1
+    with pytest.raises(KeyError):
+        sorted_by_status["Unsigned"]
     assert list(sorted_by_status.keys()) == [status.value for status in SORT_ORDERING]
 
 
@@ -170,3 +192,28 @@ def test_update_enforces_unique_number():
     dupe_task_order = TaskOrderFactory.create()
     with pytest.raises(AlreadyExistsError):
         TaskOrders.update(dupe_task_order.id, task_order.number, [], None)
+
+
+def test_allows_alphanumeric_number():
+    portfolio = PortfolioFactory.create()
+    valid_to_numbers = ["1234567890123", "ABC1234567890"]
+
+    for number in valid_to_numbers:
+        assert TaskOrders.create(portfolio.id, number, [], None)
+
+
+def test_get_for_send_task_order_files(
+    new_task_order, updated_task_order, sent_task_order
+):
+    updated_and_new_task_orders = TaskOrders.get_for_send_task_order_files()
+    assert len(updated_and_new_task_orders) == 2
+    assert sent_task_order not in updated_and_new_task_orders
+    assert updated_task_order in updated_and_new_task_orders
+    assert new_task_order in updated_and_new_task_orders
+
+
+def test_get_clins_for_create_billing_instructions(new_task_order, sent_task_order):
+    new_clins = TaskOrders.get_clins_for_create_billing_instructions()
+    assert len(new_clins) == 1
+    assert new_task_order.clins[0] in new_clins
+    assert sent_task_order.clins[0] not in new_clins

@@ -32,22 +32,36 @@
 }
 
 .action-group-footer {
-  @extend .action-group;
-
-  &:last-child {
-    margin-bottom: 0;
-  }
-  margin-top: 0;
-  margin-bottom: 0;
   padding-top: $gap;
   padding-bottom: $gap;
-
+  padding-right: $gap * 4;
   position: fixed;
   bottom: $footer-height;
+  left: 0;
   background: white;
-  right: 0;
-  padding-right: $gap * 4;
   border-top: 1px solid $color-gray-lighter;
-  width: 100%;
   z-index: 1;
+  width: 100%;
+  height: $action-footer-height;
+
+  &.action-group-footer--expand-offset {
+    padding-left: $sidenav-expanded-width;
+  }
+
+  &.action-group-footer--collapse-offset {
+    padding-left: $sidenav-collapsed-width;
+  }
+
+  .action-group-footer--container {
+    @extend .action-group;
+
+    margin-top: 0;
+    margin-bottom: 0;
+    margin-left: $large-spacing;
+    max-width: $max-panel-width;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
 }

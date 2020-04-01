@@ -17,36 +17,37 @@
       <h1>{{ portfolio.name }}</h1>
     </div>
   </div>
-  <div class='row links'>
-    {% if user_can(permissions.VIEW_PORTFOLIO_ADMIN) %}
+  <div class="col">
+    <div class='row links'>
+      {% if user_can(permissions.VIEW_PORTFOLIO_ADMIN) %}
+        {{ Link(
+          icon='cog',
+          text='navigation.portfolio_navigation.breadcrumbs.admin' | translate,
+          url=url_for("portfolios.admin", portfolio_id=portfolio.id),
+          active=request.url_rule.endpoint == "portfolios.admin",
+        ) }}
+      {% endif %}{% if user_can(permissions.VIEW_PORTFOLIO_FUNDING) %}
+        {{ Link(
+          icon='funding',
+          text='navigation.portfolio_navigation.breadcrumbs.funding' | translate,
+          url=url_for("task_orders.portfolio_funding", portfolio_id=portfolio.id),
+          active=request.url_rule.endpoint in ["task_orders.portfolio_funding", "task_orders.view_task_order", "task_orders.form_step_one_add_pdf", "task_orders.submit_form_step_one_add_pdf", "task_orders.form_step_two_add_number", "task_orders.submit_form_step_two_add_number", "task_orders.form_step_three_add_clins", "task_orders.submit_form_step_three_add_clins", "task_orders.form_step_four_review", "task_orders.form_step_five_confirm_signature"],
+        ) }}
+      {% endif %}
       {{ Link(
-        icon='cog',
-        text='navigation.portfolio_navigation.breadcrumbs.admin' | translate,
-        url=url_for("portfolios.admin", portfolio_id=portfolio.id),
-        active=request.url_rule.endpoint == "portfolios.admin",
+        icon='applications',
+        text='navigation.portfolio_navigation.breadcrumbs.applications' | translate,
+        url=url_for("applications.portfolio_applications", portfolio_id=portfolio.id),
+        active=request.url_rule.endpoint in ["applications.portfolio_applications", "applications.settings"],
       ) }}
-    {% endif %}{% if user_can(permissions.VIEW_PORTFOLIO_FUNDING) %}
-      {{ Link(
-        icon='funding',
-        text='navigation.portfolio_navigation.breadcrumbs.funding' | translate,
-        url=url_for("task_orders.portfolio_funding", portfolio_id=portfolio.id),
-        active=request.url_rule.endpoint in ["task_orders.portfolio_funding", "task_orders.view_task_order", "task_orders.form_step_one_add_pdf", "task_orders.submit_form_step_one_add_pdf", "task_orders.form_step_two_add_number", "task_orders.submit_form_step_two_add_number", "task_orders.form_step_three_add_clins", "task_orders.submit_form_step_three_add_clins", "task_orders.form_step_four_review", "task_orders.form_step_five_confirm_signature"],
-      ) }}
-    {% endif %}
-    {{ Link(
-      icon='applications',
-      text='navigation.portfolio_navigation.breadcrumbs.applications' | translate,
-      url=url_for("applications.portfolio_applications", portfolio_id=portfolio.id),
-      active=request.url_rule.endpoint in ["applications.portfolio_applications", "applications.settings"],
-    ) }}
-    {% if user_can(permissions.VIEW_PORTFOLIO_REPORTS) %}
-      {{ Link(
-        icon='chart-pie',
-        text='navigation.portfolio_navigation.breadcrumbs.reports' | translate,
-        url=url_for("portfolios.reports", portfolio_id=portfolio.id),
-        active=request.url_rule.endpoint == "portfolios.reports",
-      ) }}
-    {% endif %}
-
+      {% if user_can(permissions.VIEW_PORTFOLIO_REPORTS) %}
+        {{ Link(
+          icon='chart-pie',
+          text='navigation.portfolio_navigation.breadcrumbs.reports' | translate,
+          url=url_for("portfolios.reports", portfolio_id=portfolio.id),
+          active=request.url_rule.endpoint == "portfolios.reports",
+        ) }}
+      {% endif %}
+    </div>
   </div>
 </div>

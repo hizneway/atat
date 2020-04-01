@@ -1,5 +1,4 @@
 import createNumberMask from 'text-mask-addons/dist/createNumberMask'
-import emailMask from 'text-mask-addons/dist/emailMask'
 import createAutoCorrectedDatePipe from 'text-mask-addons/dist/createAutoCorrectedDatePipe'
 
 export default {
@@ -8,6 +7,18 @@ export default {
     match: /\s*/,
     unmask: [],
     validationError: 'Please enter a response',
+  },
+  applicationName: {
+    mask: false,
+    match: /^[A-Za-z0-9\-_,'".\s]{4,100}$$/,
+    unmask: [],
+    validationError: 'Application names can be between 4-100 characters',
+  },
+  clinNumber: {
+    mask: false,
+    match: /^\d{4}$/,
+    unmask: [],
+    validationError: 'Please enter a 4-digit CLIN number',
   },
   date: {
     mask: [/\d/, /\d/, '/', /\d/, /\d/, '/', /\d/, /\d/, /\d/, /\d/],
@@ -34,6 +45,20 @@ export default {
     unmask: ['$', ','],
     validationError: 'Please enter a dollar amount',
   },
+  defaultStringField: {
+    mask: false,
+    match: /^[A-Za-z0-9\-_,'".\s]{1,1000}$/,
+    unmask: [],
+    validationError:
+      'Please enter a response of no more than 100 alphanumeric characters',
+  },
+  defaultTextAreaField: {
+    mask: false,
+    match: /^[A-Za-z0-9\-_,'".\s]{1,1000}$/,
+    unmask: [],
+    validationError:
+      'Please enter a response of no more than 1000 alphanumeric characters',
+  },
   clinDollars: {
     mask: createNumberMask({ prefix: '$', allowDecimal: true }),
     match: /^-?\d+\.?\d*$/,
@@ -42,7 +67,7 @@ export default {
       'Please enter a dollar amount between $0.00 and $1,000,000,000.00',
   },
   email: {
-    mask: emailMask,
+    mask: false,
     match: /^.+@[^.].*\.[a-zA-Z]{2,10}$/,
     unmask: [],
     validationError: 'Please enter a valid e-mail address',
@@ -52,6 +77,13 @@ export default {
     match: /^[1-9]\d*$/,
     unmask: [','],
     validationError: 'Please enter a number',
+  },
+  name: {
+    mask: false,
+    match: /.{1,100}/,
+    unmask: [],
+    validationError:
+      'This field accepts letters, numbers, commas, apostrophes, hyphens, and periods.',
   },
   phoneExt: {
     mask: createNumberMask({
@@ -67,11 +99,11 @@ export default {
   },
   portfolioName: {
     mask: false,
-    match: /^.{4,100}$/,
+    match: /^[A-Za-z0-9\-_,'".\s]{4,100}$$/,
     unmask: [],
     validationError: 'Portfolio names can be between 4-100 characters',
   },
-  requiredField: {
+  required: {
     mask: false,
     match: /.+/,
     unmask: [],
@@ -79,9 +111,9 @@ export default {
   },
   taskOrderNumber: {
     mask: false,
-    match: /^.{13}$/,
-    unmask: [],
-    validationError: 'TO number must be 13 digits',
+    match: /(^[0-9a-zA-Z]{13,17}$)/,
+    unmask: ['-'],
+    validationError: 'TO number must be between 13 and 17 characters',
   },
   usPhone: {
     mask: [
@@ -103,5 +135,12 @@ export default {
     match: /^\d{10}$/,
     unmask: ['(', ')', '-', ' '],
     validationError: 'Please enter a 10-digit phone number',
+  },
+  restrictedFileName: {
+    mask: false,
+    match: /^[A-Za-z0-9\-_ \.]+$/,
+    unmask: [],
+    validationError:
+      'File names can only contain the characters A-Z, 0-9, space, hyphen, underscore, and period.',
   },
 }
