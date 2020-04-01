@@ -344,29 +344,30 @@ def test_dispatch_provision_portfolio(csp, monkeypatch):
 
 
 class TestDoProvisionPortfolio:
-    def test_portfolio_has_state_machine(self, csp, session, portfolio):
-        do_provision_portfolio(csp=csp, portfolio_id=portfolio.id)
-        session.refresh(portfolio)
-        assert portfolio.state_machine
-
-    def test_sends_email_to_PPOC_on_completion(
-        self, monkeypatch, csp, portfolio: Portfolio
+    @patch("atat.models.PortfolioStateMachine.trigger_next_transition")
+    def test_portfolio_has_state_machine(
+        self, trigger_next_transition, csp, session, portfolio
     ):
-        mock = Mock()
-        monkeypatch.setattr("atat.jobs.send_PPOC_email", mock)
+        do_provision_portfolio(csp=csp, portfolio_id=portfolio.id)
+        assert portfolio.state_machine
+        assert trigger_next_transition.called_with(
+            csp_data=make_initial_csp_data(portfolio)
+        )
 
-        csp._authorize.return_value = None
-        csp._maybe_raise.return_value = None
+    @patch("atat.jobs.send_PPOC_email")
+    def test_sends_email_to_PPOC_on_completion(
+        self, send_PPOC_email, monkeypatch, csp, portfolio: Portfolio
+    ):
         sm: PortfolioStateMachine = PortfolioStateMachineFactory.create(
             portfolio=portfolio
         )
+
         # The stage before "COMPLETED"
         last_step = [e.name for e in AzureStages][-1]
         sm.state = getattr(FSMStates, f"{last_step}_CREATED")
         do_provision_portfolio(csp=csp, portfolio_id=portfolio.id)
 
-        # send_PPOC_email was called
-        assert mock.assert_called_once
+        assert send_PPOC_email.assert_called_once
 
 
 def test_send_ppoc_email(monkeypatch, app):
