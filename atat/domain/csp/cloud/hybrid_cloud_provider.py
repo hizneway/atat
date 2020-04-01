@@ -232,4 +232,5 @@ class HybridCloudProvider(object):
     def create_environment(
         self, payload: EnvironmentCSPPayload
     ) -> EnvironmentCSPResult:
+        payload.management_group_name = f"hybrid-{payload.management_group_name}"
         return self.azure.create_environment(payload)
