@@ -78,8 +78,8 @@ commands:
             apk add bash py3-pip
             apk add --virtual=build \
               linux-headers gcc libffi-dev musl-dev openssl-dev python3-dev make
-            pip3 --no-cache-dir install -U pip3
-            pip3 --no-cache-dir install azure-cli
+            pip --no-cache-dir install -U pip
+            pip --no-cache-dir install azure-cli
             apk del --purge build
       - run:
           name: Login to Azure CLI
