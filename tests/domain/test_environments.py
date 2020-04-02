@@ -147,3 +147,14 @@ class TestGetEnvironmentsPendingCreate(EnvQueryTest):
             app_data={"cloud_id": uuid4().hex},
         )
         assert len(Environments.get_environments_pending_creation(self.NOW)) == 0
+
+
+def test_create_many_environments_will_skip_already_created_names():
+    application = ApplicationFactory.create()
+    environments_first_run = Environments.create_many(
+        application.portfolio.owner, application, ["Staging", "Production"]
+    )
+    environments_second_run = Environments.create_many(
+        application.portfolio.owner, application, ["Staging", "Production"]
+    )
+    assert len(environments_second_run) == 0
