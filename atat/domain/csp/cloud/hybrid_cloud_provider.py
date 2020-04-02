@@ -172,8 +172,8 @@ class HybridCloudProvider(object):
     def create_tenant_admin_ownership(
         self, payload: TenantAdminOwnershipCSPPayload
     ) -> TenantAdminOwnershipCSPResult:
-        """For this step, we needed to be able to retrieve the elevated management 
-        token from KeyVault with the original tenant id, but make the role assignment 
+        """For this step, we needed to be able to retrieve the elevated management
+        token from KeyVault with the original tenant id, but make the role assignment
         request with the root credentials.
         """
 
@@ -193,8 +193,8 @@ class HybridCloudProvider(object):
         self, payload: TenantPrincipalOwnershipCSPPayload
     ) -> TenantPrincipalOwnershipCSPResult:
 
-        """For this step, we needed to be able to retrieve the elevated 
-        management token from KeyVault with the original tenant id, but make 
+        """For this step, we needed to be able to retrieve the elevated
+        management token from KeyVault with the original tenant id, but make
         the tenant principal ownership request with the root credentials.
         """
 
@@ -221,7 +221,7 @@ class HybridCloudProvider(object):
     def create_tenant_admin_credential_reset(
         self, payload: TenantAdminCredentialResetCSPPayload
     ) -> TenantAdminCredentialResetCSPResult:
-        return self.azure.create_tenant_admin_credential_reset(payload)
+        return self.mock.create_tenant_admin_credential_reset(payload)
 
     def create_policies(self, payload: PoliciesCSPPayload) -> PoliciesCSPResult:
         return self.azure.create_policies(payload)
