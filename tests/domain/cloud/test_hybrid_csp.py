@@ -1,4 +1,3 @@
-import json
 import pendulum
 import pytest
 from unittest.mock import Mock
@@ -9,7 +8,6 @@ from atat.domain.csp.cloud.exceptions import UserProvisioningException
 from atat.domain.csp.cloud.models import (
     EnvironmentCSPPayload,
     KeyVaultCredentials,
-    UserCSPPayload,
     UserRoleCSPPayload,
 )
 from atat.jobs import do_create_application, do_create_environment_role, do_create_user
@@ -26,8 +24,6 @@ from tests.factories import (
     TaskOrderFactory,
     UserFactory,
 )
-from requests import get, post
-from secrets import token_urlsafe
 from uuid import uuid4
 
 
@@ -250,7 +246,6 @@ class TestHybridUserManagement:
         do_create_user(csp, [app_role_1.id])
         session.rollback()
 
-        create_user_role_result = None
         payload = UserRoleCSPPayload(
             tenant_id=csp.azure.tenant_id,
             role="owner",
