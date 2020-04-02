@@ -1,3 +1,4 @@
+import json
 import pendulum
 import pytest
 from unittest.mock import Mock
@@ -8,6 +9,8 @@ from atat.domain.csp.cloud.exceptions import UserProvisioningException
 from atat.domain.csp.cloud.models import (
     EnvironmentCSPPayload,
     KeyVaultCredentials,
+    UserCSPPayload,
+    UserRoleCSPPayload,
 )
 from atat.jobs import do_create_application, do_create_environment_role, do_create_user
 from atat.models import FSMStates, PortfolioStateMachine
@@ -23,6 +26,9 @@ from tests.factories import (
     TaskOrderFactory,
     UserFactory,
 )
+from requests import get, post
+from secrets import token_urlsafe
+from uuid import uuid4
 
 
 @pytest.fixture(scope="function")
@@ -136,7 +142,7 @@ def test_hybrid_create_environment_job(session, csp):
 
 
 @pytest.mark.hybrid
-class TestHybridCreateUserJob:
+class TestHybridUserManagement:
     @pytest.fixture
     def portfolio(self, app, csp):
         return PortfolioFactory.create(
@@ -227,32 +233,62 @@ class TestHybridCreateUserJob:
 
         assert app_role_1.cloud_id == cloud_id
 
+    def test_hybrid_disable_user(self, session, csp, portfolio, app, app_role_1):
+        csp.azure.create_tenant_creds(
+            csp.azure.tenant_id,
+            KeyVaultCredentials(
+                root_tenant_id=csp.azure.tenant_id,
+                root_sp_client_id=csp.azure.client_id,
+                root_sp_key=csp.azure.secret_key,
+                tenant_id=csp.azure.tenant_id,
+                tenant_sp_key=csp.azure.secret_key,
+                tenant_sp_client_id=csp.azure.client_id,
+            ),
+        )
 
-def test_hybrid_do_create_environment_role_job(session, csp, portfolio, app):
-    environment_role = EnvironmentRoleFactory.create()
-    environment_role.environment.cloud_id = app.config["AZURE_ROOT_MGMT_GROUP_ID"]
-    environment_role.application_role.cloud_id = app.config["AZURE_USER_OBJECT_ID"]
-    environment_role.environment.portfolio.csp_data = {
-        "tenant_id": csp.azure.tenant_id,
-        "domain_name": "dancorriganpromptworks",
-    }
+        session.begin_nested()
+        do_create_user(csp, [app_role_1.id])
+        session.rollback()
 
-    session.commit()
-
-    csp.azure.create_tenant_creds(
-        csp.azure.tenant_id,
-        KeyVaultCredentials(
-            root_tenant_id=csp.azure.tenant_id,
-            root_sp_client_id=csp.azure.client_id,
-            root_sp_key=csp.azure.secret_key,
+        create_user_role_result = None
+        payload = UserRoleCSPPayload(
             tenant_id=csp.azure.tenant_id,
-            tenant_sp_key=csp.azure.secret_key,
-            tenant_sp_client_id=csp.azure.client_id,
-        ),
-    )
+            role="owner",
+            management_group_id=app.config["AZURE_ROOT_MGMT_GROUP_ID"],
+            user_object_id=app_role_1.cloud_id,
+        )
 
-    try:
-        do_create_environment_role(csp, environment_role.id)
-    except UserProvisioningException as e:
-        if "RoleAssignmentExists" not in str(e):
-            raise e
+        create_user_role_result = csp.azure.create_user_role(payload)
+        disable_user_result = csp.azure.disable_user(
+            csp.azure.tenant_id, create_user_role_result.id
+        )
+        assert disable_user_result["id"] == create_user_role_result.id
+
+    def test_hybrid_do_create_environment_role_job(self, session, csp, portfolio, app):
+        environment_role = EnvironmentRoleFactory.create()
+        environment_role.environment.cloud_id = app.config["AZURE_ROOT_MGMT_GROUP_ID"]
+        environment_role.application_role.cloud_id = app.config["AZURE_USER_OBJECT_ID"]
+        environment_role.environment.portfolio.csp_data = {
+            "tenant_id": csp.azure.tenant_id,
+            "domain_name": "dancorriganpromptworks",
+        }
+
+        session.commit()
+
+        csp.azure.create_tenant_creds(
+            csp.azure.tenant_id,
+            KeyVaultCredentials(
+                root_tenant_id=csp.azure.tenant_id,
+                root_sp_client_id=csp.azure.client_id,
+                root_sp_key=csp.azure.secret_key,
+                tenant_id=csp.azure.tenant_id,
+                tenant_sp_key=csp.azure.secret_key,
+                tenant_sp_client_id=csp.azure.client_id,
+            ),
+        )
+
+        try:
+            do_create_environment_role(csp, environment_role.id)
+        except UserProvisioningException as e:
+            if "RoleAssignmentExists" not in str(e):
+                raise e

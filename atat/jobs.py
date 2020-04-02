@@ -178,12 +178,11 @@ def do_create_environment_role(csp: CloudProviderInterface, environment_role_id=
             role = UserRoleCSPPayload.Roles.contributor
 
         payload = UserRoleCSPPayload(
-            tenant_id=csp_details["tenant_id"],
+            tenant_id=csp_details.get("tenant_id"),
             management_group_id=env.cloud_id,
             user_object_id=app_role.cloud_id,
             role=role,
         )
-
         result = csp.create_user_role(payload)
 
         env_role.cloud_id = result.id
