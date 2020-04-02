@@ -22,7 +22,7 @@ data:
   ASSETS_URL: ""
   AZURE_ACCOUNT_NAME: pwdevtasks
   BLOB_STORAGE_URL: https://pwdevtasks.blob.core.windows.net/
-  CAC_URL: https://auth-staging.atat.cloud.mil
+  CAC_URL: https://auth-staging.atat.code.mil/login-redirect
   CDN_ORIGIN: https://staging.atat.cloud.mil
   CELERY_DEFAULT_QUEUE: celery-staging
   FLASK_ENV: staging
