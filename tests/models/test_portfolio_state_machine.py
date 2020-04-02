@@ -174,8 +174,16 @@ def test_finish_stage_invalid_stage(state_machine):
 
 
 @pytest.mark.state_machine
-def test_stage_state_to_stage_name(state_machine):
-    state_machine.state = FSMStates.TENANT_IN_PROGRESS
+@pytest.mark.parametrize(
+    "state_machine_state",
+    [
+        (FSMStates.TENANT_IN_PROGRESS),
+        (FSMStates.TENANT_CREATED),
+        (FSMStates.TENANT_FAILED),
+    ],
+)
+def test_current_stage(state_machine_state, state_machine):
+    state_machine.state = state_machine_state
     assert state_machine.current_stage == "tenant"
 
 

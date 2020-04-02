@@ -239,12 +239,18 @@ class PortfolioStateMachine(
             # TODO: Ensure that failing the stage does not preclude a Celery retry
             self.fail_stage(self.current_stage)
 
-    def _stage_state_to_stage_name(self, stage_state):
-        return self.current_state.name.split(f"_{stage_state.name}")[0].lower()
-
     @property
-    def current_stage(self):
-        return self._stage_state_to_stage_name(StageStates.IN_PROGRESS)
+    def current_stage(self) -> str:
+        """Returns the current stage of the CSP provisioning process       
+        
+        E.g. TENANT_IN_PROGRESS -> tenant
+        """
+        for stage_state in StageStates:
+            if self.current_state.name.endswith(stage_state.name):
+                stage, stage_state = self.current_state.name.split(
+                    f"_{stage_state.name}"
+                )
+                return stage.lower()
 
     def after_in_progress_callback(self, event):
         payload = event.kwargs.get("csp_data")
