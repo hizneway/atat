@@ -33,20 +33,34 @@ class AzureStages(Enum):
     POLICIES = "policies"
 
 
-def _build_csp_states(csp_stages):
-    states = {
+def _build_csp_states(csp_stages: Enum) -> dict:
+    """Builds a complete dictionary of portfolio provisioning states for a CSP
+    
+    Includes system states, plus each CSP stage combined with each Stage State. 
+    E.g. Given two CSP Stages, `TENANT` & `BILLING_PROFILE`, and three possible 
+    stage states, `CREATED`, `IN_PROGRESS`, & FAILED, this function generates a 
+    dictionary of system states + states that correspond with:
+    - TENANT_CREATED
+    - TENANT_IN_PROGRESS
+    - TENANT_FAILED
+    - BILLING_PROFILE_CREATION_CREATED
+    - BILLING_PROFILE_CREATION_IN_PROGRESS
+    - BILLING_PROFILE_CREATION_FAILED
+    """
+
+    system_states = {
         "UNSTARTED": "unstarted",
         "STARTING": "starting",
         "STARTED": "started",
         "COMPLETED": "completed",
         "FAILED": "failed",
     }
-    for csp_stage in csp_stages:
-        for state in StageStates:
-            states[csp_stage.name + "_" + state.name] = (
-                csp_stage.value + " " + state.value
-            )
-    return states
+    csp_states = {
+        f"{csp_stage.name}_{stage_state.name}": f"{csp_stage.value} {stage_state.value}"
+        for csp_stage in csp_stages
+        for stage_state in StageStates
+    }
+    return {**system_states, **csp_states}
 
 
 FSMStates = Enum("FSMStates", _build_csp_states(AzureStages))
