@@ -66,26 +66,38 @@ def _build_csp_states(csp_stages: Enum) -> dict:
 FSMStates = Enum("FSMStates", _build_csp_states(AzureStages))
 
 compose_state = lambda csp_stage, state: getattr(
-    FSMStates, "_".join([csp_stage.name, state.name])
+    FSMStates, f"{csp_stage.name}_{state.name}"
 )
 
 
 def _build_transitions(csp_stages):
+    """Build transitions between each provisioning state for a given CSP
+    
+    For each CSP state (a combination of CSP stages and StateStages) We need 
+    transitions: 
+    
+    - from the system `STARTED` state or the previous stage's `_CREATED` state to
+     `<CSP stage>_IN_PROGRESS` to try the provisioning step
+        - triggered with a `create_<CSP stage>` trigger
+    
+    - from `<CSP stage>_IN_PROGRESS` to `<CSP stage>_FAILED`, when the provisioning step fails
+        - triggered with a `fail_<CSP stage>` trigger
+    
+    - from `<CSP stage>_FAILED` to `<CSP stage>_IN_PROGRESS`, to retry the provisioning step
+        - triggered with a `resume_progress_<CSP stage>` trigger
+    
+    - from `<CSP stage>_IN_PROGRESS` to `<CSP stage>_CREATED` state, 
+      when the provisioning step is successful
+        - triggered with a `finish_<CSP stage>` trigger
+    
+    - from the last stage's `_CREATED` state to the system `COMPLETED` state
+        - triggered with a `finish_<CSP stage>` trigger
+
+    TODO: Turn the nested for loop into a generator
+    """
     transitions = []
     states = []
-    for stage_i, csp_stage in enumerate(csp_stages):
-        # the last CREATED stage has a transition to COMPLETED
-        if stage_i == len(csp_stages) - 1:
-            transitions.append(
-                dict(
-                    trigger="complete",
-                    source=compose_state(
-                        list(csp_stages)[stage_i], StageStates.CREATED
-                    ),
-                    dest=FSMStates.COMPLETED,
-                )
-            )
-
+    for stage_index, csp_stage in enumerate(csp_stages):
         for state in StageStates:
             states.append(
                 dict(
@@ -94,16 +106,16 @@ def _build_transitions(csp_stages):
                 )
             )
             if state == StageStates.CREATED:
-                if stage_i > 0:
-                    src = compose_state(
-                        list(csp_stages)[stage_i - 1], StageStates.CREATED
+                if stage_index > 0:
+                    source = compose_state(
+                        list(csp_stages)[stage_index - 1], StageStates.CREATED
                     )
                 else:
-                    src = FSMStates.STARTED
+                    source = FSMStates.STARTED
                 transitions.append(
                     dict(
                         trigger="create_" + csp_stage.name.lower(),
-                        source=src,
+                        source=source,
                         dest=compose_state(csp_stage, StageStates.IN_PROGRESS),
                         after="after_in_progress_callback",
                     )
@@ -133,6 +145,16 @@ def _build_transitions(csp_stages):
                         conditions=["is_ready_resume_progress"],
                     )
                 )
+
+    # the last CREATED stage has a transition to COMPLETED
+    transitions.append(
+        dict(
+            trigger="complete",
+            source=compose_state(list(csp_stages)[-1], StageStates.CREATED),
+            dest=FSMStates.COMPLETED,
+        )
+    )
+
     return states, transitions
 
 
