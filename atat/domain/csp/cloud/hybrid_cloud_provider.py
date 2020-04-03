@@ -3,7 +3,7 @@ from atat.domain.csp.cloud.azure_cloud_provider import AzureCloudProvider
 from atat.domain.csp.cloud.exceptions import UnknownServerException
 from atat.domain.csp.cloud.mock_cloud_provider import MockCloudProvider
 from atat.domain.csp.cloud.models import *
-from typing import Union
+from typing import Dict, Union
 from uuid import uuid4
 
 
@@ -250,3 +250,9 @@ class HybridCloudProvider(object):
             UserCSPResult -- a result object containing the AAD ID.
         """
         return self.azure.create_user(payload)
+
+    def create_user_role(self, payload: UserRoleCSPPayload) -> UserRoleCSPResult:
+        return self.azure.create_user_role(payload)
+
+    def disable_user(self, tenant_id: str, role_assignment_cloud_id: str) -> Dict:
+        return self.azure.disable_user(tenant_id, role_assignment_cloud_id)

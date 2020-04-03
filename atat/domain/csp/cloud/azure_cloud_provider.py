@@ -460,7 +460,7 @@ class AzureCloudProvider(CloudProviderInterface):
 
         try:
             result = self.sdk.requests.delete(
-                f"{self.sdk.cloud.endpoints.resource_manager}/{role_assignment_cloud_id}?api-version=2015-07-01",
+                f"{self.sdk.cloud.endpoints.resource_manager}{role_assignment_cloud_id}?api-version=2015-07-01",
                 headers=headers,
                 timeout=30,
             )
