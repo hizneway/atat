@@ -29,8 +29,11 @@ class Environments(object):
     def create_many(cls, user, application, names):
         environments = []
         for name in names:
-            environment = Environments.create(user, application, name)
-            environments.append(environment)
+            if name not in [
+                existing_envs.name for existing_envs in application.environments
+            ]:
+                environment = Environments.create(user, application, name)
+                environments.append(environment)
 
         db.session.add_all(environments)
         return environments

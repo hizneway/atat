@@ -3,7 +3,7 @@ from atat.domain.csp.cloud.azure_cloud_provider import AzureCloudProvider
 from atat.domain.csp.cloud.exceptions import UnknownServerException
 from atat.domain.csp.cloud.mock_cloud_provider import MockCloudProvider
 from atat.domain.csp.cloud.models import *
-from typing import Union
+from typing import Dict, Union
 from uuid import uuid4
 
 
@@ -172,8 +172,8 @@ class HybridCloudProvider(object):
     def create_tenant_admin_ownership(
         self, payload: TenantAdminOwnershipCSPPayload
     ) -> TenantAdminOwnershipCSPResult:
-        """For this step, we needed to be able to retrieve the elevated management 
-        token from KeyVault with the original tenant id, but make the role assignment 
+        """For this step, we needed to be able to retrieve the elevated management
+        token from KeyVault with the original tenant id, but make the role assignment
         request with the root credentials.
         """
 
@@ -193,8 +193,8 @@ class HybridCloudProvider(object):
         self, payload: TenantPrincipalOwnershipCSPPayload
     ) -> TenantPrincipalOwnershipCSPResult:
 
-        """For this step, we needed to be able to retrieve the elevated 
-        management token from KeyVault with the original tenant id, but make 
+        """For this step, we needed to be able to retrieve the elevated
+        management token from KeyVault with the original tenant id, but make
         the tenant principal ownership request with the root credentials.
         """
 
@@ -221,7 +221,38 @@ class HybridCloudProvider(object):
     def create_tenant_admin_credential_reset(
         self, payload: TenantAdminCredentialResetCSPPayload
     ) -> TenantAdminCredentialResetCSPResult:
-        return self.azure.create_tenant_admin_credential_reset(payload)
+        return self.mock.create_tenant_admin_credential_reset(payload)
 
     def create_policies(self, payload: PoliciesCSPPayload) -> PoliciesCSPResult:
         return self.azure.create_policies(payload)
+
+    def create_application(self, payload):
+        return self.azure.create_application(payload)
+
+    def create_environment(
+        self, payload: EnvironmentCSPPayload
+    ) -> EnvironmentCSPResult:
+        payload.management_group_name = f"hybrid-{payload.management_group_name}"
+        return self.azure.create_environment(payload)
+
+    def create_user(self, payload: UserCSPPayload) -> UserCSPResult:
+        """Create a user in an Azure Active Directory instance.
+        Unlike most of the methods on this interface, this requires
+        two API calls: one POST to create the user and one PATCH to
+        set the alternate email address. The email address cannot
+        be set on the first API call. The email address is
+        necessary so that users can do Self-Service Password
+        Recovery.
+        Arguments:
+            payload {UserCSPPayload} -- a payload object with the
+            data necessary for both calls
+        Returns:
+            UserCSPResult -- a result object containing the AAD ID.
+        """
+        return self.azure.create_user(payload)
+
+    def create_user_role(self, payload: UserRoleCSPPayload) -> UserRoleCSPResult:
+        return self.azure.create_user_role(payload)
+
+    def disable_user(self, tenant_id: str, role_assignment_cloud_id: str) -> Dict:
+        return self.azure.disable_user(tenant_id, role_assignment_cloud_id)

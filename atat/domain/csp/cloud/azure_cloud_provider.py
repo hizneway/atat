@@ -280,6 +280,7 @@ class AzureCloudProvider(CloudProviderInterface):
             display_name=display_name,
             details=create_mgmt_grp_details,
         )
+
         create_request = mgmgt_group_client.management_groups.create_or_update(
             management_group_id, mgmt_grp_create
         )
@@ -459,7 +460,7 @@ class AzureCloudProvider(CloudProviderInterface):
 
         try:
             result = self.sdk.requests.delete(
-                f"{self.sdk.cloud.endpoints.resource_manager}/{role_assignment_cloud_id}?api-version=2015-07-01",
+                f"{self.sdk.cloud.endpoints.resource_manager}{role_assignment_cloud_id}?api-version=2015-07-01",
                 headers=headers,
                 timeout=30,
             )

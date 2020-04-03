@@ -1,34 +1,12 @@
+from smtplib import SMTPException
+from unittest.mock import MagicMock, Mock, patch, ANY
+from uuid import uuid4
+
 import pendulum
 import pytest
-from uuid import uuid4
-from unittest.mock import Mock, MagicMock
-from smtplib import SMTPException
 from azure.core.exceptions import AzureError
-
-from atat.domain.csp.cloud import MockCloudProvider
-from atat.domain.csp.cloud.models import BillingInstructionCSPPayload, UserRoleCSPResult
-from atat.domain.portfolios import Portfolios
-from atat.models import ApplicationRoleStatus, Portfolio, FSMStates
-from atat.models.mixins.state_machines import AzureStages
-
-from atat.jobs import (
-    RecordFailure,
-    dispatch_create_environment,
-    dispatch_create_application,
-    dispatch_create_user,
-    dispatch_create_environment_role,
-    dispatch_provision_portfolio,
-    create_billing_instruction,
-    create_environment,
-    do_create_user,
-    do_provision_portfolio,
-    do_create_environment,
-    do_create_environment_role,
-    do_create_application,
-    make_initial_csp_data,
-    send_PPOC_email,
-    send_task_order_files,
-)
+from celery.exceptions import Retry
+from pytest import raises
 from tests.factories import (
     ApplicationFactory,
     ApplicationRoleFactory,
@@ -40,7 +18,36 @@ from tests.factories import (
     TaskOrderFactory,
     UserFactory,
 )
-from atat.models import CSPRole, EnvironmentRole, ApplicationRoleStatus, JobFailure
+
+from atat.domain.csp.cloud import MockCloudProvider
+from atat.domain.csp.cloud.exceptions import GeneralCSPException
+from atat.domain.csp.cloud.models import UserRoleCSPResult
+from atat.jobs import (
+    RecordFailure,
+    create_billing_instruction,
+    create_environment,
+    dispatch_create_application,
+    dispatch_create_environment,
+    dispatch_create_environment_role,
+    dispatch_create_user,
+    dispatch_provision_portfolio,
+    do_create_application,
+    do_create_environment,
+    do_create_environment_role,
+    do_create_user,
+    do_provision_portfolio,
+    make_initial_csp_data,
+    provision_portfolio,
+    send_PPOC_email,
+    send_task_order_files,
+)
+from atat.models import (
+    ApplicationRoleStatus,
+    FSMStates,
+    JobFailure,
+    Portfolio,
+)
+from atat.models.mixins.state_machines import AzureStages
 from atat.utils.localization import translate
 
 
@@ -337,29 +344,30 @@ def test_dispatch_provision_portfolio(csp, monkeypatch):
 
 
 class TestDoProvisionPortfolio:
-    def test_portfolio_has_state_machine(self, csp, session, portfolio):
-        do_provision_portfolio(csp=csp, portfolio_id=portfolio.id)
-        session.refresh(portfolio)
-        assert portfolio.state_machine
-
-    def test_sends_email_to_PPOC_on_completion(
-        self, monkeypatch, csp, portfolio: Portfolio
+    @patch("atat.models.PortfolioStateMachine.trigger_next_transition")
+    def test_portfolio_has_state_machine(
+        self, trigger_next_transition, csp, session, portfolio
     ):
-        mock = Mock()
-        monkeypatch.setattr("atat.jobs.send_PPOC_email", mock)
+        do_provision_portfolio(csp=csp, portfolio_id=portfolio.id)
+        assert portfolio.state_machine
+        assert trigger_next_transition.called_with(
+            csp_data=make_initial_csp_data(portfolio)
+        )
 
-        csp._authorize.return_value = None
-        csp._maybe_raise.return_value = None
+    @patch("atat.jobs.send_PPOC_email")
+    def test_sends_email_to_PPOC_on_completion(
+        self, send_PPOC_email, monkeypatch, csp, portfolio: Portfolio
+    ):
         sm: PortfolioStateMachine = PortfolioStateMachineFactory.create(
             portfolio=portfolio
         )
+
         # The stage before "COMPLETED"
         last_step = [e.name for e in AzureStages][-1]
         sm.state = getattr(FSMStates, f"{last_step}_CREATED")
         do_provision_portfolio(csp=csp, portfolio_id=portfolio.id)
 
-        # send_PPOC_email was called
-        assert mock.assert_called_once
+        assert send_PPOC_email.assert_called_once
 
 
 def test_send_ppoc_email(monkeypatch, app):
@@ -390,14 +398,24 @@ def test_send_ppoc_email(monkeypatch, app):
     )
 
 
-def test_provision_portfolio_create_tenant(
-    csp, session, portfolio, celery_app, celery_worker, monkeypatch
-):
-    sm = PortfolioStateMachineFactory.create(portfolio=portfolio)
-    # mock = Mock()
-    # monkeypatch.setattr("atat.jobs.provision_portfolio", mock)
-    # dispatch_provision_portfolio.run()
-    # mock.delay.assert_called_once_with(portfolio_id=portfolio.id)
+class TestProvisionPortfolio:
+    @patch("atat.jobs.do_work")
+    def test_calls_do_provision_portfolio(self, do_work, app, portfolio):
+        provision_portfolio(portfolio.id)
+        do_work.assert_called_with(
+            do_provision_portfolio, ANY, app.csp.cloud, portfolio_id=portfolio.id
+        )
+
+    @patch("atat.jobs.provision_portfolio.retry")
+    @patch("atat.jobs.do_work")
+    def test_exception_triggers_retry(
+        self, provision_portfolio_retry, do_work, app, portfolio,
+    ):
+        provision_portfolio_retry.side_effect = Retry()
+        do_work = GeneralCSPException()
+
+        with raises(Retry):
+            provision_portfolio(portfolio.id)
 
 
 def test_dispatch_create_environment_role(monkeypatch):
