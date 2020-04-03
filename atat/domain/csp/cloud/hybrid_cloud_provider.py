@@ -17,6 +17,9 @@ def monkeypatched(object_, name, patch):
     setattr(object_, name, pre_patched_value)
 
 
+HYBRID_PREFIX = "Hybrid ::"
+
+
 class HybridCloudProvider(object):
     def __init__(self, azure: AzureCloudProvider, mock: MockCloudProvider):
         self.azure = azure
@@ -117,7 +120,7 @@ class HybridCloudProvider(object):
         with monkeypatched(
             self.azure,
             "tenant_principal_app_display_name",
-            f"Hybrid :: {payload.display_name} :: ATAT Remote Admin",
+            f"{HYBRID_PREFIX} {payload.display_name} :: ATAT Remote Admin",
         ):
             return self.azure.create_tenant_principal_app(payload)
 
@@ -161,7 +164,7 @@ class HybridCloudProvider(object):
     def create_initial_mgmt_group(
         self, payload: InitialMgmtGroupCSPPayload
     ) -> InitialMgmtGroupCSPResult:
-        payload.display_name = f"Hybrid :: {payload.display_name}"
+        payload.display_name = f"{HYBRID_PREFIX} {payload.display_name}"
         return self.azure.create_initial_mgmt_group(payload)
 
     def create_initial_mgmt_group_verification(
@@ -215,7 +218,7 @@ class HybridCloudProvider(object):
         with monkeypatched(
             self.azure, "_get_tenant_principal_token", lambda *a, **kw: token
         ):
-            payload.display_name = f"Hybrid {payload.display_name} Billing"
+            payload.display_name = f"{HYBRID_PREFIX} {payload.display_name} :: Billing"
             return self.azure.create_billing_owner(payload)
 
     def create_tenant_admin_credential_reset(
@@ -227,12 +230,13 @@ class HybridCloudProvider(object):
         return self.azure.create_policies(payload)
 
     def create_application(self, payload):
+        payload.display_name = f"{HYBRID_PREFIX} {payload.display_name}"
         return self.azure.create_application(payload)
 
     def create_environment(
         self, payload: EnvironmentCSPPayload
     ) -> EnvironmentCSPResult:
-        payload.management_group_name = f"hybrid-{payload.management_group_name}"
+        payload.display_name = f"{HYBRID_PREFIX} {payload.display_name}"
         return self.azure.create_environment(payload)
 
     def create_user(self, payload: UserCSPPayload) -> UserCSPResult:

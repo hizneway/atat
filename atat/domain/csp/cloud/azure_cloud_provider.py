@@ -216,10 +216,10 @@ class AzureCloudProvider(CloudProviderInterface):
     def create_initial_mgmt_group(self, payload: InitialMgmtGroupCSPPayload):
         """Creates the root management group for the Portfolio tenant.
 
-        The management group created in this step is the parent to all future 
+        The management group created in this step is the parent to all future
         management groups created for applications and environments.
-        
-        A management group is a collection of subscriptions and management 
+
+        A management group is a collection of subscriptions and management
         groups to which "governance conditions" can be applied. These resources
         can be nested.
 
@@ -245,8 +245,8 @@ class AzureCloudProvider(CloudProviderInterface):
         self, payload: InitialMgmtGroupVerificationCSPPayload
     ):
         """Verify the creation of the root management group.
-        
-        A management group is a collection of subscriptions and management 
+
+        A management group is a collection of subscriptions and management
         groups to which "governance conditions" can be applied. These resources
         can be nested.
 
@@ -411,9 +411,9 @@ class AzureCloudProvider(CloudProviderInterface):
     def create_policies(self, payload: PoliciesCSPPayload):
         """
         Creates and applies the default JEDI Policy Set to a portfolio's root management group.
-        
+
         The underlying API calls seem to be idempotent, despite the fact that most of them repeatedly
-        return 201. The _create_policy_set API call is the one exception. It returns 201 on initial 
+        return 201. The _create_policy_set API call is the one exception. It returns 201 on initial
         creation, and then 200 thereafter
         """
 
@@ -568,7 +568,7 @@ class AzureCloudProvider(CloudProviderInterface):
     def create_billing_profile_creation(
         self, payload: BillingProfileCreationCSPPayload
     ):
-        """Create a billing profile which specifies which products are included 
+        """Create a billing profile which specifies which products are included
             in an invoice, and how the invoice is paid for.
 
             Billing profiles include:
@@ -633,7 +633,7 @@ class AzureCloudProvider(CloudProviderInterface):
     ):
         """Verify that a billing profile has been created.
 
-            A billing profile specifies which products are included in an invoice, 
+            A billing profile specifies which products are included in an invoice,
             and how the invoice is paid for. They include:
             - Payment methods
             - Contact info
@@ -1100,8 +1100,8 @@ class AzureCloudProvider(CloudProviderInterface):
     ):
         """Reset tenant admin password to random value.
 
-        The purpose of this call is to set the password for the tenant admin 
-        user to a value that is not stored anywhere. You're essentially making 
+        The purpose of this call is to set the password for the tenant admin
+        user to a value that is not stored anywhere. You're essentially making
         ATAT "forget" the human admin's login creds when it's done with them.
         """
 
@@ -1177,7 +1177,7 @@ class AzureCloudProvider(CloudProviderInterface):
     ):
         """Gives the service principal the owner role over the root management group.
 
-        The security principal object defines the access policy and permissions 
+        The security principal object defines the access policy and permissions
         for the user/application in the Azure AD tenant.
 
         https://docs.microsoft.com/en-us/azure/active-directory/develop/app-objects-and-service-principals
@@ -1239,11 +1239,11 @@ class AzureCloudProvider(CloudProviderInterface):
 
     def create_tenant_principal_app(self, payload: TenantPrincipalAppCSPPayload):
         """Creates an app registration for a Profile.
-        
-        An Azure AD application is defined by its one and only application 
-        object, which resides in the Azure AD tenant where the application was 
+
+        An Azure AD application is defined by its one and only application
+        object, which resides in the Azure AD tenant where the application was
         registered, known as the application's "home" tenant.
-        
+
         https://docs.microsoft.com/en-us/azure/active-directory/develop/app-objects-and-service-principals
         https://docs.microsoft.com/en-us/graph/api/resources/application?view=graph-rest-1.0
         """
@@ -1295,7 +1295,7 @@ class AzureCloudProvider(CloudProviderInterface):
 
     def create_tenant_principal(self, payload: TenantPrincipalCSPPayload):
         """Creates a service principal for a Profile.
-        A service principal represents an instance of an application in a 
+        A service principal represents an instance of an application in a
         directory.
 
         https://docs.microsoft.com/en-us/graph/api/resources/serviceprincipal?view=graph-rest-beta
@@ -1470,7 +1470,7 @@ class AzureCloudProvider(CloudProviderInterface):
             )
 
     def create_principal_admin_role(self, payload: PrincipalAdminRoleCSPPayload):
-        """Grant the "Global Admin" / "Company Admin" role to the service 
+        """Grant the "Global Admin" / "Company Admin" role to the service
         principal (create a role assignment).
         """
 
@@ -1524,7 +1524,7 @@ class AzureCloudProvider(CloudProviderInterface):
             )
 
     def create_billing_owner(self, payload: BillingOwnerCSPPayload):
-        """Create a billing account owner, which is a billing role that can 
+        """Create a billing account owner, which is a billing role that can
         manage everything for a billing account.
 
         https://docs.microsoft.com/en-us/azure/cost-management-billing/manage/understand-mca-roles
