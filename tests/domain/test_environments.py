@@ -155,6 +155,8 @@ def test_create_many_environments_will_skip_already_created_names():
         application.portfolio.owner, application, ["Staging", "Production"]
     )
     environments_second_run = Environments.create_many(
-        application.portfolio.owner, application, ["Staging", "Production"]
+        application.portfolio.owner,
+        application,
+        ["Staging", "Production", "Development"],
     )
-    assert len(environments_second_run) == 0
+    assert len(application.environments) == 3
