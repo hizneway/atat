@@ -375,7 +375,7 @@ def test_send_ppoc_email(monkeypatch, app):
     monkeypatch.setattr("atat.jobs.send_mail", mock)
 
     ppoc_email = "example@example.com"
-    user_id = "user_id"
+    user_id = "userid"
     domain_name = "domain"
 
     send_PPOC_email(

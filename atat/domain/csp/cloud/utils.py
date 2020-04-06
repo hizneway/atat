@@ -1,3 +1,6 @@
+import string
+import re
+
 from flask import current_app as app
 
 
@@ -6,5 +9,8 @@ def generate_user_principal_name(name, domain_name):
     return f"{mail_name}@{domain_name}.{app.config.get('OFFICE_365_DOMAIN')}"
 
 
+ESCAPED_PUNCTUATION = re.escape(string.punctuation)
+
+
 def generate_mail_nickname(name):
-    return name.replace(" ", ".").lower()
+    return re.sub(f"[{ESCAPED_PUNCTUATION} ]+", ".", name).lower()
