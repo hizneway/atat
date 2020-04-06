@@ -1,5 +1,5 @@
 from smtplib import SMTPException
-from unittest.mock import MagicMock, Mock, patch, ANY
+from unittest.mock import MagicMock, Mock, patch
 from uuid import uuid4
 
 import pendulum
@@ -20,7 +20,7 @@ from tests.factories import (
 )
 
 from atat.domain.csp.cloud import MockCloudProvider
-from atat.domain.csp.cloud.exceptions import GeneralCSPException
+from atat.domain.csp.cloud.exceptions import GeneralCSPException, ConnectionException
 from atat.domain.csp.cloud.models import UserRoleCSPResult
 from atat.jobs import (
     RecordFailure,
@@ -399,23 +399,12 @@ def test_send_ppoc_email(monkeypatch, app):
 
 
 class TestProvisionPortfolio:
-    @patch("atat.jobs.do_work")
-    def test_calls_do_provision_portfolio(self, do_work, app, portfolio):
+    @patch("atat.jobs.do_provision_portfolio")
+    def test_calls_do_provision_portfolio(self, do_provision_portfolio, app, portfolio):
         provision_portfolio(portfolio.id)
-        do_work.assert_called_with(
-            do_provision_portfolio, ANY, app.csp.cloud, portfolio_id=portfolio.id
+        do_provision_portfolio.assert_called_with(
+            app.csp.cloud, portfolio_id=portfolio.id
         )
-
-    @patch("atat.jobs.provision_portfolio.retry")
-    @patch("atat.jobs.do_work")
-    def test_exception_triggers_retry(
-        self, provision_portfolio_retry, do_work, app, portfolio,
-    ):
-        provision_portfolio_retry.side_effect = Retry()
-        do_work = GeneralCSPException()
-
-        with raises(Retry):
-            provision_portfolio(portfolio.id)
 
 
 def test_dispatch_create_environment_role(monkeypatch):

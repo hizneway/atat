@@ -1,26 +1,24 @@
 import importlib
 
-from sqlalchemy import Column, ForeignKey, Enum as SQLAEnum
-from sqlalchemy.orm import relationship, reconstructor
-from sqlalchemy.dialects.postgresql import UUID
-
-from pydantic import ValidationError as PydanticValidationError
-from transitions import Machine
-from transitions.extensions.states import add_state_features, Tags
-
 from flask import current_app as app
+from sqlalchemy import Column
+from sqlalchemy import Enum as SQLAEnum
+from sqlalchemy import ForeignKey
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import reconstructor, relationship
+from transitions import Machine
+from transitions.extensions.states import Tags, add_state_features
 
-from atat.domain.csp.cloud.exceptions import ConnectionException, UnknownServerException
-from atat.database import db
-from atat.models.types import Id
-from atat.models.base import Base
 import atat.models.mixins as mixins
+from atat.database import db
+from atat.models.base import Base
 from atat.models.mixins.state_machines import (
-    FSMStates,
     AzureStages,
+    FSMStates,
     StageStates,
     _build_transitions,
 )
+from atat.models.types import Id
 
 
 class StateMachineMisconfiguredError(Exception):
@@ -123,6 +121,19 @@ class PortfolioStateMachine(
             return getattr(FSMStates, self.state)
         return self.state
 
+    @property
+    def current_stage(self) -> str:
+        """Returns the current stage of the CSP provisioning process       
+        
+        E.g. TENANT_IN_PROGRESS -> tenant
+        """
+        for stage_state in StageStates:
+            if self.current_state.name.endswith(stage_state.name):
+                stage, stage_state = self.current_state.name.split(
+                    f"_{stage_state.name}"
+                )
+                return stage.lower()
+
     def trigger_next_transition(self, **kwargs):
         state_obj = self.machine.get_state(self.state)
 
@@ -189,81 +200,24 @@ class PortfolioStateMachine(
             if create_trigger is not None:
                 self.trigger(create_trigger, **kwargs)
 
-    def _get_payload_data_class(self):
-        """Retrieves the appropriate payload class for the current provisioning step.
-        """
-
-        payload_data_cls = get_stage_csp_class(self.current_stage, "payload")
-
-        if payload_data_cls is None:
-            app.logger.info(
-                f"could not resolve payload data class for stage {self.current_stage}"
-            )
-            self.fail_stage(self.current_stage)
-
-        return payload_data_cls
-
-    def _get_payload_data(self, payload_data_class, payload):
-        try:
-            return payload_data_class(**payload)
-        except PydanticValidationError as exc:
-            app.logger.error(
-                f"Payload Validation Error in {self.__repr__()}:", exc_info=1
-            )
-            app.logger.info(exc.json())
-            print(exc.json())
-            app.logger.info(payload)
-            self.fail_stage(self.current_stage)
-
-    def _provision_stage(self, payload_data):
-        try:
-            func_name = f"create_{self.current_stage}"
-            response = getattr(self.cloud, func_name)(payload_data)
-            return response
-        except PydanticValidationError as exc:
-            app.logger.error(
-                f"Failed to cast response to valid result class {self.__repr__()}:",
-                exc_info=1,
-            )
-            app.logger.info(exc.json())
-            print(exc.json())
-            app.logger.info(payload_data)
-            # TODO: Ensure that failing the stage does not preclude a Celery retry
-            self.fail_stage(self.current_stage)
-
-        # TODO: catch and handle general CSP exception here
-        except (ConnectionException, UnknownServerException) as exc:
-            app.logger.error(
-                f"CSP api call. Caught exception for {self.__repr__()}.", exc_info=1,
-            )
-            # TODO: Ensure that failing the stage does not preclude a Celery retry
-            self.fail_stage(self.current_stage)
-
-    @property
-    def current_stage(self) -> str:
-        """Returns the current stage of the CSP provisioning process
-
-        E.g. TENANT_IN_PROGRESS -> tenant
-        """
-        for stage_state in StageStates:
-            if self.current_state.name.endswith(stage_state.name):
-                stage, stage_state = self.current_state.name.split(
-                    f"_{stage_state.name}"
-                )
-                return stage.lower()
+    def _do_provisioning_stage(self, payload):
+        payload_data_class = get_stage_csp_class(self.current_stage, "payload")
+        payload_data = payload_data_class(**payload)
+        return getattr(self.cloud, f"create_{self.current_stage}")(payload_data)
 
     def after_in_progress_callback(self, event):
-        payload = event.kwargs.get("csp_data")
-        payload_data_class = self._get_payload_data_class()
-        payload_data = self._get_payload_data(payload_data_class, payload)
-        response = self._provision_stage(payload_data)
-        if self.portfolio.csp_data is None:
-            self.portfolio.csp_data = {}
-        self.portfolio.csp_data.update(response.dict())
-        db.session.add(self.portfolio)
-        db.session.commit()
-
-        self.finish_stage(self.current_stage)
+        try:
+            payload = event.kwargs.get("csp_data")
+            response = self._do_provisioning_stage(payload)
+            if self.portfolio.csp_data is None:
+                self.portfolio.csp_data = {}
+            self.portfolio.csp_data.update(response.dict())
+            db.session.add(self.portfolio)
+            db.session.commit()
+            self.finish_stage(self.current_stage)
+        except:
+            self.fail_stage(self.current_stage)
+            raise
 
     def is_csp_data_valid(self, event):
         """
@@ -281,7 +235,7 @@ class PortfolioStateMachine(
         """
         This function guards advancing states from FAILED to *_IN_PROGRESS.
         """
-
+        # TODO: Make this real
         return True
 
     @property

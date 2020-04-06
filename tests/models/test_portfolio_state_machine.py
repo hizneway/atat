@@ -1,8 +1,10 @@
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 import pendulum
 import pydantic
+from pydantic import ValidationError as PydanticValidationError
 import pytest
+from pytest import raises
 from tests.factories import (
     ApplicationFactory,
     CLINFactory,
@@ -11,8 +13,10 @@ from tests.factories import (
     TaskOrderFactory,
     UserFactory,
 )
+from atat.domain.csp.cloud.models import TenantCSPPayload
+from atat.domain.csp.cloud.exceptions import GeneralCSPException, UnknownServerException
 
-from atat.models.mixins.state_machines import AzureStages, StageStates, FSMStates
+from atat.models.mixins.state_machines import AzureStages, FSMStates
 from atat.models.portfolio_state_machine import (
     StateMachineMisconfiguredError,
     _stage_to_classname,
@@ -110,6 +114,22 @@ def test_attach_machine(state_machine):
     ]
     state_machine.attach_machine()
     assert list(state_machine.machine.events)[: len(initial_stages)] == initial_stages
+
+
+@pytest.mark.state_machine
+@patch("atat.models.PortfolioStateMachine._do_provisioning_stage")
+def test_after_in_progress_callback(_do_provisioning_stage):
+    # Given: a portfolio state machine is attempting a provisioning stage
+    portfolio = PortfolioFactory.create(state="TENANT_IN_PROGRESS")
+    # Given: The provisioning stage throws an exception
+    _do_provisioning_stage.side_effect = Exception()
+
+    # When I run the task, then:
+    # The exception is re-raised
+    with raises(Exception):
+        portfolio.state_machine.after_in_progress_callback(Mock())
+    # Then the state machine fails the stage
+    assert portfolio.state_machine.state == FSMStates.TENANT_FAILED
 
 
 @pytest.mark.state_machine
