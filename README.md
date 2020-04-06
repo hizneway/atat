@@ -51,6 +51,18 @@ locally:
   This dependency is optional. If present, the queue worker process will hot
   reload in development.
 
+* `node` == 10
+  This is a requirement of [node-sass](https://github.com/sass/node-sass).  For macOS, use brew to install:
+  ```
+  brew install node@10
+  ```
+
+  You will have to either create symlinks to the binaries or update the path.  Both are probably not necessary:
+  ```
+  brew link --force --overwrite node@10
+  echo 'export PATH="/usr/local/opt/node@10/bin:$PATH"' >> ~/.zshrc 
+  ```
+
 ### Cloning
 This project contains git submodules. Here is an example clone command that will
 automatically initialize and update those modules:
@@ -97,6 +109,12 @@ run:
 
 ```
 createdb atat
+```
+
+If Celery is throwing a "Too many open files" error, you may need to increase the machine's ulimit:
+
+```
+ulimit -n 1024
 ```
 
 ## Running (development)
