@@ -524,6 +524,7 @@ class TestCreateBillingInstructions:
                 "billing_profile_name": "fake",
             },
             task_orders=[{"create_clins": [{"start_date": start_date}]}],
+            state=FSMStates.COMPLETED.name,
         )
         return portfolio.task_orders[0].clins[0]
 
@@ -570,6 +571,7 @@ class TestCreateBillingInstructions:
                     ]
                 }
             ],
+            state=FSMStates.COMPLETED.name,
         )
         task_order = portfolio.task_orders[0]
         sent_clin = task_order.clins[0]

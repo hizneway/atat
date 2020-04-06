@@ -2,8 +2,14 @@ from sqlalchemy import or_
 import pendulum
 
 from atat.database import db
-from atat.models.clin import CLIN
-from atat.models.task_order import TaskOrder, SORT_ORDERING
+from atat.models import (
+    CLIN,
+    TaskOrder,
+    Portfolio,
+    PortfolioStateMachine,
+    FSMStates as PortfolioStates,
+)
+from atat.models.task_order import SORT_ORDERING
 from . import BaseDomainClass
 from atat.utils import commit_or_raise_already_exists_error
 
@@ -93,10 +99,26 @@ class TaskOrders(BaseDomainClass):
 
     @classmethod
     def get_clins_for_create_billing_instructions(cls):
+        """Finds CLINs that need to be transmitted to the CSP. These should be
+        CLINs that have changed since the portfolio was initially provisioned.
+        CLINs are not updated in-place, just updated entirely when a user edits
+        them. Because of this, the last_sent_at column will always be empty for
+        a new or "edited" CLIN.
+
+        Checks that:
+          - last_sent_at is null
+          - the current date is within the CLIN's period of performance
+          - the associated portfolio is done being provisioned
+        """
         return (
             db.session.query(CLIN)
+            .join(TaskOrder)
+            .join(Portfolio)
+            .join(PortfolioStateMachine)
             .filter(
-                CLIN.last_sent_at.is_(None), CLIN.start_date < pendulum.now(tz="UTC")
+                CLIN.last_sent_at.is_(None),
+                CLIN.start_date < pendulum.now(tz="UTC"),
+                PortfolioStateMachine.state == PortfolioStates.COMPLETED,
             )
             .all()
         )
