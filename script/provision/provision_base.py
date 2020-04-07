@@ -3,8 +3,8 @@ import os
 import pprint
 import sys
 
-from atst.domain.csp.cloud import AzureCloudProvider
-from atst.domain.csp.cloud.models import KeyVaultCredentials
+from atat.domain.csp.cloud import AzureCloudProvider
+from atat.domain.csp.cloud.models import KeyVaultCredentials
 
 parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
 sys.path.append(parent_dir)

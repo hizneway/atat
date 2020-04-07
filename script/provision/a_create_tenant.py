@@ -6,7 +6,7 @@ sys.path.append(parent_dir)
 
 from script.provision.provision_base import handle
 
-from atst.domain.csp.cloud.models import TenantCSPPayload
+from atat.domain.csp.cloud.models import TenantCSPPayload
 
 
 def create_tenant(csp, inputs):
@@ -32,4 +32,3 @@ def create_tenant(csp, inputs):
 
 if __name__ == "__main__":
     handle(create_tenant)
-
