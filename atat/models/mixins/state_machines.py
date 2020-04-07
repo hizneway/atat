@@ -176,22 +176,40 @@ class FSMMixin:
         {"trigger": "fail", "source": "*", "dest": FSMStates.FAILED,},
     ]
 
-    def fail_stage(self, stage):
-        fail_trigger = f"fail_{stage}"
-        if fail_trigger in self.machine.get_triggers(self.current_state.name):
-            self.trigger(fail_trigger)
+    def _find_and_call_stage_trigger(self, trigger_prefix, **kwargs):
+        """Given a trigger prefix, find the appropriate trigger to call for the 
+        current Portfolio provisioning stage
+
+
+        E.g. if a portfolio is in the "TENANT" stage, and this method is given
+        a trigger prefix of `create`, find the `create_tenant` trigger and call it.
+        """
+        trigger = next(
+            filter(
+                lambda trigger: trigger.startswith(trigger_prefix),
+                self.machine.get_triggers(self.state_str),
+            ),
+            None,
+        )
+        if trigger is not None:
+            self.trigger(trigger, **kwargs)
             app.logger.info(
-                f"calling fail trigger '{fail_trigger}' for '{self.__repr__()}'"
+                f"calling {trigger_prefix} trigger '{trigger}' for '{self.__repr__()}'"
             )
         else:
             app.logger.info(
-                f"could not locate fail trigger '{fail_trigger}' for '{self.__repr__()}'"
+                f"could not locate {trigger_prefix} trigger '{trigger}' for '{self.__repr__()}'"
             )
+            self.trigger("fail")
 
-    def finish_stage(self, stage):
-        finish_trigger = f"finish_{stage}"
-        if finish_trigger in self.machine.get_triggers(self.current_state.name):
-            app.logger.info(
-                f"calling finish trigger '{finish_trigger}' for '{self.__repr__()}'"
-            )
-            self.trigger(finish_trigger)
+    def start_next_stage(self, **kwargs):
+        self._find_and_call_stage_trigger("create_", **kwargs)
+
+    def resume_stage_progress(self, **kwargs):
+        self._find_and_call_stage_trigger("resume_progress_", **kwargs)
+
+    def fail_stage(self, **kwargs):
+        self._find_and_call_stage_trigger("fail_", **kwargs)
+
+    def finish_stage(self, **kwargs):
+        self._find_and_call_stage_trigger("finish_", **kwargs)

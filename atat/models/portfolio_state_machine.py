@@ -139,66 +139,25 @@ class PortfolioStateMachine(
 
         kwargs["csp_data"] = kwargs.get("csp_data", {})
 
-        if state_obj.is_system:
-            if self.current_state in (FSMStates.UNSTARTED, FSMStates.STARTING):
-                # call the first trigger availabe for these two system states
-                trigger_name = self.machine.get_triggers(self.current_state.name)[0]
-                self.trigger(trigger_name, **kwargs)
+        if self.current_state in (FSMStates.UNSTARTED, FSMStates.STARTING):
+            # call the first trigger availabe for these two system states
+            trigger_name = self.machine.get_triggers(self.current_state.name)[0]
+            self.trigger(trigger_name, **kwargs)
 
-            elif self.current_state == FSMStates.STARTED:
-                # get the first trigger that starts with 'create_'
-                create_trigger = next(
-                    filter(
-                        lambda trigger: trigger.startswith("create_"),
-                        self.machine.get_triggers(FSMStates.STARTED.name),
-                    ),
-                    None,
-                )
-                if create_trigger:
-                    self.trigger(create_trigger, **kwargs)
-                else:
-                    app.logger.info(
-                        f"could not locate 'create trigger' for {self.__repr__()}"
-                    )
-                    self.trigger("fail")
+        elif self.current_state == FSMStates.STARTED:
+            self.start_next_stage(**kwargs)
 
-            elif self.current_state == FSMStates.FAILED:
-                # get the first trigger that starts with 'resume_progress_'
-                resume_progress_trigger = next(
-                    filter(
-                        lambda trigger: trigger.startswith("resume_progress_"),
-                        self.machine.get_triggers(FSMStates.FAILED.name),
-                    ),
-                    None,
-                )
-                if resume_progress_trigger:
-                    self.trigger(resume_progress_trigger, **kwargs)
-                else:
-                    app.logger.info(
-                        f"could not locate 'resume progress trigger' for {self.__repr__()}"
-                    )
+        elif state_obj.is_FAILED:
+            self.resume_stage_progress(**kwargs)
 
         elif state_obj.is_CREATED:
-            # if last CREATED state then transition to COMPLETED
-            if list(AzureStages)[-1].name == state_obj.name.split("_CREATED")[
-                0
-            ] and "complete" in self.machine.get_triggers(state_obj.name):
+            if "complete" in self.machine.get_triggers(state_obj.name):
                 app.logger.info(
                     "last stage completed. transitioning to COMPLETED state"
                 )
                 self.trigger("complete", **kwargs)
-
-            # the create trigger for the next stage should be in the available
-            # triggers for the current state
-            create_trigger = next(
-                filter(
-                    lambda trigger: trigger.startswith("create_"),
-                    self.machine.get_triggers(self.state_str),
-                ),
-                None,
-            )
-            if create_trigger is not None:
-                self.trigger(create_trigger, **kwargs)
+            else:
+                self.start_next_stage(**kwargs)
 
     def _do_provisioning_stage(self, payload):
         payload_data_class = get_stage_csp_class(self.current_stage, "payload")
@@ -214,9 +173,9 @@ class PortfolioStateMachine(
             self.portfolio.csp_data.update(response.dict())
             db.session.add(self.portfolio)
             db.session.commit()
-            self.finish_stage(self.current_stage)
+            self.finish_stage()
         except:
-            self.fail_stage(self.current_stage)
+            self.fail_stage()
             raise
 
     def is_csp_data_valid(self, event):
@@ -226,6 +185,8 @@ class PortfolioStateMachine(
         if self.portfolio.csp_data is None or not isinstance(
             self.portfolio.csp_data, dict
         ):
+            # TODO: Should this throw an exception and fail the portfolio? Is
+            # this even necessary?
             print("no csp data")
             return False
 
