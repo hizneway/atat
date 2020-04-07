@@ -332,7 +332,8 @@ def test_dispatch_provision_portfolio(csp, monkeypatch):
                         "start_date": pendulum.now().subtract(days=1),
                         "end_date": pendulum.now().add(days=1),
                     }
-                ]
+                ],
+                "signed_at": pendulum.now(),
             }
         ],
     )

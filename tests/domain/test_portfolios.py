@@ -52,13 +52,6 @@ def test_portfolio_has_timestamps(portfolio):
 
 
 def test_update_portfolio_role_role(portfolio, portfolio_owner):
-    user_data = {
-        "first_name": "New",
-        "last_name": "User",
-        "email": "new.user@mail.com",
-        "portfolio_role": "developer",
-        "dod_id": "1234567890",
-    }
     PortfolioRoleFactory._meta.sqlalchemy_session_persistence = "flush"
     member = PortfolioRoleFactory.create(portfolio=portfolio)
     permission_sets = [PermissionSets.EDIT_PORTFOLIO_FUNDING]
@@ -221,7 +214,7 @@ def test_delete_success():
 
 def test_delete_failure_with_applications():
     portfolio = PortfolioFactory.create()
-    application = ApplicationFactory.create(portfolio=portfolio)
+    ApplicationFactory.create(portfolio=portfolio)
 
     assert not portfolio.deleted
 
@@ -258,15 +251,6 @@ def test_create_state_machine(portfolio):
 
 
 class TestGetPortfoliosPendingCreate(EnvQueryTest):
-    """Portfolios.get_portfolios_pending_provisioning should return portfolios that
-       are in their period of performace AND with a state machine is in one of the
-       following states:
-         - not created i.e. portfolio.state_machine is `None`
-         - "UNSTARTED"
-         - "STARTING"
-         - "STARTED"
-         - a "_CREATED" state """
-
     def test_finds_unstarted(self):
         # Given: A portfolio is in its period of performance
         # Given: The portfolio's state machine is in its "UNSTARTED" stage
@@ -389,3 +373,17 @@ class TestGetPortfoliosPendingCreate(EnvQueryTest):
         portfolios_pending = Portfolios.get_portfolios_pending_provisioning(self.NOW)
         # Then the query will return the pending portfolio
         assert len(portfolios_pending) == 1
+
+    def test_with_unsigned_task_order(self):
+        # Given: A portfolio is in its period of performance
+        # Given: The portfolio has begun the provisioning process
+        # Given: Portfolio is associated with an unsigned task order
+        self.create_portfolio_with_clins(
+            [(self.YESTERDAY, self.TOMORROW)],
+            state_machine_status=FSMStates.TENANT_CREATED.name,
+            task_order_signed_at=None,
+        )
+        # When I query for portfolios pending provisioning
+        portfolios_pending = Portfolios.get_portfolios_pending_provisioning(self.NOW)
+        # Then the query will NOT return the pending portfolio
+        assert len(portfolios_pending) == 0
