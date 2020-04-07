@@ -143,6 +143,7 @@ def _build_transitions(csp_stages):
                         source=compose_state(csp_stage, StageStates.FAILED),
                         dest=compose_state(csp_stage, StageStates.IN_PROGRESS),
                         conditions=["is_ready_resume_progress"],
+                        after="after_in_progress_callback",
                     )
                 )
 
