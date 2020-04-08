@@ -1,20 +1,38 @@
 from enum import Enum
 
 import pytest
+from pytest import raises
 
-from atat.models.portfolio_state_machine import FSMStates
 from atat.models.mixins.state_machines import (
     AzureStages,
     StageStates,
+    FSMStates,
+    StateMachineMisconfiguredError,
     _build_csp_states,
     _build_transitions,
     compose_state,
 )
+from tests.factories import PortfolioFactory
 
 
 class AzureStagesTest(Enum):
     TENANT = "tenant"
     POLICIES = "policies"
+
+
+def test_find_and_call_stage_trigger():
+    portfolio = PortfolioFactory.create(state="TENANT_IN_PROGRESS")
+    portfolio.state_machine._find_and_call_stage_trigger("fail_")
+    assert portfolio.state_machine.state == FSMStates.TENANT_FAILED
+
+
+def test_find_and_call_stage_trigger_fails():
+    portfolio = PortfolioFactory.create(state="STARTED")
+    with raises(StateMachineMisconfiguredError):
+        portfolio.state_machine._find_and_call_stage_trigger(
+            "wont_find_a_trigger_with_this_prefix"
+        )
+    assert portfolio.state_machine.state == FSMStates.FAILED
 
 
 @pytest.mark.state_machine

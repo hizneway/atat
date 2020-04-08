@@ -1,8 +1,9 @@
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 import pendulum
 import pydantic
 import pytest
+from pytest import raises
 from tests.factories import (
     ApplicationFactory,
     CLINFactory,
@@ -12,12 +13,15 @@ from tests.factories import (
     UserFactory,
 )
 
-from atat.models.mixins.state_machines import AzureStages, StageStates, FSMStates
-from atat.models.portfolio_state_machine import (
+from atat.models.mixins.state_machines import (
+    AzureStages,
+    FSMStates,
     StateMachineMisconfiguredError,
+)
+from atat.models.portfolio_state_machine import (
+    PortfolioStateMachine,
     _stage_to_classname,
     get_stage_csp_class,
-    PortfolioStateMachine,
 )
 
 # TODO: Write failure case tests
@@ -54,19 +58,29 @@ def test_fsm_creation(portfolio):
 
 
 @pytest.mark.state_machine
-def test_state_machine_trigger_next_transition(state_machine):
+class TestTriggerNextTransition:
+    def test_unstarted(self, state_machine):
+        state_machine.trigger_next_transition()
+        assert state_machine.current_state == FSMStates.STARTING
 
-    state_machine.trigger_next_transition()
-    assert state_machine.current_state == FSMStates.STARTING
+    def test_starting(self, state_machine):
+        state_machine.state = FSMStates.STARTING
+        state_machine.trigger_next_transition()
+        assert state_machine.current_state == FSMStates.STARTED
 
-    state_machine.trigger_next_transition()
-    assert state_machine.current_state == FSMStates.STARTED
+    def test_started(self, state_machine):
+        state_machine.state = FSMStates.STARTED
+        state_machine.trigger_next_transition(
+            csp_data=state_machine.portfolio.to_dictionary()
+        )
+        assert state_machine.current_state == FSMStates.TENANT_CREATED
 
-    state_machine.state = FSMStates.STARTED
-    state_machine.trigger_next_transition(
-        csp_data=state_machine.portfolio.to_dictionary()
-    )
-    assert state_machine.current_state == FSMStates.TENANT_CREATED
+    def test_failed(self, state_machine):
+        state_machine.state = FSMStates.TENANT_FAILED
+        state_machine.trigger_next_transition(
+            csp_data=state_machine.portfolio.to_dictionary()
+        )
+        assert state_machine.current_state == FSMStates.TENANT_CREATED
 
 
 @pytest.mark.state_machine
@@ -113,6 +127,22 @@ def test_attach_machine(state_machine):
 
 
 @pytest.mark.state_machine
+@patch("atat.models.PortfolioStateMachine._do_provisioning_stage")
+def test_after_in_progress_callback(_do_provisioning_stage):
+    # Given: a portfolio state machine is attempting a provisioning stage
+    portfolio = PortfolioFactory.create(state="TENANT_IN_PROGRESS")
+    # Given: The provisioning stage throws an exception
+    _do_provisioning_stage.side_effect = Exception()
+
+    # When I run the task, then:
+    # The exception is re-raised
+    with raises(Exception):
+        portfolio.state_machine.after_in_progress_callback(Mock())
+    # Then the state machine fails the stage
+    assert portfolio.state_machine.state == FSMStates.TENANT_FAILED
+
+
+@pytest.mark.state_machine
 def test_current_state_property(state_machine):
     assert state_machine.current_state == FSMStates.UNSTARTED
     state_machine.state = FSMStates.TENANT_IN_PROGRESS
@@ -122,55 +152,36 @@ def test_current_state_property(state_machine):
 
 
 @pytest.mark.state_machine
-def test_fail_stage(state_machine):
-    state_machine.state = FSMStates.TENANT_IN_PROGRESS
-    state_machine.portfolio.csp_data = {}
-    state_machine.fail_stage("tenant")
-    assert state_machine.state == FSMStates.TENANT_FAILED
-
-
-@pytest.mark.state_machine
-def test_fail_stage_invalid_triggers(state_machine):
-    state_machine.state = FSMStates.TENANT_IN_PROGRESS
-    state_machine.portfolio.csp_data = {}
-    state_machine.machine.get_triggers = Mock(return_value=["some", "triggers", "here"])
-    state_machine.fail_stage("tenant")
-    assert state_machine.state == FSMStates.TENANT_IN_PROGRESS
-
-
-@pytest.mark.state_machine
-def test_fail_stage_invalid_stage(state_machine):
-    state_machine.state = FSMStates.TENANT_IN_PROGRESS
-    state_machine.portfolio.csp_data = {}
-    state_machine.fail_stage("invalid stage")
-    assert state_machine.state == FSMStates.TENANT_IN_PROGRESS
-
-
-@pytest.mark.state_machine
-def test_finish_stage(state_machine):
-    state_machine.state = FSMStates.TENANT_IN_PROGRESS
-    state_machine.portfolio.csp_data = {}
-    state_machine.finish_stage("tenant")
+def test_start_next_stage(state_machine):
+    state_machine.state = FSMStates.STARTED
+    state_machine.start_next_stage(csp_data=state_machine.portfolio.to_dictionary())
+    # _IN_PROGRESS automatically triggers callback which fails or finishes the stage
     assert state_machine.state == FSMStates.TENANT_CREATED
 
 
 @pytest.mark.state_machine
-def test_finish_stage_invalid_triggers(state_machine):
-    state_machine.state = FSMStates.TENANT_IN_PROGRESS
-    state_machine.portfolio.csp_data = {}
-
-    state_machine.machine.get_triggers = Mock(return_value=["some", "triggers", "here"])
-    state_machine.finish_stage("tenant")
-    assert state_machine.state == FSMStates.TENANT_IN_PROGRESS
+def test_resume_stage_progress(state_machine):
+    state_machine.state = FSMStates.TENANT_FAILED
+    state_machine.resume_stage_progress(
+        csp_data=state_machine.portfolio.to_dictionary()
+    )
+    # _IN_PROGRESS automatically triggers callback which fails or finishes the stage
+    assert state_machine.state == FSMStates.TENANT_CREATED
 
 
 @pytest.mark.state_machine
-def test_finish_stage_invalid_stage(state_machine):
+def test_fail_stage(state_machine):
     state_machine.state = FSMStates.TENANT_IN_PROGRESS
+    state_machine.fail_stage()
+    assert state_machine.state == FSMStates.TENANT_FAILED
+
+
+@pytest.mark.state_machine
+def test_finish_stage(state_machine):
     state_machine.portfolio.csp_data = {}
-    portfolio.csp_data = {}
-    state_machine.finish_stage("invalid stage")
-    assert state_machine.state == FSMStates.TENANT_IN_PROGRESS
+    state_machine.state = FSMStates.TENANT_IN_PROGRESS
+    state_machine.finish_stage()
+    assert state_machine.state == FSMStates.TENANT_CREATED
 
 
 @pytest.mark.state_machine

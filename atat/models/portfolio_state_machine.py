@@ -1,35 +1,25 @@
 import importlib
 
-from sqlalchemy import Column, ForeignKey, Enum as SQLAEnum
-from sqlalchemy.orm import relationship, reconstructor
-from sqlalchemy.dialects.postgresql import UUID
-
-from pydantic import ValidationError as PydanticValidationError
-from transitions import Machine
-from transitions.extensions.states import add_state_features, Tags
-
 from flask import current_app as app
+from sqlalchemy import Column
+from sqlalchemy import Enum as SQLAEnum
+from sqlalchemy import ForeignKey
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import reconstructor, relationship
+from transitions import Machine
+from transitions.extensions.states import Tags, add_state_features
 
-from atat.domain.csp.cloud.exceptions import ConnectionException, UnknownServerException
-from atat.database import db
-from atat.models.types import Id
-from atat.models.base import Base
 import atat.models.mixins as mixins
+from atat.database import db
+from atat.models.base import Base
 from atat.models.mixins.state_machines import (
-    FSMStates,
     AzureStages,
+    FSMStates,
     StageStates,
     _build_transitions,
+    StateMachineMisconfiguredError,
 )
-
-
-class StateMachineMisconfiguredError(Exception):
-    def __init__(self, class_details):
-        self.class_details = class_details
-
-    @property
-    def message(self):
-        return self.class_details
+from atat.models.types import Id
 
 
 def _stage_to_classname(stage):
@@ -123,126 +113,10 @@ class PortfolioStateMachine(
             return getattr(FSMStates, self.state)
         return self.state
 
-    def trigger_next_transition(self, **kwargs):
-        state_obj = self.machine.get_state(self.state)
-
-        kwargs["csp_data"] = kwargs.get("csp_data", {})
-
-        if state_obj.is_system:
-            if self.current_state in (FSMStates.UNSTARTED, FSMStates.STARTING):
-                # call the first trigger availabe for these two system states
-                trigger_name = self.machine.get_triggers(self.current_state.name)[0]
-                self.trigger(trigger_name, **kwargs)
-
-            elif self.current_state == FSMStates.STARTED:
-                # get the first trigger that starts with 'create_'
-                create_trigger = next(
-                    filter(
-                        lambda trigger: trigger.startswith("create_"),
-                        self.machine.get_triggers(FSMStates.STARTED.name),
-                    ),
-                    None,
-                )
-                if create_trigger:
-                    self.trigger(create_trigger, **kwargs)
-                else:
-                    app.logger.info(
-                        f"could not locate 'create trigger' for {self.__repr__()}"
-                    )
-                    self.trigger("fail")
-
-            elif self.current_state == FSMStates.FAILED:
-                # get the first trigger that starts with 'resume_progress_'
-                resume_progress_trigger = next(
-                    filter(
-                        lambda trigger: trigger.startswith("resume_progress_"),
-                        self.machine.get_triggers(FSMStates.FAILED.name),
-                    ),
-                    None,
-                )
-                if resume_progress_trigger:
-                    self.trigger(resume_progress_trigger, **kwargs)
-                else:
-                    app.logger.info(
-                        f"could not locate 'resume progress trigger' for {self.__repr__()}"
-                    )
-
-        elif state_obj.is_CREATED:
-            # if last CREATED state then transition to COMPLETED
-            if list(AzureStages)[-1].name == state_obj.name.split("_CREATED")[
-                0
-            ] and "complete" in self.machine.get_triggers(state_obj.name):
-                app.logger.info(
-                    "last stage completed. transitioning to COMPLETED state"
-                )
-                self.trigger("complete", **kwargs)
-
-            # the create trigger for the next stage should be in the available
-            # triggers for the current state
-            create_trigger = next(
-                filter(
-                    lambda trigger: trigger.startswith("create_"),
-                    self.machine.get_triggers(self.state_str),
-                ),
-                None,
-            )
-            if create_trigger is not None:
-                self.trigger(create_trigger, **kwargs)
-
-    def _get_payload_data_class(self):
-        """Retrieves the appropriate payload class for the current provisioning step.
-        """
-
-        payload_data_cls = get_stage_csp_class(self.current_stage, "payload")
-
-        if payload_data_cls is None:
-            app.logger.info(
-                f"could not resolve payload data class for stage {self.current_stage}"
-            )
-            self.fail_stage(self.current_stage)
-
-        return payload_data_cls
-
-    def _get_payload_data(self, payload_data_class, payload):
-        try:
-            return payload_data_class(**payload)
-        except PydanticValidationError as exc:
-            app.logger.error(
-                f"Payload Validation Error in {self.__repr__()}:", exc_info=1
-            )
-            app.logger.info(exc.json())
-            print(exc.json())
-            app.logger.info(payload)
-            self.fail_stage(self.current_stage)
-
-    def _provision_stage(self, payload_data):
-        try:
-            func_name = f"create_{self.current_stage}"
-            response = getattr(self.cloud, func_name)(payload_data)
-            return response
-        except PydanticValidationError as exc:
-            app.logger.error(
-                f"Failed to cast response to valid result class {self.__repr__()}:",
-                exc_info=1,
-            )
-            app.logger.info(exc.json())
-            print(exc.json())
-            app.logger.info(payload_data)
-            # TODO: Ensure that failing the stage does not preclude a Celery retry
-            self.fail_stage(self.current_stage)
-
-        # TODO: catch and handle general CSP exception here
-        except (ConnectionException, UnknownServerException) as exc:
-            app.logger.error(
-                f"CSP api call. Caught exception for {self.__repr__()}.", exc_info=1,
-            )
-            # TODO: Ensure that failing the stage does not preclude a Celery retry
-            self.fail_stage(self.current_stage)
-
     @property
     def current_stage(self) -> str:
-        """Returns the current stage of the CSP provisioning process
-
+        """Returns the current stage of the CSP provisioning process       
+        
         E.g. TENANT_IN_PROGRESS -> tenant
         """
         for stage_state in StageStates:
@@ -252,18 +126,46 @@ class PortfolioStateMachine(
                 )
                 return stage.lower()
 
-    def after_in_progress_callback(self, event):
-        payload = event.kwargs.get("csp_data")
-        payload_data_class = self._get_payload_data_class()
-        payload_data = self._get_payload_data(payload_data_class, payload)
-        response = self._provision_stage(payload_data)
-        if self.portfolio.csp_data is None:
-            self.portfolio.csp_data = {}
-        self.portfolio.csp_data.update(response.dict())
-        db.session.add(self.portfolio)
-        db.session.commit()
+    def trigger_next_transition(self, **kwargs):
+        state_obj = self.machine.get_state(self.state)
 
-        self.finish_stage(self.current_stage)
+        kwargs["csp_data"] = kwargs.get("csp_data", {})
+
+        if self.current_state in (FSMStates.UNSTARTED, FSMStates.STARTING):
+            # call the first trigger availabe for these two system states
+            trigger_name = self.machine.get_triggers(self.current_state.name)[0]
+            self.trigger(trigger_name, **kwargs)
+
+        elif self.current_state == FSMStates.STARTED:
+            self.start_next_stage(**kwargs)
+
+        elif state_obj.is_FAILED:
+            self.resume_stage_progress(**kwargs)
+
+        elif state_obj.is_CREATED:
+            if "complete" in self.machine.get_triggers(state_obj.name):
+                self.trigger("complete", **kwargs)
+            else:
+                self.start_next_stage(**kwargs)
+
+    def _do_provisioning_stage(self, payload):
+        payload_data_class = get_stage_csp_class(self.current_stage, "payload")
+        payload_data = payload_data_class(**payload)
+        return getattr(self.cloud, f"create_{self.current_stage}")(payload_data)
+
+    def after_in_progress_callback(self, event):
+        try:
+            payload = event.kwargs.get("csp_data")
+            response = self._do_provisioning_stage(payload)
+            if self.portfolio.csp_data is None:
+                self.portfolio.csp_data = {}
+            self.portfolio.csp_data.update(response.dict())
+            db.session.add(self.portfolio)
+            db.session.commit()
+            self.finish_stage()
+        except:
+            self.fail_stage()
+            raise
 
     def is_csp_data_valid(self, event):
         """
@@ -272,6 +174,8 @@ class PortfolioStateMachine(
         if self.portfolio.csp_data is None or not isinstance(
             self.portfolio.csp_data, dict
         ):
+            # TODO: Should this throw an exception and fail the portfolio? Is
+            # this even necessary?
             print("no csp data")
             return False
 
@@ -281,8 +185,12 @@ class PortfolioStateMachine(
         """
         This function guards advancing states from FAILED to *_IN_PROGRESS.
         """
-
+        # TODO: Make this real
         return True
+
+    @property
+    def history(self):
+        return self.get_changes()
 
     @property
     def application_id(self):
