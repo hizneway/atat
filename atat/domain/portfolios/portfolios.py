@@ -178,6 +178,6 @@ class Portfolios(object):
                     PortfolioStateMachine.state.like("%CREATED"),
                 )
             )
-            .filter(TaskOrder.signed_at != None)
+            .filter(TaskOrder.signed_at.isnot(None))
         )
         return [id_ for id_, in results]
