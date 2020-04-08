@@ -447,7 +447,11 @@ class TestSendTaskOrderFiles:
     @pytest.fixture(scope="function")
     def download_task_order(self, monkeypatch):
         def _download_task_order(MockFileService, object_name):
-            return {"name": object_name}
+            return {
+                "name": object_name,
+                "filename": "test.pdf",
+                "content": b"some content",
+            }
 
         monkeypatch.setattr(
             "atat.domain.csp.files.MockFileService.download_task_order",
@@ -482,6 +486,8 @@ class TestSendTaskOrderFiles:
                     "name": task_order.pdf.object_name,
                     "maintype": "application",
                     "subtype": "pdf",
+                    "filename": "test.pdf",
+                    "content": b"some content",
                 }
             ],
         )
@@ -511,6 +517,16 @@ class TestSendTaskOrderFiles:
 
         # Check that pdf_last_sent_at has not been updated
         assert not task_order.pdf_last_sent_at
+
+    def test_integration(self, app, monkeypatch):
+        """Only mocks out the connection on the mailer so that we can test that
+        the job runs end-to-end.
+        """
+        connection = Mock()
+        monkeypatch.setattr(app.mailer, "connection", connection)
+        task_order = TaskOrderFactory.create(create_clins=[{"number": "0002"}])
+        send_task_order_files.run()
+        assert connection.send.called
 
 
 class TestCreateBillingInstructions:
