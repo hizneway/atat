@@ -17,17 +17,9 @@ from atat.models.mixins.state_machines import (
     FSMStates,
     StageStates,
     _build_transitions,
+    StateMachineMisconfiguredError,
 )
 from atat.models.types import Id
-
-
-class StateMachineMisconfiguredError(Exception):
-    def __init__(self, class_details):
-        self.class_details = class_details
-
-    @property
-    def message(self):
-        return self.class_details
 
 
 def _stage_to_classname(stage):
@@ -152,9 +144,6 @@ class PortfolioStateMachine(
 
         elif state_obj.is_CREATED:
             if "complete" in self.machine.get_triggers(state_obj.name):
-                app.logger.info(
-                    "last stage completed. transitioning to COMPLETED state"
-                )
                 self.trigger("complete", **kwargs)
             else:
                 self.start_next_stage(**kwargs)
@@ -198,6 +187,10 @@ class PortfolioStateMachine(
         """
         # TODO: Make this real
         return True
+
+    @property
+    def history(self):
+        return self.get_changes()
 
     @property
     def application_id(self):

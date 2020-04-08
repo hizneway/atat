@@ -1,6 +1,13 @@
 from enum import Enum
 
-from flask import current_app as app
+
+class StateMachineMisconfiguredError(Exception):
+    def __init__(self, class_details):
+        self.class_details = class_details
+
+    @property
+    def message(self):
+        return self.class_details
 
 
 class StageStates(Enum):
@@ -193,14 +200,11 @@ class FSMMixin:
         )
         if trigger is not None:
             self.trigger(trigger, **kwargs)
-            app.logger.info(
-                f"calling {trigger_prefix} trigger '{trigger}' for '{self.__repr__()}'"
-            )
         else:
-            app.logger.info(
-                f"could not locate {trigger_prefix} trigger '{trigger}' for '{self.__repr__()}'"
-            )
             self.trigger("fail")
+            raise StateMachineMisconfiguredError(
+                f"could not locate trigger with prefix '{trigger_prefix}' for '{self.__repr__()}'"
+            )
 
     def start_next_stage(self, **kwargs):
         self._find_and_call_stage_trigger("create_", **kwargs)

@@ -2,7 +2,6 @@ from unittest.mock import Mock, patch
 
 import pendulum
 import pydantic
-from pydantic import ValidationError as PydanticValidationError
 import pytest
 from pytest import raises
 from tests.factories import (
@@ -13,15 +12,16 @@ from tests.factories import (
     TaskOrderFactory,
     UserFactory,
 )
-from atat.domain.csp.cloud.models import TenantCSPPayload
-from atat.domain.csp.cloud.exceptions import GeneralCSPException, UnknownServerException
 
-from atat.models.mixins.state_machines import AzureStages, FSMStates
-from atat.models.portfolio_state_machine import (
+from atat.models.mixins.state_machines import (
+    AzureStages,
+    FSMStates,
     StateMachineMisconfiguredError,
+)
+from atat.models.portfolio_state_machine import (
+    PortfolioStateMachine,
     _stage_to_classname,
     get_stage_csp_class,
-    PortfolioStateMachine,
 )
 
 # TODO: Write failure case tests
