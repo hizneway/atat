@@ -63,13 +63,20 @@ if __name__ == "__main__":
     """
     config = make_config()
 
-    if config["CSP"] != "hybrid":
-        raise ValueError("CSP setting must be 'hybrid' for script to work.")
+    required_config = [
+        "AZURE_TENANT_ID",
+        "AZURE_TENANT_ADMIN_USERNAME",
+        "AZURE_TENANT_ADMIN_PASSWORD",
+        "AZURE_POWERSHELL_CLIENT_ID",
+    ]
+    missing_config = [s for s in required_config if config[s] is None]
 
-    tenant_id = config["AZURE_TENANT_ID"]
-    username = config["AZURE_TENANT_ADMIN_USERNAME"]
-    password = config["AZURE_TENANT_ADMIN_PASSWORD"]
-    ps_client_id = config["AZURE_POWERSHELL_CLIENT_ID"]
+    if missing_config:
+        raise ValueError(
+            f"The following config settings must have values: {', '.join(missing_config)}"
+        )
+
+    tenant_id, username, password, ps_client_id = [config[s] for s in required_config]
 
     token = get_user_token(
         AZURE_PUBLIC_CLOUD, tenant_id, username, password, ps_client_id,
