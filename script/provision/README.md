@@ -1,4 +1,19 @@
-This folder contains a series of scripts to do the parts of provisioning that do not have UIs.
+This folder contains a series of scripts that cover a subset of the provisioning steps. The scripts cover everything up thru `PRODUCT_PURCHASE_VERIFICATION`. This does not include the following:
+
+- TENANT_PRINCIPAL_APP
+- TENANT_PRINCIPAL
+- TENANT_PRINCIPAL_CREDENTIAL
+- ADMIN_ROLE_DEFINITION
+- PRINCIPAL_ADMIN_ROLE
+- INITIAL_MGMT_GROUP
+- INITIAL_MGMT_GROUP_VERIFICATION
+- TENANT_ADMIN_OWNERSHIP
+- TENANT_PRINCIPAL_OWNERSHIP
+- BILLING_OWNER
+- TENANT_ADMIN_CREDENTIAL_RESET
+- POLICIES
+
+Some work might need to be done in the future to be able to manually run provisioning, but currently all steps are in the UI. 
 
 ## Initial Provisioning
 
