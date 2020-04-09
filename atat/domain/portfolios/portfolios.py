@@ -1,3 +1,5 @@
+import pendulum
+
 from sqlalchemy import or_
 from typing import List
 from uuid import UUID
@@ -146,9 +148,8 @@ class Portfolios(object):
         return db.session.query(Portfolio.id)
 
     @classmethod
-    def get_portfolios_pending_provisioning(cls, now) -> List[UUID]:
-        """
-        Any portfolio with
+    def get_portfolios_pending_provisioning(cls, now: pendulum.DateTime) -> List[UUID]:
+        """Retrieve UUIDs for any portfolio with the following properties:
             - Active CLINs (within the period of performance)
             - Not soft-deleted
             - No state machine attached OR
@@ -157,6 +158,7 @@ class Portfolios(object):
               - STARTING
               - STARTED
               - any that string-match /*CREATED$/
+            - A signed task order
         """
 
         results = (
@@ -176,5 +178,6 @@ class Portfolios(object):
                     PortfolioStateMachine.state.like("%CREATED"),
                 )
             )
+            .filter(TaskOrder.signed_at.isnot(None))
         )
         return [id_ for id_, in results]

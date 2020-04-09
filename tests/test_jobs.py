@@ -105,9 +105,9 @@ def test_environment_role_job_failure(session, celery_app, celery_worker):
     assert job_failure.task == task
 
 
-now = pendulum.now()
-yesterday = now.subtract(days=1)
-tomorrow = now.add(days=1)
+NOW = pendulum.now()
+YESTERDAY = NOW.subtract(days=1)
+TOMORROW = NOW.add(days=1)
 
 
 def test_create_environment_job(session, csp):
@@ -227,14 +227,7 @@ def test_dispatch_create_environment(session, monkeypatch):
     portfolio = PortfolioFactory.create(
         applications=[{"environments": [{}, {}], "cloud_id": uuid4().hex}],
         task_orders=[
-            {
-                "create_clins": [
-                    {
-                        "start_date": pendulum.now().subtract(days=1),
-                        "end_date": pendulum.now().add(days=1),
-                    }
-                ]
-            }
+            {"create_clins": [{"start_date": YESTERDAY, "end_date": TOMORROW,}]}
         ],
     )
     [e1, e2] = portfolio.applications[0].environments
@@ -295,14 +288,7 @@ def test_create_environment_no_dupes(session, celery_app, celery_worker):
     portfolio = PortfolioFactory.create(
         applications=[{"environments": [{"cloud_id": uuid4().hex}]}],
         task_orders=[
-            {
-                "create_clins": [
-                    {
-                        "start_date": pendulum.now().subtract(days=1),
-                        "end_date": pendulum.now().add(days=1),
-                    }
-                ]
-            }
+            {"create_clins": [{"start_date": YESTERDAY, "end_date": TOMORROW,}]}
         ],
     )
     environment = portfolio.applications[0].environments[0]
@@ -327,12 +313,8 @@ def test_dispatch_provision_portfolio(csp, monkeypatch):
     portfolio = PortfolioFactory.create(
         task_orders=[
             {
-                "create_clins": [
-                    {
-                        "start_date": pendulum.now().subtract(days=1),
-                        "end_date": pendulum.now().add(days=1),
-                    }
-                ]
+                "create_clins": [{"start_date": YESTERDAY, "end_date": TOMORROW,}],
+                "signed_at": NOW,
             }
         ],
     )
@@ -534,7 +516,7 @@ class TestSendTaskOrderFiles:
 class TestCreateBillingInstructions:
     @pytest.fixture
     def unsent_clin(self):
-        start_date = pendulum.now().subtract(days=1)
+        start_date = YESTERDAY
         portfolio = PortfolioFactory.create(
             csp_data={
                 "tenant_id": str(uuid4()),
@@ -574,7 +556,7 @@ class TestCreateBillingInstructions:
         session.rollback()
 
     def test_task_order_with_multiple_clins(self, session):
-        start_date = pendulum.now(tz="UTC").subtract(days=1)
+        start_date = YESTERDAY
         portfolio = PortfolioFactory.create(
             csp_data={
                 "tenant_id": str(uuid4()),

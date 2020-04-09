@@ -86,6 +86,7 @@ class EnvQueryTest:
         env_data=None,
         app_data=None,
         state_machine_status=None,
+        task_order_signed_at=pendulum.now(),
     ):
         env_data = env_data or {}
         app_data = app_data or {}
@@ -104,7 +105,8 @@ class EnvQueryTest:
                     "create_clins": [
                         {"start_date": start_date, "end_date": end_date}
                         for (start_date, end_date) in start_and_end_dates
-                    ]
+                    ],
+                    "signed_at": task_order_signed_at,
                 }
             ],
         )
