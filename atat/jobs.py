@@ -81,6 +81,12 @@ def do_create_application(csp: CloudProviderInterface, application_id=None):
         csp_details = application.portfolio.csp_data
         parent_id = csp_details["root_management_group_id"]
         tenant_id = csp_details["tenant_id"]
+
+        app.logger.debug(f"application.id = {application.id}")
+        app.logger.debug(f"application.portfolio.id = {application.portfolio.id}")
+        app.logger.debug(f"tenant_id = {tenant_id}")
+        app.logger.debug(f"parent_id = {parent_id}")
+
         payload = ApplicationCSPPayload(
             tenant_id=tenant_id, display_name=application.name, parent_id=parent_id
         )
@@ -100,6 +106,9 @@ def do_create_user(csp: CloudProviderInterface, application_role_ids=None):
     with claim_many_for_update(app_roles) as app_roles:
 
         if any([ar.cloud_id for ar in app_roles]):
+            app.logger.warning(
+                f"Application role cloud ID {ar.cloud_id} already present."
+            )
             return
 
         csp_details = app_roles[0].application.portfolio.csp_data
@@ -144,11 +153,19 @@ def do_create_environment(csp: CloudProviderInterface, environment_id=None):
     with claim_for_update(environment) as environment:
 
         if environment.cloud_id is not None:
+            app.logger.warning(
+                f"Environment cloud ID {environment.cloud_id} already present."
+            )
             return
 
         csp_details = environment.portfolio.csp_data
         parent_id = environment.application.cloud_id
         tenant_id = csp_details.get("tenant_id")
+
+        app.logger.debug(f"environment.portfolio.id = {environment.portfolio.id}")
+        app.logger.debug(f"parent_id = {parent_id}")
+        app.logger.debug(f"tenant_id = {tenant_id}")
+
         payload = EnvironmentCSPPayload(
             tenant_id=tenant_id, display_name=environment.name, parent_id=parent_id
         )
@@ -164,6 +181,9 @@ def do_create_environment_role(csp: CloudProviderInterface, environment_role_id=
     with claim_for_update(env_role) as env_role:
 
         if env_role.cloud_id is not None:
+            app.logger.warning(
+                f"Attempting to create an environment role {env_role.cloud_id} that already exists."
+            )
             return
 
         env = env_role.environment
@@ -187,8 +207,11 @@ def do_create_environment_role(csp: CloudProviderInterface, environment_role_id=
         result = csp.create_user_role(payload)
 
         env_role.cloud_id = result.id
+
         db.session.add(env_role)
         db.session.commit()
+
+        app.logger.info(f"Created environment role {env_role.cloud_id}")
 
         user = env_role.application_role.user
         domain_name = csp_details.get("domain_name")
@@ -247,6 +270,7 @@ def make_initial_csp_data(portfolio):
 def do_provision_portfolio(csp: CloudProviderInterface, portfolio_id=None):
     portfolio = Portfolios.get_for_update(portfolio_id)
     fsm = Portfolios.get_or_create_state_machine(portfolio)
+    app.logger.info(f"Triggering next transition for portfolio {portfolio.id}")
     fsm.trigger_next_transition(csp_data=make_initial_csp_data(portfolio))
     if fsm.current_state == FSMStates.COMPLETED:
         send_PPOC_email(portfolio.to_dictionary())
