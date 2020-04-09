@@ -227,10 +227,6 @@ CRL_LIST = [
         "305f310b300906035504061302555331183016060355040a130f552e532e20476f7665726e6d656e74310c300a060355040b1303446f44310c300a060355040b1303504b49311a301806035504031311446f44204e504520526f6f742043412031",  # pragma: allowlist secret
     ),
     (
-        "https://crl.gds.disa.mil/crl/DMDNSIGNINGCA_1.crl",
-        "305f310b300906035504061302555331183016060355040a130f552e532e20476f7665726e6d656e74310c300a060355040b1303446f44310c300a060355040b1303504b49311a301806035504031311444d444e205369676e696e672043412d31",  # pragma: allowlist secret
-    ),
-    (
         "https://crl.gds.disa.mil/crl/DODWCFROOTCA1.crl",
         "3063310b300906035504061302555331183016060355040a130f552e532e20476f7665726e6d656e74310c300a060355040b1303446f443110300e060355040b130757434620504b49311a301806035504031311446f442057434620526f6f742043412031",  # pragma: allowlist secret
     ),
@@ -311,12 +307,10 @@ def remove_bad_crl(out_dir, crl_location):
     os.remove(crl)
 
 
-def log_error(logger, crl_location):
+def log_error(logger, error_string, crl_location):
     if logger:
         logger.error(
-            "Error downloading {}, removing file and continuing anyway".format(
-                crl_location
-            )
+            f"{error_string}: Error downloading {crl_location}, removing file and continuing anyway"
         )
 
 
@@ -331,10 +325,10 @@ def refresh_crl(out_dir, target_dir, crl_uri, logger):
 
         return crl_path
     except requests.exceptions.ChunkedEncodingError:
-        log_error(logger, crl_uri)
+        log_error(logger, "ChunkedEncodingError", crl_uri)
         remove_bad_crl(out_dir, crl_uri)
     except CRLNotFoundError:
-        log_error(logger, crl_uri)
+        log_error(logger, "CRLNotFoundError", crl_uri)
 
 
 def sync_crls(tmp_location, final_location):
