@@ -1,6 +1,13 @@
 from enum import Enum
 
-from flask import current_app as app
+
+class StateMachineMisconfiguredError(Exception):
+    def __init__(self, class_details):
+        self.class_details = class_details
+
+    @property
+    def message(self):
+        return self.class_details
 
 
 class StageStates(Enum):
@@ -143,6 +150,7 @@ def _build_transitions(csp_stages):
                         source=compose_state(csp_stage, StageStates.FAILED),
                         dest=compose_state(csp_stage, StageStates.IN_PROGRESS),
                         conditions=["is_ready_resume_progress"],
+                        after="after_in_progress_callback",
                     )
                 )
 
@@ -175,22 +183,37 @@ class FSMMixin:
         {"trigger": "fail", "source": "*", "dest": FSMStates.FAILED,},
     ]
 
-    def fail_stage(self, stage):
-        fail_trigger = f"fail_{stage}"
-        if fail_trigger in self.machine.get_triggers(self.current_state.name):
-            self.trigger(fail_trigger)
-            app.logger.info(
-                f"calling fail trigger '{fail_trigger}' for '{self.__repr__()}'"
-            )
+    def _find_and_call_stage_trigger(self, trigger_prefix, **kwargs):
+        """Given a trigger prefix, find the appropriate trigger to call for the 
+        current Portfolio provisioning stage
+
+
+        E.g. if a portfolio is in the "TENANT" stage, and this method is given
+        a trigger prefix of `create`, find the `create_tenant` trigger and call it.
+        """
+        trigger = next(
+            filter(
+                lambda trigger: trigger.startswith(trigger_prefix),
+                self.machine.get_triggers(self.state_str),
+            ),
+            None,
+        )
+        if trigger is not None:
+            self.trigger(trigger, **kwargs)
         else:
-            app.logger.info(
-                f"could not locate fail trigger '{fail_trigger}' for '{self.__repr__()}'"
+            self.trigger("fail")
+            raise StateMachineMisconfiguredError(
+                f"could not locate trigger with prefix '{trigger_prefix}' for '{self.__repr__()}'"
             )
 
-    def finish_stage(self, stage):
-        finish_trigger = f"finish_{stage}"
-        if finish_trigger in self.machine.get_triggers(self.current_state.name):
-            app.logger.info(
-                f"calling finish trigger '{finish_trigger}' for '{self.__repr__()}'"
-            )
-            self.trigger(finish_trigger)
+    def start_next_stage(self, **kwargs):
+        self._find_and_call_stage_trigger("create_", **kwargs)
+
+    def resume_stage_progress(self, **kwargs):
+        self._find_and_call_stage_trigger("resume_progress_", **kwargs)
+
+    def fail_stage(self, **kwargs):
+        self._find_and_call_stage_trigger("fail_", **kwargs)
+
+    def finish_stage(self, **kwargs):
+        self._find_and_call_stage_trigger("finish_", **kwargs)

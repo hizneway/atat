@@ -1,5 +1,5 @@
 from smtplib import SMTPException
-from unittest.mock import MagicMock, Mock, patch, ANY
+from unittest.mock import MagicMock, Mock, patch
 from uuid import uuid4
 
 import pendulum
@@ -20,7 +20,7 @@ from tests.factories import (
 )
 
 from atat.domain.csp.cloud import MockCloudProvider
-from atat.domain.csp.cloud.exceptions import GeneralCSPException
+from atat.domain.csp.cloud.exceptions import GeneralCSPException, ConnectionException
 from atat.domain.csp.cloud.models import UserRoleCSPResult
 from atat.jobs import (
     RecordFailure,
@@ -105,9 +105,9 @@ def test_environment_role_job_failure(session, celery_app, celery_worker):
     assert job_failure.task == task
 
 
-now = pendulum.now()
-yesterday = now.subtract(days=1)
-tomorrow = now.add(days=1)
+NOW = pendulum.now()
+YESTERDAY = NOW.subtract(days=1)
+TOMORROW = NOW.add(days=1)
 
 
 def test_create_environment_job(session, csp):
@@ -227,14 +227,7 @@ def test_dispatch_create_environment(session, monkeypatch):
     portfolio = PortfolioFactory.create(
         applications=[{"environments": [{}, {}], "cloud_id": uuid4().hex}],
         task_orders=[
-            {
-                "create_clins": [
-                    {
-                        "start_date": pendulum.now().subtract(days=1),
-                        "end_date": pendulum.now().add(days=1),
-                    }
-                ]
-            }
+            {"create_clins": [{"start_date": YESTERDAY, "end_date": TOMORROW,}]}
         ],
     )
     [e1, e2] = portfolio.applications[0].environments
@@ -295,14 +288,7 @@ def test_create_environment_no_dupes(session, celery_app, celery_worker):
     portfolio = PortfolioFactory.create(
         applications=[{"environments": [{"cloud_id": uuid4().hex}]}],
         task_orders=[
-            {
-                "create_clins": [
-                    {
-                        "start_date": pendulum.now().subtract(days=1),
-                        "end_date": pendulum.now().add(days=1),
-                    }
-                ]
-            }
+            {"create_clins": [{"start_date": YESTERDAY, "end_date": TOMORROW,}]}
         ],
     )
     environment = portfolio.applications[0].environments[0]
@@ -327,12 +313,8 @@ def test_dispatch_provision_portfolio(csp, monkeypatch):
     portfolio = PortfolioFactory.create(
         task_orders=[
             {
-                "create_clins": [
-                    {
-                        "start_date": pendulum.now().subtract(days=1),
-                        "end_date": pendulum.now().add(days=1),
-                    }
-                ]
+                "create_clins": [{"start_date": YESTERDAY, "end_date": TOMORROW,}],
+                "signed_at": NOW,
             }
         ],
     )
@@ -375,7 +357,7 @@ def test_send_ppoc_email(monkeypatch, app):
     monkeypatch.setattr("atat.jobs.send_mail", mock)
 
     ppoc_email = "example@example.com"
-    user_id = "user_id"
+    user_id = "userid"
     domain_name = "domain"
 
     send_PPOC_email(
@@ -399,23 +381,12 @@ def test_send_ppoc_email(monkeypatch, app):
 
 
 class TestProvisionPortfolio:
-    @patch("atat.jobs.do_work")
-    def test_calls_do_provision_portfolio(self, do_work, app, portfolio):
+    @patch("atat.jobs.do_provision_portfolio")
+    def test_calls_do_provision_portfolio(self, do_provision_portfolio, app, portfolio):
         provision_portfolio(portfolio.id)
-        do_work.assert_called_with(
-            do_provision_portfolio, ANY, app.csp.cloud, portfolio_id=portfolio.id
+        do_provision_portfolio.assert_called_with(
+            app.csp.cloud, portfolio_id=portfolio.id
         )
-
-    @patch("atat.jobs.provision_portfolio.retry")
-    @patch("atat.jobs.do_work")
-    def test_exception_triggers_retry(
-        self, provision_portfolio_retry, do_work, app, portfolio,
-    ):
-        provision_portfolio_retry.side_effect = Retry()
-        do_work = GeneralCSPException()
-
-        with raises(Retry):
-            provision_portfolio(portfolio.id)
 
 
 def test_dispatch_create_environment_role(monkeypatch):
@@ -476,7 +447,11 @@ class TestSendTaskOrderFiles:
     @pytest.fixture(scope="function")
     def download_task_order(self, monkeypatch):
         def _download_task_order(MockFileService, object_name):
-            return {"name": object_name}
+            return {
+                "name": object_name,
+                "filename": "test.pdf",
+                "content": b"some content",
+            }
 
         monkeypatch.setattr(
             "atat.domain.csp.files.MockFileService.download_task_order",
@@ -511,6 +486,8 @@ class TestSendTaskOrderFiles:
                     "name": task_order.pdf.object_name,
                     "maintype": "application",
                     "subtype": "pdf",
+                    "filename": "test.pdf",
+                    "content": b"some content",
                 }
             ],
         )
@@ -541,11 +518,21 @@ class TestSendTaskOrderFiles:
         # Check that pdf_last_sent_at has not been updated
         assert not task_order.pdf_last_sent_at
 
+    def test_integration(self, app, monkeypatch):
+        """Only mocks out the connection on the mailer so that we can test that
+        the job runs end-to-end.
+        """
+        connection = Mock()
+        monkeypatch.setattr(app.mailer, "connection", connection)
+        task_order = TaskOrderFactory.create(create_clins=[{"number": "0002"}])
+        send_task_order_files.run()
+        assert connection.send.called
+
 
 class TestCreateBillingInstructions:
     @pytest.fixture
     def unsent_clin(self):
-        start_date = pendulum.now().subtract(days=1)
+        start_date = YESTERDAY
         portfolio = PortfolioFactory.create(
             csp_data={
                 "tenant_id": str(uuid4()),
@@ -553,6 +540,7 @@ class TestCreateBillingInstructions:
                 "billing_profile_name": "fake",
             },
             task_orders=[{"create_clins": [{"start_date": start_date}]}],
+            state=FSMStates.COMPLETED.name,
         )
         return portfolio.task_orders[0].clins[0]
 
@@ -585,7 +573,7 @@ class TestCreateBillingInstructions:
         session.rollback()
 
     def test_task_order_with_multiple_clins(self, session):
-        start_date = pendulum.now(tz="UTC").subtract(days=1)
+        start_date = YESTERDAY
         portfolio = PortfolioFactory.create(
             csp_data={
                 "tenant_id": str(uuid4()),
@@ -599,6 +587,7 @@ class TestCreateBillingInstructions:
                     ]
                 }
             ],
+            state=FSMStates.COMPLETED.name,
         )
         task_order = portfolio.task_orders[0]
         sent_clin = task_order.clins[0]

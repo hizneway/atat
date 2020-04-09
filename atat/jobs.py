@@ -1,13 +1,13 @@
-import pendulum
-from flask import current_app as app
 from smtplib import SMTPException
+
+import pendulum
 from azure.core.exceptions import AzureError
+from flask import current_app as app
 
 from atat.database import db
 from atat.domain.application_roles import ApplicationRoles
 from atat.domain.applications import Applications
 from atat.domain.csp.cloud import CloudProviderInterface
-from atat.domain.csp.cloud.utils import generate_user_principal_name
 from atat.domain.csp.cloud.exceptions import GeneralCSPException
 from atat.domain.csp.cloud.models import (
     ApplicationCSPPayload,
@@ -16,12 +16,13 @@ from atat.domain.csp.cloud.models import (
     UserCSPPayload,
     UserRoleCSPPayload,
 )
-from atat.domain.environments import Environments
+from atat.domain.csp.cloud.utils import generate_user_principal_name
 from atat.domain.environment_roles import EnvironmentRoles
+from atat.domain.environments import Environments
 from atat.domain.portfolios import Portfolios
+from atat.domain.task_orders import TaskOrders
 from atat.models import CSPRole, JobFailure
 from atat.models.mixins.state_machines import FSMStates
-from atat.domain.task_orders import TaskOrders
 from atat.models.utils import claim_for_update, claim_many_for_update
 from atat.queue import celery
 from atat.utils.localization import translate
@@ -251,9 +252,9 @@ def do_provision_portfolio(csp: CloudProviderInterface, portfolio_id=None):
         send_PPOC_email(portfolio.to_dictionary())
 
 
-@celery.task(bind=True, base=RecordFailure)
+@celery.task(bind=True, base=RecordFailure, autoretry_for=(GeneralCSPException,))
 def provision_portfolio(self, portfolio_id=None):
-    do_work(do_provision_portfolio, self, app.csp.cloud, portfolio_id=portfolio_id)
+    do_provision_portfolio(app.csp.cloud, portfolio_id=portfolio_id)
 
 
 @celery.task(bind=True, base=RecordFailure)
@@ -353,9 +354,9 @@ def create_billing_instruction(self):
         portfolio = clin.task_order.portfolio
 
         payload = BillingInstructionCSPPayload(
-            tenant_id=portfolio.csp_data.get("tenant_id"),
-            billing_account_name=portfolio.csp_data.get("billing_account_name"),
-            billing_profile_name=portfolio.csp_data.get("billing_profile_name"),
+            tenant_id=portfolio.csp_data["tenant_id"],
+            billing_account_name=portfolio.csp_data["billing_account_name"],
+            billing_profile_name=portfolio.csp_data["billing_profile_name"],
             initial_clin_amount=clin.obligated_amount,
             initial_clin_start_date=str(clin.start_date),
             initial_clin_end_date=str(clin.end_date),

@@ -30,11 +30,14 @@ class MockFileService(FileService):
         with open("tests/fixtures/sample.pdf", "rb") as some_bytes:
             return {
                 "name": object_name,
-                "content": some_bytes,
+                "content": some_bytes.read(),
+                "filename": "sample.pdf",
             }
 
 
 class AzureFileService(FileService):
+    DEFAULT_FILENAME = "task-order.pdf"
+
     def __init__(self, config):
         self.account_name = config["AZURE_ACCOUNT_NAME"]
         self.storage_key = config["AZURE_STORAGE_KEY"]
@@ -101,7 +104,13 @@ class AzureFileService(FileService):
         b = block_blob_service.get_blob_to_bytes(
             container_name=self.container_name, blob_name=object_name,
         )
+
+        filename = AzureFileService.DEFAULT_FILENAME
+        if b.metadata:
+            filename = b.metadata.get("filename", AzureFileService.DEFAULT_FILENAME)
+
         return {
             "name": b.name,
+            "filename": filename,
             "content": b.content,
         }

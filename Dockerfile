@@ -86,6 +86,7 @@ COPY --from=builder /install/app.py .
 COPY --from=builder /install/atat/ ./atat/
 COPY --from=builder /install/celery_worker.py ./celery_worker.py
 COPY --from=builder /install/config/ ./config/
+COPY --from=builder /install/policies/ ./policies/
 COPY --from=builder /install/templates/ ./templates/
 COPY --from=builder /install/translations.yaml .
 COPY --from=builder /install/script/ ./script/
