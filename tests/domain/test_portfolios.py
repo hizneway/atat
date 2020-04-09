@@ -380,7 +380,7 @@ class TestGetPortfoliosPendingCreate(EnvQueryTest):
         # Given: Portfolio is associated with an unsigned task order
         self.create_portfolio_with_clins(
             [(self.YESTERDAY, self.TOMORROW)],
-            state_machine_status=FSMStates.TENANT_CREATED.name,
+            state_machine_status=FSMStates.UNSTARTED.name,
             task_order_signed_at=None,
         )
         # When I query for portfolios pending provisioning
