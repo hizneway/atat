@@ -4,7 +4,7 @@ from decimal import Decimal
 
 from atat.domain.exceptions import AlreadyExistsError
 from atat.domain.task_orders import TaskOrders
-from atat.models import Attachment
+from atat.models import Attachment, FSMStates as PortfolioStates
 from atat.models.task_order import TaskOrder, SORT_ORDERING, Status
 from tests.factories import TaskOrderFactory, CLINFactory, PortfolioFactory
 
@@ -212,8 +212,32 @@ def test_get_for_send_task_order_files(
     assert new_task_order in updated_and_new_task_orders
 
 
-def test_get_clins_for_create_billing_instructions(new_task_order, sent_task_order):
-    new_clins = TaskOrders.get_clins_for_create_billing_instructions()
-    assert len(new_clins) == 1
-    assert new_task_order.clins[0] in new_clins
-    assert sent_task_order.clins[0] not in new_clins
+class Test_get_clins_for_create_billing_instructions:
+    @pytest.fixture
+    def provisioned_task_order(self):
+        return TaskOrderFactory.create(
+            portfolio=PortfolioFactory.create(state=PortfolioStates.COMPLETED.name),
+            create_clins=[{}],
+        )
+
+    @pytest.fixture
+    def sent_task_order(self):
+        return TaskOrderFactory.create(
+            create_clins=[{"last_sent_at": pendulum.date(2020, 1, 1)}],
+        )
+
+    def test_sent_task_order(self, sent_task_order):
+        new_clins = TaskOrders.get_clins_for_create_billing_instructions()
+        assert len(new_clins) == 0
+
+    def test_portfolio_is_completed(self, provisioned_task_order):
+        new_clins = TaskOrders.get_clins_for_create_billing_instructions()
+        assert provisioned_task_order.clins == new_clins
+
+    def test_portfolio_is_not_completed(self):
+        task_order = TaskOrderFactory.create(
+            portfolio=PortfolioFactory.create(state=PortfolioStates.UNSTARTED.name),
+            create_clins=[{}],
+        )
+        new_clins = TaskOrders.get_clins_for_create_billing_instructions()
+        assert len(new_clins) == 0

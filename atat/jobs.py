@@ -354,9 +354,9 @@ def create_billing_instruction(self):
         portfolio = clin.task_order.portfolio
 
         payload = BillingInstructionCSPPayload(
-            tenant_id=portfolio.csp_data.get("tenant_id"),
-            billing_account_name=portfolio.csp_data.get("billing_account_name"),
-            billing_profile_name=portfolio.csp_data.get("billing_profile_name"),
+            tenant_id=portfolio.csp_data["tenant_id"],
+            billing_account_name=portfolio.csp_data["billing_account_name"],
+            billing_profile_name=portfolio.csp_data["billing_profile_name"],
             initial_clin_amount=clin.obligated_amount,
             initial_clin_start_date=str(clin.start_date),
             initial_clin_end_date=str(clin.end_date),
