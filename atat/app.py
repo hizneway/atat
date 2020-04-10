@@ -363,4 +363,6 @@ def register_jinja_globals(app):
         else:
             return flask_url_for(endpoint, **values)
 
-    app.jinja_env.globals["url_for"] = _url_for
+    app.jinja_env.globals.update(
+        {"url_for": _url_for, "service_desk_url": app.config.get("SERVICE_DESK_URL")}
+    )
