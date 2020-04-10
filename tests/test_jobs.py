@@ -631,5 +631,5 @@ class Test_make_initial_csp_data:
 
     def test_includes_billing_account_name(self, app, portfolio):
         data = make_initial_csp_data(portfolio)
-        billing_account = app.config.get("AZURE_BILLING_ACCOUNT_NAME")
+        billing_account = app.config["AZURE_BILLING_ACCOUNT_NAME"]
         assert data.get("billing_account_name") == billing_account

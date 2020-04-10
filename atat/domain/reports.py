@@ -1,10 +1,11 @@
+import pendulum
 from flask import current_app
+
 from atat.domain.csp.cloud.models import (
     CostManagementQueryCSPPayload,
     CostManagementQueryCSPResult,
 )
 from atat.domain.csp.reports import prepare_azure_reporting_data
-import pendulum
 
 
 class Reports:
@@ -20,8 +21,7 @@ class Reports:
         from_date = pendulum.now().subtract(years=1).add(days=1).format("YYYY-MM-DD")
         to_date = pendulum.now().format("YYYY-MM-DD")
         rows = []
-
-        if portfolio.csp_data:
+        if portfolio.is_provisioned:
             payload = CostManagementQueryCSPPayload(
                 from_date=from_date, to_date=to_date, **portfolio.csp_data
             )

@@ -547,7 +547,7 @@ def build_subscription_payload(environment) -> SubscriptionCreationCSPPayload:
         tenant_id=csp_data.get("tenant_id"),
         display_name=display_name,
         parent_group_id=parent_group_id,
-        billing_account_name=csp_data.get("billing_account_name"),
+        billing_account_name=app.config["AZURE_BILLING_ACCOUNT_NAME"],
         billing_profile_name=csp_data.get("billing_profile_name"),
         invoice_section_name=invoice_section_name,
     )

@@ -240,7 +240,7 @@ def make_initial_csp_data(portfolio):
     return {
         **portfolio.to_dictionary(),
         **csp_data,
-        "billing_account_name": app.config.get("AZURE_BILLING_ACCOUNT_NAME"),
+        "billing_account_name": app.config["AZURE_BILLING_ACCOUNT_NAME"],
     }
 
 
@@ -355,7 +355,7 @@ def create_billing_instruction(self):
 
         payload = BillingInstructionCSPPayload(
             tenant_id=portfolio.csp_data["tenant_id"],
-            billing_account_name=portfolio.csp_data["billing_account_name"],
+            billing_account_name=app.config["AZURE_BILLING_ACCOUNT_NAME"],
             billing_profile_name=portfolio.csp_data["billing_profile_name"],
             initial_clin_amount=clin.obligated_amount,
             initial_clin_start_date=str(clin.start_date),
