@@ -8,6 +8,7 @@ from atat.domain.csp.cloud.models import (
     ManagementGroupCSPPayload,
     ManagementGroupCSPResponse,
     UserCSPPayload,
+    UserRoleCSPPayload,
     BillingOwnerCSPPayload,
 )
 
@@ -180,3 +181,24 @@ class TestBillingOwnerCSPPayload:
     def test_email(self):
         payload = BillingOwnerCSPPayload(**self.user_payload)
         assert payload.email == self.user_payload["password_recovery_email_address"]
+
+
+class TestUserRoleCSPPayload:
+    def test_management_group_id_without_path(self):
+        payload = UserRoleCSPPayload(
+            tenant_id="123",
+            management_group_id="mid",
+            role="owner",
+            user_object_id="123",
+        )
+        assert payload.management_group_id == f"{AZURE_MGMNT_PATH}mid"
+
+    def test_management_group_id_with_path(self):
+        full_path = f"{AZURE_MGMNT_PATH}mid"
+        payload = UserRoleCSPPayload(
+            tenant_id="123",
+            management_group_id=full_path,
+            role="owner",
+            user_object_id="123",
+        )
+        assert payload.management_group_id == full_path
