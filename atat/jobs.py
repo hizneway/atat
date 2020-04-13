@@ -319,49 +319,42 @@ def dispatch_provision_portfolio(self: Task):
     """
     Iterate over portfolios with a corresponding State Machine that have not completed.
     """
-    portfolio_ids = []
-    for portfolio_id in Portfolios.get_portfolios_pending_provisioning(pendulum.now()):
+    portfolio_ids = Portfolios.get_portfolios_pending_provisioning(pendulum.now())
+    for portfolio_id in portfolio_ids:
         provision_portfolio.delay(portfolio_id=portfolio_id)
-        portfolio_ids.append(portfolio_id)
-    return portfolio_ids
+    return [str(portfolio_id) for portfolio_id in portfolio_ids]
 
 
 @celery.task(bind=True)
 def dispatch_create_application(self: Task):
-    application_ids = []
-    for application_id in Applications.get_applications_pending_creation():
+    application_ids = Applications.get_applications_pending_creation()
+    for application_id in application_ids:
         create_application.delay(application_id=application_id)
-        application_ids.append(application_id)
-    return application_ids
+    return [str(application_id) for application_id in application_ids]
 
 
 @celery.task(bind=True)
 def dispatch_create_user(self: Task):
-    application_role_idss = []
-    for application_role_ids in ApplicationRoles.get_pending_creation():
+    application_role_id_groups = ApplicationRoles.get_pending_creation()
+    for application_role_ids in application_role_id_groups:
         create_user.delay(application_role_ids=application_role_ids)
-        application_role_idss.append(application_role_ids)
-    return application_role_idss
+    return [[str(role_id) for role_id in group] for group in application_role_id_groups]
 
 
 @celery.task(bind=True)
 def dispatch_create_environment_role(self: Task):
-    environment_role_ids = []
-    for environment_role_id in EnvironmentRoles.get_pending_creation():
+    environment_role_ids = EnvironmentRoles.get_pending_creation()
+    for environment_role_id in environment_role_ids:
         create_environment_role.delay(environment_role_id=environment_role_id)
-        environment_role_ids.append(environment_role_id)
-    return environment_role_ids
+    return [str(role_id) for role_id in environment_role_ids]
 
 
 @celery.task(bind=True)
 def dispatch_create_environment(self: Task):
-    environment_ids = []
-    for environment_id in Environments.get_environments_pending_creation(
-        pendulum.now()
-    ):
+    environment_ids = Environments.get_environments_pending_creation(pendulum.now())
+    for environment_id in environment_ids:
         create_environment.delay(environment_id=environment_id)
-        environment_ids.append(environment_id)
-    return environment_ids
+    return [str(environment_id) for environment_id in environment_ids]
 
 
 @celery.task(bind=True)
@@ -390,7 +383,7 @@ def send_task_order_files(self: Task):
         db.session.add(task_order)
 
     db.session.commit()
-    return [task_order.id for task_order in task_orders]
+    return [str(task_order.id) for task_order in task_orders]
 
 
 @celery.task(bind=True)
@@ -425,6 +418,6 @@ def create_billing_instruction(self: Task):
     db.session.commit()
 
     return {
-        "clin_ids": [clin.id for clin in clins],
-        "portfolio_ids": portfolio_ids,
+        "clin_ids": [str(clin.id) for clin in clins],
+        "portfolio_ids": [str(portfolio_id) for portfolio_id in portfolio_ids],
     }
