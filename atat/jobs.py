@@ -2,6 +2,7 @@ from smtplib import SMTPException
 
 import pendulum
 from azure.core.exceptions import AzureError
+from celery import Task
 from flask import current_app as app
 
 from atat.database import db
@@ -277,74 +278,84 @@ def do_provision_portfolio(csp: CloudProviderInterface, portfolio_id=None):
 
 
 @celery.task(bind=True, base=RecordFailure, autoretry_for=(GeneralCSPException,))
-def provision_portfolio(self, portfolio_id=None):
+def provision_portfolio(self: Task, portfolio_id=None):
     do_provision_portfolio(app.csp.cloud, portfolio_id=portfolio_id)
+    return self.request.id
 
 
 @celery.task(bind=True, base=RecordFailure)
-def create_application(self, application_id=None):
+def create_application(self: Task, application_id=None):
     do_work(do_create_application, self, app.csp.cloud, application_id=application_id)
+    return self.request.id
 
 
 @celery.task(bind=True, base=RecordFailure)
-def create_user(self, application_role_ids=None):
+def create_user(self: Task, application_role_ids=None):
     do_work(
         do_create_user, self, app.csp.cloud, application_role_ids=application_role_ids
     )
+    return self.request.id
 
 
 @celery.task(bind=True, base=RecordFailure)
-def create_environment_role(self, environment_role_id=None):
+def create_environment_role(self: Task, environment_role_id=None):
     do_work(
         do_create_environment_role,
         self,
         app.csp.cloud,
         environment_role_id=environment_role_id,
     )
+    return self.request.id
 
 
 @celery.task(bind=True, base=RecordFailure)
-def create_environment(self, environment_id=None):
+def create_environment(self: Task, environment_id=None):
     do_work(do_create_environment, self, app.csp.cloud, environment_id=environment_id)
+    return self.request.id
 
 
 @celery.task(bind=True)
-def dispatch_provision_portfolio(self):
+def dispatch_provision_portfolio(self: Task):
     """
     Iterate over portfolios with a corresponding State Machine that have not completed.
     """
     for portfolio_id in Portfolios.get_portfolios_pending_provisioning(pendulum.now()):
         provision_portfolio.delay(portfolio_id=portfolio_id)
+    return self.request.id
 
 
 @celery.task(bind=True)
-def dispatch_create_application(self):
+def dispatch_create_application(self: Task):
     for application_id in Applications.get_applications_pending_creation():
         create_application.delay(application_id=application_id)
+    return self.request.id
 
 
 @celery.task(bind=True)
-def dispatch_create_user(self):
+def dispatch_create_user(self: Task):
     for application_role_ids in ApplicationRoles.get_pending_creation():
         create_user.delay(application_role_ids=application_role_ids)
+    return self.request.id
 
 
 @celery.task(bind=True)
-def dispatch_create_environment_role(self):
+def dispatch_create_environment_role(self: Task):
     for environment_role_id in EnvironmentRoles.get_pending_creation():
         create_environment_role.delay(environment_role_id=environment_role_id)
+    return self.request.id
 
 
 @celery.task(bind=True)
-def dispatch_create_environment(self):
+def dispatch_create_environment(self: Task):
     for environment_id in Environments.get_environments_pending_creation(
         pendulum.now()
     ):
         create_environment.delay(environment_id=environment_id)
+    return self.request.id
 
 
 @celery.task(bind=True)
-def send_task_order_files(self):
+def send_task_order_files(self: Task):
     task_orders = TaskOrders.get_for_send_task_order_files()
     recipients = [app.config.get("MICROSOFT_TASK_ORDER_EMAIL_ADDRESS")]
 
@@ -369,10 +380,11 @@ def send_task_order_files(self):
         db.session.add(task_order)
 
     db.session.commit()
+    return self.request.id
 
 
 @celery.task(bind=True)
-def create_billing_instruction(self):
+def create_billing_instruction(self: Task):
     clins = TaskOrders.get_clins_for_create_billing_instructions()
     for clin in clins:
         portfolio = clin.task_order.portfolio
@@ -398,3 +410,4 @@ def create_billing_instruction(self):
         db.session.add(clin)
 
     db.session.commit()
+    return self.request.id
