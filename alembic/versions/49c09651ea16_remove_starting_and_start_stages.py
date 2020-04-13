@@ -17,7 +17,6 @@ depends_on = None
 
 
 def upgrade():
-    pass
     op.alter_column(
         "portfolio_state_machines",
         "state",
