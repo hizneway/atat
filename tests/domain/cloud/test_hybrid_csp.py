@@ -61,11 +61,6 @@ def test_hybrid_provision_portfolio(pytestconfig, state_machine: PortfolioStateM
     csp_data = {}
     config = {"billing_account_name": "billing_account_name"}
 
-    # Starting
-    state_machine.trigger_next_transition(csp_data=csp_data)
-    # Started
-    state_machine.trigger_next_transition(csp_data=csp_data)
-
     while state_machine.state != FSMStates.COMPLETED:
         collected_data = dict(
             list(csp_data.items())
