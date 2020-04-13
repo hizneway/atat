@@ -155,8 +155,6 @@ class Portfolios(object):
             - No state machine attached OR
             - An attached state machine with a state of
               - UNSTARTED
-              - STARTING
-              - STARTED
               - any that string-match /*CREATED$/
             - A signed task order
         """
@@ -173,8 +171,6 @@ class Portfolios(object):
                 or_(
                     Portfolio.state_machine == None,
                     PortfolioStateMachine.state == FSMStates.UNSTARTED,
-                    PortfolioStateMachine.state == FSMStates.STARTING,
-                    PortfolioStateMachine.state == FSMStates.STARTED,
                     PortfolioStateMachine.state.like("%CREATED"),
                 )
             )
