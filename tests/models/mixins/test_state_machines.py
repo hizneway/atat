@@ -27,7 +27,7 @@ def test_find_and_call_stage_trigger():
 
 
 def test_find_and_call_stage_trigger_fails():
-    portfolio = PortfolioFactory.create(state="STARTED")
+    portfolio = PortfolioFactory.create(state="UNSTARTED")
     with raises(StateMachineMisconfiguredError):
         portfolio.state_machine._find_and_call_stage_trigger(
             "wont_find_a_trigger_with_this_prefix"
@@ -78,8 +78,6 @@ def test_build_csp_states():
     states = _build_csp_states(AzureStagesTest)
     assert list(states) == [
         "UNSTARTED",
-        "STARTING",
-        "STARTED",
         "COMPLETED",
         "FAILED",
         "TENANT_CREATED",
