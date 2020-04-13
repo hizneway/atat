@@ -57,8 +57,6 @@ def _build_csp_states(csp_stages: Enum) -> dict:
 
     system_states = {
         "UNSTARTED": "unstarted",
-        "STARTING": "starting",
-        "STARTED": "started",
         "COMPLETED": "completed",
         "FAILED": "failed",
     }
@@ -83,7 +81,7 @@ def _build_transitions(csp_stages):
     For each CSP state (a combination of CSP stages and StateStages) We need 
     transitions: 
     
-    - from the system `STARTED` state or the previous stage's `_CREATED` state to
+    - from the system `UNSTARTED` state or the previous stage's `_CREATED` state to
      `<CSP stage>_IN_PROGRESS` to try the provisioning step
         - triggered with a `create_<CSP stage>` trigger
     
@@ -118,7 +116,7 @@ def _build_transitions(csp_stages):
                         list(csp_stages)[stage_index - 1], StageStates.CREATED
                     )
                 else:
-                    source = FSMStates.STARTED
+                    source = FSMStates.UNSTARTED
                 transitions.append(
                     dict(
                         trigger="create_" + csp_stage.name.lower(),
@@ -170,15 +168,11 @@ class FSMMixin:
 
     system_states = [
         {"name": FSMStates.UNSTARTED.name, "tags": ["system"]},
-        {"name": FSMStates.STARTING.name, "tags": ["system"]},
-        {"name": FSMStates.STARTED.name, "tags": ["system"]},
         {"name": FSMStates.FAILED.name, "tags": ["system"]},
         {"name": FSMStates.COMPLETED.name, "tags": ["system"]},
     ]
 
     system_transitions = [
-        {"trigger": "init", "source": FSMStates.UNSTARTED, "dest": FSMStates.STARTING},
-        {"trigger": "start", "source": FSMStates.STARTING, "dest": FSMStates.STARTED},
         {"trigger": "reset", "source": "*", "dest": FSMStates.UNSTARTED},
         {"trigger": "fail", "source": "*", "dest": FSMStates.FAILED,},
     ]
