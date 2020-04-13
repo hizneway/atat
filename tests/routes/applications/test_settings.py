@@ -885,17 +885,17 @@ class TestBuildSubscriptionPayload:
 
         assert payload_1.display_name != payload_2.display_name
 
-    def test_populates_payload_correctly(self):
-        app = ApplicationFactory.create(
+    def test_populates_payload_correctly(self, app):
+        application = ApplicationFactory.create(
             name="Application", environments=[{"name": "Environment", "cloud_id": 123}]
         )
-        environment = app.environments[0]
-        account_name = "fake-account-name"
+        environment = application.environments[0]
+        account_name = app.config["AZURE_BILLING_ACCOUNT_NAME"]
         profile_name = "fake-profile-name"
         tenant_id = "123"
         section_name = "fake-section-name"
+
         environment.portfolio.csp_data = {
-            "billing_account_name": account_name,
             "billing_profile_name": profile_name,
             "tenant_id": tenant_id,
             "billing_profile_properties": {
