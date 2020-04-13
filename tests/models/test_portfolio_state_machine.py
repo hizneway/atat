@@ -98,7 +98,7 @@ def test_state_machine_valid_data_classes_for_stages():
 def test_attach_machine(state_machine):
     initial_stages = [
         "reset",
-        "fail",
+        "configuration_error",
         "create_tenant",
         "finish_tenant",
         "fail_tenant",
@@ -195,7 +195,7 @@ def test_state_machine_initialization(state_machine):
         )
         assert [
             "reset",
-            "fail",
+            "configuration_error",
             "finish_" + stage_name,
             "fail_" + stage_name,
         ] == in_progress_triggers
@@ -208,7 +208,7 @@ def test_state_machine_initialization(state_machine):
             ),
             None,
         )
-        assert ["reset", "fail", create_trigger] == started_triggers
+        assert ["reset", "configuration_error", create_trigger] == started_triggers
 
 
 @pytest.mark.state_machine

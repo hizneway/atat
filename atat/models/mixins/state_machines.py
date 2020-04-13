@@ -58,7 +58,7 @@ def _build_csp_states(csp_stages: Enum) -> dict:
     system_states = {
         "UNSTARTED": "unstarted",
         "COMPLETED": "completed",
-        "FAILED": "failed",
+        "CONFIGURATION_ERROR": "configuration_error",
     }
     csp_states = {
         f"{csp_stage.name}_{stage_state.name}": f"{csp_stage.value} {stage_state.value}"
@@ -168,13 +168,17 @@ class FSMMixin:
 
     system_states = [
         {"name": FSMStates.UNSTARTED.name, "tags": ["system"]},
-        {"name": FSMStates.FAILED.name, "tags": ["system"]},
+        {"name": FSMStates.CONFIGURATION_ERROR.name, "tags": ["system"]},
         {"name": FSMStates.COMPLETED.name, "tags": ["system"]},
     ]
 
     system_transitions = [
         {"trigger": "reset", "source": "*", "dest": FSMStates.UNSTARTED},
-        {"trigger": "fail", "source": "*", "dest": FSMStates.FAILED,},
+        {
+            "trigger": "configuration_error",
+            "source": "*",
+            "dest": FSMStates.CONFIGURATION_ERROR,
+        },
     ]
 
     def _find_and_call_stage_trigger(self, trigger_prefix, **kwargs):
@@ -195,7 +199,7 @@ class FSMMixin:
         if trigger is not None:
             self.trigger(trigger, **kwargs)
         else:
-            self.trigger("fail")
+            self.trigger("configuration_error")
             raise StateMachineMisconfiguredError(
                 f"could not locate trigger with prefix '{trigger_prefix}' for '{self.__repr__()}'"
             )
