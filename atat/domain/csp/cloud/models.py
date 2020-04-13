@@ -23,6 +23,14 @@ SUBSCRIPTION_ID_REGEX = re.compile(
 )
 
 
+def normalize_management_group_id(cls, id_):
+    if id_:
+        if AZURE_MGMNT_PATH not in id_:
+            return f"{AZURE_MGMNT_PATH}{id_}"
+        else:
+            return id_
+
+
 class AliasModel(BaseModel):
     """
     This provides automatic camel <-> snake conversion for serializing to/from json
@@ -341,6 +349,10 @@ class ManagementGroupCSPPayload(AliasModel):
     display_name: str
     parent_id: Optional[str]
 
+    _normalize_parent_id = validator("parent_id", allow_reuse=True)(
+        normalize_management_group_id
+    )
+
     @validator("management_group_name", pre=True, always=True)
     def supply_management_group_name_default(cls, name):
         if name:
@@ -356,14 +368,6 @@ class ManagementGroupCSPPayload(AliasModel):
     @validator("display_name", pre=True, always=True)
     def enforce_display_name_length(cls, name):
         return name[0:90]
-
-    @validator("parent_id", pre=True, always=True)
-    def enforce_parent_id_pattern(cls, id_):
-        if id_:
-            if AZURE_MGMNT_PATH not in id_:
-                return f"{AZURE_MGMNT_PATH}{id_}"
-            else:
-                return id_
 
 
 class ManagementGroupCSPResponse(AliasModel):
@@ -576,6 +580,10 @@ class UserRoleCSPPayload(BaseCSPPayload):
     management_group_id: str
     role: Roles
     user_object_id: str
+
+    _normalize_management_group_id = validator("management_group_id", allow_reuse=True)(
+        normalize_management_group_id
+    )
 
 
 class UserRoleCSPResult(AliasModel):

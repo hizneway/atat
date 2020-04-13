@@ -7,13 +7,15 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.types import ARRAY
 from sqlalchemy_json import NestedMutableJson
 
-from atat.database import db
 import atat.models.mixins as mixins
 import atat.models.types as types
+from atat.database import db
 from atat.domain.csp.cloud.utils import generate_mail_nickname
 from atat.domain.permission_sets import PermissionSets
 from atat.models.base import Base
-from atat.models.portfolio_role import PortfolioRole, Status as PortfolioRoleStatus
+from atat.models.mixins.state_machines import FSMStates
+from atat.models.portfolio_role import PortfolioRole
+from atat.models.portfolio_role import Status as PortfolioRoleStatus
 from atat.utils import first_or_none
 
 
@@ -194,6 +196,13 @@ class Portfolio(
             return self.csp_data.get("domain_name", domain_name)
         else:
             return domain_name
+
+    @property
+    def is_provisioned(self) -> bool:
+        return bool(
+            self.state_machine
+            and self.state_machine.state_str == FSMStates.COMPLETED.name
+        )
 
     @property
     def application_id(self):

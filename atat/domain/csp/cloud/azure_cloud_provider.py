@@ -1867,7 +1867,7 @@ class AzureCloudProvider(CloudProviderInterface):
             )
 
         role_guid = self.roles[payload.role]
-        role_definition_id = f"/providers/Microsoft.Management/managementGroups/{payload.management_group_id}/providers/Microsoft.Authorization/roleDefinitions/{role_guid}"
+        role_definition_id = f"{payload.management_group_id}/providers/Microsoft.Authorization/roleDefinitions/{role_guid}"
 
         request_body = {
             "properties": {
