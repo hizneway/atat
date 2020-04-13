@@ -280,13 +280,13 @@ def do_provision_portfolio(csp: CloudProviderInterface, portfolio_id=None):
 @celery.task(bind=True, base=RecordFailure, autoretry_for=(GeneralCSPException,))
 def provision_portfolio(self: Task, portfolio_id=None):
     do_provision_portfolio(app.csp.cloud, portfolio_id=portfolio_id)
-    return self.request.id
+    return portfolio_id
 
 
 @celery.task(bind=True, base=RecordFailure)
 def create_application(self: Task, application_id=None):
     do_work(do_create_application, self, app.csp.cloud, application_id=application_id)
-    return self.request.id
+    return application_id
 
 
 @celery.task(bind=True, base=RecordFailure)
@@ -294,7 +294,7 @@ def create_user(self: Task, application_role_ids=None):
     do_work(
         do_create_user, self, app.csp.cloud, application_role_ids=application_role_ids
     )
-    return self.request.id
+    return application_role_ids
 
 
 @celery.task(bind=True, base=RecordFailure)
@@ -305,13 +305,13 @@ def create_environment_role(self: Task, environment_role_id=None):
         app.csp.cloud,
         environment_role_id=environment_role_id,
     )
-    return self.request.id
+    return environment_role_id
 
 
 @celery.task(bind=True, base=RecordFailure)
 def create_environment(self: Task, environment_id=None):
     do_work(do_create_environment, self, app.csp.cloud, environment_id=environment_id)
-    return self.request.id
+    return environment_id
 
 
 @celery.task(bind=True)
@@ -319,39 +319,49 @@ def dispatch_provision_portfolio(self: Task):
     """
     Iterate over portfolios with a corresponding State Machine that have not completed.
     """
+    portfolio_ids = []
     for portfolio_id in Portfolios.get_portfolios_pending_provisioning(pendulum.now()):
         provision_portfolio.delay(portfolio_id=portfolio_id)
-    return self.request.id
+        portfolio_ids.append(portfolio_id)
+    return portfolio_ids
 
 
 @celery.task(bind=True)
 def dispatch_create_application(self: Task):
+    application_ids = []
     for application_id in Applications.get_applications_pending_creation():
         create_application.delay(application_id=application_id)
-    return self.request.id
+        application_ids.append(application_id)
+    return application_ids
 
 
 @celery.task(bind=True)
 def dispatch_create_user(self: Task):
+    application_role_idss = []
     for application_role_ids in ApplicationRoles.get_pending_creation():
         create_user.delay(application_role_ids=application_role_ids)
-    return self.request.id
+        application_role_idss.append(application_role_ids)
+    return application_role_idss
 
 
 @celery.task(bind=True)
 def dispatch_create_environment_role(self: Task):
+    environment_role_ids = []
     for environment_role_id in EnvironmentRoles.get_pending_creation():
         create_environment_role.delay(environment_role_id=environment_role_id)
-    return self.request.id
+        environment_role_ids.append(environment_role_id)
+    return environment_role_ids
 
 
 @celery.task(bind=True)
 def dispatch_create_environment(self: Task):
+    environment_ids = []
     for environment_id in Environments.get_environments_pending_creation(
         pendulum.now()
     ):
         create_environment.delay(environment_id=environment_id)
-    return self.request.id
+        environment_ids.append(environment_id)
+    return environment_ids
 
 
 @celery.task(bind=True)
@@ -380,12 +390,14 @@ def send_task_order_files(self: Task):
         db.session.add(task_order)
 
     db.session.commit()
-    return self.request.id
+    return [task_order.id for task_order in task_orders]
 
 
 @celery.task(bind=True)
 def create_billing_instruction(self: Task):
     clins = TaskOrders.get_clins_for_create_billing_instructions()
+    portfolio_ids = []
+
     for clin in clins:
         portfolio = clin.task_order.portfolio
 
@@ -408,6 +420,11 @@ def create_billing_instruction(self: Task):
 
         clin.last_sent_at = pendulum.now(tz="UTC")
         db.session.add(clin)
+        portfolio_ids.append(portfolio.id)
 
     db.session.commit()
-    return self.request.id
+
+    return {
+        "clin_ids": [clin.id for clin in clins],
+        "portfolio_ids": portfolio_ids,
+    }
