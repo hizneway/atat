@@ -231,7 +231,11 @@ def test_disable_user(mock_azure: AzureCloudProvider):
     assert result.get("name") == assignment_guid
 
 
-def test_create_tenant(mock_azure: AzureCloudProvider):
+def test_create_tenant(mock_azure: AzureCloudProvider, monkeypatch):
+    monkeypatch.setattr(
+        "atat.domain.csp.cloud.azure_cloud_provider.AzureCloudProvider.generate_valid_domain_name",
+        lambda *a: "domain_name",
+    )
     mock_result = Mock()
     mock_result.json.return_value = {
         "objectId": "0a5f4926-e3ee-4f47-a6e3-8b0a30a40e3d",
