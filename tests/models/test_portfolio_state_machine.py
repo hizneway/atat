@@ -66,6 +66,13 @@ class TestTriggerNextTransition:
         )
         assert state_machine.current_state == FSMStates.TENANT_CREATED
 
+    def test_started(self, state_machine):
+        state_machine.state = FSMStates.UNSTARTED
+        state_machine.trigger_next_transition(
+            csp_data=state_machine.portfolio.to_dictionary()
+        )
+        assert state_machine.current_state == FSMStates.TENANT_CREATED
+
 
 @pytest.mark.state_machine
 def test_stage_to_classname():
