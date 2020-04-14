@@ -38,7 +38,7 @@ A Finite State Machine `atat.models.portoflio_state_machine.PortfolioStateMachin
 
 Aach time the FSM is created/accessed it will generate a list of States and Transitions between the states.
 
-There is a set of "system" states such as UNSTARTED, STARTING, STARTED, COMPLETED, FAILED etc
+There is a set of three "system" states: UNSTARTED, COMPLETED and CONFIGURATION_ERROR. The latter is triggered when the next trigger cannot be found, most likely indicating a configuration error.
 
 There is a set of CSP specific states generated for each "stage" in the FSM.
     TENANT_IN_PROGRESS
