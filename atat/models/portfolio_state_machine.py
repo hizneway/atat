@@ -130,13 +130,7 @@ class PortfolioStateMachine(
         state_obj = self.machine.get_state(self.state)
 
         kwargs["csp_data"] = kwargs.get("csp_data", {})
-
-        if self.current_state in (FSMStates.UNSTARTED, FSMStates.STARTING):
-            # call the first trigger availabe for these two system states
-            trigger_name = self.machine.get_triggers(self.current_state.name)[0]
-            self.trigger(trigger_name, **kwargs)
-
-        elif self.current_state == FSMStates.STARTED:
+        if self.current_state == FSMStates.UNSTARTED:
             self.start_next_stage(**kwargs)
 
         elif state_obj.is_FAILED:

@@ -19,7 +19,7 @@ class TestGetPortfolioSpending:
         assert data["estimated"] == Decimal(500.0)
 
     def test_not_completed_state_machine(self):
-        portfolio = PortfolioFactory.create(state="STARTED")
+        portfolio = PortfolioFactory.create(state="UNSTARTED")
         portfolio.csp_data = self.csp_data
         data = Reports.get_portfolio_spending(portfolio)
         assert data["invoiced"] == Decimal(0)

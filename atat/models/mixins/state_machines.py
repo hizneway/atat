@@ -57,10 +57,8 @@ def _build_csp_states(csp_stages: Enum) -> dict:
 
     system_states = {
         "UNSTARTED": "unstarted",
-        "STARTING": "starting",
-        "STARTED": "started",
         "COMPLETED": "completed",
-        "FAILED": "failed",
+        "CONFIGURATION_ERROR": "configuration_error",
     }
     csp_states = {
         f"{csp_stage.name}_{stage_state.name}": f"{csp_stage.value} {stage_state.value}"
@@ -83,7 +81,7 @@ def _build_transitions(csp_stages):
     For each CSP state (a combination of CSP stages and StateStages) We need 
     transitions: 
     
-    - from the system `STARTED` state or the previous stage's `_CREATED` state to
+    - from the system `UNSTARTED` state or the previous stage's `_CREATED` state to
      `<CSP stage>_IN_PROGRESS` to try the provisioning step
         - triggered with a `create_<CSP stage>` trigger
     
@@ -118,7 +116,7 @@ def _build_transitions(csp_stages):
                         list(csp_stages)[stage_index - 1], StageStates.CREATED
                     )
                 else:
-                    source = FSMStates.STARTED
+                    source = FSMStates.UNSTARTED
                 transitions.append(
                     dict(
                         trigger="create_" + csp_stage.name.lower(),
@@ -170,17 +168,17 @@ class FSMMixin:
 
     system_states = [
         {"name": FSMStates.UNSTARTED.name, "tags": ["system"]},
-        {"name": FSMStates.STARTING.name, "tags": ["system"]},
-        {"name": FSMStates.STARTED.name, "tags": ["system"]},
-        {"name": FSMStates.FAILED.name, "tags": ["system"]},
+        {"name": FSMStates.CONFIGURATION_ERROR.name, "tags": ["system"]},
         {"name": FSMStates.COMPLETED.name, "tags": ["system"]},
     ]
 
     system_transitions = [
-        {"trigger": "init", "source": FSMStates.UNSTARTED, "dest": FSMStates.STARTING},
-        {"trigger": "start", "source": FSMStates.STARTING, "dest": FSMStates.STARTED},
         {"trigger": "reset", "source": "*", "dest": FSMStates.UNSTARTED},
-        {"trigger": "fail", "source": "*", "dest": FSMStates.FAILED,},
+        {
+            "trigger": "configuration_error",
+            "source": "*",
+            "dest": FSMStates.CONFIGURATION_ERROR,
+        },
     ]
 
     def _find_and_call_stage_trigger(self, trigger_prefix, **kwargs):
@@ -201,7 +199,7 @@ class FSMMixin:
         if trigger is not None:
             self.trigger(trigger, **kwargs)
         else:
-            self.trigger("fail")
+            self.trigger("configuration_error")
             raise StateMachineMisconfiguredError(
                 f"could not locate trigger with prefix '{trigger_prefix}' for '{self.__repr__()}'"
             )

@@ -59,24 +59,15 @@ def test_fsm_creation(portfolio):
 
 @pytest.mark.state_machine
 class TestTriggerNextTransition:
-    def test_unstarted(self, state_machine):
-        state_machine.trigger_next_transition()
-        assert state_machine.current_state == FSMStates.STARTING
-
-    def test_starting(self, state_machine):
-        state_machine.state = FSMStates.STARTING
-        state_machine.trigger_next_transition()
-        assert state_machine.current_state == FSMStates.STARTED
-
-    def test_started(self, state_machine):
-        state_machine.state = FSMStates.STARTED
+    def test_failed(self, state_machine):
+        state_machine.state = FSMStates.TENANT_FAILED
         state_machine.trigger_next_transition(
             csp_data=state_machine.portfolio.to_dictionary()
         )
         assert state_machine.current_state == FSMStates.TENANT_CREATED
 
-    def test_failed(self, state_machine):
-        state_machine.state = FSMStates.TENANT_FAILED
+    def test_started(self, state_machine):
+        state_machine.state = FSMStates.UNSTARTED
         state_machine.trigger_next_transition(
             csp_data=state_machine.portfolio.to_dictionary()
         )
@@ -113,10 +104,8 @@ def test_state_machine_valid_data_classes_for_stages():
 @pytest.mark.state_machine
 def test_attach_machine(state_machine):
     initial_stages = [
-        "init",
-        "start",
         "reset",
-        "fail",
+        "configuration_error",
         "create_tenant",
         "finish_tenant",
         "fail_tenant",
@@ -153,7 +142,7 @@ def test_current_state_property(state_machine):
 
 @pytest.mark.state_machine
 def test_start_next_stage(state_machine):
-    state_machine.state = FSMStates.STARTED
+    state_machine.state = FSMStates.UNSTARTED
     state_machine.start_next_stage(csp_data=state_machine.portfolio.to_dictionary())
     # _IN_PROGRESS automatically triggers callback which fails or finishes the stage
     assert state_machine.state == FSMStates.TENANT_CREATED
@@ -213,28 +202,26 @@ def test_state_machine_initialization(state_machine):
         )
         assert [
             "reset",
-            "fail",
+            "configuration_error",
             "finish_" + stage_name,
             "fail_" + stage_name,
         ] == in_progress_triggers
 
-        started_triggers = state_machine.machine.get_triggers("STARTED")
+        started_triggers = state_machine.machine.get_triggers("UNSTARTED")
         create_trigger = next(
             filter(
                 lambda trigger: trigger.startswith("create_"),
-                state_machine.machine.get_triggers(FSMStates.STARTED.name),
+                state_machine.machine.get_triggers(FSMStates.UNSTARTED.name),
             ),
             None,
         )
-        assert ["reset", "fail", create_trigger] == started_triggers
+        assert ["reset", "configuration_error", create_trigger] == started_triggers
 
 
 @pytest.mark.state_machine
 def test_fsm_transition_start(state_machine: PortfolioStateMachine):
 
     expected_states = [
-        FSMStates.STARTING,
-        FSMStates.STARTED,
         FSMStates.TENANT_CREATED,
         FSMStates.BILLING_PROFILE_CREATION_CREATED,
         FSMStates.BILLING_PROFILE_VERIFICATION_CREATED,
