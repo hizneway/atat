@@ -2,6 +2,7 @@ from smtplib import SMTPException
 
 import pendulum
 from azure.core.exceptions import AzureError
+from celery import Task
 from flask import current_app as app
 
 from atat.database import db
@@ -81,6 +82,12 @@ def do_create_application(csp: CloudProviderInterface, application_id=None):
         csp_details = application.portfolio.csp_data
         parent_id = csp_details["root_management_group_id"]
         tenant_id = csp_details["tenant_id"]
+
+        app.logger.debug(f"application.id = {application.id}")
+        app.logger.debug(f"application.portfolio.id = {application.portfolio.id}")
+        app.logger.debug(f"tenant_id = {tenant_id}")
+        app.logger.debug(f"parent_id = {parent_id}")
+
         payload = ApplicationCSPPayload(
             tenant_id=tenant_id, display_name=application.name, parent_id=parent_id
         )
@@ -100,6 +107,9 @@ def do_create_user(csp: CloudProviderInterface, application_role_ids=None):
     with claim_many_for_update(app_roles) as app_roles:
 
         if any([ar.cloud_id for ar in app_roles]):
+            app.logger.warning(
+                f"Application role cloud ID {ar.cloud_id} already present."
+            )
             return
 
         csp_details = app_roles[0].application.portfolio.csp_data
@@ -144,11 +154,19 @@ def do_create_environment(csp: CloudProviderInterface, environment_id=None):
     with claim_for_update(environment) as environment:
 
         if environment.cloud_id is not None:
+            app.logger.warning(
+                f"Environment cloud ID {environment.cloud_id} already present."
+            )
             return
 
         csp_details = environment.portfolio.csp_data
         parent_id = environment.application.cloud_id
         tenant_id = csp_details.get("tenant_id")
+
+        app.logger.debug(f"environment.portfolio.id = {environment.portfolio.id}")
+        app.logger.debug(f"parent_id = {parent_id}")
+        app.logger.debug(f"tenant_id = {tenant_id}")
+
         payload = EnvironmentCSPPayload(
             tenant_id=tenant_id, display_name=environment.name, parent_id=parent_id
         )
@@ -164,6 +182,9 @@ def do_create_environment_role(csp: CloudProviderInterface, environment_role_id=
     with claim_for_update(env_role) as env_role:
 
         if env_role.cloud_id is not None:
+            app.logger.warning(
+                f"Attempting to create an environment role {env_role.cloud_id} that already exists."
+            )
             return
 
         env = env_role.environment
@@ -187,8 +208,11 @@ def do_create_environment_role(csp: CloudProviderInterface, environment_role_id=
         result = csp.create_user_role(payload)
 
         env_role.cloud_id = result.id
+
         db.session.add(env_role)
         db.session.commit()
+
+        app.logger.info(f"Created environment role {env_role.cloud_id}")
 
         user = env_role.application_role.user
         domain_name = csp_details.get("domain_name")
@@ -240,87 +264,101 @@ def make_initial_csp_data(portfolio):
     return {
         **portfolio.to_dictionary(),
         **csp_data,
-        "billing_account_name": app.config.get("AZURE_BILLING_ACCOUNT_NAME"),
+        "billing_account_name": app.config["AZURE_BILLING_ACCOUNT_NAME"],
     }
 
 
 def do_provision_portfolio(csp: CloudProviderInterface, portfolio_id=None):
     portfolio = Portfolios.get_for_update(portfolio_id)
     fsm = Portfolios.get_or_create_state_machine(portfolio)
+    app.logger.info(f"Triggering next transition for portfolio {portfolio.id}")
     fsm.trigger_next_transition(csp_data=make_initial_csp_data(portfolio))
     if fsm.current_state == FSMStates.COMPLETED:
         send_PPOC_email(portfolio.to_dictionary())
 
 
 @celery.task(bind=True, base=RecordFailure, autoretry_for=(GeneralCSPException,))
-def provision_portfolio(self, portfolio_id=None):
+def provision_portfolio(self: Task, portfolio_id=None):
     do_provision_portfolio(app.csp.cloud, portfolio_id=portfolio_id)
+    return portfolio_id
 
 
 @celery.task(bind=True, base=RecordFailure)
-def create_application(self, application_id=None):
+def create_application(self: Task, application_id=None):
     do_work(do_create_application, self, app.csp.cloud, application_id=application_id)
+    return application_id
 
 
 @celery.task(bind=True, base=RecordFailure)
-def create_user(self, application_role_ids=None):
+def create_user(self: Task, application_role_ids=None):
     do_work(
         do_create_user, self, app.csp.cloud, application_role_ids=application_role_ids
     )
+    return application_role_ids
 
 
 @celery.task(bind=True, base=RecordFailure)
-def create_environment_role(self, environment_role_id=None):
+def create_environment_role(self: Task, environment_role_id=None):
     do_work(
         do_create_environment_role,
         self,
         app.csp.cloud,
         environment_role_id=environment_role_id,
     )
+    return environment_role_id
 
 
 @celery.task(bind=True, base=RecordFailure)
-def create_environment(self, environment_id=None):
+def create_environment(self: Task, environment_id=None):
     do_work(do_create_environment, self, app.csp.cloud, environment_id=environment_id)
+    return environment_id
 
 
 @celery.task(bind=True)
-def dispatch_provision_portfolio(self):
+def dispatch_provision_portfolio(self: Task):
     """
     Iterate over portfolios with a corresponding State Machine that have not completed.
     """
-    for portfolio_id in Portfolios.get_portfolios_pending_provisioning(pendulum.now()):
+    portfolio_ids = Portfolios.get_portfolios_pending_provisioning(pendulum.now())
+    for portfolio_id in portfolio_ids:
         provision_portfolio.delay(portfolio_id=portfolio_id)
+    return [str(portfolio_id) for portfolio_id in portfolio_ids]
 
 
 @celery.task(bind=True)
-def dispatch_create_application(self):
-    for application_id in Applications.get_applications_pending_creation():
+def dispatch_create_application(self: Task):
+    application_ids = Applications.get_applications_pending_creation()
+    for application_id in application_ids:
         create_application.delay(application_id=application_id)
+    return [str(application_id) for application_id in application_ids]
 
 
 @celery.task(bind=True)
-def dispatch_create_user(self):
-    for application_role_ids in ApplicationRoles.get_pending_creation():
+def dispatch_create_user(self: Task):
+    application_role_id_groups = ApplicationRoles.get_pending_creation()
+    for application_role_ids in application_role_id_groups:
         create_user.delay(application_role_ids=application_role_ids)
+    return [[str(role_id) for role_id in group] for group in application_role_id_groups]
 
 
 @celery.task(bind=True)
-def dispatch_create_environment_role(self):
-    for environment_role_id in EnvironmentRoles.get_pending_creation():
+def dispatch_create_environment_role(self: Task):
+    environment_role_ids = EnvironmentRoles.get_pending_creation()
+    for environment_role_id in environment_role_ids:
         create_environment_role.delay(environment_role_id=environment_role_id)
+    return [str(role_id) for role_id in environment_role_ids]
 
 
 @celery.task(bind=True)
-def dispatch_create_environment(self):
-    for environment_id in Environments.get_environments_pending_creation(
-        pendulum.now()
-    ):
+def dispatch_create_environment(self: Task):
+    environment_ids = Environments.get_environments_pending_creation(pendulum.now())
+    for environment_id in environment_ids:
         create_environment.delay(environment_id=environment_id)
+    return [str(environment_id) for environment_id in environment_ids]
 
 
 @celery.task(bind=True)
-def send_task_order_files(self):
+def send_task_order_files(self: Task):
     task_orders = TaskOrders.get_for_send_task_order_files()
     recipients = [app.config.get("MICROSOFT_TASK_ORDER_EMAIL_ADDRESS")]
 
@@ -345,17 +383,20 @@ def send_task_order_files(self):
         db.session.add(task_order)
 
     db.session.commit()
+    return [str(task_order.id) for task_order in task_orders]
 
 
 @celery.task(bind=True)
-def create_billing_instruction(self):
+def create_billing_instruction(self: Task):
     clins = TaskOrders.get_clins_for_create_billing_instructions()
+    portfolio_ids = []
+
     for clin in clins:
         portfolio = clin.task_order.portfolio
 
         payload = BillingInstructionCSPPayload(
             tenant_id=portfolio.csp_data["tenant_id"],
-            billing_account_name=portfolio.csp_data["billing_account_name"],
+            billing_account_name=app.config["AZURE_BILLING_ACCOUNT_NAME"],
             billing_profile_name=portfolio.csp_data["billing_profile_name"],
             initial_clin_amount=clin.obligated_amount,
             initial_clin_start_date=str(clin.start_date),
@@ -372,5 +413,11 @@ def create_billing_instruction(self):
 
         clin.last_sent_at = pendulum.now(tz="UTC")
         db.session.add(clin)
+        portfolio_ids.append(portfolio.id)
 
     db.session.commit()
+
+    return {
+        "clin_ids": [str(clin.id) for clin in clins],
+        "portfolio_ids": [str(portfolio_id) for portfolio_id in portfolio_ids],
+    }
