@@ -1,4 +1,5 @@
 import json
+from functools import wraps
 from secrets import token_hex, token_urlsafe
 from uuid import uuid4
 from flask import current_app as app
@@ -81,6 +82,38 @@ AZURE_SKU_ID = "0001"  # probably a static sku specific to ATAT/JEDI
 REMOTE_ROOT_ROLE_DEF_ID = "/providers/Microsoft.Authorization/roleDefinitions/00000000-0000-4000-8000-000000000000"
 
 DEFAULT_POLICY_SET_DEFINITION_NAME = "Default JEDI Policy Set"
+
+
+def log_and_raise_exceptions(func):
+    """Wraps Azure cloud provider API calls to catch `requests` exceptions,
+    log them, and re-raise them as our CSP exceptions. 
+
+    The cloud parameter below represents an AzureCloudProvider class instance,
+    i.e. `self`, since this decorator is applied to class methods.
+    """
+
+    @wraps(func)
+    def wrapped_func(cloud, *args, **kwargs):
+        try:
+            return func(cloud, *args, **kwargs)
+
+        except cloud.sdk.requests.exceptions.ConnectionError:
+            message = f"Connection Error calling {func.__name__}"
+            app.logger.error(message, exc_info=1)
+            raise ConnectionException(message)
+
+        except cloud.sdk.requests.exceptions.Timeout:
+            message = f"Timeout Error calling {func.__name__}"
+            app.logger.error(message, exc_info=1)
+            raise ConnectionException(message)
+
+        except cloud.sdk.requests.exceptions.HTTPError as exc:
+            status_code = str(exc)[:3]
+            message = f"Error calling {func.__name__}"
+            app.logger.error(status_code, message, exc_info=1)
+            raise UnknownServerException(status_code, f"{message}. {str(exc)}")
+
+    return wrapped_func
 
 
 class AzureSDKProvider(object):
