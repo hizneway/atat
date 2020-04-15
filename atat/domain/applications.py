@@ -17,7 +17,7 @@ from atat.models import (
     Portfolio,
     PortfolioStateMachine,
 )
-from atat.models.mixins.state_machines import FSMStates
+from atat.models.mixins.state_machines import PortfolioStates
 from atat.utils import first_or_none, commit_or_raise_already_exists_error
 
 
@@ -135,7 +135,7 @@ class Applications(BaseDomainClass):
             .join(PortfolioStateMachine)
             .filter(
                 and_(
-                    PortfolioStateMachine.state == FSMStates.COMPLETED,
+                    PortfolioStateMachine.state == PortfolioStates.COMPLETED,
                     Application.deleted == False,
                     Application.cloud_id.is_(None),
                     or_(

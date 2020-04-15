@@ -14,7 +14,7 @@ from atat.database import db
 from atat.models.base import Base
 from atat.models.mixins.state_machines import (
     AzureStages,
-    FSMStates,
+    PortfolioStates,
     StageStates,
     _build_transitions,
     StateMachineMisconfiguredError,
@@ -63,8 +63,8 @@ class PortfolioStateMachine(
     portfolio = relationship("Portfolio", back_populates="state_machine")
 
     state = Column(
-        SQLAEnum(FSMStates, native_enum=False, create_constraint=False),
-        default=FSMStates.UNSTARTED,
+        SQLAEnum(PortfolioStates, native_enum=False, create_constraint=False),
+        default=PortfolioStates.UNSTARTED,
         nullable=False,
     )
 
@@ -83,7 +83,7 @@ class PortfolioStateMachine(
     def state_str(self):
         """
         If the state column has not been serialized to the database,
-        it's an instance of FSMStates. If it has been serialized and
+        it's an instance of PortfolioStates. If it has been serialized and
         deserialized, it's a string. This property will always return
         it as a string.
         """
@@ -98,7 +98,7 @@ class PortfolioStateMachine(
         self.machine = StateMachineWithTags(
             model=self,
             send_event=True,
-            initial=self.current_state if self.state else FSMStates.UNSTARTED,
+            initial=self.current_state if self.state else PortfolioStates.UNSTARTED,
             auto_transitions=False,
             after_state_change="after_state_change",
         )
@@ -110,7 +110,7 @@ class PortfolioStateMachine(
     @property
     def current_state(self):
         if isinstance(self.state, str):
-            return getattr(FSMStates, self.state)
+            return getattr(PortfolioStates, self.state)
         return self.state
 
     @property
@@ -130,7 +130,7 @@ class PortfolioStateMachine(
         state_obj = self.machine.get_state(self.state)
 
         kwargs["csp_data"] = kwargs.get("csp_data", {})
-        if self.current_state == FSMStates.UNSTARTED:
+        if self.current_state == PortfolioStates.UNSTARTED:
             self.start_next_stage(**kwargs)
 
         elif state_obj.is_FAILED:

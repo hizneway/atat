@@ -12,7 +12,7 @@ from atat.domain.permission_sets import PermissionSets
 from atat.domain.portfolio_roles import PortfolioRoles
 from atat.forms import data
 from atat.models import *
-from atat.models.mixins.state_machines import FSMStates
+from atat.models.mixins.state_machines import PortfolioStates
 
 
 def random_choice(choices):
@@ -167,7 +167,7 @@ class PortfolioFactory(Base):
             )
 
         if state:
-            state = getattr(FSMStates, state)
+            state = getattr(PortfolioStates, state)
             fsm = PortfolioStateMachineFactory.create(state=state, portfolio=portfolio)
             # setting it in the factory is not working for some reason
             fsm.state = state
