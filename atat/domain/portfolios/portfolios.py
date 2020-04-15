@@ -13,7 +13,7 @@ from atat.domain.invitations import PortfolioInvitations
 from atat.models import (
     Portfolio,
     PortfolioStateMachine,
-    FSMStates,
+    PortfolioStates,
     Permissions,
     PortfolioRole,
     PortfolioRoleStatus,
@@ -170,7 +170,7 @@ class Portfolios(object):
             .filter(
                 or_(
                     Portfolio.state_machine == None,
-                    PortfolioStateMachine.state == FSMStates.UNSTARTED,
+                    PortfolioStateMachine.state == PortfolioStates.UNSTARTED,
                     PortfolioStateMachine.state.like("%CREATED"),
                 )
             )

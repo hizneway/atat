@@ -68,10 +68,10 @@ def _build_csp_states(csp_stages: Enum) -> dict:
     return {**system_states, **csp_states}
 
 
-FSMStates = Enum("FSMStates", _build_csp_states(AzureStages))
+PortfolioStates = Enum("PortfolioStates", _build_csp_states(AzureStages))
 
 compose_state = lambda csp_stage, state: getattr(
-    FSMStates, f"{csp_stage.name}_{state.name}"
+    PortfolioStates, f"{csp_stage.name}_{state.name}"
 )
 
 
@@ -116,7 +116,7 @@ def _build_transitions(csp_stages):
                         list(csp_stages)[stage_index - 1], StageStates.CREATED
                     )
                 else:
-                    source = FSMStates.UNSTARTED
+                    source = PortfolioStates.UNSTARTED
                 transitions.append(
                     dict(
                         trigger="create_" + csp_stage.name.lower(),
@@ -157,7 +157,7 @@ def _build_transitions(csp_stages):
         dict(
             trigger="complete",
             source=compose_state(list(csp_stages)[-1], StageStates.CREATED),
-            dest=FSMStates.COMPLETED,
+            dest=PortfolioStates.COMPLETED,
         )
     )
 
@@ -167,17 +167,17 @@ def _build_transitions(csp_stages):
 class FSMMixin:
 
     system_states = [
-        {"name": FSMStates.UNSTARTED.name, "tags": ["system"]},
-        {"name": FSMStates.CONFIGURATION_ERROR.name, "tags": ["system"]},
-        {"name": FSMStates.COMPLETED.name, "tags": ["system"]},
+        {"name": PortfolioStates.UNSTARTED.name, "tags": ["system"]},
+        {"name": PortfolioStates.CONFIGURATION_ERROR.name, "tags": ["system"]},
+        {"name": PortfolioStates.COMPLETED.name, "tags": ["system"]},
     ]
 
     system_transitions = [
-        {"trigger": "reset", "source": "*", "dest": FSMStates.UNSTARTED},
+        {"trigger": "reset", "source": "*", "dest": PortfolioStates.UNSTARTED},
         {
             "trigger": "configuration_error",
             "source": "*",
-            "dest": FSMStates.CONFIGURATION_ERROR,
+            "dest": PortfolioStates.CONFIGURATION_ERROR,
         },
     ]
 

@@ -23,7 +23,7 @@ from atat.domain.environments import Environments
 from atat.domain.portfolios import Portfolios
 from atat.domain.task_orders import TaskOrders
 from atat.models import CSPRole, JobFailure
-from atat.models.mixins.state_machines import FSMStates
+from atat.models.mixins.state_machines import PortfolioStates
 from atat.models.utils import claim_for_update, claim_many_for_update
 from atat.queue import celery
 from atat.utils.localization import translate
@@ -273,7 +273,7 @@ def do_provision_portfolio(csp: CloudProviderInterface, portfolio_id=None):
     fsm = Portfolios.get_or_create_state_machine(portfolio)
     app.logger.info(f"Triggering next transition for portfolio {portfolio.id}")
     fsm.trigger_next_transition(csp_data=make_initial_csp_data(portfolio))
-    if fsm.current_state == FSMStates.COMPLETED:
+    if fsm.current_state == PortfolioStates.COMPLETED:
         send_PPOC_email(portfolio.to_dictionary())
 
 

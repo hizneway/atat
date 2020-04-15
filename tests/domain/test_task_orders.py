@@ -4,7 +4,7 @@ from decimal import Decimal
 
 from atat.domain.exceptions import AlreadyExistsError
 from atat.domain.task_orders import TaskOrders
-from atat.models import Attachment, FSMStates as PortfolioStates
+from atat.models import Attachment, PortfolioStates
 from atat.models.task_order import TaskOrder, SORT_ORDERING, Status
 from tests.factories import TaskOrderFactory, CLINFactory, PortfolioFactory
 
