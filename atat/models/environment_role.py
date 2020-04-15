@@ -38,6 +38,8 @@ class EnvironmentRole(
 
     cloud_id = Column(String())
 
+    # TODO: Why is this implemented as a status enum? Seems like we only use
+    # the DISABLED state.
     class Status(Enum):
         PENDING = "pending"
         COMPLETED = "completed"

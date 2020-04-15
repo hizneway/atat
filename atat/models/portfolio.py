@@ -208,6 +208,10 @@ class Portfolio(
     def application_id(self):
         return None
 
+    @property
+    def tenant_id(self):
+        return self.csp_data.get("tenant_id") if self.csp_data else None
+
     def to_dictionary(self):
         return {
             "user_id": generate_mail_nickname(
