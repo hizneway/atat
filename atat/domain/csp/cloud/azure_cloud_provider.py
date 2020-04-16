@@ -1167,7 +1167,7 @@ class AzureCloudProvider(CloudProviderInterface):
             app_create_param
         )
 
-        # create a new service principle for the new application, which should be scoped
+        # create a new service principal for the new application, which should be scoped
         # to the new subscription
         app_id = app.app_id
         sp_create_params = self.sdk.graphrbac.models.ServicePrincipalCreateParameters(
@@ -1325,7 +1325,7 @@ class AzureCloudProvider(CloudProviderInterface):
 
     def _get_tenant_admin_token(self, tenant_id, resource):
         creds = self._source_tenant_creds(tenant_id)
-        return self._get_up_token_for_resource(
+        return self._get_user_principal_token_for_resource(
             creds.tenant_admin_username,
             creds.tenant_admin_password,
             creds.tenant_id,
@@ -1334,11 +1334,13 @@ class AzureCloudProvider(CloudProviderInterface):
 
     def _get_root_provisioning_token(self):
         creds = self._source_root_creds()
-        return self._get_sp_token(
+        return self._get_service_principal_token(
             creds.root_tenant_id, creds.root_sp_client_id, creds.root_sp_key
         )
 
-    def _get_sp_token(self, tenant_id, client_id, secret_key, resource=None):
+    def _get_service_principal_token(
+        self, tenant_id, client_id, secret_key, resource=None
+    ):
         context = self.sdk.adal.AuthenticationContext(
             f"{self.sdk.cloud.endpoints.active_directory}/{tenant_id}"
         )
@@ -1351,8 +1353,9 @@ class AzureCloudProvider(CloudProviderInterface):
 
         return token_response.get("accessToken", None)
 
-    def _get_up_token_for_resource(self, username, password, tenant_id, resource):
-
+    def _get_user_principal_token_for_resource(
+        self, username, password, tenant_id, resource
+    ):
         context = self.sdk.adal.AuthenticationContext(
             f"{self.sdk.cloud.endpoints.active_directory}/{tenant_id}"
         )
@@ -1391,7 +1394,7 @@ class AzureCloudProvider(CloudProviderInterface):
 
     def _get_tenant_principal_token(self, tenant_id, resource=None):
         creds = self._source_tenant_creds(tenant_id)
-        return self._get_sp_token(
+        return self._get_service_principal_token(
             creds.tenant_id,
             creds.tenant_sp_client_id,
             creds.tenant_sp_key,
@@ -1457,7 +1460,7 @@ class AzureCloudProvider(CloudProviderInterface):
         with the payload at the `invoice_section_id` key.
         """
         creds = self._source_tenant_creds(payload.tenant_id)
-        token = self._get_sp_token(
+        token = self._get_service_principal_token(
             payload.tenant_id, creds.tenant_sp_client_id, creds.tenant_sp_key
         )
 
