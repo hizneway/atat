@@ -113,6 +113,11 @@ def log_and_raise_exceptions(func):
             app.logger.error(status_code, message, exc_info=1)
             raise UnknownServerException(status_code, f"{message}. {str(exc)}")
 
+        except cloud.sdk.adal.AdalError as exc:
+            message = f"ADAL error calling {func.__name__}"
+            app.logger.error(message, exc_info=1)
+            raise AuthenticationException(message)
+
     return wrapped_func
 
 
