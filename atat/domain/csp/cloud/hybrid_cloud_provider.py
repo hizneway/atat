@@ -260,3 +260,6 @@ class HybridCloudProvider(object):
 
     def disable_user(self, tenant_id: str, role_assignment_cloud_id: str) -> Dict:
         return self.azure.disable_user(tenant_id, role_assignment_cloud_id)
+
+    def get_reporting_data(self, payload: CostManagementQueryCSPPayload):
+        return self.azure.get_reporting_data(payload)
