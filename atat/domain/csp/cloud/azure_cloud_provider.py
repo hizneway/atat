@@ -1343,29 +1343,27 @@ class AzureCloudProvider(CloudProviderInterface):
             creds.root_tenant_id, creds.root_sp_client_id, creds.root_sp_key
         )
 
+    @log_and_raise_exceptions
     def _get_service_principal_token(
         self, tenant_id, client_id, secret_key, resource=None
     ):
         context = self.sdk.adal.AuthenticationContext(
             f"{self.sdk.cloud.endpoints.active_directory}/{tenant_id}"
         )
-
         resource = resource or self.sdk.cloud.endpoints.resource_manager
-        # TODO: handle failure states here
         token_response = context.acquire_token_with_client_credentials(
             resource, client_id, secret_key
         )
 
         return token_response.get("accessToken", None)
 
+    @log_and_raise_exceptions
     def _get_user_principal_token_for_resource(
         self, username, password, tenant_id, resource
     ):
         context = self.sdk.adal.AuthenticationContext(
             f"{self.sdk.cloud.endpoints.active_directory}/{tenant_id}"
         )
-
-        # TODO: handle failure states here
         token_response = context.acquire_token_with_username_password(
             resource, username, password, self.ps_client_id
         )
@@ -1497,6 +1495,7 @@ class AzureCloudProvider(CloudProviderInterface):
         if result.ok:
             return CostManagementQueryCSPResult(**result.json())
 
+    @log_and_raise_exceptions
     def _get_calculator_creds(self):
         authority = f"{self.sdk.cloud.endpoints.active_directory}/{self.tenant_id}"
         context = self.sdk.adal.AuthenticationContext(authority=authority)
