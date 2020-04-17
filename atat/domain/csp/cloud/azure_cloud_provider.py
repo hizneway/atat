@@ -1276,9 +1276,9 @@ class AzureCloudProvider(CloudProviderInterface):
 
         token = token_response.get("accessToken")
         if token is None:
-            raise AuthenticationException(
-                f"Failed to get service principal token for resource '{resource}' in tenant '{tenant_id}'"
-            )
+            message = f"Failed to get service principal token for resource '{resource}' in tenant '{tenant_id}'"
+            app.logger.error(message, exc_info=1)
+            raise AuthenticationException(message)
         else:
             return token
 
@@ -1295,9 +1295,9 @@ class AzureCloudProvider(CloudProviderInterface):
 
         token = token_response.get("accessToken")
         if token is None:
-            raise AuthenticationException(
-                f"Failed to get service principal token for resource '{resource}' in tenant '{tenant_id}'"
-            )
+            message = f"Failed to get service principal token for resource '{resource}' in tenant '{tenant_id}'"
+            app.logger.error(message, exc_info=1)
+            raise AuthenticationException(message)
         else:
             return token
 
@@ -1431,9 +1431,9 @@ class AzureCloudProvider(CloudProviderInterface):
         )
         token = token_response.get("accessToken")
         if token is None:
-            raise AuthenticationException(
-                f"Failed to get token for resource '{calc_resource}' in tenant '{tenant_id}'"
-            )
+            message = f"Failed to get token for resource '{calc_resource}' in tenant '{tenant_id}'"
+            app.logger.error(message, exc_info=1)
+            raise AuthenticationException(message)
         else:
             return token
 
