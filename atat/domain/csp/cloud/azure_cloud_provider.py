@@ -1,8 +1,10 @@
 import json
+
 from functools import wraps
 from secrets import token_hex, token_urlsafe
 from uuid import uuid4
 from flask import current_app as app
+from msrest.exceptions import AuthenticationError
 
 from atat.utils import sha256_hex
 
@@ -118,6 +120,11 @@ def log_and_raise_exceptions(func):
             app.logger.error(message, exc_info=1)
             raise AuthenticationException(message)
 
+        except Exception as exc:
+            message = f"Exception occured in {func.__name__}"
+            app.logger.error(message, exc_info=1)
+            raise exc
+
     return wrapped_func
 
 
@@ -231,6 +238,7 @@ class AzureCloudProvider(CloudProviderInterface):
 
         return EnvironmentCSPResult(**response)
 
+    @log_and_raise_exceptions
     def create_application(self, payload: ApplicationCSPPayload):
         creds = self._source_tenant_creds(payload.tenant_id)
         credentials = self._get_credential_obj(
