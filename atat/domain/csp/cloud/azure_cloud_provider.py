@@ -1,10 +1,8 @@
 import json
-
 from functools import wraps
 from secrets import token_hex, token_urlsafe
 from uuid import uuid4
 from flask import current_app as app
-from msrest.exceptions import AuthenticationError
 
 from atat.utils import sha256_hex
 
