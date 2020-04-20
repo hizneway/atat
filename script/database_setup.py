@@ -12,12 +12,9 @@ from atat.app import make_config, make_app
 from atat.database import db
 from atat.domain.users import Users
 from atat.models import User
-from reset_database import reset_database
 
 
 def database_setup(username, password, dbname, ccpo_users):
-    print("Applying schema and seeding roles and permissions.")
-    reset_database()
 
     print(
         f"Creating Postgres user role for '{username}' and granting all privileges to database '{dbname}'."
