@@ -118,11 +118,6 @@ def log_and_raise_exceptions(func):
             app.logger.error(message, exc_info=1)
             raise AuthenticationException(message)
 
-        except Exception as exc:
-            message = f"Exception occured in {func.__name__}"
-            app.logger.error(message, exc_info=1)
-            raise exc
-
     return wrapped_func
 
 
