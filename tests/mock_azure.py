@@ -1,5 +1,6 @@
-import pytest
 from unittest.mock import Mock
+
+import pytest
 
 from atat.domain.csp.cloud import AzureCloudProvider
 
@@ -27,28 +28,10 @@ AUTH_CREDENTIALS = {
 }
 
 
-def mock_subscription():
-    from azure.mgmt import subscription
-
-    return Mock(spec=subscription)
-
-
-def mock_authorization():
-    from azure.mgmt import authorization
-
-    return Mock(spec=authorization)
-
-
 def mock_managementgroups():
     from azure.mgmt import managementgroups
 
     return Mock(spec=managementgroups)
-
-
-def mock_graphrbac():
-    import azure.graphrbac as graphrbac
-
-    return Mock(spec=graphrbac)
 
 
 def mock_credentials():
@@ -63,16 +46,22 @@ def mock_identity():
     return Mock(spec=identity)
 
 
-def mock_policy():
-    from azure.mgmt.resource import policy
+def mock_secrets():
+    from azure.keyvault import secrets
 
-    return Mock(spec=policy)
+    return Mock(spec=secrets)
 
 
 def mock_azure_exceptions():
     from azure.core import exceptions
 
     return exceptions
+
+
+def mock_cloud_details():
+    from msrestazure.azure_cloud import AZURE_PUBLIC_CLOUD
+
+    return AZURE_PUBLIC_CLOUD
 
 
 def mock_adal():
@@ -89,35 +78,17 @@ def mock_requests():
     return mock_requests
 
 
-def mock_secrets():
-    from azure.keyvault import secrets
-
-    return Mock(spec=secrets)
-
-
-def mock_cloud_details():
-    from msrestazure.azure_cloud import AZURE_PUBLIC_CLOUD
-
-    return AZURE_PUBLIC_CLOUD
-
-
 class MockAzureSDK(object):
     def __init__(self):
 
-        self.subscription = mock_subscription()
-        self.authorization = mock_authorization()
-        self.policy = mock_policy()
-        self.adal = mock_adal()
         self.managementgroups = mock_managementgroups()
-        self.graphrbac = mock_graphrbac()
         self.credentials = mock_credentials()
         self.identity = mock_identity()
-        self.azure_exceptions = mock_azure_exceptions()
-        self.policy = mock_policy()
         self.secrets = mock_secrets()
-        self.requests = mock_requests()
+        self.azure_exceptions = mock_azure_exceptions()
         self.cloud = mock_cloud_details()
-        self.identity = mock_identity()
+        self.adal = mock_adal()
+        self.requests = mock_requests()
 
 
 @pytest.fixture(scope="function")

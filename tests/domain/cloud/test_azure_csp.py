@@ -2,23 +2,22 @@ import json
 from unittest.mock import Mock, patch
 from uuid import uuid4
 
-from adal.adal_error import AdalError
 import pendulum
 import pydantic
 import pytest
-
+from adal.adal_error import AdalError
 from tests.factories import ApplicationFactory, EnvironmentFactory
-from tests.mock_azure import AUTH_CREDENTIALS, mock_azure
+from tests.mock_azure import mock_azure  # pylint: disable=W0611
 
+from atat.domain.csp.cloud import AzureCloudProvider
 from atat.domain.csp.cloud.exceptions import (
     AuthenticationException,
-    UserProvisioningException,
     ConnectionException,
-    UnknownServerException,
-    SecretException,
     DomainNameException,
+    SecretException,
+    UnknownServerException,
+    UserProvisioningException,
 )
-from atat.domain.csp.cloud import AzureCloudProvider
 from atat.domain.csp.cloud.models import (
     AdminRoleDefinitionCSPPayload,
     AdminRoleDefinitionCSPResult,
@@ -33,13 +32,13 @@ from atat.domain.csp.cloud.models import (
     BillingProfileTenantAccessCSPResult,
     BillingProfileVerificationCSPPayload,
     BillingProfileVerificationCSPResult,
+    CostManagementQueryCSPPayload,
+    CostManagementQueryCSPResult,
+    EnvironmentCSPPayload,
     InitialMgmtGroupCSPPayload,
     InitialMgmtGroupCSPResult,
     InitialMgmtGroupVerificationCSPPayload,
     InitialMgmtGroupVerificationCSPResult,
-    CostManagementQueryCSPResult,
-    EnvironmentCSPPayload,
-    EnvironmentCSPResult,
     KeyVaultCredentials,
     PoliciesCSPPayload,
     PoliciesCSPResult,
@@ -49,7 +48,6 @@ from atat.domain.csp.cloud.models import (
     ProductPurchaseCSPResult,
     ProductPurchaseVerificationCSPPayload,
     ProductPurchaseVerificationCSPResult,
-    CostManagementQueryCSPPayload,
     SubscriptionCreationCSPPayload,
     SubscriptionCreationCSPResult,
     SubscriptionVerificationCSPPayload,
@@ -58,9 +56,9 @@ from atat.domain.csp.cloud.models import (
     TaskOrderBillingCreationCSPResult,
     TaskOrderBillingVerificationCSPPayload,
     TaskOrderBillingVerificationCSPResult,
+    TenantAdminCredentialResetCSPPayload,
     TenantAdminOwnershipCSPPayload,
     TenantAdminOwnershipCSPResult,
-    TenantAdminCredentialResetCSPPayload,
     TenantCSPPayload,
     TenantCSPResult,
     TenantPrincipalAppCSPPayload,
@@ -74,7 +72,6 @@ from atat.domain.csp.cloud.models import (
     UserCSPPayload,
     UserRoleCSPPayload,
 )
-from atat.domain.csp.cloud.exceptions import UserProvisioningException
 
 BILLING_ACCOUNT_NAME = "52865e4c-52e8-5a6c-da6b-c58f0814f06f:7ea5de9d-b8ce-4901-b1c5-d864320c7b03_2019-05-31"
 
