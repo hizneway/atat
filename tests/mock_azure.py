@@ -66,8 +66,14 @@ def mock_cloud_details():
 
 def mock_adal():
     import adal
+    from adal.adal_error import AdalError
 
-    return Mock(spec=adal)
+    mock_adal = Mock(spec=adal)
+    mock_adal.AdalError = AdalError
+    mock_adal.AuthenticationContext.return_value.context.acquire_token_with_client_credentials.return_value = {
+        "accessToken": "TOKEN"
+    }
+    return mock_adal
 
 
 def mock_requests():

@@ -77,7 +77,12 @@ BILLING_ACCOUNT_NAME = "52865e4c-52e8-5a6c-da6b-c58f0814f06f:7ea5de9d-b8ce-4901-
 
 
 def mock_requests_response(
-    status=200, content="CONTENT", json_data=None, raise_for_status=None
+    status=200,
+    content="CONTENT",
+    json_data=None,
+    raise_for_status=None,
+    headers=None,
+    ok=True,
 ):
     mock_resp = Mock()
     # mock raise_for_status call w/optional error
@@ -86,10 +91,11 @@ def mock_requests_response(
         mock_resp.raise_for_status.side_effect = raise_for_status
     # set status code and content
     mock_resp.status_code = status
+    mock_resp.ok = ok
+    mock_resp.headers = headers if headers is not None else {}
     mock_resp.content = content
     # add json data if provided
-    if json_data:
-        mock_resp.json = Mock(return_value=json_data)
+    mock_resp.json.return_value = json_data if json_data is not None else {}
     return mock_resp
 
 
@@ -190,20 +196,18 @@ def test_disable_user(mock_azure: AzureCloudProvider):
     assignment_guid = str(uuid4())
     management_group_id = str(uuid4())
     assignment_id = f"/providers/Microsoft.Management/managementGroups/{management_group_id}/providers/Microsoft.Authorization/roleAssignments/{assignment_guid}"
-
-    mock_result = Mock()
-    mock_result.json.return_value = {
-        "properties": {
-            "roleDefinitionId": "/subscriptions/subId/providers/Microsoft.Authorization/roleDefinitions/roledefinitionId",
-            "principalId": "Pid",
-            "scope": "/subscriptions/subId/resourcegroups/rgname",
-        },
-        "id": assignment_id,
-        "type": "Microsoft.Authorization/roleAssignments",
-        "name": assignment_guid,
-    }
-
-    mock_result.status_code = 200
+    mock_result = mock_requests_response(
+        json_data={
+            "properties": {
+                "roleDefinitionId": "/subscriptions/subId/providers/Microsoft.Authorization/roleDefinitions/roledefinitionId",
+                "principalId": "Pid",
+                "scope": "/subscriptions/subId/resourcegroups/rgname",
+            },
+            "id": assignment_id,
+            "type": "Microsoft.Authorization/roleAssignments",
+            "name": assignment_guid,
+        }
+    )
     mock_http_error_resp = mock_requests_response(
         status=500,
         raise_for_status=mock_azure.sdk.requests.exceptions.HTTPError(
@@ -235,13 +239,13 @@ def test_create_tenant(mock_azure: AzureCloudProvider, monkeypatch):
         "atat.domain.csp.cloud.azure_cloud_provider.AzureCloudProvider.generate_valid_domain_name",
         lambda *a: "domain_name",
     )
-    mock_result = Mock()
-    mock_result.json.return_value = {
-        "objectId": "0a5f4926-e3ee-4f47-a6e3-8b0a30a40e3d",
-        "tenantId": "60ff9d34-82bf-4f21-b565-308ef0533435",
-        "userId": "1153801116406515559",
-    }
-    mock_result.status_code = 200
+    mock_result = mock_requests_response(
+        json_data={
+            "objectId": "0a5f4926-e3ee-4f47-a6e3-8b0a30a40e3d",
+            "tenantId": "60ff9d34-82bf-4f21-b565-308ef0533435",
+            "userId": "1153801116406515559",
+        }
+    )
     mock_http_error_resp = mock_requests_response(
         status=500,
         raise_for_status=mock_azure.sdk.requests.exceptions.HTTPError(
@@ -279,16 +283,9 @@ def test_create_tenant(mock_azure: AzureCloudProvider, monkeypatch):
 
 
 def test_create_billing_profile_creation(mock_azure: AzureCloudProvider):
-    mock_azure.sdk.adal.AuthenticationContext.return_value.context.acquire_token_with_client_credentials.return_value = {
-        "accessToken": "TOKEN"
-    }
-
-    mock_result = Mock()
-    mock_result.headers = {
-        "Location": "http://retry-url",
-        "Retry-After": "10",
-    }
-    mock_result.status_code = 202
+    mock_result = mock_requests_response(
+        headers={"Location": "http://retry-url", "Retry-After": "10",}, status=202
+    )
 
     mock_http_error_resp = mock_requests_response(
         status=500,
@@ -332,41 +329,40 @@ def test_create_billing_profile_creation(mock_azure: AzureCloudProvider):
 
 
 def test_validate_billing_profile_creation(mock_azure: AzureCloudProvider):
-    mock_azure.sdk.adal.AuthenticationContext.return_value.context.acquire_token_with_client_credentials.return_value = {
-        "accessToken": "TOKEN"
-    }
 
-    mock_result = Mock()
-    mock_result.status_code = 200
-    mock_result.json.return_value = {
-        "id": "/providers/Microsoft.Billing/billingAccounts/7c89b735-b22b-55c0-ab5a-c624843e8bf6:de4416ce-acc6-44b1-8122-c87c4e903c91_2019-05-31/billingProfiles/KQWI-W2SU-BG7-TGB",
-        "name": "KQWI-W2SU-BG7-TGB",
-        "properties": {
-            "address": {
-                "addressLine1": "123 S Broad Street, Suite 2400",
-                "city": "Philadelphia",
-                "companyName": "Promptworks",
-                "country": "US",
-                "postalCode": "19109",
-                "region": "PA",
+    mock_result = mock_requests_response(
+        json_data={
+            "id": "/providers/Microsoft.Billing/billingAccounts/7c89b735-b22b-55c0-ab5a-c624843e8bf6:de4416ce-acc6-44b1-8122-c87c4e903c91_2019-05-31/billingProfiles/KQWI-W2SU-BG7-TGB",
+            "name": "KQWI-W2SU-BG7-TGB",
+            "properties": {
+                "address": {
+                    "addressLine1": "123 S Broad Street, Suite 2400",
+                    "city": "Philadelphia",
+                    "companyName": "Promptworks",
+                    "country": "US",
+                    "postalCode": "19109",
+                    "region": "PA",
+                },
+                "currency": "USD",
+                "displayName": "First Portfolio Billing Profile",
+                "enabledAzurePlans": [],
+                "hasReadAccess": True,
+                "invoiceDay": 5,
+                "invoiceEmailOptIn": False,
+                "invoiceSections": [
+                    {
+                        "id": "/providers/Microsoft.Billing/billingAccounts/7c89b735-b22b-55c0-ab5a-c624843e8bf6:de4416ce-acc6-44b1-8122-c87c4e903c91_2019-05-31/billingProfiles/KQWI-W2SU-BG7-TGB/invoiceSections/6HMZ-2HLO-PJA-TGB",
+                        "name": "6HMZ-2HLO-PJA-TGB",
+                        "properties": {
+                            "displayName": "First Portfolio Billing Profile"
+                        },
+                        "type": "Microsoft.Billing/billingAccounts/billingProfiles/invoiceSections",
+                    }
+                ],
             },
-            "currency": "USD",
-            "displayName": "First Portfolio Billing Profile",
-            "enabledAzurePlans": [],
-            "hasReadAccess": True,
-            "invoiceDay": 5,
-            "invoiceEmailOptIn": False,
-            "invoiceSections": [
-                {
-                    "id": "/providers/Microsoft.Billing/billingAccounts/7c89b735-b22b-55c0-ab5a-c624843e8bf6:de4416ce-acc6-44b1-8122-c87c4e903c91_2019-05-31/billingProfiles/KQWI-W2SU-BG7-TGB/invoiceSections/6HMZ-2HLO-PJA-TGB",
-                    "name": "6HMZ-2HLO-PJA-TGB",
-                    "properties": {"displayName": "First Portfolio Billing Profile"},
-                    "type": "Microsoft.Billing/billingAccounts/billingProfiles/invoiceSections",
-                }
-            ],
-        },
-        "type": "Microsoft.Billing/billingAccounts/billingProfiles",
-    }
+            "type": "Microsoft.Billing/billingAccounts/billingProfiles",
+        }
+    )
     mock_http_error_resp = mock_requests_response(
         status=500,
         raise_for_status=mock_azure.sdk.requests.exceptions.HTTPError(
@@ -404,26 +400,23 @@ def test_validate_billing_profile_creation(mock_azure: AzureCloudProvider):
 
 
 def test_create_billing_profile_tenant_access(mock_azure: AzureCloudProvider):
-    mock_azure.sdk.adal.AuthenticationContext.return_value.context.acquire_token_with_client_credentials.return_value = {
-        "accessToken": "TOKEN"
-    }
 
-    mock_result = Mock()
-    mock_result.status_code = 201
-    mock_result.json.return_value = {
-        "id": "/providers/Microsoft.Billing/billingAccounts/7c89b735-b22b-55c0-ab5a-c624843e8bf6:de4416ce-acc6-44b1-8122-c87c4e903c91_2019-05-31/billingProfiles/KQWI-W2SU-BG7-TGB/billingRoleAssignments/40000000-aaaa-bbbb-cccc-100000000000_0a5f4926-e3ee-4f47-a6e3-8b0a30a40e3d",
-        "name": "40000000-aaaa-bbbb-cccc-100000000000_0a5f4926-e3ee-4f47-a6e3-8b0a30a40e3d",
-        "properties": {
-            "createdOn": "2020-01-14T14:39:26.3342192+00:00",
-            "createdByPrincipalId": "82e2b376-3297-4096-8743-ed65b3be0b03",
-            "principalId": "0a5f4926-e3ee-4f47-a6e3-8b0a30a40e3d",
-            "principalTenantId": "60ff9d34-82bf-4f21-b565-308ef0533435",
-            "roleDefinitionId": "/providers/Microsoft.Billing/billingAccounts/7c89b735-b22b-55c0-ab5a-c624843e8bf6:de4416ce-acc6-44b1-8122-c87c4e903c91_2019-05-31/billingProfiles/KQWI-W2SU-BG7-TGB/billingRoleDefinitions/40000000-aaaa-bbbb-cccc-100000000000",
-            "scope": "/providers/Microsoft.Billing/billingAccounts/7c89b735-b22b-55c0-ab5a-c624843e8bf6:de4416ce-acc6-44b1-8122-c87c4e903c91_2019-05-31/billingProfiles/KQWI-W2SU-BG7-TGB",
+    mock_result = mock_requests_response(
+        status=201,
+        json_data={
+            "id": "/providers/Microsoft.Billing/billingAccounts/7c89b735-b22b-55c0-ab5a-c624843e8bf6:de4416ce-acc6-44b1-8122-c87c4e903c91_2019-05-31/billingProfiles/KQWI-W2SU-BG7-TGB/billingRoleAssignments/40000000-aaaa-bbbb-cccc-100000000000_0a5f4926-e3ee-4f47-a6e3-8b0a30a40e3d",
+            "name": "40000000-aaaa-bbbb-cccc-100000000000_0a5f4926-e3ee-4f47-a6e3-8b0a30a40e3d",
+            "properties": {
+                "createdOn": "2020-01-14T14:39:26.3342192+00:00",
+                "createdByPrincipalId": "82e2b376-3297-4096-8743-ed65b3be0b03",
+                "principalId": "0a5f4926-e3ee-4f47-a6e3-8b0a30a40e3d",
+                "principalTenantId": "60ff9d34-82bf-4f21-b565-308ef0533435",
+                "roleDefinitionId": "/providers/Microsoft.Billing/billingAccounts/7c89b735-b22b-55c0-ab5a-c624843e8bf6:de4416ce-acc6-44b1-8122-c87c4e903c91_2019-05-31/billingProfiles/KQWI-W2SU-BG7-TGB/billingRoleDefinitions/40000000-aaaa-bbbb-cccc-100000000000",
+                "scope": "/providers/Microsoft.Billing/billingAccounts/7c89b735-b22b-55c0-ab5a-c624843e8bf6:de4416ce-acc6-44b1-8122-c87c4e903c91_2019-05-31/billingProfiles/KQWI-W2SU-BG7-TGB",
+            },
+            "type": "Microsoft.Billing/billingRoleAssignments",
         },
-        "type": "Microsoft.Billing/billingRoleAssignments",
-    }
-
+    )
     mock_http_error_resp = mock_requests_response(
         status=500,
         raise_for_status=mock_azure.sdk.requests.exceptions.HTTPError(
@@ -462,16 +455,14 @@ def test_create_billing_profile_tenant_access(mock_azure: AzureCloudProvider):
 
 
 def test_create_task_order_billing_creation(mock_azure: AzureCloudProvider):
-    mock_azure.sdk.adal.AuthenticationContext.return_value.context.acquire_token_with_client_credentials.return_value = {
-        "accessToken": "TOKEN"
-    }
 
-    mock_result = Mock()
-    mock_result.status_code = 202
-    mock_result.headers = {
-        "Location": "https://management.azure.com/providers/Microsoft.Billing/billingAccounts/7c89b735-b22b-55c0-ab5a-c624843e8bf6:de4416ce-acc6-44b1-8122-c87c4e903c91_2019-05-31/operationResults/patchBillingProfile_KQWI-W2SU-BG7-TGB:02715576-4118-466c-bca7-b1cd3169ff46?api-version=2019-10-01-preview",
-        "Retry-After": "10",
-    }
+    mock_result = mock_requests_response(
+        status=202,
+        headers={
+            "Location": "https://management.azure.com/providers/Microsoft.Billing/billingAccounts/7c89b735-b22b-55c0-ab5a-c624843e8bf6:de4416ce-acc6-44b1-8122-c87c4e903c91_2019-05-31/operationResults/patchBillingProfile_KQWI-W2SU-BG7-TGB:02715576-4118-466c-bca7-b1cd3169ff46?api-version=2019-10-01-preview",
+            "Retry-After": "10",
+        },
+    )
 
     mock_http_error_resp = mock_requests_response(
         status=500,
@@ -511,47 +502,44 @@ def test_create_task_order_billing_creation(mock_azure: AzureCloudProvider):
 
 
 def test_create_task_order_billing_verification(mock_azure):
-    mock_azure.sdk.adal.AuthenticationContext.return_value.context.acquire_token_with_client_credentials.return_value = {
-        "accessToken": "TOKEN"
-    }
 
-    mock_result = Mock()
-    mock_result.status_code = 200
-    mock_result.json.return_value = {
-        "id": "/providers/Microsoft.Billing/billingAccounts/7c89b735-b22b-55c0-ab5a-c624843e8bf6:de4416ce-acc6-44b1-8122-c87c4e903c91_2019-05-31/billingProfiles/KQWI-W2SU-BG7-TGB",
-        "name": "KQWI-W2SU-BG7-TGB",
-        "properties": {
-            "address": {
-                "addressLine1": "123 S Broad Street, Suite 2400",
-                "city": "Philadelphia",
-                "companyName": "Promptworks",
-                "country": "US",
-                "postalCode": "19109",
-                "region": "PA",
+    mock_result = mock_requests_response(
+        json_data={
+            "id": "/providers/Microsoft.Billing/billingAccounts/7c89b735-b22b-55c0-ab5a-c624843e8bf6:de4416ce-acc6-44b1-8122-c87c4e903c91_2019-05-31/billingProfiles/KQWI-W2SU-BG7-TGB",
+            "name": "KQWI-W2SU-BG7-TGB",
+            "properties": {
+                "address": {
+                    "addressLine1": "123 S Broad Street, Suite 2400",
+                    "city": "Philadelphia",
+                    "companyName": "Promptworks",
+                    "country": "US",
+                    "postalCode": "19109",
+                    "region": "PA",
+                },
+                "currency": "USD",
+                "displayName": "Test Billing Profile",
+                "enabledAzurePlans": [
+                    {
+                        "productId": "DZH318Z0BPS6",
+                        "skuId": "0001",
+                        "skuDescription": "Microsoft Azure Plan",
+                    }
+                ],
+                "hasReadAccess": True,
+                "invoiceDay": 5,
+                "invoiceEmailOptIn": False,
+                "invoiceSections": [
+                    {
+                        "id": "/providers/Microsoft.Billing/billingAccounts/7c89b735-b22b-55c0-ab5a-c624843e8bf6:de4416ce-acc6-44b1-8122-c87c4e903c91_2019-05-31/billingProfiles/KQWI-W2SU-BG7-TGB/invoiceSections/CHCO-BAAR-PJA-TGB",
+                        "name": "CHCO-BAAR-PJA-TGB",
+                        "properties": {"displayName": "Test Billing Profile"},
+                        "type": "Microsoft.Billing/billingAccounts/billingProfiles/invoiceSections",
+                    }
+                ],
             },
-            "currency": "USD",
-            "displayName": "Test Billing Profile",
-            "enabledAzurePlans": [
-                {
-                    "productId": "DZH318Z0BPS6",
-                    "skuId": "0001",
-                    "skuDescription": "Microsoft Azure Plan",
-                }
-            ],
-            "hasReadAccess": True,
-            "invoiceDay": 5,
-            "invoiceEmailOptIn": False,
-            "invoiceSections": [
-                {
-                    "id": "/providers/Microsoft.Billing/billingAccounts/7c89b735-b22b-55c0-ab5a-c624843e8bf6:de4416ce-acc6-44b1-8122-c87c4e903c91_2019-05-31/billingProfiles/KQWI-W2SU-BG7-TGB/invoiceSections/CHCO-BAAR-PJA-TGB",
-                    "name": "CHCO-BAAR-PJA-TGB",
-                    "properties": {"displayName": "Test Billing Profile"},
-                    "type": "Microsoft.Billing/billingAccounts/billingProfiles/invoiceSections",
-                }
-            ],
-        },
-        "type": "Microsoft.Billing/billingAccounts/billingProfiles",
-    }
+            "type": "Microsoft.Billing/billingAccounts/billingProfiles",
+        }
+    )
     mock_http_error_resp = mock_requests_response(
         status=500,
         raise_for_status=mock_azure.sdk.requests.exceptions.HTTPError(
@@ -589,21 +577,18 @@ def test_create_task_order_billing_verification(mock_azure):
 
 
 def test_create_billing_instruction(mock_azure: AzureCloudProvider):
-    mock_azure.sdk.adal.AuthenticationContext.return_value.context.acquire_token_with_client_credentials.return_value = {
-        "accessToken": "TOKEN"
-    }
 
-    mock_result = Mock()
-    mock_result.status_code = 200
-    mock_result.json.return_value = {
-        "name": "TO1:CLIN001",
-        "properties": {
-            "amount": 1000.0,
-            "endDate": "2020-03-01T00:00:00+00:00",
-            "startDate": "2020-01-01T00:00:00+00:00",
-        },
-        "type": "Microsoft.Billing/billingAccounts/billingProfiles/billingInstructions",
-    }
+    mock_result = mock_requests_response(
+        json_data={
+            "name": "TO1:CLIN001",
+            "properties": {
+                "amount": 1000.0,
+                "endDate": "2020-03-01T00:00:00+00:00",
+                "startDate": "2020-01-01T00:00:00+00:00",
+            },
+            "type": "Microsoft.Billing/billingAccounts/billingProfiles/billingInstructions",
+        }
+    )
 
     mock_http_error_resp = mock_requests_response(
         status=500,
@@ -641,17 +626,13 @@ def test_create_billing_instruction(mock_azure: AzureCloudProvider):
 
 
 def test_create_product_purchase(mock_azure: AzureCloudProvider):
-    mock_azure.sdk.adal.AuthenticationContext.return_value.context.acquire_token_with_client_credentials.return_value = {
-        "accessToken": "TOKEN"
-    }
-
-    mock_result = Mock()
-    mock_result.status_code = 202
-    mock_result.headers = {
-        "Location": "https://management.azure.com/providers/Microsoft.Billing/billingAccounts/7c89b735-b22b-55c0-ab5a-c624843e8bf6:de4416ce-acc6-44b1-8122-c87c4e903c91_2019-05-31/operationResults/patchBillingProfile_KQWI-W2SU-BG7-TGB:02715576-4118-466c-bca7-b1cd3169ff46?api-version=2019-10-01-preview",
-        "Retry-After": "10",
-    }
-
+    mock_result = mock_requests_response(
+        status=202,
+        headers={
+            "Location": "https://management.azure.com/providers/Microsoft.Billing/billingAccounts/7c89b735-b22b-55c0-ab5a-c624843e8bf6:de4416ce-acc6-44b1-8122-c87c4e903c91_2019-05-31/operationResults/patchBillingProfile_KQWI-W2SU-BG7-TGB:02715576-4118-466c-bca7-b1cd3169ff46?api-version=2019-10-01-preview",
+            "Retry-After": "10",
+        },
+    )
     mock_http_error_resp = mock_requests_response(
         status=500,
         raise_for_status=mock_azure.sdk.requests.exceptions.HTTPError(
@@ -687,32 +668,29 @@ def test_create_product_purchase(mock_azure: AzureCloudProvider):
 
 
 def test_create_product_purchase_verification(mock_azure):
-    mock_azure.sdk.adal.AuthenticationContext.return_value.context.acquire_token_with_client_credentials.return_value = {
-        "accessToken": "TOKEN"
-    }
 
-    mock_result = Mock()
-    mock_result.status_code = 200
-    mock_result.json.return_value = {
-        "id": "/providers/Microsoft.Billing/billingAccounts/BILLINGACCOUNTNAME/billingProfiles/BILLINGPROFILENAME/invoiceSections/INVOICESECTION/products/29386e29-a025-faae-f70b-b1cbbc266600",
-        "name": "29386e29-a025-faae-f70b-b1cbbc266600",
-        "properties": {
-            "availabilityId": "C07TTFC7Q9XK",
-            "billingProfileId": "/providers/Microsoft.Billing/billingAccounts/BILLINGACCOUNTNAME/billingProfiles/BILLINGPROFILENAME",
-            "billingProfileDisplayName": "ATAT Billing Profile",
-            "endDate": "01/30/2021",
-            "invoiceSectionId": "/providers/Microsoft.Billing/billingAccounts/BILLINGACCOUNTNAME/billingProfiles/BILLINGPROFILENAME/invoiceSections/INVOICESECTION",
-            "invoiceSectionDisplayName": "ATAT Billing Profile",
-            "productType": "Azure Active Directory Premium P1",
-            "productTypeId": "C07TTFC7Q9XK",
-            "skuId": "0002",
-            "skuDescription": "Azure Active Directory Premium P1",
-            "purchaseDate": "01/31/2020",
-            "quantity": 5,
-            "status": "AutoRenew",
-        },
-        "type": "Microsoft.Billing/billingAccounts/billingProfiles/invoiceSections/products",
-    }
+    mock_result = mock_requests_response(
+        json_data={
+            "id": "/providers/Microsoft.Billing/billingAccounts/BILLINGACCOUNTNAME/billingProfiles/BILLINGPROFILENAME/invoiceSections/INVOICESECTION/products/29386e29-a025-faae-f70b-b1cbbc266600",
+            "name": "29386e29-a025-faae-f70b-b1cbbc266600",
+            "properties": {
+                "availabilityId": "C07TTFC7Q9XK",
+                "billingProfileId": "/providers/Microsoft.Billing/billingAccounts/BILLINGACCOUNTNAME/billingProfiles/BILLINGPROFILENAME",
+                "billingProfileDisplayName": "ATAT Billing Profile",
+                "endDate": "01/30/2021",
+                "invoiceSectionId": "/providers/Microsoft.Billing/billingAccounts/BILLINGACCOUNTNAME/billingProfiles/BILLINGPROFILENAME/invoiceSections/INVOICESECTION",
+                "invoiceSectionDisplayName": "ATAT Billing Profile",
+                "productType": "Azure Active Directory Premium P1",
+                "productTypeId": "C07TTFC7Q9XK",
+                "skuId": "0002",
+                "skuDescription": "Azure Active Directory Premium P1",
+                "purchaseDate": "01/31/2020",
+                "quantity": 5,
+                "status": "AutoRenew",
+            },
+            "type": "Microsoft.Billing/billingAccounts/billingProfiles/invoiceSections/products",
+        }
+    )
 
     mock_http_error_resp = mock_requests_response(
         status=500,
@@ -754,9 +732,7 @@ def test_create_tenant_principal_app(mock_azure: AzureCloudProvider):
     ) as get_elevated_management_token:
         get_elevated_management_token.return_value = "my fake token"
 
-        mock_result = Mock()
-        mock_result.ok = True
-        mock_result.json.return_value = {"appId": "appId", "id": "id"}
+        mock_result = mock_requests_response(json_data={"appId": "appId", "id": "id"})
 
         mock_http_error_resp = mock_requests_response(
             status=500,
@@ -801,10 +777,7 @@ def test_create_tenant_principal(mock_azure: AzureCloudProvider):
     ) as get_elevated_management_token:
         get_elevated_management_token.return_value = "my fake token"
 
-        mock_result = Mock()
-        mock_result.ok = True
-        mock_result.json.return_value = {"id": "principal_id"}
-
+        mock_result = mock_requests_response(json_data={"id": "principal_id"})
         mock_http_error_resp = mock_requests_response(
             status=500,
             raise_for_status=mock_azure.sdk.requests.exceptions.HTTPError(
@@ -846,10 +819,7 @@ def test_create_tenant_principal_credential(mock_azure: AzureCloudProvider):
     ) as get_elevated_management_token:
         get_elevated_management_token.return_value = "my fake token"
 
-        mock_result = Mock()
-        mock_result.ok = True
-        mock_result.json.return_value = {"secretText": "new secret key"}
-
+        mock_result = mock_requests_response(json_data={"secretText": "new secret key"})
         mock_http_error_resp = mock_requests_response(
             status=500,
             raise_for_status=mock_azure.sdk.requests.exceptions.HTTPError(
@@ -894,14 +864,14 @@ def test_create_admin_role_definition(mock_azure: AzureCloudProvider):
     ) as get_tenant_admin_token:
         get_tenant_admin_token.return_value = "my fake token"
 
-        mock_result = Mock()
-        mock_result.ok = True
-        mock_result.json.return_value = {
-            "value": [
-                {"id": "wrongid", "displayName": "Wrong Role"},
-                {"id": "id", "displayName": "Company Administrator"},
-            ]
-        }
+        mock_result = mock_requests_response(
+            json_data={
+                "value": [
+                    {"id": "wrongid", "displayName": "Wrong Role"},
+                    {"id": "id", "displayName": "Company Administrator"},
+                ]
+            }
+        )
 
         mock_http_error_resp = mock_requests_response(
             status=500,
@@ -942,10 +912,7 @@ def test_create_tenant_admin_ownership(mock_azure: AzureCloudProvider):
     ) as get_elevated_management_token:
         get_elevated_management_token.return_value = "my fake token"
 
-        mock_result = Mock()
-        mock_result.ok = True
-        mock_result.json.return_value = {"id": "id"}
-
+        mock_result = mock_requests_response(json_data={"id": "id"})
         mock_http_error_resp = mock_requests_response(
             status=500,
             raise_for_status=mock_azure.sdk.requests.exceptions.HTTPError(
@@ -987,10 +954,7 @@ def test_create_tenant_principal_ownership(mock_azure: AzureCloudProvider):
     ) as get_elevated_management_token:
         get_elevated_management_token.return_value = "my fake token"
 
-        mock_result = Mock()
-        mock_result.ok = True
-        mock_result.json.return_value = {"id": "id"}
-
+        mock_result = mock_requests_response(json_data={"id": "id"})
         mock_http_error_resp = mock_requests_response(
             status=500,
             raise_for_status=mock_azure.sdk.requests.exceptions.HTTPError(
@@ -1032,9 +996,7 @@ def test_create_principal_admin_role(mock_azure: AzureCloudProvider):
     ) as get_tenant_admin_token:
         get_tenant_admin_token.return_value = "my fake token"
 
-        mock_result = Mock()
-        mock_result.ok = True
-        mock_result.json.return_value = {"id": "id"}
+        mock_result = mock_requests_response(json_data={"id": "id"})
 
         mock_http_error_resp = mock_requests_response(
             status=500,
@@ -1078,13 +1040,9 @@ def test_create_subscription_creation(mock_azure: AzureCloudProvider):
     ) as _get_tenant_principal_token:
         _get_tenant_principal_token.return_value = "my fake token"
 
-        mock_result = Mock()
-        mock_result.status_code = 202
-        mock_result.headers = {
-            "Location": "https://verify.me",
-            "Retry-After": 10,
-        }
-        mock_result.json.return_value = {}
+        mock_result = mock_requests_response(
+            status=202, headers={"Location": "https://verify.me", "Retry-After": 10}
+        )
 
         mock_http_error_resp = mock_requests_response(
             status=500,
@@ -1132,11 +1090,11 @@ def test_create_subscription_verification(mock_azure: AzureCloudProvider):
     ) as _get_tenant_principal_token:
         _get_tenant_principal_token.return_value = "my fake token"
 
-        mock_result = Mock()
-        mock_result.ok = True
-        mock_result.json.return_value = {
-            "subscriptionLink": "/subscriptions/60fbbb72-0516-4253-ab18-c92432ba3230"
-        }
+        mock_result = mock_requests_response(
+            json_data={
+                "subscriptionLink": "/subscriptions/60fbbb72-0516-4253-ab18-c92432ba3230"
+            }
+        )
 
         mock_http_error_resp = mock_requests_response(
             status=500,
@@ -1171,26 +1129,26 @@ def test_create_subscription_verification(mock_azure: AzureCloudProvider):
 
 
 def test_get_reporting_data(mock_azure: AzureCloudProvider):
-    mock_result = Mock()
-    mock_result.json.return_value = {
-        "eTag": None,
-        "id": "providers/Microsoft.Billing/billingAccounts/52865e4c-52e8-5a6c-da6b-c58f0814f06f:7ea5de9d-b8ce-4901-b1c5-d864320c7b03_2019-05-31/billingProfiles/XQDJ-6LB4-BG7-TGB/invoiceSections/P73M-XC7J-PJA-TGB/providers/Microsoft.CostManagement/query/e82d0cda-2ffb-4476-a98a-425c83c216f9",
-        "location": None,
-        "name": "e82d0cda-2ffb-4476-a98a-425c83c216f9",
-        "properties": {
-            "columns": [
-                {"name": "PreTaxCost", "type": "Number"},
-                {"name": "UsageDate", "type": "Number"},
-                {"name": "InvoiceId", "type": "String"},
-                {"name": "Currency", "type": "String"},
-            ],
-            "nextLink": None,
-            "rows": [],
-        },
-        "sku": None,
-        "type": "Microsoft.CostManagement/query",
-    }
-    mock_result.ok = True
+    mock_result = mock_requests_response(
+        json_data={
+            "eTag": None,
+            "id": "providers/Microsoft.Billing/billingAccounts/52865e4c-52e8-5a6c-da6b-c58f0814f06f:7ea5de9d-b8ce-4901-b1c5-d864320c7b03_2019-05-31/billingProfiles/XQDJ-6LB4-BG7-TGB/invoiceSections/P73M-XC7J-PJA-TGB/providers/Microsoft.CostManagement/query/e82d0cda-2ffb-4476-a98a-425c83c216f9",
+            "location": None,
+            "name": "e82d0cda-2ffb-4476-a98a-425c83c216f9",
+            "properties": {
+                "columns": [
+                    {"name": "PreTaxCost", "type": "Number"},
+                    {"name": "UsageDate", "type": "Number"},
+                    {"name": "InvoiceId", "type": "String"},
+                    {"name": "Currency", "type": "String"},
+                ],
+                "nextLink": None,
+                "rows": [],
+            },
+            "sku": None,
+            "type": "Microsoft.CostManagement/query",
+        }
+    )
 
     mock_http_error_resp = mock_requests_response(
         status=500,
@@ -1238,9 +1196,7 @@ def test_get_reporting_data(mock_azure: AzureCloudProvider):
 
 
 def test_get_reporting_data_malformed_payload(mock_azure: AzureCloudProvider):
-    mock_result = Mock()
-    mock_result.ok = True
-
+    mock_result = mock_requests_response()
     mock_http_error_resp = mock_requests_response(
         status=500,
         raise_for_status=mock_azure.sdk.requests.exceptions.HTTPError(
@@ -1345,9 +1301,7 @@ def test_set_secret_secret_exception(mock_azure: AzureCloudProvider):
 
 
 def test_create_active_directory_user(mock_azure: AzureCloudProvider):
-    mock_result = Mock()
-    mock_result.ok = True
-    mock_result.json.return_value = {"id": "id"}
+    mock_result = mock_requests_response(json_data={"id": "id"})
     mock_http_error_resp = mock_requests_response(
         status=500,
         raise_for_status=mock_azure.sdk.requests.exceptions.HTTPError(
@@ -1381,8 +1335,7 @@ def test_create_active_directory_user(mock_azure: AzureCloudProvider):
 
 
 def test_update_active_directory_user_email(mock_azure: AzureCloudProvider):
-    mock_result = Mock()
-    mock_result.ok = True
+    mock_result = mock_requests_response()
     mock_http_error_resp = mock_requests_response(
         status=500,
         raise_for_status=mock_azure.sdk.requests.exceptions.HTTPError(
@@ -1417,8 +1370,7 @@ def test_update_active_directory_user_email(mock_azure: AzureCloudProvider):
 
 
 def test_update_active_directory_user_password_profile(mock_azure: AzureCloudProvider):
-    mock_result = Mock()
-    mock_result.ok = True
+    mock_result = mock_requests_response()
     mock_http_error_resp = mock_requests_response(
         status=500,
         raise_for_status=mock_azure.sdk.requests.exceptions.HTTPError(
@@ -1456,13 +1408,10 @@ def test_create_user(mock_azure: AzureCloudProvider):
     ) as _get_tenant_principal_token:
         _get_tenant_principal_token.return_value = "token"
 
-        mock_result_create = Mock()
-        mock_result_create.ok = True
-        mock_result_create.json.return_value = {"id": "id"}
+        mock_result_create = mock_requests_response(json_data={"id": "id"})
         mock_azure.sdk.requests.post.return_value = mock_result_create
 
-        mock_result_update = Mock()
-        mock_result_update.ok = True
+        mock_result_update = mock_requests_response()
         mock_azure.sdk.requests.patch.return_value = mock_result_update
 
         payload = UserCSPPayload(
@@ -1485,9 +1434,7 @@ def test_create_user_role(mock_azure: AzureCloudProvider):
     ) as _get_tenant_principal_token:
         _get_tenant_principal_token.return_value = "token"
 
-        mock_result_create = Mock()
-        mock_result_create.ok = True
-        mock_result_create.json.return_value = {"id": "id"}
+        mock_result_create = mock_requests_response(json_data={"id": "id"})
         mock_azure.sdk.requests.put.return_value = mock_result_create
 
         payload = UserRoleCSPPayload(
@@ -1510,8 +1457,7 @@ def test_create_user_role_failure(mock_azure: AzureCloudProvider):
     ) as _get_tenant_principal_token:
         _get_tenant_principal_token.return_value = "token"
 
-        mock_result_create = Mock()
-        mock_result_create.ok = False
+        mock_result_create = mock_requests_response(ok=False)
         mock_azure.sdk.requests.put.return_value = mock_result_create
 
         payload = UserRoleCSPPayload(
@@ -1537,24 +1483,18 @@ def test_create_billing_owner(mock_azure: AzureCloudProvider):
 
         # create_billing_owner does: POST, PATCH, GET, POST
 
-        def make_mock_result(return_value=None):
-            mock_result_create = Mock()
-            mock_result_create.ok = True
-            mock_result_create.json.return_value = return_value
-
-            return mock_result_create
-
-        post_results = [make_mock_result({"id": final_result}), make_mock_result()]
-
-        mock_post = lambda *a, **k: post_results.pop(0)
-
         # mock POST so that it pops off results in the order we want
-        mock_azure.sdk.requests.post = mock_post
+        mock_azure.sdk.requests.post.side_effect = [
+            mock_requests_response(json_data={"id": final_result}),
+            mock_requests_response(),
+        ]
         # return value for PATCH doesn't matter much
-        mock_azure.sdk.requests.patch.return_value = make_mock_result()
+        mock_azure.sdk.requests.patch.return_value = mock_requests_response()
         # return value for GET needs to be a JSON object with a list of role definitions
-        mock_azure.sdk.requests.get.return_value = make_mock_result(
-            {"value": [{"displayName": "Billing Administrator", "id": "4567"}]}
+        mock_azure.sdk.requests.get.return_value = mock_requests_response(
+            json_data={
+                "value": [{"displayName": "Billing Administrator", "id": "4567"}]
+            }
         )
 
         payload = BillingOwnerCSPPayload(
@@ -1595,7 +1535,7 @@ class TestGetCalculatorCreds:
         assert mock_azure._get_calculator_creds() == "TOKEN"
 
     def test_get_calculator_creds_fails(self, mock_azure: AzureCloudProvider):
-        mock_azure.sdk.adal.AdalError = AdalError
+
         mock_azure.sdk.adal.AuthenticationContext.return_value.acquire_token_with_client_credentials.side_effect = AdalError(
             "Adal Error"
         )
@@ -1697,7 +1637,6 @@ def test_create_policies(mock_azure: AzureCloudProvider, monkeypatch):
 
 
 def test_get_service_principal_token_fails(mock_azure: AzureCloudProvider):
-    mock_azure.sdk.adal.AdalError = AdalError
     mock_azure.sdk.adal.AuthenticationContext.return_value.acquire_token_with_client_credentials.side_effect = AdalError(
         "Adal Error"
     )
@@ -1706,7 +1645,6 @@ def test_get_service_principal_token_fails(mock_azure: AzureCloudProvider):
 
 
 def test_get_user_principal_token_for_resource_fails(mock_azure: AzureCloudProvider):
-    mock_azure.sdk.adal.AdalError = AdalError
     mock_azure.sdk.adal.AuthenticationContext.return_value.acquire_token_with_username_password.side_effect = AdalError(
         "Adal Error"
     )
