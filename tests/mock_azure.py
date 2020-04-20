@@ -1,3 +1,4 @@
+import json
 from unittest.mock import Mock
 
 import pytest
@@ -27,6 +28,15 @@ AUTH_CREDENTIALS = {
     "tenant_id": AZURE_CONFIG["AZURE_TENANT_ID"],
 }
 
+KEYVAULT_SECRET = {
+    **AUTH_CREDENTIALS,
+    "tenant_id": "mock_tenant_id",
+    "tenant_admin_username": "mock_tenant_admin_username",
+    "tenant_admin_password": "mock_tenant_admin_password",
+}
+
+MOCK_ACCESS_TOKEN = "TOKEN"
+
 
 def mock_managementgroups():
     from azure.mgmt import managementgroups
@@ -49,7 +59,12 @@ def mock_identity():
 def mock_secrets():
     from azure.keyvault import secrets
 
-    return Mock(spec=secrets)
+    mock_secrets = Mock(spec=secrets)
+    mock_secrets.SecretClient.return_value.get_secret.return_value.value = json.dumps(
+        KEYVAULT_SECRET
+    )
+    mock_secrets.SecretClient.return_value.set_secret.return_value = None
+    return mock_secrets
 
 
 def mock_azure_exceptions():
@@ -70,8 +85,11 @@ def mock_adal():
 
     mock_adal = Mock(spec=adal)
     mock_adal.AdalError = AdalError
-    mock_adal.AuthenticationContext.return_value.context.acquire_token_with_client_credentials.return_value = {
-        "accessToken": "TOKEN"
+    mock_adal.AuthenticationContext.return_value.acquire_token_with_client_credentials.return_value = {
+        "accessToken": MOCK_ACCESS_TOKEN
+    }
+    mock_adal.AuthenticationContext.return_value.acquire_token_with_username_password.return_value = {
+        "accessToken": MOCK_ACCESS_TOKEN
     }
     return mock_adal
 
@@ -98,5 +116,16 @@ class MockAzureSDK(object):
 
 
 @pytest.fixture(scope="function")
-def mock_azure():
-    return AzureCloudProvider(AZURE_CONFIG, azure_sdk_provider=MockAzureSDK())
+def mock_azure(monkeypatch):
+    monkeypatch.setattr(
+        AzureCloudProvider,
+        "_get_elevated_management_token",
+        Mock(return_value=MOCK_ACCESS_TOKEN),
+    )
+    monkeypatch.setattr(
+        AzureCloudProvider, "validate_domain_name", Mock(return_value=True),
+    )
+    azure_cloud_provider = AzureCloudProvider(
+        AZURE_CONFIG, azure_sdk_provider=MockAzureSDK()
+    )
+    return azure_cloud_provider
