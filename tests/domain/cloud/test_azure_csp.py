@@ -1,6 +1,8 @@
 import json
 from unittest.mock import Mock, patch
 from uuid import uuid4
+
+from adal.adal_error import AdalError
 import pendulum
 import pydantic
 import pytest
@@ -1588,11 +1590,20 @@ def test_update_tenant_creds(mock_azure: AzureCloudProvider):
         )
 
 
-def test_get_calculator_creds(mock_azure: AzureCloudProvider):
-    mock_azure.sdk.adal.AuthenticationContext.return_value.acquire_token_with_client_credentials.return_value = {
-        "accessToken": "TOKEN"
-    }
-    assert mock_azure._get_calculator_creds() == "TOKEN"
+class TestGetCalculatorCreds:
+    def test_get_calculator_creds_succeeds(self, mock_azure: AzureCloudProvider):
+        mock_azure.sdk.adal.AuthenticationContext.return_value.acquire_token_with_client_credentials.return_value = {
+            "accessToken": "TOKEN"
+        }
+        assert mock_azure._get_calculator_creds() == "TOKEN"
+
+    def test_get_calculator_creds_fails(self, mock_azure: AzureCloudProvider):
+        mock_azure.sdk.adal.AdalError = AdalError
+        mock_azure.sdk.adal.AuthenticationContext.return_value.acquire_token_with_client_credentials.side_effect = AdalError(
+            "Adal Error"
+        )
+        with pytest.raises(AuthenticationException):
+            mock_azure._get_calculator_creds()
 
 
 def test_get_calculator_url(mock_azure: AzureCloudProvider):
@@ -1686,3 +1697,23 @@ def test_create_policies(mock_azure: AzureCloudProvider, monkeypatch):
     )
     result: PoliciesCSPResult = mock_azure.create_policies(payload)
     assert result.policy_assignment_id == final_assignment_id
+
+
+def test_get_service_principal_token_fails(mock_azure: AzureCloudProvider):
+    mock_azure.sdk.adal.AdalError = AdalError
+    mock_azure.sdk.adal.AuthenticationContext.return_value.acquire_token_with_client_credentials.side_effect = AdalError(
+        "Adal Error"
+    )
+    with pytest.raises(AuthenticationException):
+        mock_azure._get_service_principal_token("resource", "client", "secret")
+
+
+def test_get_user_principal_token_for_resource_fails(mock_azure: AzureCloudProvider):
+    mock_azure.sdk.adal.AdalError = AdalError
+    mock_azure.sdk.adal.AuthenticationContext.return_value.acquire_token_with_username_password.side_effect = AdalError(
+        "Adal Error"
+    )
+    with pytest.raises(AuthenticationException):
+        mock_azure._get_user_principal_token_for_resource(
+            "username", "password", "tenant_id", "my_resource"
+        )
