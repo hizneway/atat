@@ -99,6 +99,17 @@ def mock_requests_response(
     return mock_resp
 
 
+@pytest.fixture(scope="function", autouse=True)
+def mock_http_error_response(mock_azure):
+    response = mock_requests_response(
+        status=500,
+        raise_for_status=mock_azure.sdk.requests.exceptions.HTTPError(
+            "500 Server Error"
+        ),
+    )
+    return response
+
+
 def mock_management_group_create(mock_azure, spec_dict):
     mock_azure.sdk.managementgroups.ManagementGroupsAPI.return_value.management_groups.create_or_update.return_value.result.return_value = (
         spec_dict
@@ -111,7 +122,9 @@ def mock_management_group_get(mock_azure, spec_dict):
     )
 
 
-def test_create_environment_succeeds(mock_azure: AzureCloudProvider):
+def test_create_environment_succeeds(
+    mock_azure: AzureCloudProvider, mock_http_error_response
+):
     environment = EnvironmentFactory.create()
     mock_management_group_create(mock_azure, {"id": "Test Id"})
 
@@ -171,9 +184,7 @@ def test_create_initial_mgmt_group_succeeds(mock_azure: AzureCloudProvider):
     assert result.root_management_group_name == "Test Name"
 
 
-def test_create_initial_mgmt_group_verification_succeeds(
-    mock_azure: AzureCloudProvider,
-):
+def test_create_initial_mgmt_group_verification_succeed(mock_azure: AzureCloudProvider):
     application = ApplicationFactory.create()
     mock_management_group_get(mock_azure, {"id": "Test Id"})
     mock_azure = mock_get_secret(mock_azure)
@@ -191,7 +202,7 @@ def test_create_initial_mgmt_group_verification_succeeds(
     # assert result.name == management_group_name
 
 
-def test_disable_user(mock_azure: AzureCloudProvider):
+def test_disable_user(mock_azure: AzureCloudProvider, mock_http_error_response):
 
     assignment_guid = str(uuid4())
     management_group_id = str(uuid4())
@@ -208,16 +219,11 @@ def test_disable_user(mock_azure: AzureCloudProvider):
             "name": assignment_guid,
         }
     )
-    mock_http_error_resp = mock_requests_response(
-        status=500,
-        raise_for_status=mock_azure.sdk.requests.exceptions.HTTPError(
-            "500 Server Error"
-        ),
-    )
+
     mock_azure.sdk.requests.delete.side_effect = [
         mock_azure.sdk.requests.exceptions.ConnectionError,
         mock_azure.sdk.requests.exceptions.Timeout,
-        mock_http_error_resp,
+        mock_http_error_response,
         mock_result,
     ]
     mock_azure = mock_get_secret(mock_azure)
@@ -234,7 +240,9 @@ def test_disable_user(mock_azure: AzureCloudProvider):
     assert result.get("name") == assignment_guid
 
 
-def test_create_tenant(mock_azure: AzureCloudProvider, monkeypatch):
+def test_create_tenant(
+    mock_azure: AzureCloudProvider, monkeypatch, mock_http_error_response
+):
     monkeypatch.setattr(
         "atat.domain.csp.cloud.azure_cloud_provider.AzureCloudProvider.generate_valid_domain_name",
         lambda *a: "domain_name",
@@ -246,16 +254,11 @@ def test_create_tenant(mock_azure: AzureCloudProvider, monkeypatch):
             "userId": "1153801116406515559",
         }
     )
-    mock_http_error_resp = mock_requests_response(
-        status=500,
-        raise_for_status=mock_azure.sdk.requests.exceptions.HTTPError(
-            "500 Server Error"
-        ),
-    )
+
     mock_azure.sdk.requests.post.side_effect = [
         mock_azure.sdk.requests.exceptions.ConnectionError,
         mock_azure.sdk.requests.exceptions.Timeout,
-        mock_http_error_resp,
+        mock_http_error_response,
         mock_result,
     ]
     payload = TenantCSPPayload(
@@ -282,21 +285,17 @@ def test_create_tenant(mock_azure: AzureCloudProvider, monkeypatch):
     assert result.tenant_id == "60ff9d34-82bf-4f21-b565-308ef0533435"
 
 
-def test_create_billing_profile_creation(mock_azure: AzureCloudProvider):
+def test_create_billing_profile_creation(
+    mock_azure: AzureCloudProvider, mock_http_error_response
+):
     mock_result = mock_requests_response(
         headers={"Location": "http://retry-url", "Retry-After": "10",}, status=202
     )
 
-    mock_http_error_resp = mock_requests_response(
-        status=500,
-        raise_for_status=mock_azure.sdk.requests.exceptions.HTTPError(
-            "500 Server Error"
-        ),
-    )
     mock_azure.sdk.requests.post.side_effect = [
         mock_azure.sdk.requests.exceptions.ConnectionError,
         mock_azure.sdk.requests.exceptions.Timeout,
-        mock_http_error_resp,
+        mock_http_error_response,
         mock_result,
     ]
 
@@ -328,7 +327,9 @@ def test_create_billing_profile_creation(mock_azure: AzureCloudProvider):
     assert body.billing_profile_retry_after == 10
 
 
-def test_validate_billing_profile_creation(mock_azure: AzureCloudProvider):
+def test_validate_billing_profile_creation(
+    mock_azure: AzureCloudProvider, mock_http_error_response
+):
 
     mock_result = mock_requests_response(
         json_data={
@@ -363,16 +364,11 @@ def test_validate_billing_profile_creation(mock_azure: AzureCloudProvider):
             "type": "Microsoft.Billing/billingAccounts/billingProfiles",
         }
     )
-    mock_http_error_resp = mock_requests_response(
-        status=500,
-        raise_for_status=mock_azure.sdk.requests.exceptions.HTTPError(
-            "500 Server Error"
-        ),
-    )
+
     mock_azure.sdk.requests.get.side_effect = [
         mock_azure.sdk.requests.exceptions.ConnectionError,
         mock_azure.sdk.requests.exceptions.Timeout,
-        mock_http_error_resp,
+        mock_http_error_response,
         mock_result,
     ]
 
@@ -399,7 +395,9 @@ def test_validate_billing_profile_creation(mock_azure: AzureCloudProvider):
     )
 
 
-def test_create_billing_profile_tenant_access(mock_azure: AzureCloudProvider):
+def test_create_billing_profile_tenant_access(
+    mock_azure: AzureCloudProvider, mock_http_error_response
+):
 
     mock_result = mock_requests_response(
         status=201,
@@ -417,16 +415,11 @@ def test_create_billing_profile_tenant_access(mock_azure: AzureCloudProvider):
             "type": "Microsoft.Billing/billingRoleAssignments",
         },
     )
-    mock_http_error_resp = mock_requests_response(
-        status=500,
-        raise_for_status=mock_azure.sdk.requests.exceptions.HTTPError(
-            "500 Server Error"
-        ),
-    )
+
     mock_azure.sdk.requests.post.side_effect = [
         mock_azure.sdk.requests.exceptions.ConnectionError,
         mock_azure.sdk.requests.exceptions.Timeout,
-        mock_http_error_resp,
+        mock_http_error_response,
         mock_result,
     ]
 
@@ -454,7 +447,9 @@ def test_create_billing_profile_tenant_access(mock_azure: AzureCloudProvider):
     )
 
 
-def test_create_task_order_billing_creation(mock_azure: AzureCloudProvider):
+def test_create_task_order_billing_creation(
+    mock_azure: AzureCloudProvider, mock_http_error_response
+):
 
     mock_result = mock_requests_response(
         status=202,
@@ -464,16 +459,10 @@ def test_create_task_order_billing_creation(mock_azure: AzureCloudProvider):
         },
     )
 
-    mock_http_error_resp = mock_requests_response(
-        status=500,
-        raise_for_status=mock_azure.sdk.requests.exceptions.HTTPError(
-            "500 Server Error"
-        ),
-    )
     mock_azure.sdk.requests.patch.side_effect = [
         mock_azure.sdk.requests.exceptions.ConnectionError,
         mock_azure.sdk.requests.exceptions.Timeout,
-        mock_http_error_resp,
+        mock_http_error_response,
         mock_result,
     ]
 
@@ -501,7 +490,7 @@ def test_create_task_order_billing_creation(mock_azure: AzureCloudProvider):
     )
 
 
-def test_create_task_order_billing_verification(mock_azure):
+def test_create_task_order_billing_verification(mock_azure, mock_http_error_response):
 
     mock_result = mock_requests_response(
         json_data={
@@ -540,16 +529,11 @@ def test_create_task_order_billing_verification(mock_azure):
             "type": "Microsoft.Billing/billingAccounts/billingProfiles",
         }
     )
-    mock_http_error_resp = mock_requests_response(
-        status=500,
-        raise_for_status=mock_azure.sdk.requests.exceptions.HTTPError(
-            "500 Server Error"
-        ),
-    )
+
     mock_azure.sdk.requests.get.side_effect = [
         mock_azure.sdk.requests.exceptions.ConnectionError,
         mock_azure.sdk.requests.exceptions.Timeout,
-        mock_http_error_resp,
+        mock_http_error_response,
         mock_result,
     ]
 
@@ -576,7 +560,9 @@ def test_create_task_order_billing_verification(mock_azure):
     )
 
 
-def test_create_billing_instruction(mock_azure: AzureCloudProvider):
+def test_create_billing_instruction(
+    mock_azure: AzureCloudProvider, mock_http_error_response
+):
 
     mock_result = mock_requests_response(
         json_data={
@@ -590,16 +576,10 @@ def test_create_billing_instruction(mock_azure: AzureCloudProvider):
         }
     )
 
-    mock_http_error_resp = mock_requests_response(
-        status=500,
-        raise_for_status=mock_azure.sdk.requests.exceptions.HTTPError(
-            "500 Server Error"
-        ),
-    )
     mock_azure.sdk.requests.put.side_effect = [
         mock_azure.sdk.requests.exceptions.ConnectionError,
         mock_azure.sdk.requests.exceptions.Timeout,
-        mock_http_error_resp,
+        mock_http_error_response,
         mock_result,
     ]
 
@@ -625,7 +605,9 @@ def test_create_billing_instruction(mock_azure: AzureCloudProvider):
     assert body.reported_clin_name == "TO1:CLIN001"
 
 
-def test_create_product_purchase(mock_azure: AzureCloudProvider):
+def test_create_product_purchase(
+    mock_azure: AzureCloudProvider, mock_http_error_response
+):
     mock_result = mock_requests_response(
         status=202,
         headers={
@@ -633,16 +615,11 @@ def test_create_product_purchase(mock_azure: AzureCloudProvider):
             "Retry-After": "10",
         },
     )
-    mock_http_error_resp = mock_requests_response(
-        status=500,
-        raise_for_status=mock_azure.sdk.requests.exceptions.HTTPError(
-            "500 Server Error"
-        ),
-    )
+
     mock_azure.sdk.requests.post.side_effect = [
         mock_azure.sdk.requests.exceptions.ConnectionError,
         mock_azure.sdk.requests.exceptions.Timeout,
-        mock_http_error_resp,
+        mock_http_error_response,
         mock_result,
     ]
 
@@ -667,7 +644,7 @@ def test_create_product_purchase(mock_azure: AzureCloudProvider):
     )
 
 
-def test_create_product_purchase_verification(mock_azure):
+def test_create_product_purchase_verification(mock_azure, mock_http_error_response):
 
     mock_result = mock_requests_response(
         json_data={
@@ -692,16 +669,10 @@ def test_create_product_purchase_verification(mock_azure):
         }
     )
 
-    mock_http_error_resp = mock_requests_response(
-        status=500,
-        raise_for_status=mock_azure.sdk.requests.exceptions.HTTPError(
-            "500 Server Error"
-        ),
-    )
     mock_azure.sdk.requests.get.side_effect = [
         mock_azure.sdk.requests.exceptions.ConnectionError,
         mock_azure.sdk.requests.exceptions.Timeout,
-        mock_http_error_resp,
+        mock_http_error_response,
         mock_result,
     ]
 
@@ -724,7 +695,9 @@ def test_create_product_purchase_verification(mock_azure):
     assert body.premium_purchase_date == "01/31/2020"
 
 
-def test_create_tenant_principal_app(mock_azure: AzureCloudProvider):
+def test_create_tenant_principal_app(
+    mock_azure: AzureCloudProvider, mock_http_error_response
+):
     with patch.object(
         AzureCloudProvider,
         "_get_elevated_management_token",
@@ -734,16 +707,10 @@ def test_create_tenant_principal_app(mock_azure: AzureCloudProvider):
 
         mock_result = mock_requests_response(json_data={"appId": "appId", "id": "id"})
 
-        mock_http_error_resp = mock_requests_response(
-            status=500,
-            raise_for_status=mock_azure.sdk.requests.exceptions.HTTPError(
-                "500 Server Error"
-            ),
-        )
         mock_azure.sdk.requests.post.side_effect = [
             mock_azure.sdk.requests.exceptions.ConnectionError,
             mock_azure.sdk.requests.exceptions.Timeout,
-            mock_http_error_resp,
+            mock_http_error_response,
             mock_result,
         ]
 
@@ -769,7 +736,9 @@ def test_create_tenant_principal_app(mock_azure: AzureCloudProvider):
         assert result.principal_app_id == "appId"
 
 
-def test_create_tenant_principal(mock_azure: AzureCloudProvider):
+def test_create_tenant_principal(
+    mock_azure: AzureCloudProvider, mock_http_error_response
+):
     with patch.object(
         AzureCloudProvider,
         "_get_elevated_management_token",
@@ -778,16 +747,11 @@ def test_create_tenant_principal(mock_azure: AzureCloudProvider):
         get_elevated_management_token.return_value = "my fake token"
 
         mock_result = mock_requests_response(json_data={"id": "principal_id"})
-        mock_http_error_resp = mock_requests_response(
-            status=500,
-            raise_for_status=mock_azure.sdk.requests.exceptions.HTTPError(
-                "500 Server Error"
-            ),
-        )
+
         mock_azure.sdk.requests.post.side_effect = [
             mock_azure.sdk.requests.exceptions.ConnectionError,
             mock_azure.sdk.requests.exceptions.Timeout,
-            mock_http_error_resp,
+            mock_http_error_response,
             mock_result,
         ]
 
@@ -811,7 +775,9 @@ def test_create_tenant_principal(mock_azure: AzureCloudProvider):
         assert result.principal_id == "principal_id"
 
 
-def test_create_tenant_principal_credential(mock_azure: AzureCloudProvider):
+def test_create_tenant_principal_credential(
+    mock_azure: AzureCloudProvider, mock_http_error_response
+):
     with patch.object(
         AzureCloudProvider,
         "_get_elevated_management_token",
@@ -820,16 +786,11 @@ def test_create_tenant_principal_credential(mock_azure: AzureCloudProvider):
         get_elevated_management_token.return_value = "my fake token"
 
         mock_result = mock_requests_response(json_data={"secretText": "new secret key"})
-        mock_http_error_resp = mock_requests_response(
-            status=500,
-            raise_for_status=mock_azure.sdk.requests.exceptions.HTTPError(
-                "500 Server Error"
-            ),
-        )
+
         mock_azure.sdk.requests.post.side_effect = [
             mock_azure.sdk.requests.exceptions.ConnectionError,
             mock_azure.sdk.requests.exceptions.Timeout,
-            mock_http_error_resp,
+            mock_http_error_response,
             mock_result,
         ]
 
@@ -856,7 +817,9 @@ def test_create_tenant_principal_credential(mock_azure: AzureCloudProvider):
         assert result.principal_creds_established == True
 
 
-def test_create_admin_role_definition(mock_azure: AzureCloudProvider):
+def test_create_admin_role_definition(
+    mock_azure: AzureCloudProvider, mock_http_error_response
+):
     with patch.object(
         AzureCloudProvider,
         "_get_tenant_admin_token",
@@ -873,16 +836,10 @@ def test_create_admin_role_definition(mock_azure: AzureCloudProvider):
             }
         )
 
-        mock_http_error_resp = mock_requests_response(
-            status=500,
-            raise_for_status=mock_azure.sdk.requests.exceptions.HTTPError(
-                "500 Server Error"
-            ),
-        )
         mock_azure.sdk.requests.get.side_effect = [
             mock_azure.sdk.requests.exceptions.ConnectionError,
             mock_azure.sdk.requests.exceptions.Timeout,
-            mock_http_error_resp,
+            mock_http_error_response,
             mock_result,
         ]
         mock_azure = mock_get_secret(mock_azure)
@@ -904,7 +861,9 @@ def test_create_admin_role_definition(mock_azure: AzureCloudProvider):
         assert result.admin_role_def_id == "id"
 
 
-def test_create_tenant_admin_ownership(mock_azure: AzureCloudProvider):
+def test_create_tenant_admin_ownership(
+    mock_azure: AzureCloudProvider, mock_http_error_response
+):
     with patch.object(
         AzureCloudProvider,
         "_get_elevated_management_token",
@@ -913,16 +872,11 @@ def test_create_tenant_admin_ownership(mock_azure: AzureCloudProvider):
         get_elevated_management_token.return_value = "my fake token"
 
         mock_result = mock_requests_response(json_data={"id": "id"})
-        mock_http_error_resp = mock_requests_response(
-            status=500,
-            raise_for_status=mock_azure.sdk.requests.exceptions.HTTPError(
-                "500 Server Error"
-            ),
-        )
+
         mock_azure.sdk.requests.put.side_effect = [
             mock_azure.sdk.requests.exceptions.ConnectionError,
             mock_azure.sdk.requests.exceptions.Timeout,
-            mock_http_error_resp,
+            mock_http_error_response,
             mock_result,
         ]
 
@@ -946,7 +900,9 @@ def test_create_tenant_admin_ownership(mock_azure: AzureCloudProvider):
         assert result.admin_owner_assignment_id == "id"
 
 
-def test_create_tenant_principal_ownership(mock_azure: AzureCloudProvider):
+def test_create_tenant_principal_ownership(
+    mock_azure: AzureCloudProvider, mock_http_error_response
+):
     with patch.object(
         AzureCloudProvider,
         "_get_elevated_management_token",
@@ -955,16 +911,11 @@ def test_create_tenant_principal_ownership(mock_azure: AzureCloudProvider):
         get_elevated_management_token.return_value = "my fake token"
 
         mock_result = mock_requests_response(json_data={"id": "id"})
-        mock_http_error_resp = mock_requests_response(
-            status=500,
-            raise_for_status=mock_azure.sdk.requests.exceptions.HTTPError(
-                "500 Server Error"
-            ),
-        )
+
         mock_azure.sdk.requests.put.side_effect = [
             mock_azure.sdk.requests.exceptions.ConnectionError,
             mock_azure.sdk.requests.exceptions.Timeout,
-            mock_http_error_resp,
+            mock_http_error_response,
             mock_result,
         ]
 
@@ -988,7 +939,9 @@ def test_create_tenant_principal_ownership(mock_azure: AzureCloudProvider):
         assert result.principal_owner_assignment_id == "id"
 
 
-def test_create_principal_admin_role(mock_azure: AzureCloudProvider):
+def test_create_principal_admin_role(
+    mock_azure: AzureCloudProvider, mock_http_error_response
+):
     with patch.object(
         AzureCloudProvider,
         "_get_tenant_admin_token",
@@ -998,16 +951,10 @@ def test_create_principal_admin_role(mock_azure: AzureCloudProvider):
 
         mock_result = mock_requests_response(json_data={"id": "id"})
 
-        mock_http_error_resp = mock_requests_response(
-            status=500,
-            raise_for_status=mock_azure.sdk.requests.exceptions.HTTPError(
-                "500 Server Error"
-            ),
-        )
         mock_azure.sdk.requests.post.side_effect = [
             mock_azure.sdk.requests.exceptions.ConnectionError,
             mock_azure.sdk.requests.exceptions.Timeout,
-            mock_http_error_resp,
+            mock_http_error_response,
             mock_result,
         ]
 
@@ -1032,7 +979,9 @@ def test_create_principal_admin_role(mock_azure: AzureCloudProvider):
         assert result.principal_assignment_id == "id"
 
 
-def test_create_subscription_creation(mock_azure: AzureCloudProvider):
+def test_create_subscription_creation(
+    mock_azure: AzureCloudProvider, mock_http_error_response
+):
     with patch.object(
         AzureCloudProvider,
         "_get_tenant_principal_token",
@@ -1044,16 +993,10 @@ def test_create_subscription_creation(mock_azure: AzureCloudProvider):
             status=202, headers={"Location": "https://verify.me", "Retry-After": 10}
         )
 
-        mock_http_error_resp = mock_requests_response(
-            status=500,
-            raise_for_status=mock_azure.sdk.requests.exceptions.HTTPError(
-                "500 Server Error"
-            ),
-        )
         mock_azure.sdk.requests.put.side_effect = [
             mock_azure.sdk.requests.exceptions.ConnectionError,
             mock_azure.sdk.requests.exceptions.Timeout,
-            mock_http_error_resp,
+            mock_http_error_response,
             mock_result,
         ]
 
@@ -1082,7 +1025,9 @@ def test_create_subscription_creation(mock_azure: AzureCloudProvider):
         assert result.subscription_verify_url == "https://verify.me"
 
 
-def test_create_subscription_verification(mock_azure: AzureCloudProvider):
+def test_create_subscription_verification(
+    mock_azure: AzureCloudProvider, mock_http_error_response
+):
     with patch.object(
         AzureCloudProvider,
         "_get_tenant_principal_token",
@@ -1096,16 +1041,10 @@ def test_create_subscription_verification(mock_azure: AzureCloudProvider):
             }
         )
 
-        mock_http_error_resp = mock_requests_response(
-            status=500,
-            raise_for_status=mock_azure.sdk.requests.exceptions.HTTPError(
-                "500 Server Error"
-            ),
-        )
         mock_azure.sdk.requests.get.side_effect = [
             mock_azure.sdk.requests.exceptions.ConnectionError,
             mock_azure.sdk.requests.exceptions.Timeout,
-            mock_http_error_resp,
+            mock_http_error_response,
             mock_result,
         ]
 
@@ -1128,7 +1067,7 @@ def test_create_subscription_verification(mock_azure: AzureCloudProvider):
         assert result.subscription_id == "60fbbb72-0516-4253-ab18-c92432ba3230"
 
 
-def test_get_reporting_data(mock_azure: AzureCloudProvider):
+def test_get_reporting_data(mock_azure: AzureCloudProvider, mock_http_error_response):
     mock_result = mock_requests_response(
         json_data={
             "eTag": None,
@@ -1150,16 +1089,10 @@ def test_get_reporting_data(mock_azure: AzureCloudProvider):
         }
     )
 
-    mock_http_error_resp = mock_requests_response(
-        status=500,
-        raise_for_status=mock_azure.sdk.requests.exceptions.HTTPError(
-            "500 Server Error"
-        ),
-    )
     mock_azure.sdk.requests.post.side_effect = [
         mock_azure.sdk.requests.exceptions.ConnectionError,
         mock_azure.sdk.requests.exceptions.Timeout,
-        mock_http_error_resp,
+        mock_http_error_response,
         mock_result,
     ]
 
@@ -1195,18 +1128,15 @@ def test_get_reporting_data(mock_azure: AzureCloudProvider):
     assert len(data.properties.columns) == 4
 
 
-def test_get_reporting_data_malformed_payload(mock_azure: AzureCloudProvider):
+def test_get_reporting_data_malformed_payload(
+    mock_azure: AzureCloudProvider, mock_http_error_response
+):
     mock_result = mock_requests_response()
-    mock_http_error_resp = mock_requests_response(
-        status=500,
-        raise_for_status=mock_azure.sdk.requests.exceptions.HTTPError(
-            "500 Server Error"
-        ),
-    )
+
     mock_azure.sdk.requests.post.side_effect = [
         mock_azure.sdk.requests.exceptions.ConnectionError,
         mock_azure.sdk.requests.exceptions.Timeout,
-        mock_http_error_resp,
+        mock_http_error_response,
         mock_result,
     ]
 
@@ -1231,7 +1161,7 @@ def test_get_reporting_data_malformed_payload(mock_azure: AzureCloudProvider):
             )
 
 
-def test_get_secret(mock_azure: AzureCloudProvider):
+def test_get_secret(mock_azure: AzureCloudProvider, mock_http_error_response):
     with patch.object(
         AzureCloudProvider,
         "_get_client_secret_credential_obj",
@@ -1246,7 +1176,9 @@ def test_get_secret(mock_azure: AzureCloudProvider):
         assert mock_azure.get_secret("secret key") == "my secret"
 
 
-def test_get_secret_secret_exception(mock_azure: AzureCloudProvider):
+def test_get_secret_secret_exception(
+    mock_azure: AzureCloudProvider, mock_http_error_response
+):
     with patch.object(
         AzureCloudProvider,
         "_get_client_secret_credential_obj",
@@ -1266,7 +1198,7 @@ def test_get_secret_secret_exception(mock_azure: AzureCloudProvider):
             mock_azure.get_secret("secret key") == "my secret"
 
 
-def test_set_secret(mock_azure: AzureCloudProvider):
+def test_set_secret(mock_azure: AzureCloudProvider, mock_http_error_response):
     with patch.object(
         AzureCloudProvider,
         "_get_client_secret_credential_obj",
@@ -1280,7 +1212,9 @@ def test_set_secret(mock_azure: AzureCloudProvider):
         assert mock_azure.set_secret("secret key", "secret_value") == "my secret"
 
 
-def test_set_secret_secret_exception(mock_azure: AzureCloudProvider):
+def test_set_secret_secret_exception(
+    mock_azure: AzureCloudProvider, mock_http_error_response
+):
     with patch.object(
         AzureCloudProvider,
         "_get_client_secret_credential_obj",
@@ -1300,18 +1234,15 @@ def test_set_secret_secret_exception(mock_azure: AzureCloudProvider):
             mock_azure.set_secret("secret key", "secret_value")
 
 
-def test_create_active_directory_user(mock_azure: AzureCloudProvider):
+def test_create_active_directory_user(
+    mock_azure: AzureCloudProvider, mock_http_error_response
+):
     mock_result = mock_requests_response(json_data={"id": "id"})
-    mock_http_error_resp = mock_requests_response(
-        status=500,
-        raise_for_status=mock_azure.sdk.requests.exceptions.HTTPError(
-            "500 Server Error"
-        ),
-    )
+
     mock_azure.sdk.requests.post.side_effect = [
         mock_azure.sdk.requests.exceptions.ConnectionError,
         mock_azure.sdk.requests.exceptions.Timeout,
-        mock_http_error_resp,
+        mock_http_error_response,
         mock_result,
     ]
 
@@ -1334,18 +1265,15 @@ def test_create_active_directory_user(mock_azure: AzureCloudProvider):
     assert result.id == "id"
 
 
-def test_update_active_directory_user_email(mock_azure: AzureCloudProvider):
+def test_update_active_directory_user_email(
+    mock_azure: AzureCloudProvider, mock_http_error_response
+):
     mock_result = mock_requests_response()
-    mock_http_error_resp = mock_requests_response(
-        status=500,
-        raise_for_status=mock_azure.sdk.requests.exceptions.HTTPError(
-            "500 Server Error"
-        ),
-    )
+
     mock_azure.sdk.requests.patch.side_effect = [
         mock_azure.sdk.requests.exceptions.ConnectionError,
         mock_azure.sdk.requests.exceptions.Timeout,
-        mock_http_error_resp,
+        mock_http_error_response,
         mock_result,
     ]
     payload = UserCSPPayload(
@@ -1369,18 +1297,15 @@ def test_update_active_directory_user_email(mock_azure: AzureCloudProvider):
     assert result
 
 
-def test_update_active_directory_user_password_profile(mock_azure: AzureCloudProvider):
+def test_update_active_directory_user_password_profile(
+    mock_azure: AzureCloudProvider, mock_http_error_response
+):
     mock_result = mock_requests_response()
-    mock_http_error_resp = mock_requests_response(
-        status=500,
-        raise_for_status=mock_azure.sdk.requests.exceptions.HTTPError(
-            "500 Server Error"
-        ),
-    )
+
     mock_azure.sdk.requests.patch.side_effect = [
         mock_azure.sdk.requests.exceptions.ConnectionError,
         mock_azure.sdk.requests.exceptions.Timeout,
-        mock_http_error_resp,
+        mock_http_error_response,
         mock_result,
     ]
     payload = TenantAdminCredentialResetCSPPayload(
