@@ -11,15 +11,10 @@ from atat.app import make_config, make_app
 from atat.database import db
 
 
-def database_setup(username, password, dbname, ccpo_users):
-
+def create_database_user(username, password, dbname):
     print(
         f"Creating Postgres user role for '{username}' and granting all privileges to database '{dbname}'."
     )
-    _create_database_user(username, password, dbname)
-
-
-def _create_database_user(username, password, dbname):
     conn = db.engine.connect()
 
     meta = sqlalchemy.MetaData(bind=conn)
@@ -54,6 +49,7 @@ def _create_database_user(username, password, dbname):
 
     trans.commit()
 
+
 if __name__ == "__main__":
     config = make_config({"DISABLE_CRL_CHECK": True, "DEBUG": False})
     app = make_app(config)
@@ -61,4 +57,4 @@ if __name__ == "__main__":
         dbname = config.get("PGDATABASE", "atat")
         username = sys.argv[1]
         password = sys.argv[2]
-        database_setup(username, password, dbname)
+        create_database_user(username, password, dbname)
