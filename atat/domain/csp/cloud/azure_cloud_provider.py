@@ -231,6 +231,7 @@ class AzureCloudProvider(CloudProviderInterface):
 
         return EnvironmentCSPResult(**response)
 
+    @log_and_raise_exceptions
     def create_application(self, payload: ApplicationCSPPayload):
         creds = self._source_tenant_creds(payload.tenant_id)
         credentials = self._get_credential_obj(
