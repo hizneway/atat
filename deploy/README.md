@@ -127,19 +127,15 @@ This will start new pods for the web service, and the new ACME challenge will be
 
 Repeat this process for the second domain. If the validation is successful, certbot will write new certificates to your host machine.
 
-### Create the TLS secret
+### Create the Key Vault certificate object
 
-Once you have obtained the certs, you can create the new TLS secret in the cluster. First delete the existing secret:
-
-```
-kubectl -n atat delete secret azure-atat-code-mil-tls
-```
-
-Then:
+Once you have obtained the certs, you can create or update the Key Vault certificate object:
 
 ```
-kubectl -n atat create secret tls azure-atat-code-mil-tls --key="[path to the private key]" --cert="[path to the full chain]"
+az keyvault certificate import --vault-name my-vault-name --name my-cert-object-name --file /path/to/my/cert.pem
 ```
+
+Make sure that the vault name and cert name match the ones used in the FlexVol integration, discussed in "Secrets Management" below.
 
 ### Create the Diffie-Hellman parameters
 
