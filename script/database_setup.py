@@ -6,12 +6,9 @@ parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.append(parent_dir)
 
 import sqlalchemy
-import yaml
 
 from atat.app import make_config, make_app
 from atat.database import db
-from atat.domain.users import Users
-from atat.models import User
 
 
 def database_setup(username, password, dbname, ccpo_users):
@@ -20,9 +17,6 @@ def database_setup(username, password, dbname, ccpo_users):
         f"Creating Postgres user role for '{username}' and granting all privileges to database '{dbname}'."
     )
     _create_database_user(username, password, dbname)
-
-    print("Creating initial set of CCPO users.")
-    _add_ccpo_users(ccpo_users)
 
 
 def _create_database_user(username, password, dbname):
@@ -60,21 +54,6 @@ def _create_database_user(username, password, dbname):
 
     trans.commit()
 
-
-def _add_ccpo_users(ccpo_users):
-    for user_data in ccpo_users:
-        user = User(**user_data)
-        Users.give_ccpo_perms(user, commit=False)
-        db.session.add(user)
-
-    db.session.commit()
-
-
-def _load_yaml(file_):
-    with open(file_) as f:
-        return yaml.safe_load(f)
-
-
 if __name__ == "__main__":
     config = make_config({"DISABLE_CRL_CHECK": True, "DEBUG": False})
     app = make_app(config)
@@ -82,6 +61,4 @@ if __name__ == "__main__":
         dbname = config.get("PGDATABASE", "atat")
         username = sys.argv[1]
         password = sys.argv[2]
-        ccpo_user_file = sys.argv[3]
-        ccpo_users = _load_yaml(ccpo_user_file)
-        database_setup(username, password, dbname, ccpo_users)
+        database_setup(username, password, dbname)
