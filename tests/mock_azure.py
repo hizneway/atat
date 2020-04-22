@@ -1,5 +1,7 @@
-import pytest
+import json
 from unittest.mock import Mock
+
+import pytest
 
 from atat.domain.csp.cloud import AzureCloudProvider
 
@@ -26,29 +28,20 @@ AUTH_CREDENTIALS = {
     "tenant_id": AZURE_CONFIG["AZURE_TENANT_ID"],
 }
 
+KEYVAULT_SECRET = {
+    **AUTH_CREDENTIALS,
+    "tenant_id": "mock_tenant_id",
+    "tenant_admin_username": "mock_tenant_admin_username",
+    "tenant_admin_password": "mock_tenant_admin_password",
+}
 
-def mock_subscription():
-    from azure.mgmt import subscription
-
-    return Mock(spec=subscription)
-
-
-def mock_authorization():
-    from azure.mgmt import authorization
-
-    return Mock(spec=authorization)
+MOCK_ACCESS_TOKEN = "TOKEN"
 
 
 def mock_managementgroups():
     from azure.mgmt import managementgroups
 
     return Mock(spec=managementgroups)
-
-
-def mock_graphrbac():
-    import azure.graphrbac as graphrbac
-
-    return Mock(spec=graphrbac)
 
 
 def mock_credentials():
@@ -63,10 +56,15 @@ def mock_identity():
     return Mock(spec=identity)
 
 
-def mock_policy():
-    from azure.mgmt.resource import policy
+def mock_secrets():
+    from azure.keyvault import secrets
 
-    return Mock(spec=policy)
+    mock_secrets = Mock(spec=secrets)
+    mock_secrets.SecretClient.return_value.get_secret.return_value.value = json.dumps(
+        KEYVAULT_SECRET
+    )
+    mock_secrets.SecretClient.return_value.set_secret.return_value = None
+    return mock_secrets
 
 
 def mock_azure_exceptions():
@@ -75,10 +73,25 @@ def mock_azure_exceptions():
     return exceptions
 
 
+def mock_cloud_details():
+    from msrestazure.azure_cloud import AZURE_PUBLIC_CLOUD
+
+    return AZURE_PUBLIC_CLOUD
+
+
 def mock_adal():
     import adal
+    from adal.adal_error import AdalError
 
-    return Mock(spec=adal)
+    mock_adal = Mock(spec=adal)
+    mock_adal.AdalError = AdalError
+    mock_adal.AuthenticationContext.return_value.acquire_token_with_client_credentials.return_value = {
+        "accessToken": MOCK_ACCESS_TOKEN
+    }
+    mock_adal.AuthenticationContext.return_value.acquire_token_with_username_password.return_value = {
+        "accessToken": MOCK_ACCESS_TOKEN
+    }
+    return mock_adal
 
 
 def mock_requests():
@@ -89,37 +102,30 @@ def mock_requests():
     return mock_requests
 
 
-def mock_secrets():
-    from azure.keyvault import secrets
-
-    return Mock(spec=secrets)
-
-
-def mock_cloud_details():
-    from msrestazure.azure_cloud import AZURE_PUBLIC_CLOUD
-
-    return AZURE_PUBLIC_CLOUD
-
-
 class MockAzureSDK(object):
     def __init__(self):
 
-        self.subscription = mock_subscription()
-        self.authorization = mock_authorization()
-        self.policy = mock_policy()
-        self.adal = mock_adal()
         self.managementgroups = mock_managementgroups()
-        self.graphrbac = mock_graphrbac()
         self.credentials = mock_credentials()
         self.identity = mock_identity()
-        self.azure_exceptions = mock_azure_exceptions()
-        self.policy = mock_policy()
         self.secrets = mock_secrets()
-        self.requests = mock_requests()
+        self.azure_exceptions = mock_azure_exceptions()
         self.cloud = mock_cloud_details()
-        self.identity = mock_identity()
+        self.adal = mock_adal()
+        self.requests = mock_requests()
 
 
 @pytest.fixture(scope="function")
-def mock_azure():
-    return AzureCloudProvider(AZURE_CONFIG, azure_sdk_provider=MockAzureSDK())
+def mock_azure(monkeypatch):
+    monkeypatch.setattr(
+        AzureCloudProvider,
+        "_get_elevated_management_token",
+        Mock(return_value=MOCK_ACCESS_TOKEN),
+    )
+    monkeypatch.setattr(
+        AzureCloudProvider, "validate_domain_name", Mock(return_value=True),
+    )
+    azure_cloud_provider = AzureCloudProvider(
+        AZURE_CONFIG, azure_sdk_provider=MockAzureSDK()
+    )
+    return azure_cloud_provider

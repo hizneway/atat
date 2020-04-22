@@ -2,6 +2,7 @@ import json
 from functools import wraps
 from secrets import token_hex, token_urlsafe
 from uuid import uuid4
+
 from flask import current_app as app
 
 from atat.utils import sha256_hex
@@ -9,11 +10,11 @@ from atat.utils import sha256_hex
 from .cloud_provider_interface import CloudProviderInterface
 from .exceptions import (
     AuthenticationException,
-    UserProvisioningException,
     ConnectionException,
-    UnknownServerException,
-    SecretException,
     DomainNameException,
+    SecretException,
+    UnknownServerException,
+    UserProvisioningException,
 )
 from .models import (
     AdminRoleDefinitionCSPPayload,
@@ -30,13 +31,14 @@ from .models import (
     BillingProfileTenantAccessCSPResult,
     BillingProfileVerificationCSPPayload,
     BillingProfileVerificationCSPResult,
+    CostManagementQueryCSPPayload,
     CostManagementQueryCSPResult,
+    EnvironmentCSPPayload,
+    EnvironmentCSPResult,
     InitialMgmtGroupCSPPayload,
     InitialMgmtGroupCSPResult,
     InitialMgmtGroupVerificationCSPPayload,
     InitialMgmtGroupVerificationCSPResult,
-    EnvironmentCSPPayload,
-    EnvironmentCSPResult,
     KeyVaultCredentials,
     PoliciesCSPPayload,
     PoliciesCSPResult,
@@ -46,7 +48,6 @@ from .models import (
     ProductPurchaseCSPResult,
     ProductPurchaseVerificationCSPPayload,
     ProductPurchaseVerificationCSPResult,
-    CostManagementQueryCSPPayload,
     SubscriptionCreationCSPPayload,
     SubscriptionCreationCSPResult,
     SubscriptionVerificationCSPPayload,
@@ -55,10 +56,10 @@ from .models import (
     TaskOrderBillingCreationCSPResult,
     TaskOrderBillingVerificationCSPPayload,
     TaskOrderBillingVerificationCSPResult,
-    TenantAdminOwnershipCSPPayload,
-    TenantAdminOwnershipCSPResult,
     TenantAdminCredentialResetCSPPayload,
     TenantAdminCredentialResetCSPResult,
+    TenantAdminOwnershipCSPPayload,
+    TenantAdminOwnershipCSPResult,
     TenantCSPPayload,
     TenantCSPResult,
     TenantPrincipalAppCSPPayload,
@@ -123,9 +124,7 @@ def log_and_raise_exceptions(func):
 
 class AzureSDKProvider(object):
     def __init__(self):
-        from azure.mgmt import subscription, authorization, managementgroups
-        from azure.mgmt.resource import policy
-        import azure.graphrbac as graphrbac
+        from azure.mgmt import managementgroups
         import azure.common.credentials as credentials
         import azure.identity as identity
         from azure.keyvault import secrets
@@ -136,18 +135,14 @@ class AzureSDKProvider(object):
         import adal
         import requests
 
-        self.subscription = subscription
-        self.policy = policy
         self.managementgroups = managementgroups
-        self.authorization = authorization
-        self.adal = adal
-        self.graphrbac = graphrbac
         self.credentials = credentials
         self.identity = identity
-        self.azure_exceptions = exceptions
         self.secrets = secrets
-        self.requests = requests
+        self.azure_exceptions = exceptions
         self.cloud = AZURE_PUBLIC_CLOUD
+        self.adal = adal
+        self.requests = requests
 
 
 class AzureCloudProvider(CloudProviderInterface):
@@ -1065,51 +1060,6 @@ class AzureCloudProvider(CloudProviderInterface):
             raise UserProvisioningException(
                 "Could not find Billing Administrator role ID; role may not be enabled."
             )
-
-    def _get_management_service_principal(self):
-        # we really should be using graph.microsoft.com, but i'm getting
-        # "expired token" errors for that
-        # graph_resource = "https://graph.microsoft.com"
-        graph_resource = "https://graph.windows.net"
-        graph_creds = self._get_credential_obj(
-            self._root_creds, resource=graph_resource
-        )
-        # I needed to set permissions for the graph.windows.net API before I
-        # could get this to work.
-
-        # how do we scope the graph client to the new subscription rather than
-        # the cloud0 subscription? tenant id seems to be separate from subscription id
-        graph_client = self.sdk.graphrbac.GraphRbacManagementClient(
-            graph_creds, self._root_creds.get("tenant_id")
-        )
-
-        # do we need to create a new application to manage each subscripition
-        # or should we manage access to each subscription from a single service
-        # principal with multiple role assignments?
-        app_display_name = "?"  # name should reflect the subscription it exists
-        app_create_param = self.sdk.graphrbac.models.ApplicationCreateParameters(
-            display_name=app_display_name
-        )
-
-        # we need the appropriate perms here:
-        # https://docs.microsoft.com/en-us/graph/api/application-post-applications?view=graph-rest-beta&tabs=http
-        # https://docs.microsoft.com/en-us/graph/permissions-reference#microsoft-graph-permission-names
-        # set app perms in app registration portal
-        # https://docs.microsoft.com/en-us/graph/auth-v2-service#2-configure-permissions-for-microsoft-graph
-        app: self.sdk.graphrbac.models.Application = graph_client.applications.create(
-            app_create_param
-        )
-
-        # create a new service principal for the new application, which should be scoped
-        # to the new subscription
-        app_id = app.app_id
-        sp_create_params = self.sdk.graphrbac.models.ServicePrincipalCreateParameters(
-            app_id=app_id, account_enabled=True
-        )
-
-        service_principal = graph_client.service_principals.create(sp_create_params)
-
-        return service_principal
 
     def create_user(self, payload: UserCSPPayload) -> UserCSPResult:
         """Create a user in an Azure Active Directory instance.
