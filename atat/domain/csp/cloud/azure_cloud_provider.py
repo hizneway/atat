@@ -1333,17 +1333,18 @@ class AzureCloudProvider(CloudProviderInterface):
         return KeyVaultCredentials(**json.loads(raw_creds))
 
     @log_and_raise_exceptions
-    def get_reporting_data(self, payload: CostManagementQueryCSPPayload):
+    def get_reporting_data(self, payload: CostManagementQueryCSPPayload, token=None):
         """
         Queries the Cost Management API for an invoice section's raw reporting data
 
         We query at the invoiceSection scope. The full scope path is passed in
         with the payload at the `invoice_section_id` key.
         """
-        creds = self._source_tenant_creds(payload.tenant_id)
-        token = self._get_service_principal_token(
-            payload.tenant_id, creds.tenant_sp_client_id, creds.tenant_sp_key
-        )
+        if token is None:
+            creds = self._source_tenant_creds(payload.tenant_id)
+            token = self._get_sp_token(
+                payload.tenant_id, creds.tenant_sp_client_id, creds.tenant_sp_key
+            )
 
         headers = {"Authorization": f"Bearer {token}"}
 
