@@ -46,7 +46,7 @@ def protected_routes(app):
     return _protected_routes
 
 
-sample_config = make_config({"CRL_STORAGE_PROVIDER": "LOCAL"})
+sample_config = make_config({"default": {"CRL_STORAGE_PROVIDER": "LOCAL"}})
 sample_app = make_app(sample_config)
 _PROTECTED_ROUTES = protected_routes(sample_app)
 
@@ -97,7 +97,7 @@ def user_with(*perm_sets_names):
 
 @pytest.fixture(scope="session")
 def app(request):
-    config = make_config(direct_config={"DEBUG": False})
+    config = make_config(direct_config={"default": {"DEBUG": False}})
     _app = make_app(config)
 
     ctx = _app.app_context()

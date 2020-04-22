@@ -78,7 +78,7 @@ def skip_audit_log(request):
 
 @pytest.fixture(scope="function")
 def no_debug_app(request):
-    config = make_config(direct_config={"DEBUG": False})
+    config = make_config(direct_config={"default": {"DEBUG": False}})
     _app = make_app(config)
 
     ctx = _app.app_context()

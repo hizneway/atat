@@ -72,13 +72,13 @@ def test_apply_config_from_environment_skips_unknown_settings(
 
 class TestMakeConfig:
     def test_redis_ssl_connection(self):
-        config = make_config({"REDIS_TLS": True})
+        config = make_config({"default": {"REDIS_TLS": True}})
         uri = config.get("REDIS_URI")
         assert "rediss" in uri
         assert "ssl_cert_reqs" in uri
 
     def test_non_redis_ssl_connection(self):
-        config = make_config({"REDIS_TLS": False})
+        config = make_config({"default": {"REDIS_TLS": False}})
         uri = config.get("REDIS_URI")
         assert "rediss" not in uri
         assert "redis" in uri

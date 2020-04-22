@@ -198,29 +198,47 @@ def map_config(config):
 
 
 def make_config(direct_config=None):
-    BASE_CONFIG_FILENAME = os.path.join(os.path.dirname(__file__), "../config/base.ini")
-    ENV_CONFIG_FILENAME = os.path.join(
-        os.path.dirname(__file__), "../config/", "{}.ini".format(ENV.lower())
-    )
-    OVERRIDE_CONFIG_DIRECTORY = os.getenv("OVERRIDE_CONFIG_DIRECTORY")
+    """Assemble a ConfigParser object to pass to map_config
+    
+    Configuration values are possibly applied from multiple sources. They are 
+    applied in the following order. At each step, options that are currently set
+    are overwritten by options of the same name:
+    1. The base config file, `base.ini`
+    2. An environment's config file -- e.g. if ENV="test", `test.ini`
+    3. Optionally: If an OVERRIDE_CONFIG_DIRECTORY environment variable is 
+        present, configuration files in that directory
+    4. Environment variables
+    5. Optionally: A dictionary passed in as the `direct_config` parameter
+    
+    After the configuration is finished being written / overwritten, a database
+    uri, redis uri, and broker uri (in our case, a celery uri) are set.
+
+    Finally, the final ConfigParser object is passed to `map_config()`
+    """
 
     config = ConfigParser(allow_no_value=True)
     config.optionxform = str
 
+    # Read configuration values from base and environment configuration files
+    BASE_CONFIG_FILENAME = os.path.join(os.path.dirname(__file__), "../config/base.ini")
+    ENV_CONFIG_FILENAME = os.path.join(
+        os.path.dirname(__file__), "../config/", "{}.ini".format(ENV.lower())
+    )
     config_files = [BASE_CONFIG_FILENAME, ENV_CONFIG_FILENAME]
-
     # ENV_CONFIG will override values in BASE_CONFIG.
     config.read(config_files)
 
+    # Optionally read configuration files that overwrite base and environment files
+    OVERRIDE_CONFIG_DIRECTORY = os.getenv("OVERRIDE_CONFIG_DIRECTORY")
     if OVERRIDE_CONFIG_DIRECTORY:
         apply_config_from_directory(OVERRIDE_CONFIG_DIRECTORY, config)
 
-    # Check for ENV variables as a final source of overrides
+    # Check for ENV variables to override config files
     apply_config_from_environment(config)
 
-    # override if a dictionary of options has been given
+    # Finally, override any options set to this point with the direct_config parameter
     if direct_config:
-        config.read_dict({"default": direct_config})
+        config.read_dict(direct_config)
 
     # Assemble DATABASE_URI value
     database_uri = "postgresql://{}:{}@{}:{}/{}".format(  # pragma: allowlist secret
