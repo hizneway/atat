@@ -197,6 +197,12 @@ def map_config(config):
     }
 
 
+def apply_hybrid_config_options(config: ConfigParser):
+    """Copy config options in [hybrid] section to [default] section of config"""
+
+    config.read_dict({"default": dict(config.items("hybrid"))})
+
+
 def make_config(direct_config=None):
     """Assemble a ConfigParser object to pass to map_config
     
@@ -227,6 +233,8 @@ def make_config(direct_config=None):
     config_files = [BASE_CONFIG_FILENAME, ENV_CONFIG_FILENAME]
     # ENV_CONFIG will override values in BASE_CONFIG.
     config.read(config_files)
+    # Copy hybrid section to default section
+    apply_hybrid_config_options(config)
 
     # Optionally read configuration files that overwrite base and environment files
     OVERRIDE_CONFIG_DIRECTORY = os.getenv("OVERRIDE_CONFIG_DIRECTORY")
@@ -239,6 +247,8 @@ def make_config(direct_config=None):
     # Finally, override any options set to this point with the direct_config parameter
     if direct_config:
         config.read_dict(direct_config)
+        # Copy hybrid section to default section
+        apply_hybrid_config_options(config)
 
     # Assemble DATABASE_URI value
     database_uri = "postgresql://{}:{}@{}:{}/{}".format(  # pragma: allowlist secret
