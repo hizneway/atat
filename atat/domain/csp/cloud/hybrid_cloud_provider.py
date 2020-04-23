@@ -5,7 +5,6 @@ from atat.domain.csp.cloud.mock_cloud_provider import MockCloudProvider
 from atat.domain.csp.cloud.models import *
 from typing import Dict, Union
 from uuid import uuid4
-from flask import current_app as app
 from operator import itemgetter
 
 
