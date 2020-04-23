@@ -271,7 +271,4 @@ class HybridCloudProvider(object):
         isi = f"/providers/Microsoft.Billing/billingAccounts/{billing_account_id}/billingProfiles/{billing_profile_id}/invoiceSections/{invoice_section_id}"
         payload.invoice_section_id = isi
 
-        # if token is None:
-        #     token = self.azure._get_tenant_principal_token(payload.tenant_id)
-
         return self.azure.get_reporting_data(payload)

@@ -1340,10 +1340,7 @@ class AzureCloudProvider(CloudProviderInterface):
         We query at the invoiceSection scope. The full scope path is passed in
         with the payload at the `invoice_section_id` key.
         """
-        creds = self._source_tenant_creds(payload.tenant_id)
-        token = self._get_sp_token(
-            payload.tenant_id, creds.tenant_sp_client_id, creds.tenant_sp_key
-        )
+        token = self._get_tenant_principal_token(payload.tenant_id)
 
         headers = {"Authorization": f"Bearer {token}"}
 
