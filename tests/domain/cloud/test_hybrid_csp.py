@@ -11,7 +11,7 @@ from atat.domain.csp.cloud.models import (
     UserRoleCSPPayload,
 )
 from atat.jobs import do_create_application, do_create_environment_role, do_create_user
-from atat.models import FSMStates, PortfolioStateMachine
+from atat.models import PortfolioStates, PortfolioStateMachine
 from tests.factories import (
     ApplicationFactory,
     ApplicationRoleFactory,
@@ -61,7 +61,7 @@ def test_hybrid_provision_portfolio(pytestconfig, state_machine: PortfolioStateM
     csp_data = {}
     config = {"billing_account_name": "billing_account_name"}
 
-    while state_machine.state != FSMStates.COMPLETED:
+    while state_machine.state != PortfolioStates.COMPLETED:
         collected_data = dict(
             list(csp_data.items())
             + list(state_machine.portfolio.to_dictionary().items())
@@ -71,7 +71,7 @@ def test_hybrid_provision_portfolio(pytestconfig, state_machine: PortfolioStateM
         state_machine.trigger_next_transition(csp_data=collected_data)
         assert (
             "created" in state_machine.state.value
-            or state_machine.state == FSMStates.COMPLETED
+            or state_machine.state == PortfolioStates.COMPLETED
         )
 
         csp_data = state_machine.portfolio.csp_data

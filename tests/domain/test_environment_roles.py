@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 import pytest
 
 from atat.domain.environment_roles import EnvironmentRoles
@@ -79,50 +81,28 @@ def test_get_for_application_member_does_not_return_deleted(
     assert len(roles) == 0
 
 
-def test_disable_completed(application_role, environment):
-    environment_role = EnvironmentRoleFactory.create(
-        application_role=application_role,
-        environment=environment,
-        status=EnvironmentRole.Status.COMPLETED,
-    )
+class Test_disable:
+    def test_completed(self, application_role, environment):
+        environment_role = EnvironmentRoleFactory.create(
+            application_role=application_role,
+            environment=environment,
+            status=EnvironmentRole.Status.COMPLETED,
+        )
+        EnvironmentRoles.disable(environment_role.id)
+        assert environment_role.disabled
 
-    environment_role = EnvironmentRoles.disable(environment_role.id)
+    @patch("atat.domain.environment_roles.app.csp.cloud.disable_user")
+    def test_has_cloud_id(self, disable_user, app):
+        cloud_id = uuid4()
+        env_role = EnvironmentRoleFactory.create(cloud_id=cloud_id)
+        EnvironmentRoles.disable(env_role.id)
+        assert disable_user.call_args == ((None, str(cloud_id)),)
 
-    assert environment_role.disabled
-
-
-def test_disable_checks_env_provisioning_status(session):
-    environment = EnvironmentFactory.create()
-    assert not environment.cloud_id
-    env_role1 = EnvironmentRoleFactory.create(environment=environment)
-    env_role1 = EnvironmentRoles.disable(env_role1.id)
-    assert env_role1.disabled
-
-    environment.cloud_id = "cloud-id"
-    session.add(environment)
-    session.commit()
-    session.refresh(environment)
-
-    assert environment.cloud_id
-    env_role2 = EnvironmentRoleFactory.create(environment=environment)
-    env_role2 = EnvironmentRoles.disable(env_role2.id)
-    assert env_role2.disabled
-
-
-def test_disable_checks_env_role_provisioning_status():
-    environment = EnvironmentFactory.create(cloud_id="cloud-id")
-    environment.portfolio.csp_data = {"tenant_id": uuid4().hex}
-    env_role1 = EnvironmentRoleFactory.create(environment=environment)
-    assert not env_role1.cloud_id
-    env_role1 = EnvironmentRoles.disable(env_role1.id)
-    assert env_role1.disabled
-
-    env_role2 = EnvironmentRoleFactory.create(
-        environment=environment, cloud_id="123456"
-    )
-    assert env_role2.cloud_id
-    env_role2 = EnvironmentRoles.disable(env_role2.id)
-    assert env_role2.disabled
+    @patch("atat.domain.environment_roles.app.csp.cloud.disable_user")
+    def test_no_cloud_id(self, disable_user):
+        env_role = EnvironmentRoleFactory.create(cloud_id=None)
+        EnvironmentRoles.disable(env_role.id)
+        assert not disable_user.called
 
 
 def test_get_for_update(application_role, environment):

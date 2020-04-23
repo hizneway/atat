@@ -7,7 +7,7 @@ from atat.models import (
     TaskOrder,
     Portfolio,
     PortfolioStateMachine,
-    FSMStates as PortfolioStates,
+    PortfolioStates,
 )
 from atat.models.task_order import SORT_ORDERING
 from . import BaseDomainClass

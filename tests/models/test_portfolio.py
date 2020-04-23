@@ -234,3 +234,17 @@ class TestInitialClinDict:
             ],
         )
         assert portfolio.initial_clin_dict["initial_clin_number"] == "1001"
+
+
+class Test_tenant_id:
+    def test_tenant_id(self):
+        portfolio = PortfolioFactory.create(csp_data={"tenant_id": "123"})
+        assert portfolio.tenant_id == "123"
+
+    def test_no_csp_data(self):
+        portfolio = PortfolioFactory.create(csp_data=None)
+        assert portfolio.tenant_id is None
+
+    def test_no_tenant_id(self):
+        portfolio = PortfolioFactory.create(csp_data={})
+        assert portfolio.tenant_id is None

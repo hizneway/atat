@@ -40,6 +40,7 @@ class HybridCSP:
 
 def make_csp_provider(app, csp=None):
     simulate_failures = app.config.get("SIMULATE_API_FAILURE")
+    app.logger.info(f"Created a cloud service provider in '{csp}' mode!")
     if csp == "azure":
         app.csp = AzureCSP(app)
     elif csp == "mock-test":

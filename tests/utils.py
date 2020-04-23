@@ -34,6 +34,9 @@ class FakeLogger:
     def log(self, _lvl, msg, *args, **kwargs):
         self._log(_lvl, msg, *args, **kwargs)
 
+    def debug(self, msg, *args, **kwargs):
+        self._log("debug", msg, *args, **kwargs)
+
     def info(self, msg, *args, **kwargs):
         self._log("info", msg, *args, **kwargs)
 

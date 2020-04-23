@@ -6,7 +6,7 @@ from pytest import raises
 from atat.models.mixins.state_machines import (
     AzureStages,
     StageStates,
-    FSMStates,
+    PortfolioStates,
     StateMachineMisconfiguredError,
     _build_csp_states,
     _build_transitions,
@@ -23,7 +23,7 @@ class AzureStagesTest(Enum):
 def test_find_and_call_stage_trigger():
     portfolio = PortfolioFactory.create(state="TENANT_IN_PROGRESS")
     portfolio.state_machine._find_and_call_stage_trigger("fail_")
-    assert portfolio.state_machine.state == FSMStates.TENANT_FAILED
+    assert portfolio.state_machine.state == PortfolioStates.TENANT_FAILED
 
 
 def test_find_and_call_stage_trigger_fails():
@@ -32,7 +32,7 @@ def test_find_and_call_stage_trigger_fails():
         portfolio.state_machine._find_and_call_stage_trigger(
             "wont_find_a_trigger_with_this_prefix"
         )
-    assert portfolio.state_machine.state == FSMStates.CONFIGURATION_ERROR
+    assert portfolio.state_machine.state == PortfolioStates.CONFIGURATION_ERROR
 
 
 @pytest.mark.state_machine
@@ -69,8 +69,10 @@ def test_build_transitions():
     created_to_in_progress_trigger = next(
         (t for t in transitions if t.get("trigger") == "create_policies")
     )
-    assert created_to_in_progress_trigger["source"] == FSMStates.TENANT_CREATED
-    assert created_to_in_progress_trigger["dest"] == FSMStates.POLICIES_IN_PROGRESS
+    assert created_to_in_progress_trigger["source"] == PortfolioStates.TENANT_CREATED
+    assert (
+        created_to_in_progress_trigger["dest"] == PortfolioStates.POLICIES_IN_PROGRESS
+    )
 
 
 @pytest.mark.state_machine
@@ -93,5 +95,5 @@ def test_build_csp_states():
 def test_compose_state():
     assert (
         compose_state(AzureStages.TENANT, StageStates.CREATED)
-        == FSMStates.TENANT_CREATED
+        == PortfolioStates.TENANT_CREATED
     )

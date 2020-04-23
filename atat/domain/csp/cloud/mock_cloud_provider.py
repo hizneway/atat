@@ -26,46 +26,48 @@ from .models import (
     BillingProfileTenantAccessCSPResult,
     BillingProfileVerificationCSPPayload,
     BillingProfileVerificationCSPResult,
+    CostManagementQueryCSPPayload,
+    CostManagementQueryCSPResult,
+    EnvironmentCSPPayload,
+    EnvironmentCSPResult,
     InitialMgmtGroupCSPPayload,
     InitialMgmtGroupCSPResult,
     InitialMgmtGroupVerificationCSPPayload,
     InitialMgmtGroupVerificationCSPResult,
-    CostManagementQueryCSPResult,
     PoliciesCSPPayload,
     PoliciesCSPResult,
+    PrincipalAdminRoleCSPPayload,
+    PrincipalAdminRoleCSPResult,
     ProductPurchaseCSPPayload,
     ProductPurchaseCSPResult,
     ProductPurchaseVerificationCSPPayload,
     ProductPurchaseVerificationCSPResult,
-    PrincipalAdminRoleCSPPayload,
-    PrincipalAdminRoleCSPResult,
-    CostManagementQueryCSPPayload,
     SubscriptionCreationCSPPayload,
     SubscriptionCreationCSPResult,
     SubscriptionVerificationCSPPayload,
     SuscriptionVerificationCSPResult,
-    EnvironmentCSPPayload,
-    EnvironmentCSPResult,
     TaskOrderBillingCreationCSPPayload,
     TaskOrderBillingCreationCSPResult,
     TaskOrderBillingVerificationCSPPayload,
     TaskOrderBillingVerificationCSPResult,
-    TenantAdminOwnershipCSPPayload,
-    TenantAdminOwnershipCSPResult,
     TenantAdminCredentialResetCSPPayload,
     TenantAdminCredentialResetCSPResult,
+    TenantAdminOwnershipCSPPayload,
+    TenantAdminOwnershipCSPResult,
     TenantCSPPayload,
     TenantCSPResult,
     TenantPrincipalAppCSPPayload,
     TenantPrincipalAppCSPResult,
-    TenantPrincipalCredentialCSPPayload,
-    TenantPrincipalCredentialCSPResult,
     TenantPrincipalCSPPayload,
     TenantPrincipalCSPResult,
+    TenantPrincipalCredentialCSPPayload,
+    TenantPrincipalCredentialCSPResult,
     TenantPrincipalOwnershipCSPPayload,
     TenantPrincipalOwnershipCSPResult,
     UserCSPPayload,
     UserCSPResult,
+    UserRoleCSPPayload,
+    UserRoleCSPResult,
 )
 
 
@@ -437,6 +439,13 @@ class MockCloudProvider(CloudProviderInterface):
         )
 
         return self._maybe(12)
+
+    def create_user_role(self, payload: UserRoleCSPPayload):
+        self._maybe_raise(self.NETWORK_FAILURE_PCT, self.NETWORK_EXCEPTION)
+        self._maybe_raise(self.SERVER_FAILURE_PCT, self.SERVER_EXCEPTION)
+        self._maybe_raise(self.UNAUTHORIZED_RATE, self.AUTHENTICATION_EXCEPTION)
+
+        return UserRoleCSPResult(id=f"{AZURE_MGMNT_PATH}{uuid4()}",)
 
     def get_calculator_url(self):
         return "https://www.rackspace.com/en-us/calculator"

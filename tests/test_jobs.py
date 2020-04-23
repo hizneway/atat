@@ -43,7 +43,7 @@ from atat.jobs import (
 )
 from atat.models import (
     ApplicationRoleStatus,
-    FSMStates,
+    PortfolioStates,
     JobFailure,
     Portfolio,
 )
@@ -332,9 +332,8 @@ class TestDoProvisionPortfolio:
     ):
         do_provision_portfolio(csp=csp, portfolio_id=portfolio.id)
         assert portfolio.state_machine
-        assert trigger_next_transition.called_with(
-            csp_data=make_initial_csp_data(portfolio)
-        )
+        csp_data = make_initial_csp_data(portfolio)
+        trigger_next_transition.assert_called_with(csp_data=csp_data)
 
     @patch("atat.jobs.send_PPOC_email")
     def test_sends_email_to_PPOC_on_completion(
@@ -346,10 +345,10 @@ class TestDoProvisionPortfolio:
 
         # The stage before "COMPLETED"
         last_step = [e.name for e in AzureStages][-1]
-        sm.state = getattr(FSMStates, f"{last_step}_CREATED")
+        sm.state = getattr(PortfolioStates, f"{last_step}_CREATED")
         do_provision_portfolio(csp=csp, portfolio_id=portfolio.id)
 
-        assert send_PPOC_email.assert_called_once
+        send_PPOC_email.assert_called_once()
 
 
 def test_send_ppoc_email(monkeypatch, app):
@@ -540,7 +539,7 @@ class TestCreateBillingInstructions:
                 "billing_profile_name": "fake",
             },
             task_orders=[{"create_clins": [{"start_date": start_date}]}],
-            state=FSMStates.COMPLETED.name,
+            state=PortfolioStates.COMPLETED.name,
         )
         return portfolio.task_orders[0].clins[0]
 
@@ -587,7 +586,7 @@ class TestCreateBillingInstructions:
                     ]
                 }
             ],
-            state=FSMStates.COMPLETED.name,
+            state=PortfolioStates.COMPLETED.name,
         )
         task_order = portfolio.task_orders[0]
         sent_clin = task_order.clins[0]
