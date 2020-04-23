@@ -265,8 +265,10 @@ class HybridCloudProvider(object):
 
     def get_reporting_data(self, payload: CostManagementQueryCSPPayload):
         billing_account_id, billing_profile_id, invoice_section_id = itemgetter(
-            "BILLING_ACCOUNT_ID", "BILLING_PROFILE_ID", "INVOICE_SECTION_ID"
-        )(app.config)
+            "AZURE_BILLING_ACCOUNT_ID",
+            "AZURE_BILLING_PROFILE_ID",
+            "AZURE_INVOICE_SECTION_ID",
+        )(self.azure.config)
 
         isi = f"/providers/Microsoft.Billing/billingAccounts/{billing_account_id}/billingProfiles/{billing_profile_id}/invoiceSections/{invoice_section_id}"
         payload.invoice_section_id = isi
