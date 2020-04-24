@@ -2,6 +2,7 @@ import json
 from functools import wraps
 from secrets import token_hex, token_urlsafe
 from uuid import uuid4
+
 from flask import current_app as app
 
 from atat.utils import sha256_hex
@@ -9,11 +10,11 @@ from atat.utils import sha256_hex
 from .cloud_provider_interface import CloudProviderInterface
 from .exceptions import (
     AuthenticationException,
-    UserProvisioningException,
     ConnectionException,
-    UnknownServerException,
-    SecretException,
     DomainNameException,
+    SecretException,
+    UnknownServerException,
+    UserProvisioningException,
 )
 from .models import (
     AdminRoleDefinitionCSPPayload,
@@ -30,13 +31,14 @@ from .models import (
     BillingProfileTenantAccessCSPResult,
     BillingProfileVerificationCSPPayload,
     BillingProfileVerificationCSPResult,
+    CostManagementQueryCSPPayload,
     CostManagementQueryCSPResult,
+    EnvironmentCSPPayload,
+    EnvironmentCSPResult,
     InitialMgmtGroupCSPPayload,
     InitialMgmtGroupCSPResult,
     InitialMgmtGroupVerificationCSPPayload,
     InitialMgmtGroupVerificationCSPResult,
-    EnvironmentCSPPayload,
-    EnvironmentCSPResult,
     KeyVaultCredentials,
     PoliciesCSPPayload,
     PoliciesCSPResult,
@@ -46,7 +48,6 @@ from .models import (
     ProductPurchaseCSPResult,
     ProductPurchaseVerificationCSPPayload,
     ProductPurchaseVerificationCSPResult,
-    CostManagementQueryCSPPayload,
     SubscriptionCreationCSPPayload,
     SubscriptionCreationCSPResult,
     SubscriptionVerificationCSPPayload,
@@ -55,10 +56,10 @@ from .models import (
     TaskOrderBillingCreationCSPResult,
     TaskOrderBillingVerificationCSPPayload,
     TaskOrderBillingVerificationCSPResult,
-    TenantAdminOwnershipCSPPayload,
-    TenantAdminOwnershipCSPResult,
     TenantAdminCredentialResetCSPPayload,
     TenantAdminCredentialResetCSPResult,
+    TenantAdminOwnershipCSPPayload,
+    TenantAdminOwnershipCSPResult,
     TenantCSPPayload,
     TenantCSPResult,
     TenantPrincipalAppCSPPayload,
@@ -113,14 +114,17 @@ def log_and_raise_exceptions(func):
             app.logger.error(status_code, message, exc_info=1)
             raise UnknownServerException(status_code, f"{message}. {str(exc)}")
 
+        except cloud.sdk.adal.AdalError as exc:
+            message = f"ADAL error calling {func.__name__}"
+            app.logger.error(message, exc_info=1)
+            raise AuthenticationException(message)
+
     return wrapped_func
 
 
 class AzureSDKProvider(object):
     def __init__(self):
-        from azure.mgmt import subscription, authorization, managementgroups
-        from azure.mgmt.resource import policy
-        import azure.graphrbac as graphrbac
+        from azure.mgmt import managementgroups
         import azure.common.credentials as credentials
         import azure.identity as identity
         from azure.keyvault import secrets
@@ -131,18 +135,14 @@ class AzureSDKProvider(object):
         import adal
         import requests
 
-        self.subscription = subscription
-        self.policy = policy
         self.managementgroups = managementgroups
-        self.authorization = authorization
-        self.adal = adal
-        self.graphrbac = graphrbac
         self.credentials = credentials
         self.identity = identity
-        self.azure_exceptions = exceptions
         self.secrets = secrets
-        self.requests = requests
+        self.azure_exceptions = exceptions
         self.cloud = AZURE_PUBLIC_CLOUD
+        self.adal = adal
+        self.requests = requests
 
 
 class AzureCloudProvider(CloudProviderInterface):
@@ -226,6 +226,7 @@ class AzureCloudProvider(CloudProviderInterface):
 
         return EnvironmentCSPResult(**response)
 
+    @log_and_raise_exceptions
     def create_application(self, payload: ApplicationCSPPayload):
         creds = self._source_tenant_creds(payload.tenant_id)
         credentials = self._get_credential_obj(
@@ -389,8 +390,6 @@ class AzureCloudProvider(CloudProviderInterface):
         """
 
         sp_token = self._get_tenant_principal_token(payload.tenant_id)
-        if sp_token is None:
-            raise AuthenticationException("Could not resolve token in disable user")
         headers = {
             "Authorization": f"Bearer {sp_token}",
         }
@@ -424,8 +423,6 @@ class AzureCloudProvider(CloudProviderInterface):
     @log_and_raise_exceptions
     def disable_user(self, tenant_id, role_assignment_cloud_id):
         sp_token = self._get_tenant_principal_token(tenant_id)
-        if sp_token is None:
-            raise AuthenticationException("Could not resolve token in disable user")
         headers = {
             "Authorization": f"Bearer {sp_token}",
         }
@@ -462,8 +459,6 @@ class AzureCloudProvider(CloudProviderInterface):
     @log_and_raise_exceptions
     def create_tenant(self, payload: TenantCSPPayload):
         sp_token = self._get_root_provisioning_token()
-        if sp_token is None:
-            raise AuthenticationException("Could not resolve token for tenant creation")
 
         payload.password = token_urlsafe(16)
         payload.domain_name = self.generate_valid_domain_name(payload.domain_name)
@@ -514,10 +509,6 @@ class AzureCloudProvider(CloudProviderInterface):
             https://docs.microsoft.com/en-us/microsoft-store/billing-profile
             """
         sp_token = self._get_root_provisioning_token()
-        if sp_token is None:
-            raise AuthenticationException(
-                "Could not resolve token for billing profile creation"
-            )
 
         create_billing_account_body = payload.dict(by_alias=True)
 
@@ -556,10 +547,6 @@ class AzureCloudProvider(CloudProviderInterface):
             https://docs.microsoft.com/en-us/microsoft-store/billing-profile
             """
         sp_token = self._get_root_provisioning_token()
-        if sp_token is None:
-            raise AuthenticationException(
-                "Could not resolve token for billing profile validation"
-            )
 
         auth_header = {
             "Authorization": f"Bearer {sp_token}",
@@ -636,10 +623,6 @@ class AzureCloudProvider(CloudProviderInterface):
         self, payload: TaskOrderBillingVerificationCSPPayload
     ):
         sp_token = self._get_root_provisioning_token()
-        if sp_token is None:
-            raise AuthenticationException(
-                "Could not resolve token for task order billing validation"
-            )
 
         auth_header = {
             "Authorization": f"Bearer {sp_token}",
@@ -659,10 +642,6 @@ class AzureCloudProvider(CloudProviderInterface):
     @log_and_raise_exceptions
     def create_billing_instruction(self, payload: BillingInstructionCSPPayload):
         sp_token = self._get_root_provisioning_token()
-        if sp_token is None:
-            raise AuthenticationException(
-                "Could not resolve token for task order billing validation"
-            )
 
         request_body = {
             "properties": {
@@ -687,10 +666,6 @@ class AzureCloudProvider(CloudProviderInterface):
     @log_and_raise_exceptions
     def create_subscription(self, payload: SubscriptionCreationCSPPayload):
         sp_token = self._get_tenant_principal_token(payload.tenant_id)
-        if sp_token is None:
-            raise AuthenticationException(
-                "Could not resolve token for subscription creation"
-            )
 
         request_body = {
             "displayName": payload.display_name,
@@ -720,10 +695,6 @@ class AzureCloudProvider(CloudProviderInterface):
         self, payload: SubscriptionVerificationCSPPayload
     ):
         sp_token = self._get_tenant_principal_token(payload.tenant_id)
-        if sp_token is None:
-            raise AuthenticationException(
-                "Could not resolve token for subscription verification"
-            )
 
         auth_header = {
             "Authorization": f"Bearer {sp_token}",
@@ -740,10 +711,6 @@ class AzureCloudProvider(CloudProviderInterface):
     @log_and_raise_exceptions
     def create_product_purchase(self, payload: ProductPurchaseCSPPayload):
         sp_token = self._get_root_provisioning_token()
-        if sp_token is None:
-            raise AuthenticationException(
-                "Could not resolve token for aad premium product purchase"
-            )
 
         create_product_purchase_body = {
             "type": "AADPremium",
@@ -777,10 +744,6 @@ class AzureCloudProvider(CloudProviderInterface):
         self, payload: ProductPurchaseVerificationCSPPayload
     ):
         sp_token = self._get_root_provisioning_token()
-        if sp_token is None:
-            raise AuthenticationException(
-                "Could not resolve token for aad premium product purchase validation"
-            )
 
         auth_header = {
             "Authorization": f"Bearer {sp_token}",
@@ -813,11 +776,6 @@ class AzureCloudProvider(CloudProviderInterface):
         graph_token = self._get_tenant_admin_token(
             payload.tenant_id, self.graph_resource
         )
-        if graph_token is None:
-            raise AuthenticationException(
-                "Could not resolve graph token for tenant admin"
-            )
-
         self._update_active_directory_user_password_profile(graph_token, payload)
 
         return TenantAdminCredentialResetCSPResult()
@@ -905,11 +863,6 @@ class AzureCloudProvider(CloudProviderInterface):
         graph_token = self._get_tenant_admin_token(
             payload.tenant_id, self.graph_resource
         )
-        if graph_token is None:
-            raise AuthenticationException(
-                "Could not resolve graph token for tenant admin"
-            )
-
         request_body = {"displayName": self.tenant_principal_app_display_name}
 
         auth_header = {
@@ -936,16 +889,10 @@ class AzureCloudProvider(CloudProviderInterface):
         graph_token = self._get_tenant_admin_token(
             payload.tenant_id, self.graph_resource
         )
-        if graph_token is None:
-            raise AuthenticationException(
-                "Could not resolve graph token for tenant admin"
-            )
-
-        request_body = {"appId": payload.principal_app_id}
-
         auth_header = {
             "Authorization": f"Bearer {graph_token}",
         }
+        request_body = {"appId": payload.principal_app_id}
 
         url = f"{self.graph_resource}/beta/servicePrincipals"
 
@@ -962,11 +909,6 @@ class AzureCloudProvider(CloudProviderInterface):
         graph_token = self._get_tenant_admin_token(
             payload.tenant_id, self.graph_resource
         )
-        if graph_token is None:
-            raise AuthenticationException(
-                "Could not resolve graph token for tenant admin"
-            )
-
         request_body = {
             "passwordCredentials": [{"displayName": "ATAT Generated Password"}]
         }
@@ -1002,11 +944,6 @@ class AzureCloudProvider(CloudProviderInterface):
         graph_token = self._get_tenant_admin_token(
             payload.tenant_id, self.graph_resource
         )
-        if graph_token is None:
-            raise AuthenticationException(
-                "Could not resolve graph token for tenant admin"
-            )
-
         auth_header = {
             "Authorization": f"Bearer {graph_token}",
         }
@@ -1040,11 +977,6 @@ class AzureCloudProvider(CloudProviderInterface):
         graph_token = self._get_tenant_admin_token(
             payload.tenant_id, self.graph_resource
         )
-        if graph_token is None:
-            raise AuthenticationException(
-                "Could not resolve graph token for tenant admin"
-            )
-
         request_body = {
             "principalId": payload.principal_id,
             "roleDefinitionId": payload.admin_role_def_id,
@@ -1073,10 +1005,6 @@ class AzureCloudProvider(CloudProviderInterface):
         graph_token = self._get_tenant_principal_token(
             payload.tenant_id, resource=self.graph_resource
         )
-        if graph_token is None:
-            raise AuthenticationException(
-                "Could not resolve graph token for tenant admin"
-            )
 
         # Step 1: Create an AAD identity for the user
         user_result = self._create_active_directory_user(graph_token, payload)
@@ -1133,51 +1061,6 @@ class AzureCloudProvider(CloudProviderInterface):
                 "Could not find Billing Administrator role ID; role may not be enabled."
             )
 
-    def _get_management_service_principal(self):
-        # we really should be using graph.microsoft.com, but i'm getting
-        # "expired token" errors for that
-        # graph_resource = "https://graph.microsoft.com"
-        graph_resource = "https://graph.windows.net"
-        graph_creds = self._get_credential_obj(
-            self._root_creds, resource=graph_resource
-        )
-        # I needed to set permissions for the graph.windows.net API before I
-        # could get this to work.
-
-        # how do we scope the graph client to the new subscription rather than
-        # the cloud0 subscription? tenant id seems to be separate from subscription id
-        graph_client = self.sdk.graphrbac.GraphRbacManagementClient(
-            graph_creds, self._root_creds.get("tenant_id")
-        )
-
-        # do we need to create a new application to manage each subscripition
-        # or should we manage access to each subscription from a single service
-        # principal with multiple role assignments?
-        app_display_name = "?"  # name should reflect the subscription it exists
-        app_create_param = self.sdk.graphrbac.models.ApplicationCreateParameters(
-            display_name=app_display_name
-        )
-
-        # we need the appropriate perms here:
-        # https://docs.microsoft.com/en-us/graph/api/application-post-applications?view=graph-rest-beta&tabs=http
-        # https://docs.microsoft.com/en-us/graph/permissions-reference#microsoft-graph-permission-names
-        # set app perms in app registration portal
-        # https://docs.microsoft.com/en-us/graph/auth-v2-service#2-configure-permissions-for-microsoft-graph
-        app: self.sdk.graphrbac.models.Application = graph_client.applications.create(
-            app_create_param
-        )
-
-        # create a new service principle for the new application, which should be scoped
-        # to the new subscription
-        app_id = app.app_id
-        sp_create_params = self.sdk.graphrbac.models.ServicePrincipalCreateParameters(
-            app_id=app_id, account_enabled=True
-        )
-
-        service_principal = graph_client.service_principals.create(sp_create_params)
-
-        return service_principal
-
     def create_user(self, payload: UserCSPPayload) -> UserCSPResult:
         """Create a user in an Azure Active Directory instance.
         Unlike most of the methods on this interface, this requires
@@ -1197,10 +1080,6 @@ class AzureCloudProvider(CloudProviderInterface):
         graph_token = self._get_tenant_principal_token(
             payload.tenant_id, resource=self.graph_resource
         )
-        if graph_token is None:
-            raise AuthenticationException(
-                "Could not resolve graph token for tenant admin"
-            )
 
         result = self._create_active_directory_user(graph_token, payload)
         self._update_active_directory_user_email(graph_token, result.id, payload)
@@ -1285,10 +1164,6 @@ class AzureCloudProvider(CloudProviderInterface):
 
     def create_user_role(self, payload: UserRoleCSPPayload):
         graph_token = self._get_tenant_principal_token(payload.tenant_id)
-        if graph_token is None:
-            raise AuthenticationException(
-                "Could not resolve graph token for tenant admin"
-            )
 
         role_guid = self.roles[payload.role]
         role_definition_id = f"{payload.management_group_id}/providers/Microsoft.Authorization/roleDefinitions/{role_guid}"
@@ -1325,7 +1200,7 @@ class AzureCloudProvider(CloudProviderInterface):
 
     def _get_tenant_admin_token(self, tenant_id, resource):
         creds = self._source_tenant_creds(tenant_id)
-        return self._get_up_token_for_resource(
+        return self._get_user_principal_token_for_resource(
             creds.tenant_admin_username,
             creds.tenant_admin_password,
             creds.tenant_id,
@@ -1334,35 +1209,48 @@ class AzureCloudProvider(CloudProviderInterface):
 
     def _get_root_provisioning_token(self):
         creds = self._source_root_creds()
-        return self._get_sp_token(
+        return self._get_service_principal_token(
             creds.root_tenant_id, creds.root_sp_client_id, creds.root_sp_key
         )
 
-    def _get_sp_token(self, tenant_id, client_id, secret_key, resource=None):
+    @log_and_raise_exceptions
+    def _get_service_principal_token(
+        self, tenant_id, client_id, secret_key, resource=None
+    ):
         context = self.sdk.adal.AuthenticationContext(
             f"{self.sdk.cloud.endpoints.active_directory}/{tenant_id}"
         )
-
         resource = resource or self.sdk.cloud.endpoints.resource_manager
-        # TODO: handle failure states here
         token_response = context.acquire_token_with_client_credentials(
             resource, client_id, secret_key
         )
 
-        return token_response.get("accessToken", None)
+        token = token_response.get("accessToken")
+        if token is None:
+            message = f"Failed to get service principal token for resource '{resource}' in tenant '{tenant_id}'"
+            app.logger.error(message, exc_info=1)
+            raise AuthenticationException(message)
+        else:
+            return token
 
-    def _get_up_token_for_resource(self, username, password, tenant_id, resource):
-
+    @log_and_raise_exceptions
+    def _get_user_principal_token_for_resource(
+        self, username, password, tenant_id, resource
+    ):
         context = self.sdk.adal.AuthenticationContext(
             f"{self.sdk.cloud.endpoints.active_directory}/{tenant_id}"
         )
-
-        # TODO: handle failure states here
         token_response = context.acquire_token_with_username_password(
             resource, username, password, self.ps_client_id
         )
 
-        return token_response.get("accessToken", None)
+        token = token_response.get("accessToken")
+        if token is None:
+            message = f"Failed to get service principal token for resource '{resource}' in tenant '{tenant_id}'"
+            app.logger.error(message, exc_info=1)
+            raise AuthenticationException(message)
+        else:
+            return token
 
     def _get_credential_obj(self, creds, resource=None):
         return self.sdk.credentials.ServicePrincipalCredentials(
@@ -1391,7 +1279,7 @@ class AzureCloudProvider(CloudProviderInterface):
 
     def _get_tenant_principal_token(self, tenant_id, resource=None):
         creds = self._source_tenant_creds(tenant_id)
-        return self._get_sp_token(
+        return self._get_service_principal_token(
             creds.tenant_id,
             creds.tenant_sp_client_id,
             creds.tenant_sp_key,
@@ -1403,10 +1291,6 @@ class AzureCloudProvider(CloudProviderInterface):
         mgmt_token = self._get_tenant_admin_token(
             tenant_id, self.sdk.cloud.endpoints.resource_manager
         )
-        if mgmt_token is None:
-            raise AuthenticationException(
-                "Failed to resolve management token for tenant admin"
-            )
 
         auth_header = {
             "Authorization": f"Bearer {mgmt_token}",
@@ -1457,12 +1341,9 @@ class AzureCloudProvider(CloudProviderInterface):
         with the payload at the `invoice_section_id` key.
         """
         creds = self._source_tenant_creds(payload.tenant_id)
-        token = self._get_sp_token(
+        token = self._get_service_principal_token(
             payload.tenant_id, creds.tenant_sp_client_id, creds.tenant_sp_key
         )
-
-        if not token:
-            raise AuthenticationException("Could not retrieve tenant access token")
 
         headers = {"Authorization": f"Bearer {token}"}
 
@@ -1489,15 +1370,23 @@ class AzureCloudProvider(CloudProviderInterface):
         if result.ok:
             return CostManagementQueryCSPResult(**result.json())
 
+    @log_and_raise_exceptions
     def _get_calculator_creds(self):
         authority = f"{self.sdk.cloud.endpoints.active_directory}/{self.tenant_id}"
         context = self.sdk.adal.AuthenticationContext(authority=authority)
-        response = context.acquire_token_with_client_credentials(
-            self.config.get("AZURE_CALC_RESOURCE"),
+        calc_resource = self.config.get("AZURE_CALC_RESOURCE")
+        token_response = context.acquire_token_with_client_credentials(
+            calc_resource,
             self.config.get("AZURE_CALC_CLIENT_ID"),
             self.config.get("AZURE_CALC_SECRET"),
         )
-        return response.get("accessToken")
+        token = token_response.get("accessToken")
+        if token is None:
+            message = f"Failed to get token for resource '{calc_resource}' in tenant '{tenant_id}'"
+            app.logger.error(message, exc_info=1)
+            raise AuthenticationException(message)
+        else:
+            return token
 
     def get_calculator_url(self):
         calc_access_token = self._get_calculator_creds()

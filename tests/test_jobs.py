@@ -332,9 +332,8 @@ class TestDoProvisionPortfolio:
     ):
         do_provision_portfolio(csp=csp, portfolio_id=portfolio.id)
         assert portfolio.state_machine
-        assert trigger_next_transition.called_with(
-            csp_data=make_initial_csp_data(portfolio)
-        )
+        csp_data = make_initial_csp_data(portfolio)
+        trigger_next_transition.assert_called_with(csp_data=csp_data)
 
     @patch("atat.jobs.send_PPOC_email")
     def test_sends_email_to_PPOC_on_completion(
@@ -349,7 +348,7 @@ class TestDoProvisionPortfolio:
         sm.state = getattr(PortfolioStates, f"{last_step}_CREATED")
         do_provision_portfolio(csp=csp, portfolio_id=portfolio.id)
 
-        assert send_PPOC_email.assert_called_once
+        send_PPOC_email.assert_called_once()
 
 
 def test_send_ppoc_email(monkeypatch, app):
