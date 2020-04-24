@@ -5,6 +5,7 @@ from atat.domain.csp.cloud.mock_cloud_provider import MockCloudProvider
 from atat.domain.csp.cloud.models import *
 from typing import Dict, Union
 from uuid import uuid4
+from operator import itemgetter
 
 
 @contextlib.contextmanager
@@ -260,3 +261,15 @@ class HybridCloudProvider(object):
 
     def disable_user(self, tenant_id: str, role_assignment_cloud_id: str) -> Dict:
         return self.azure.disable_user(tenant_id, role_assignment_cloud_id)
+
+    def get_reporting_data(self, payload: CostManagementQueryCSPPayload):
+        billing_account_id, billing_profile_id, invoice_section_id = itemgetter(
+            "AZURE_BILLING_ACCOUNT_NAME",
+            "AZURE_BILLING_PROFILE_ID",
+            "AZURE_INVOICE_SECTION_ID",
+        )(self.azure.config)
+
+        isi = f"/providers/Microsoft.Billing/billingAccounts/{billing_account_id}/billingProfiles/{billing_profile_id}/invoiceSections/{invoice_section_id}"
+        payload.invoice_section_id = isi
+
+        return self.azure.get_reporting_data(payload)

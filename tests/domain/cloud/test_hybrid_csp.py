@@ -9,6 +9,7 @@ from atat.domain.csp.cloud.models import (
     EnvironmentCSPPayload,
     KeyVaultCredentials,
     UserRoleCSPPayload,
+    CostManagementQueryCSPPayload,
 )
 from atat.jobs import do_create_application, do_create_environment_role, do_create_user
 from atat.models import PortfolioStates, PortfolioStateMachine
@@ -24,7 +25,6 @@ from tests.factories import (
     TaskOrderFactory,
     UserFactory,
 )
-from uuid import uuid4
 
 
 @pytest.fixture(scope="function")
@@ -106,7 +106,7 @@ def test_hybrid_create_application_job(session, csp):
 
 
 @pytest.mark.hybrid
-def test_hybrid_create_environment_job(session, csp):
+def test_hybrid_create_environment_job(csp):
     environment = EnvironmentFactory.create()
 
     csp.azure.create_tenant_creds(
@@ -130,6 +130,34 @@ def test_hybrid_create_environment_job(session, csp):
     result = csp.create_environment(payload)
 
     assert result.id
+
+
+@pytest.mark.hybrid
+def test_get_reporting_data(csp):
+    from_date = pendulum.now().subtract(years=1).add(days=1).format("YYYY-MM-DD")
+    to_date = pendulum.now().format("YYYY-MM-DD")
+
+    csp.azure.create_tenant_creds(
+        csp.azure.tenant_id,
+        KeyVaultCredentials(
+            root_tenant_id=csp.azure.tenant_id,
+            root_sp_client_id=csp.azure.client_id,
+            root_sp_key=csp.azure.secret_key,
+            tenant_id=csp.azure.tenant_id,
+            tenant_sp_key=csp.azure.secret_key,
+            tenant_sp_client_id=csp.azure.client_id,
+        ),
+    )
+
+    payload = CostManagementQueryCSPPayload(
+        tenant_id=csp.azure.tenant_id,
+        from_date=from_date,
+        to_date=to_date,
+        billing_profile_properties={"invoice_sections": [{"invoice_section_id": "",}],},
+    )
+
+    result = csp.get_reporting_data(payload)
+    assert result.name
 
 
 @pytest.mark.hybrid

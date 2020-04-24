@@ -60,7 +60,7 @@ locally:
   You will have to either create symlinks to the binaries or update the path.  Both are probably not necessary:
   ```
   brew link --force --overwrite node@10
-  echo 'export PATH="/usr/local/opt/node@10/bin:$PATH"' >> ~/.zshrc 
+  echo 'export PATH="/usr/local/opt/node@10/bin:$PATH"' >> ~/.zshrc
   ```
 
 ### Cloning
@@ -277,7 +277,7 @@ To generate coverage reports for the Javascript tests:
 - `REDIS_URI`: URI for the redis server.
 - `SECRET_KEY`: String key which will be used to sign the session cookie. Should be a long string of random bytes. https://flask.palletsprojects.com/en/1.1.x/config/#SECRET_KEY
 - `SERVER_NAME`: Hostname for ATAT. Only needs to be specified in contexts where the hostname cannot be inferred from the request, such as Celery workers. https://flask.palletsprojects.com/en/1.1.x/config/#SERVER_NAME
-- `SERVICE_DESK_URL`: The URL for the service desk.  This is the site that will be displayed when the Support button is pressed. 
+- `SERVICE_DESK_URL`: The URL for the service desk.  This is the site that will be displayed when the Support button is pressed.
 - `SESSION_COOKIE_NAME`: String value specifying the name to use for the session cookie. https://flask.palletsprojects.com/en/1.1.x/config/#SESSION_COOKIE_NAME
 - `SESSION_COOKIE_DOMAIN`: String value specifying the name to use for the session cookie. This should be set to the root domain so that it is valid for both the main site and the authentication subdomain. https://flask.palletsprojects.com/en/1.1.x/config/#SESSION_COOKIE_DOMAIN
 - `SESSION_KEY_PREFIX`: A prefix that is added before all session keys: https://pythonhosted.org/Flask-Session/#configuration
@@ -291,11 +291,13 @@ To generate coverage reports for the Javascript tests:
 - `WTF_CSRF_ENABLED`: Boolean value specifying if WTForms should protect against CSRF. Should be set to "true" unless running automated tests.
 
 ## Hybrid Configuration
-Configuration variables that are needed solely to run Hybrid tests are in the `[hybrid]` section of the base configuration file. 
+Configuration variables that are needed solely to run Hybrid tests are in the `[hybrid]` section of the base configuration file.
 - `AZURE_ADMIN_ROLE_ASSIGNMENT_ID`: The fully pathed role assignment ID that associates a user with admin privileges to the root tenant of the Hybrid Cloud
+- `AZURE_BILLING_PROFILE_ID`: ID of the billing profile used for Cost Management queries with the Hybrid interface.
+- `AZURE_INVOICE_SECTION_ID`: ID of the invoice section used for Cost Management queries with the Hybrid interface.
 - `AZURE_ROOT_MGMT_GROUP_ID`: The fully pathed root management group ID for the Hybrid Cloud.
-- `AZURE_TENANT_ADMIN_USERNAME`: Username of an admin user associated with the "root" tenant id used in the Hybrid Cloud Provider
 - `AZURE_TENANT_ADMIN_PASSWORD`: Password associated with the "root" tenant id used in the Hybrid Cloud Provider
+- `AZURE_TENANT_ADMIN_USERNAME`: Username of an admin user associated with the "root" tenant id used in the Hybrid Cloud Provider
 - `AZURE_USER_OBJECT_ID`: Object Id of an admin user associated with the "root" tenant id used in the Hybrid Cloud Provider
 
 ### UI Test Automation
