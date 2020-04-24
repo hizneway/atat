@@ -236,19 +236,14 @@ To generate coverage reports for the Javascript tests:
 
 - `ASSETS_URL`: URL to host which serves static assets (such as a CDN).
 - `AZURE_ACCOUNT_NAME`: The name for the Azure blob storage account
-- `AZURE_ADMIN_ROLE_ASSIGNMENT_ID`: The fully pathed role assignment ID that associates a user with admin privileges to the root tenant of the Hybrid Cloud
 - `AZURE_BILLING_ACCOUNT_NAME`: The name for the root Azure billing account
 - `AZURE_CALC_CLIENT_ID`: The client id used to generate a token for the Azure pricing calculator
 - `AZURE_CALC_RESOURCE`: The resource URL used to generate a token for the Azure pricing calculator
 - `AZURE_CALC_SECRET`: The secret key used to generate a token for the Azure pricing calculator
 - `AZURE_CALC_URL`: The redirect URL for the Azure pricing calculator
 - `AZURE_LOGIN_URL`: The URL used to login for an Azure instance.
-- `AZURE_ROOT_MGMT_GROUP_ID`: [HYBRID TEST ONLY] The fully pathed root management group ID for the Hybrid Cloud.
 - `AZURE_STORAGE_KEY`: A valid secret key for the Azure blob storage account
 - `AZURE_TO_BUCKET_NAME`: The Azure blob storage container name for task order uploads
-- `AZURE_TENANT_ADMIN_USERNAME`: Username of an admin user associated with the "root" tenant id used in the Hybrid Cloud Provider
-- `AZURE_TENANT_ADMIN_PASSWORD`: Password associated with the "root" tenant id used in the Hybrid Cloud Provider
-- `AZURE_USER_OBJECT_ID`: Object Id of an admin user associated with the "root" tenant id used in the Hybrid Cloud Provider
 - `BLOB_STORAGE_URL`: URL to Azure blob storage container.
 - `CAC_URL`: URL for the CAC authentication route.
 - `CA_CHAIN`: Path to the CA chain file.
@@ -294,6 +289,14 @@ To generate coverage reports for the Javascript tests:
 - `STATIC_URL`: URL specifying where static assets are hosted.
 - `USE_AUDIT_LOG`: Boolean value describing if ATAT should write to the audit log table in the database. Set to "false" by default for performance reasons.
 - `WTF_CSRF_ENABLED`: Boolean value specifying if WTForms should protect against CSRF. Should be set to "true" unless running automated tests.
+
+## Hybrid Configuration
+Configuration variables that are needed solely to run Hybrid tests are in the `[hybrid]` section of the base configuration file. 
+- `AZURE_ADMIN_ROLE_ASSIGNMENT_ID`: The fully pathed role assignment ID that associates a user with admin privileges to the root tenant of the Hybrid Cloud
+- `AZURE_ROOT_MGMT_GROUP_ID`: The fully pathed root management group ID for the Hybrid Cloud.
+- `AZURE_TENANT_ADMIN_USERNAME`: Username of an admin user associated with the "root" tenant id used in the Hybrid Cloud Provider
+- `AZURE_TENANT_ADMIN_PASSWORD`: Password associated with the "root" tenant id used in the Hybrid Cloud Provider
+- `AZURE_USER_OBJECT_ID`: Object Id of an admin user associated with the "root" tenant id used in the Hybrid Cloud Provider
 
 ### UI Test Automation
 
