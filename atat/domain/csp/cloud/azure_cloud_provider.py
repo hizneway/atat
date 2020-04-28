@@ -209,23 +209,25 @@ class AzureCloudProvider(CloudProviderInterface):
         result.raise_for_status()
         result_value = result.json()["value"]
         return result_value
+
+    @log_and_raise_exceptions
     def get_secret(self, secret_key):
-        credential = self._get_client_secret_credential_obj()
-        secret_client = self.sdk.secrets.SecretClient(
-            vault_url=self.vault_url, credential=credential,
+        kv_token = self._get_keyvault_token()
+
+        get_secret_headers = {
+            "Authorization": f"Bearer {kv_token}",
+        }
+
+        result = self.sdk.requests.get(
+            # do we need to include secret version?
+            f"{self.vault_url}secrets/{secret_key}?api-version=7.0",
+            headers=get_secret_headers,
+            timeout=30,
         )
-        try:
-            return secret_client.get_secret(secret_key).value
-        except self.sdk.azure_exceptions.HttpResponseError:
-            app.logger.error(
-                f"Could not GET secret in Azure keyvault for key {secret_key}.",
-                exc_info=1,
-            )
-            creds = self._source_root_creds()
-            raise SecretException(
-                creds.tenant_id,
-                f"Could not GET secret in Azure keyvault for key {secret_key}.",
-            )
+
+        result.raise_for_status()
+        result_value = result.json()["value"]
+        return result_value
 
     def create_environment(self, payload: EnvironmentCSPPayload):
         creds = self._source_tenant_creds(payload.tenant_id)
