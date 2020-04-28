@@ -12,7 +12,6 @@ from .exceptions import (
     AuthenticationException,
     ConnectionException,
     DomainNameException,
-    SecretException,
     UnknownServerException,
     UserProvisioningException,
 )
