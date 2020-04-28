@@ -14,7 +14,6 @@ from atat.domain.csp.cloud.exceptions import (
     AuthenticationException,
     ConnectionException,
     DomainNameException,
-    SecretException,
     UnknownServerException,
     UserProvisioningException,
 )
@@ -1059,36 +1058,13 @@ def test_get_reporting_data_malformed_payload(mock_azure: AzureCloudProvider):
 
 
 def test_get_secret(mock_azure: AzureCloudProvider):
-    mock_azure.sdk.secrets.SecretClient.return_value.get_secret.return_value.value = (
-        "my secret"
-    )
-
+    mock_azure.get_secret.return_value = "my secret"
     assert mock_azure.get_secret("secret key") == "my secret"
 
 
-def test_get_secret_secret_exception(mock_azure: AzureCloudProvider):
-    mock_azure.sdk.secrets.SecretClient.return_value.get_secret.side_effect = [
-        mock_azure.sdk.azure_exceptions.HttpResponseError,
-    ]
-
-    with pytest.raises(SecretException):
-        mock_azure.get_secret("secret key") == "my secret"
-
-
 def test_set_secret(mock_azure: AzureCloudProvider):
-    mock_azure.sdk.secrets.SecretClient.return_value.set_secret.return_value = (
-        "my secret"
-    )
+    mock_azure.set_secret.return_value = "my secret"
     assert mock_azure.set_secret("secret key", "secret_value") == "my secret"
-
-
-def test_set_secret_secret_exception(mock_azure: AzureCloudProvider):
-    mock_azure.sdk.secrets.SecretClient.return_value.set_secret.side_effect = [
-        mock_azure.sdk.azure_exceptions.HttpResponseError,
-    ]
-
-    with pytest.raises(SecretException):
-        mock_azure.set_secret("secret key", "secret_value")
 
 
 def test_create_active_directory_user(
