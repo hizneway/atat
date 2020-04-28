@@ -56,17 +56,6 @@ def mock_identity():
     return Mock(spec=identity)
 
 
-def mock_secrets():
-    from azure.keyvault import secrets
-
-    mock_secrets = Mock(spec=secrets)
-    mock_secrets.SecretClient.return_value.get_secret.return_value.value = json.dumps(
-        KEYVAULT_SECRET
-    )
-    mock_secrets.SecretClient.return_value.set_secret.return_value = None
-    return mock_secrets
-
-
 def mock_azure_exceptions():
     from azure.core import exceptions
 
@@ -108,7 +97,6 @@ class MockAzureSDK(object):
         self.managementgroups = mock_managementgroups()
         self.credentials = mock_credentials()
         self.identity = mock_identity()
-        self.secrets = mock_secrets()
         self.azure_exceptions = mock_azure_exceptions()
         self.cloud = mock_cloud_details()
         self.adal = mock_adal()
@@ -125,6 +113,10 @@ def mock_azure(monkeypatch):
     monkeypatch.setattr(
         AzureCloudProvider, "validate_domain_name", Mock(return_value=True),
     )
+    monkeypatch.setattr(
+        AzureCloudProvider, "get_secret", Mock(return_value=json.dumps(KEYVAULT_SECRET))
+    )
+    monkeypatch.setattr(AzureCloudProvider, "set_secret", Mock(return_value=None))
     azure_cloud_provider = AzureCloudProvider(
         AZURE_CONFIG, azure_sdk_provider=MockAzureSDK()
     )
