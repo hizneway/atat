@@ -275,3 +275,16 @@ class HybridCloudProvider(object):
         payload.invoice_section_id = isi
 
         return self.azure.get_reporting_data(payload)
+
+    def create_subscription(self, payload: SubscriptionCreationCSPPayload):
+        payload.display_name = f"{HYBRID_PREFIX} {payload.display_name}"
+        return self.azure.create_subscription(payload)
+
+    def create_subscription_creation(self, payload: SubscriptionCreationCSPPayload):
+        payload.display_name = f"{HYBRID_PREFIX} {payload.display_name}"
+        return self.azure.create_subscription_creation(payload)
+
+    def create_subscription_verification(
+        self, payload: SubscriptionVerificationCSPPayload
+    ):
+        pass

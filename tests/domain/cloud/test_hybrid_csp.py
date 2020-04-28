@@ -11,7 +11,7 @@ from atat.domain.csp.cloud.models import (
     UserCSPPayload,
     UserRoleCSPPayload,
     CostManagementQueryCSPPayload,
-    InitialMgmtGroupVerificationCSPPayload,
+    SubscriptionCreationCSPPayload,
 )
 from atat.jobs import do_create_application, do_create_environment_role, do_create_user
 from atat.models import PortfolioStates, PortfolioStateMachine
@@ -160,6 +160,34 @@ def test_get_reporting_data(csp):
 
     result = csp.get_reporting_data(payload)
     assert result.name
+
+
+@pytest.mark.hybrid
+def test_create_subscription(csp):
+    environment = EnvironmentFactory.create()
+
+    csp.azure.create_tenant_creds(
+        csp.azure.tenant_id,
+        KeyVaultCredentials(
+            root_tenant_id=csp.azure.tenant_id,
+            root_sp_client_id=csp.azure.client_id,
+            root_sp_key=csp.azure.secret_key,
+            tenant_id=csp.azure.tenant_id,
+            tenant_sp_key=csp.azure.secret_key,
+            tenant_sp_client_id=csp.azure.client_id,
+        ),
+    )
+
+    payload = SubscriptionCreationCSPPayload(
+        display_name=environment.name,
+        tenant_id=csp.azure.tenant_id,
+        parent_group_id=csp.azure.config["AZURE_ROOT_MGMT_GROUP_ID"],
+        billing_account_name=csp.azure.config["AZURE_BILLING_ACCOUNT_NAME"],
+        billing_profile_name=csp.azure.config["AZURE_BILLING_PROFILE_ID"],
+        invoice_section_name=csp.azure.config["AZURE_INVOICE_SECTION_ID"],
+    )
+
+    csp.create_subscription_creation(payload)
 
 
 @pytest.mark.hybrid
