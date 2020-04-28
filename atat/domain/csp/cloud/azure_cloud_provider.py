@@ -169,24 +169,46 @@ class AzureCloudProvider(CloudProviderInterface):
 
         self.policy_manager = AzurePolicyManager(config["AZURE_POLICY_LOCATION"])
 
-    def set_secret(self, secret_key, secret_value):
-        credential = self._get_client_secret_credential_obj()
-        secret_client = self.sdk.secrets.SecretClient(
-            vault_url=self.vault_url, credential=credential,
-        )
-        try:
-            return secret_client.set_secret(secret_key, secret_value)
-        except self.sdk.azure_exceptions.HttpResponseError:
-            app.logger.error(
-                f"Could not SET secret in Azure keyvault for key {secret_key}.",
-                exc_info=1,
+    @log_and_raise_exceptions
+    def _get_keyvault_token(self):
+        url = f"https://login.microsoftonline.com/{self.tenant_id}/oauth2/token"
+        payload = {
+            "grant_type": "client_credentials",
+            "client_id": self.client_id,
+            "client_secret": self.secret_key,
+            "resource": "https://vault.azure.net",
+        }
+        token_response = self.sdk.requests.get(url, data=payload, timeout=30)
+        token_response.raise_for_status()
+        token = token_response.json().get("access_token")
+        if token is None:
+            message = (
+                f"Failed to get token for resource '{resource}' in tenant '{tenant_id}'"
             )
-            creds = self._source_root_creds()
-            raise SecretException(
-                creds.tenant_id,
-                f"Could not SET secret in Azure keyvault for key {secret_key}.",
-            )
+            app.logger.error(message, exc_info=1)
+            raise AuthenticationException(message)
+        else:
+            return token
 
+    @log_and_raise_exceptions
+    def set_secret(self, secret_key, secret_value):
+        kv_token = self._get_keyvault_token()
+
+        set_secret_headers = {
+            "Authorization": f"Bearer {kv_token}",
+        }
+        set_secret_body = {"value": secret_value}
+
+        result = self.sdk.requests.put(
+            f"{self.vault_url}secrets/{secret_key}?api-version=7.0",
+            headers=set_secret_headers,
+            timeout=30,
+            json=set_secret_body,
+        )
+
+        result.raise_for_status()
+        result_value = result.json()["value"]
+        return result_value
     def get_secret(self, secret_key):
         credential = self._get_client_secret_credential_obj()
         secret_client = self.sdk.secrets.SecretClient(
