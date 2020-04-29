@@ -39,6 +39,7 @@ transitions = "*"
 Unipath = "*"
 webassets = "*"
 werkzeug = "*"
+email-validator = '*'
 
 [tool.poetry.dev-dependencies]
 bandit = "*"
