@@ -217,7 +217,6 @@ class AzureCloudProvider(CloudProviderInterface):
         }
 
         result = self.sdk.requests.get(
-            # do we need to include secret version?
             f"{self.vault_url}secrets/{secret_key}?api-version=7.0",
             headers=get_secret_headers,
             timeout=30,
