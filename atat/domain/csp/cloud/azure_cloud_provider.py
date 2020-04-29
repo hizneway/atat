@@ -126,7 +126,6 @@ class AzureSDKProvider(object):
         from azure.mgmt import managementgroups
         import azure.common.credentials as credentials
         import azure.identity as identity
-        from azure.keyvault import secrets
         from azure.core import exceptions
         from msrestazure.azure_cloud import (
             AZURE_PUBLIC_CLOUD,
@@ -137,7 +136,6 @@ class AzureSDKProvider(object):
         self.managementgroups = managementgroups
         self.credentials = credentials
         self.identity = identity
-        self.secrets = secrets
         self.azure_exceptions = exceptions
         self.cloud = AZURE_PUBLIC_CLOUD
         self.adal = adal
