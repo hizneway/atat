@@ -169,12 +169,14 @@ class AzureCloudProvider(CloudProviderInterface):
 
     @log_and_raise_exceptions
     def _get_keyvault_token(self):
-        url = f"https://login.microsoftonline.com/{self.tenant_id}/oauth2/token"
+        url = (
+            f"{self.sdk.cloud.endpoints.active_directory}/{self.tenant_id}/oauth2/token"
+        )
         payload = {
             "grant_type": "client_credentials",
             "client_id": self.client_id,
             "client_secret": self.secret_key,
-            "resource": "https://vault.azure.net",
+            "resource": f"https://{self.sdk.cloud.suffixes.keyvault_dns[1:]}",
         }
         token_response = self.sdk.requests.get(url, data=payload, timeout=30)
         token_response.raise_for_status()
