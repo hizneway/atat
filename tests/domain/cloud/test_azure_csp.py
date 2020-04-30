@@ -1057,14 +1057,105 @@ def test_get_reporting_data_malformed_payload(mock_azure: AzureCloudProvider):
             )
 
 
-def test_get_secret(mock_azure: AzureCloudProvider):
-    mock_azure.get_secret.return_value = "my secret"
-    assert mock_azure.get_secret("secret key") == "my secret"
+def test_get_keyvault_token(mock_azure: AzureCloudProvider, mock_http_error_response):
+    mock_azure._get_keyvault_token = mock_azure._unmocked_get_keyvault_token
+    mock_result = mock_requests_response(
+        status=200,
+        json_data={
+            "token_type": "Bearer",
+            "expires_in": "3599",
+            "ext_expires_in": "3599",
+            "expires_on": "1588197654",
+            "not_before": "1588193754",
+            "resource": f"https://{mock_azure.sdk.cloud.suffixes.keyvault_dns[1:]}",
+            "access_token": "TOKEN",
+        },
+    )
+
+    mock_azure.sdk.requests.get.side_effect = [
+        mock_azure.sdk.requests.exceptions.ConnectionError,
+        mock_azure.sdk.requests.exceptions.Timeout,
+        mock_http_error_response,
+        mock_result,
+    ]
+    with pytest.raises(ConnectionException):
+        mock_azure._get_keyvault_token()
+    with pytest.raises(ConnectionException):
+        mock_azure._get_keyvault_token()
+    with pytest.raises(UnknownServerException, match=r".*500 Server Error.*"):
+        mock_azure._get_keyvault_token()
+
+    result = mock_azure._get_keyvault_token()
+    assert result == "TOKEN"
 
 
-def test_set_secret(mock_azure: AzureCloudProvider):
-    mock_azure.set_secret.return_value = "my secret"
-    assert mock_azure.set_secret("secret key", "secret_value") == "my secret"
+def test_get_secret(mock_azure: AzureCloudProvider, mock_http_error_response):
+    mock_azure.get_secret = mock_azure._unmocked_get_secret
+    mock_result = mock_requests_response(
+        status=200,
+        json_data={
+            "value": "mytestvalue",
+            "id": "https://hybridcz-pwdev-keyvault.vault.azure.net/secrets/testsecret/abc123",
+            "attributes": {
+                "enabled": True,
+                "created": 1588096321,
+                "updated": 1588096321,
+                "recoveryLevel": "Recoverable+Purgeable",
+            },
+        },
+    )
+
+    mock_azure._get_keyvault_token = Mock(return_value="TOKEN")
+    mock_azure.sdk.requests.get.side_effect = [
+        mock_azure.sdk.requests.exceptions.ConnectionError,
+        mock_azure.sdk.requests.exceptions.Timeout,
+        mock_http_error_response,
+        mock_result,
+    ]
+    with pytest.raises(ConnectionException):
+        mock_azure.get_secret("secret key")
+    with pytest.raises(ConnectionException):
+        mock_azure.get_secret("secret key")
+    with pytest.raises(UnknownServerException, match=r".*500 Server Error.*"):
+        mock_azure.get_secret("secret key")
+
+    result = mock_azure.get_secret("secret key")
+    assert result == "mytestvalue"
+
+
+def test_set_secret(mock_azure: AzureCloudProvider, mock_http_error_response):
+    mock_azure.set_secret = mock_azure._unmocked_set_secret
+    response_id = f"{mock_azure.config.get('AZURE_VAULT_URL')}secrets/testsecret/abc123"
+    mock_result = mock_requests_response(
+        status=200,
+        json_data={
+            "value": "mytestvalue",
+            "id": response_id,
+            "attributes": {
+                "enabled": True,
+                "created": 1588096321,
+                "updated": 1588096321,
+                "recoveryLevel": "Recoverable+Purgeable",
+            },
+        },
+    )
+
+    mock_azure._get_keyvault_token = Mock(return_value="TOKEN")
+    mock_azure.sdk.requests.put.side_effect = [
+        mock_azure.sdk.requests.exceptions.ConnectionError,
+        mock_azure.sdk.requests.exceptions.Timeout,
+        mock_http_error_response,
+        mock_result,
+    ]
+    with pytest.raises(ConnectionException):
+        mock_azure.set_secret("secret key", "mytestvalue")
+    with pytest.raises(ConnectionException):
+        mock_azure.set_secret("secret key", "mytestvalue")
+    with pytest.raises(UnknownServerException, match=r".*500 Server Error.*"):
+        mock_azure.set_secret("secret key", "mytestvalue")
+
+    result = mock_azure.set_secret("secret key", "mytestvalue")
+    assert result["id"] == response_id
 
 
 def test_create_active_directory_user(
