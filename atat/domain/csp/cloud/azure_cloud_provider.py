@@ -207,7 +207,7 @@ class AzureCloudProvider(CloudProviderInterface):
         )
 
         result.raise_for_status()
-        result_value = result.json()["value"]
+        result_value = result.json()
         return result_value
 
     @log_and_raise_exceptions
