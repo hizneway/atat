@@ -1355,9 +1355,7 @@ def test_update_tenant_creds(mock_azure: AzureCloudProvider, monkeypatch):
         "tenant_sp_key": "1234",
     }
     monkeypatch.setattr(
-        AzureCloudProvider,
-        "get_secret",
-        Mock(return_value=json.dumps(existing_secrets)),
+        mock_azure, "get_secret", Mock(return_value=json.dumps(existing_secrets)),
     )
 
     mock_new_secrets = KeyVaultCredentials(**new_secrets)
