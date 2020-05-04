@@ -126,17 +126,10 @@ If you are updating multiple domains, certbot will present these messages one af
 
 After you have updated the `acme-challenges.yml` file, you need to apply the updated ConfigMap using the kubectl commands discussed in the "Applying K8s Configuration" section above.
 
-You will need to ensure that the following environmental variables are set before applying the updated ConfiMap:
+In addition to the the environmental variables listed in the [Applying K8s configuration](#applying-k8s-configuration) section above, you'll also need to set the following additional variables before applying the updated ConfiMap:
 
-- CONTAINER_IMAGE
-- PORT_PREFIX
-- MAIN_DOMAIN
-- AUTH_DOMAIN
 - VMSS_CLIENT_ID
 - KV_NAME
-- TENANT_ID
-- KV_MI_ID
-- KV_MI_CLIENT_ID
 
 Pay careful attention to ensure that the container image value is to to date. As a reminder, the container images can be listed with:
 
