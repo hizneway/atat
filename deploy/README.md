@@ -86,7 +86,7 @@ certbot --config-dir ~/.certbot/config --work-dir ~/.certbot/workdir --logs-dir 
 You may be prompted to enter an email address, generally we've used the address of our tech lead in the past. If you asked to subscribe to any newsletters, decline.
 You may also be prompted to agree to a terms of services, which you should do. 
 
-You will be prompted to enter the domain names you want a cert for. Enter **both** the main and auth domains as a comma seprated list. For instance:
+You will be prompted to enter the domain names you want a cert for. Enter **both** the main and auth domains as a comma separated list. For instance:
 
 ```
 jedi.atat.code.mil,jedi-auth.atat.code.mil
@@ -181,9 +181,9 @@ Make sure that the vault name and cert name match the ones used in the FlexVol i
 
 Once the keyvault entry is updated you will need to restart deployment with these new certs:
 
-```kubectl -n master rollout restart deployment atst```
+`kubectl -n master rollout restart deployment atst`
 
-That's the end of the process of renewing certs using certbot and Let's Encrypt. If everything went well then you should be able to load your site and see the certificate on it.
+That's the end of the process of renewing certs using certbot and Let's Encrypt. If everything went well then you should be able to load your site and see the new certificate on it.
 
 ### Create the Diffie-Hellman parameters
 
