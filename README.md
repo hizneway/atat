@@ -216,9 +216,11 @@ To run only the Python unit tests:
 
     poetry run python -m pytest
 
-Integration tests that use the hybrid cloud provider are skipped by default. To run these tests, add a `--hybrid` flag when running pytest:
+Integration tests that use the hybrid cloud provider are skipped by default. To run these tests, add a `--hybrid` flag and run the hybrid test file:
 
-    poetry run python -m pytest --hybrid
+    poetry run python -m pytest --hybrid tests/domain/cloud/test_hybrid_csp.py
+
+Note that running the hybrid tests requires that additional config values be set, outlined in the [Hybrid Configuration](#hybrid-configuration) section.
 
 This project also runs Javascript tests using jest. To run the Javascript tests:
 
