@@ -116,16 +116,13 @@ def mock_azure(monkeypatch):
     azure_cloud_provider = AzureCloudProvider(
         AZURE_CONFIG, azure_sdk_provider=MockAzureSDK()
     )
-    AzureCloudProvider._unmocked_get_keyvault_token = (
-        AzureCloudProvider._get_keyvault_token
-    )
-    AzureCloudProvider._unmocked_get_secret = AzureCloudProvider.get_secret
-    AzureCloudProvider._unmocked_set_secret = AzureCloudProvider.set_secret
     monkeypatch.setattr(
-        AzureCloudProvider, "get_secret", Mock(return_value=json.dumps(KEYVAULT_SECRET))
+        azure_cloud_provider,
+        "get_secret",
+        Mock(return_value=json.dumps(KEYVAULT_SECRET)),
     )
-    monkeypatch.setattr(AzureCloudProvider, "set_secret", Mock(return_value=None))
+    monkeypatch.setattr(azure_cloud_provider, "set_secret", Mock(return_value=None))
     monkeypatch.setattr(
-        AzureCloudProvider, "_get_keyvault_token", Mock(return_value="TOKEN")
+        azure_cloud_provider, "_get_keyvault_token", Mock(return_value="TOKEN")
     )
     return azure_cloud_provider
