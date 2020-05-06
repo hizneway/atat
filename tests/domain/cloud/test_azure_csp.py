@@ -122,12 +122,6 @@ def mock_management_group_create(mock_azure, spec_dict):
     )
 
 
-def mock_management_group_get(mock_azure, spec_dict):
-    mock_azure.sdk.managementgroups.ManagementGroupsAPI.return_value.management_groups.get.return_value.as_dict.return_value = (
-        spec_dict
-    )
-
-
 def test_create_environment_succeeds(mock_azure: AzureCloudProvider):
     environment = EnvironmentFactory.create()
     mock_management_group_create(mock_azure, {"id": "Test Id"})
@@ -168,21 +162,34 @@ def test_create_initial_mgmt_group_succeeds(mock_azure: AzureCloudProvider):
     assert result.root_management_group_name == "Test Name"
 
 
-def test_create_initial_mgmt_group_verification_succeed(mock_azure: AzureCloudProvider):
-    application = ApplicationFactory.create()
-    mock_management_group_get(mock_azure, {"id": "Test Id"})
+def test_create_initial_mgmt_group_verification(
+    mock_azure: AzureCloudProvider, mock_http_error_response
+):
+    mock_id = "management/group/path/TestName"
 
-    management_group_name = str(uuid4())
+    mock_azure.sdk.requests.get.side_effect = [
+        mock_azure.sdk.requests.exceptions.ConnectionError,
+        mock_azure.sdk.requests.exceptions.Timeout,
+        mock_http_error_response,
+        mock_requests_response(json_data={"id": mock_id}),
+    ]
 
     payload = InitialMgmtGroupVerificationCSPPayload(
-        tenant_id="1234", management_group_name=management_group_name
+        tenant_id="1234", management_group_name="TestName"
     )
+
+    with pytest.raises(ConnectionException):
+        mock_azure.create_initial_mgmt_group_verification(payload)
+    with pytest.raises(ConnectionException):
+        mock_azure.create_initial_mgmt_group_verification(payload)
+    with pytest.raises(UnknownServerException, match=r".*500 Server Error.*"):
+        mock_azure.create_initial_mgmt_group_verification(payload)
+
     result: InitialMgmtGroupVerificationCSPResult = mock_azure.create_initial_mgmt_group_verification(
         payload
     )
 
-    assert result.id == "Test Id"
-    # assert result.name == management_group_name
+    assert result.id == mock_id
 
 
 def test_disable_user(mock_azure: AzureCloudProvider, mock_http_error_response):
