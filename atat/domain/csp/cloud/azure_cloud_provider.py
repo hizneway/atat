@@ -2,7 +2,6 @@ import json
 
 from flask import current_app as app
 from functools import wraps
-from msrestazure.azure_cloud import AZURE_PUBLIC_CLOUD as cloud
 from secrets import token_hex, token_urlsafe
 from uuid import uuid4
 
