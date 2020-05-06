@@ -271,10 +271,13 @@ class AzureCloudProvider(CloudProviderInterface):
         return ApplicationCSPResult(**response)
 
     def create_initial_mgmt_group(self, payload: InitialMgmtGroupCSPPayload):
-        """Creates the root management group for the Portfolio tenant.
-
-        The management group created in this step is the parent to all future
-        management groups created for applications and environments.
+        """Creates a the first management group in the Portfolio tenant.
+        
+        Every tenant has a "Root Management Group" (RMG), but this RMG isn't
+        provisioned by Azure until another management group is created. In this
+        step, we provision a management group solely to trigger the creation of 
+        the RMG. After this step, we create all other management groups for 
+        applications and environments under the RMG.
 
         A management group is a collection of subscriptions and management
         groups to which "governance conditions" can be applied. These resources
