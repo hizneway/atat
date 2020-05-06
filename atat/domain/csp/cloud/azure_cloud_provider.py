@@ -1107,9 +1107,11 @@ class AzureCloudProvider(CloudProviderInterface):
 
         # Set up bearer token header
 
-        tenant_endpoint = f"{cloud.endpoints.active_directory}/{self.tenant_id}"
+        tenant_endpoint = (
+            f"{self.sdk.cloud.endpoints.active_directory}/{self.tenant_id}"
+        )
         auth = self.sdk.adal.AuthenticationContext(tenant_endpoint)
-        resource = cloud.endpoints.microsoft_graph_resource_id
+        resource = self.sdk.cloud.endpoints.microsoft_graph_resource_id
         token = auth.acquire_token_with_client_credentials(
             resource, self.client_id, self.secret_key
         )
