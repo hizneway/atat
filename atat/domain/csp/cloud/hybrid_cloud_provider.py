@@ -165,12 +165,14 @@ class HybridCloudProvider(object):
     def create_initial_mgmt_group(
         self, payload: InitialMgmtGroupCSPPayload
     ) -> InitialMgmtGroupCSPResult:
+        payload.tenant_id = self.azure.root_tenant_id
         payload.display_name = f"{HYBRID_PREFIX} {payload.display_name}"
         return self.azure.create_initial_mgmt_group(payload)
 
     def create_initial_mgmt_group_verification(
         self, payload: InitialMgmtGroupVerificationCSPPayload
     ) -> InitialMgmtGroupVerificationCSPResult:
+        payload.tenant_id = self.azure.root_tenant_id
         return self.azure.create_initial_mgmt_group_verification(payload)
 
     def create_tenant_admin_ownership(

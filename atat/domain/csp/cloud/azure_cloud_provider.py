@@ -1,9 +1,11 @@
 import json
-
-from flask import current_app as app
+import time
 from functools import wraps
 from secrets import token_hex, token_urlsafe
+from typing import Dict
 from uuid import uuid4
+
+from flask import current_app as app
 
 from atat.utils import sha256_hex
 
@@ -12,6 +14,7 @@ from .exceptions import (
     AuthenticationException,
     ConnectionException,
     DomainNameException,
+    ResourceProvisioningError,
     UnknownServerException,
     UserProvisioningException,
 )
@@ -75,7 +78,6 @@ from .models import (
     UserRoleCSPResult,
 )
 from .policy import AzurePolicyManager
-
 
 # This needs to be a fully pathed role definition identifier, not just a UUID
 # TODO: Extract these from sdk msrestazure.azure_cloud import AZURE_PUBLIC_CLOUD
@@ -230,20 +232,10 @@ class AzureCloudProvider(CloudProviderInterface):
         return result_value
 
     def create_environment(self, payload: EnvironmentCSPPayload):
-        creds = self._source_tenant_creds(payload.tenant_id)
-        credentials = self._get_credential_obj(
-            {
-                "client_id": creds.tenant_sp_client_id,
-                "secret_key": creds.tenant_sp_key,
-                "tenant_id": creds.tenant_id,
-            },
-            resource=self.sdk.cloud.endpoints.resource_manager,
-        )
-
         response = self._create_management_group(
-            credentials,
             payload.management_group_name,
             payload.display_name,
+            payload.tenant_id,
             payload.parent_id,
         )
 
@@ -251,27 +243,17 @@ class AzureCloudProvider(CloudProviderInterface):
 
     @log_and_raise_exceptions
     def create_application(self, payload: ApplicationCSPPayload):
-        creds = self._source_tenant_creds(payload.tenant_id)
-        credentials = self._get_credential_obj(
-            {
-                "client_id": creds.tenant_sp_client_id,
-                "secret_key": creds.tenant_sp_key,
-                "tenant_id": creds.tenant_id,
-            },
-            resource=self.sdk.cloud.endpoints.resource_manager,
-        )
-
         response = self._create_management_group(
-            credentials,
             payload.management_group_name,
             payload.display_name,
+            payload.tenant_id,
             payload.parent_id,
         )
 
         return ApplicationCSPResult(**response)
 
     def create_initial_mgmt_group(self, payload: InitialMgmtGroupCSPPayload):
-        """Creates a the first management group in the Portfolio tenant.
+        """Creates the initial management group in the Portfolio tenant.
         
         Every tenant has a "Root Management Group" (RMG), but this RMG isn't
         provisioned by Azure until another management group is created. In this
@@ -285,18 +267,8 @@ class AzureCloudProvider(CloudProviderInterface):
 
         https://docs.microsoft.com/en-us/azure/governance/management-groups/overview
         """
-
-        creds = self._source_tenant_creds(payload.tenant_id)
-        credentials = self._get_credential_obj(
-            {
-                "client_id": creds.root_sp_client_id,
-                "secret_key": creds.root_sp_key,
-                "tenant_id": creds.root_tenant_id,
-            },
-            resource=self.sdk.cloud.endpoints.resource_manager,
-        )
         response = self._create_management_group(
-            credentials, payload.management_group_name, payload.display_name,
+            payload.management_group_name, payload.display_name, payload.tenant_id,
         )
 
         return InitialMgmtGroupCSPResult(**response)
@@ -313,7 +285,7 @@ class AzureCloudProvider(CloudProviderInterface):
 
         https://docs.microsoft.com/en-us/azure/governance/management-groups/overview
         """
-        sp_token = self._get_tenant_principal_token(self.tenant_id)
+        sp_token = self._get_tenant_principal_token(payload.tenant_id)
         headers = {
             "Authorization": f"Bearer {sp_token}",
         }
@@ -324,32 +296,67 @@ class AzureCloudProvider(CloudProviderInterface):
         response.raise_for_status()
         return InitialMgmtGroupVerificationCSPResult(**response.json())
 
+    @log_and_raise_exceptions
     def _create_management_group(
-        self, credentials, management_group_id, display_name, parent_id=None,
+        self, management_group_id, display_name, tenant_id, parent_id=None,
     ):
-        mgmgt_group_client = self.sdk.managementgroups.ManagementGroupsAPI(credentials)
-        create_parent_grp_info = self.sdk.managementgroups.models.CreateParentGroupInfo(
-            id=parent_id
-        )
-        create_mgmt_grp_details = self.sdk.managementgroups.models.CreateManagementGroupDetails(
-            parent=create_parent_grp_info
-        )
-        mgmt_grp_create = self.sdk.managementgroups.models.CreateManagementGroupRequest(
-            name=management_group_id,
-            display_name=display_name,
-            details=create_mgmt_grp_details,
-        )
+        sp_token = self._get_tenant_principal_token(tenant_id)
+        session = self.sdk.requests.Session()
+        session.headers = {
+            "Authorization": f"Bearer {sp_token}",
+        }
+        if parent_id is None:
+            parent_id = f"/providers/Microsoft.Management/managementGroups/{tenant_id}"
 
-        create_request = mgmgt_group_client.management_groups.create_or_update(
-            management_group_id, mgmt_grp_create
+        request_body = {
+            "properties": {"displayName": display_name, "parent": {"id": parent_id},}
+        }
+        response = session.put(
+            f"{self.sdk.cloud.endpoints.resource_manager}providers/Microsoft.Management/managementGroups/{management_group_id}?api-version=2020-02-01",
+            json=request_body,
         )
+        response.raise_for_status()
+        if response.status_code == 202:
+            status_url = response.headers["Azure-AsyncOperation"]
+            return self._poll_management_group_creation_job(status_url, session)
+        else:
+            return response.json()
 
-        # result is a synchronous wait, might need to do a poll instead to handle first mgmt group create
-        # since we were told it could take 10+ minutes to complete, unless this handles that polling internally
-        # TODO: what to do is status is not 'Succeeded' on the
-        # response object? Will it always raise its own error
-        # instead?
-        return create_request.result()
+    @log_and_raise_exceptions
+    def _poll_management_group_creation_job(self, url: str, session) -> Dict:
+        """Polls the management group creation job until it is resolved and 
+        returns the result.
+        
+        https://docs.microsoft.com/en-us/azure/azure-resource-manager/management/async-operations
+
+        Args:
+            url: The url to check for job completion, provided by the 
+                Azure-AsyncOperation response header after creating the 
+                management group.
+            session: a requests session populated with a service principal 
+                bearer token.
+        Returns:
+            A dictionary of details of the created management group
+
+        Raises:
+            ResourceProvisioningError: Something went wrong when trying to 
+                create the management group
+            RequestException: Something went wrong when trying to make the request
+        """
+
+        while True:
+            response = session.get(url)
+            response.raise_for_status()
+            response_json = response.json()
+            status = response_json["status"]
+            if status == "Succeeded":
+                return response_json
+            elif status in ("Failed", "Canceled"):
+                error_message = f"{response_json['error']['message']}\nError code: {response_json['error']['code']}"
+                raise ResourceProvisioningError("management group", f"{error_message}")
+            else:
+                time.sleep(int(response.headers.get("Retry-After", 10)))
+                continue
 
     @log_and_raise_exceptions
     def _create_policy_definition(self, session, root_management_group_name, policy):
