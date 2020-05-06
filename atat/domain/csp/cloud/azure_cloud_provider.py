@@ -1,6 +1,4 @@
-import adal
 import json
-import requests
 
 from flask import current_app as app
 from functools import wraps
