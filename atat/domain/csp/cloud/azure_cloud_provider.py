@@ -126,20 +126,12 @@ def log_and_raise_exceptions(func):
 
 class AzureSDKProvider(object):
     def __init__(self):
-        from azure.mgmt import managementgroups
-        import azure.common.credentials as credentials
-        import azure.identity as identity
-        from azure.core import exceptions
         from msrestazure.azure_cloud import (
             AZURE_PUBLIC_CLOUD,
         )  # TODO: choose cloud type from config
         import adal
         import requests
 
-        self.managementgroups = managementgroups
-        self.credentials = credentials
-        self.identity = identity
-        self.azure_exceptions = exceptions
         self.cloud = AZURE_PUBLIC_CLOUD
         self.adal = adal
         self.requests = requests
@@ -1293,23 +1285,6 @@ class AzureCloudProvider(CloudProviderInterface):
             raise AuthenticationException(message)
         else:
             return token
-
-    def _get_credential_obj(self, creds, resource=None):
-        return self.sdk.credentials.ServicePrincipalCredentials(
-            client_id=creds.get("client_id"),
-            secret=creds.get("secret_key"),
-            tenant=creds.get("tenant_id"),
-            resource=resource,
-            cloud_environment=self.sdk.cloud,
-        )
-
-    def _get_client_secret_credential_obj(self):
-        creds = self._source_root_creds()
-        return self.sdk.identity.ClientSecretCredential(
-            tenant_id=creds.root_tenant_id,
-            client_id=creds.root_sp_client_id,
-            client_secret=creds.root_sp_key,
-        )
 
     @property
     def _root_creds(self):
