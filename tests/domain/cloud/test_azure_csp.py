@@ -1269,12 +1269,16 @@ def test_update_active_directory_user_password_profile(
 
 
 def test_create_user(mock_azure: AzureCloudProvider):
+    class AuthenticaionContext(object):
+        def __init__(*a, **kw):
+            pass
 
-    mock_result_create = mock_requests_response(json_data={"id": "id"})
-    mock_azure.sdk.requests.post.return_value = mock_result_create
+        def acquire_token_with_client_credentials(*a, **kw):
+            return {"accessToken": "foo"}
 
-    mock_result_update = mock_requests_response()
-    mock_azure.sdk.requests.patch.return_value = mock_result_update
+    mock_azure.sdk.adal.AuthenticationContext = AuthenticaionContext
+    mock_user_invite = mock_requests_response(json_data={"invitedUser": {"id": "id"}})
+    mock_azure.sdk.requests.post.return_value = mock_user_invite
 
     payload = UserCSPPayload(
         tenant_id=uuid4().hex,

@@ -1,9 +1,12 @@
+import adal
 import json
-from functools import wraps
-from secrets import token_hex, token_urlsafe
-from uuid import uuid4
+import requests
 
 from flask import current_app as app
+from functools import wraps
+from msrestazure.azure_cloud import AZURE_PUBLIC_CLOUD as cloud
+from secrets import token_hex, token_urlsafe
+from uuid import uuid4
 
 from atat.utils import sha256_hex
 
@@ -75,6 +78,7 @@ from .models import (
     UserRoleCSPResult,
 )
 from .policy import AzurePolicyManager
+
 
 # This needs to be a fully pathed role definition identifier, not just a UUID
 # TODO: Extract these from sdk msrestazure.azure_cloud import AZURE_PUBLIC_CLOUD
@@ -1093,14 +1097,40 @@ class AzureCloudProvider(CloudProviderInterface):
         Returns:
             UserCSPResult -- a result object containing the AAD ID.
         """
-        graph_token = self._get_tenant_principal_token(
-            payload.tenant_id, resource=self.graph_resource
+
+        # Create invitation body
+
+        body = {
+            "invitedUserDisplayName": payload.display_name,
+            "invitedUserEmailAddress": payload.email,
+            "inviteRedirectUrl": "https://portal.azure.com",
+            "sendInvitationMessage": True,
+            "invitedUserType": "Member",
+        }
+
+        # Set up bearer token header
+
+        tenant_endpoint = f"{cloud.endpoints.active_directory}/{self.tenant_id}"
+        auth = self.sdk.adal.AuthenticationContext(tenant_endpoint)
+        resource = cloud.endpoints.microsoft_graph_resource_id
+        token = auth.acquire_token_with_client_credentials(
+            resource, self.client_id, self.secret_key
         )
 
-        result = self._create_active_directory_user(graph_token, payload)
-        self._update_active_directory_user_email(graph_token, result.id, payload)
+        headers = {
+            "Authorization": f'Bearer {token["accessToken"]}',
+            "Content-Type": "application/json",
+        }
 
-        return result
+        # Send request
+
+        endpoint = "https://graph.microsoft.com/v1.0/invitations"
+        response = self.sdk.requests.post(
+            endpoint, data=json.dumps(body), headers=headers
+        )
+        response.raise_for_status()
+
+        return UserCSPResult(id=response.json()["invitedUser"]["id"])
 
     @log_and_raise_exceptions
     def _create_active_directory_user(self, graph_token, payload) -> UserCSPResult:
