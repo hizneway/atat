@@ -24,9 +24,6 @@ LICENSE
 # Skip terraform
 terraform
 
-# Skip kubernetes and Docker config stuff
-deploy
-
 # exclude build artifacts and docker directories
 .venv
 node_modules
