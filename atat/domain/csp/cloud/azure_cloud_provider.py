@@ -1249,15 +1249,17 @@ class AzureCloudProvider(CloudProviderInterface):
     def _get_service_principal_token(
         self, tenant_id, client_id, secret_key, resource=None
     ):
-        context = self.sdk.adal.AuthenticationContext(
-            f"{self.sdk.cloud.endpoints.active_directory}/{tenant_id}"
-        )
+        url = f"{self.sdk.cloud.endpoints.active_directory}/{tenant_id}/oauth2/token"
         resource = resource or self.sdk.cloud.endpoints.resource_manager
-        token_response = context.acquire_token_with_client_credentials(
-            resource, client_id, secret_key
-        )
-
-        token = token_response.get("accessToken")
+        payload = {
+            "grant_type": "client_credentials",
+            "client_id": client_id,
+            "client_secret": secret_key,
+            "resource": resource,
+        }
+        token_response = self.sdk.requests.get(url, data=payload, timeout=30)
+        token_response.raise_for_status()
+        token = token_response.json().get("access_token")
         if token is None:
             message = f"Failed to get service principal token for resource '{resource}' in tenant '{tenant_id}'"
             app.logger.error(message, exc_info=1)
