@@ -1113,7 +1113,7 @@ class AzureCloudProvider(CloudProviderInterface):
         msal_app = self.sdk.msal.ConfidentialClientApplication(
             self.client_id, self.secret_key, authority=authority
         )
-        scope = "https://graph.microsoft.com/.default"
+        scope = f"{self.sdk.cloud.endpoints.microsoft_graph_resource_id}/.default"
         token_response = msal_app.acquire_token_for_client(scope)
         token = token_response.get("access_token")
 
@@ -1124,7 +1124,9 @@ class AzureCloudProvider(CloudProviderInterface):
 
         # Send request
 
-        endpoint = "https://graph.microsoft.com/v1.0/invitations"
+        endpoint = (
+            f"{self.sdk.cloud.endpoints.microsoft_graph_resource_id}/v1.0/invitations"
+        )
         response = self.sdk.requests.post(
             endpoint, data=json.dumps(body), headers=headers
         )
