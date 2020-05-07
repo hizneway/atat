@@ -1,4 +1,5 @@
 import json
+import msal
 
 from flask import current_app as app
 from functools import wraps
@@ -140,6 +141,7 @@ class AzureSDKProvider(object):
         self.azure_exceptions = exceptions
         self.cloud = AZURE_PUBLIC_CLOUD
         self.adal = adal
+        self.msal = msal
         self.requests = requests
 
 
@@ -1107,17 +1109,16 @@ class AzureCloudProvider(CloudProviderInterface):
 
         # Set up bearer token header
 
-        tenant_endpoint = (
-            f"{self.sdk.cloud.endpoints.active_directory}/{self.tenant_id}"
+        authority = f"{self.sdk.cloud.endpoints.active_directory}/{self.tenant_id}"
+        msal_app = self.sdk.msal.ConfidentialClientApplication(
+            self.client_id, self.secret_key, authority=authority
         )
-        auth = self.sdk.adal.AuthenticationContext(tenant_endpoint)
-        resource = self.sdk.cloud.endpoints.microsoft_graph_resource_id
-        token = auth.acquire_token_with_client_credentials(
-            resource, self.client_id, self.secret_key
-        )
+        scope = self.sdk.cloud.endpoints.resource_manager + ".default"
+        token_response = msal_app.acquire_token_for_client(scope)
+        token = token_response.get("access_token")
 
         headers = {
-            "Authorization": f'Bearer {token["accessToken"]}',
+            "Authorization": f"Bearer {token}",
             "Content-Type": "application/json",
         }
 

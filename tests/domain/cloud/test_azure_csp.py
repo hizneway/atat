@@ -1269,14 +1269,14 @@ def test_update_active_directory_user_password_profile(
 
 
 def test_create_user(mock_azure: AzureCloudProvider):
-    class AuthenticaionContext(object):
+    class ConfidentialClientApplication(object):
         def __init__(*a, **kw):
             pass
 
-        def acquire_token_with_client_credentials(*a, **kw):
-            return {"accessToken": "foo"}
+        def acquire_token_for_client(*a, **kw):
+            return {"access_token": "foo"}
 
-    mock_azure.sdk.adal.AuthenticationContext = AuthenticaionContext
+    mock_azure.sdk.msal.ConfidentialClientApplication = ConfidentialClientApplication
     mock_user_invite = mock_requests_response(json_data={"invitedUser": {"id": "id"}})
     mock_azure.sdk.requests.post.return_value = mock_user_invite
 
