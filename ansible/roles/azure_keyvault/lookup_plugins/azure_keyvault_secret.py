@@ -116,8 +116,9 @@ def lookup_secret_non_msi(terms, vault_url, kwargs):
 
     try:
         from azure.common.credentials import ServicePrincipalCredentials
-        from azure.keyvault import KeyVaultClient
+
         from azure.keyvault.secrets import SecretClient
+        from azure.identity import ClientSecretCredential
         from msrest.exceptions import AuthenticationError, ClientRequestError
         from azure.keyvault.models.key_vault_error import KeyVaultErrorException
     except ImportError:
@@ -137,7 +138,7 @@ def lookup_secret_non_msi(terms, vault_url, kwargs):
     ret = []
     for term in terms:
         try:
-            secret_val = client.get_secret(vault_url, term, '').value
+            secret_val = client.get_secret(term).value
             ret.append(secret_val)
         except ClientRequestError:
             raise AnsibleError('Error occurred in request')
