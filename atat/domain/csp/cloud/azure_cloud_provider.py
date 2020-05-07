@@ -1113,7 +1113,7 @@ class AzureCloudProvider(CloudProviderInterface):
         msal_app = self.sdk.msal.ConfidentialClientApplication(
             self.client_id, self.secret_key, authority=authority
         )
-        scope = self.sdk.cloud.endpoints.resource_manager + ".default"
+        scope = "https://graph.microsoft.com/.default"
         token_response = msal_app.acquire_token_for_client(scope)
         token = token_response.get("access_token")
 

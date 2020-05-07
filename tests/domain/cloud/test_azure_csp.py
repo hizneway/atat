@@ -1284,7 +1284,7 @@ def test_create_user(mock_azure: AzureCloudProvider):
         tenant_id=uuid4().hex,
         display_name="Test Testerson",
         tenant_host_name="testtenant",
-        email="test@testerson.test",
+        email="jessebracho@gmail.com",
         password="asdfghjkl",  # pragma: allowlist secret
     )
 
