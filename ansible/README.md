@@ -35,6 +35,12 @@ poetry install --no-root
 
 This will install the required version of Ansible and related Azure SDK dependencies.
 
+
+## ATAT Use Cases
+
+### Bootstrap a terraform config to azure KeyVault
+`poetry run ansible-playbook `
+
 ## Usage Example
 
 I won't recreate the docs, but an example ansible run of something that affects config/runs a playbook looks like:
@@ -94,4 +100,3 @@ If I want to refresh the local variables.tf file, there's another task that will
 In out case, secrets achieve vault and csp agnostic versions by storing all terraform config under the key `deploy_tag`, this way we can tie terraform releases to their respective secrets and have repeatable deployments.
 
 There are lots more possibilities and i will be adding here in the future.
-

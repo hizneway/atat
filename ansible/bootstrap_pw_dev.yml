@@ -4,3 +4,5 @@
 - hosts: localhost
   roles:
     - azure_keyvault
+
+  # more roles later about spinning up a functional env from scratch
