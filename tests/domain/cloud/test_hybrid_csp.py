@@ -326,6 +326,7 @@ def test_create_initial_mgmt_group_verification(csp):
     )
 
 
+@pytest.mark.hybrid
 def test_create_user(csp):
     payload = UserCSPPayload(
         tenant_id=csp.azure.tenant_id,
