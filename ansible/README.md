@@ -12,15 +12,34 @@ Even though ATAT is completely containerized, its not immune to the benefits of 
 
 ## Requirements
 
-* Python 3.7
-* pip || poetry
-* ansible
+
+* `python` == 3.7.3
+  Python version 3.7.3 **must** be installed on your machine before installing `poetry`.
+  You can download Python 3.7.3 [from python.org](https://www.python.org/downloads/)
+  or use your preferred system package manager. Multiple versions of Python can exist on one
+  computer, but 3.7.3 is required for ATAT's ansible.
+
+* `poetry`
+  ATAT's Ansible package requires `poetry` to be installed for python dependency management. `poetry`
+  will create the virtual environment that the app requires. [See
+  `poetry`'s documentation for instructions on installing `poetry`](
+  https://python-poetry.org/docs/#installation).
+
+## Installation
+
+To install Ansible and all of the necessary Python dependencies, run the following command in this directory:
+
+```
+poetry install --no-root
+```
+
+This will install the required version of Ansible and related Azure SDK dependencies.
 
 ## Usage Example
 
 I won't recreate the docs, but an example ansible run of something that affects config/runs a playbook looks like:
 
-`ansible-playbook play.yml --extra-vars "var_1='val1' ... var_2='val2'" [OPTIONS]`
+`poetry run ansible-playbook play.yml --extra-vars "var_1='val1' ... var_2='val2'" [OPTIONS]`
 
 
 ## General Use Case Examples
@@ -64,13 +83,13 @@ variable new_vaccines {
 
 In our set of ansible, there's a task in the azure role that will parse variables.tf for values and atomically add them to the keyvault. To do that you'd perform the following:
 
-`ansible-playbook site.yml --extra-vars "bootstrap_terraform=true deploy_tag='v0.0.1' tf_dir='/path/to/terraform/providers/pwdev' vault_url='some_vault_url' vault_secret='some_secret' vault_client_id='some_client_id' vault_tenant='some_tenant'" `
+`poetry run ansible-playbook site.yml --extra-vars "bootstrap_terraform=true deploy_tag='v0.0.1' tf_dir='/path/to/terraform/providers/pwdev' vault_url='some_vault_url' vault_secret='some_secret' vault_client_id='some_client_id' vault_tenant='some_tenant'" `
 
 
 If I want to refresh the local variables.tf file, there's another task that will pull variables from key vault and populate a json file. You can manually port the returned json to HCL if you'd like but the idea is that machines run terraform in production, hence json. To retrieve the current variable values:
 
 
-`ansible-playbook site.yml --extra-vars "ops=true secrets_to_file=true deploy_tag='v0.0.1' tf_dir='/path/to/terraform/' vault_url='some_url' vault_secret='some_secret' vault_client_id='some_client_id' vault_tenant='some_tenant' vault_subscription_id='some_subscription'"`
+`poetry run ansible-playbook site.yml --extra-vars "ops=true secrets_to_file=true deploy_tag='v0.0.1' tf_dir='/path/to/terraform/' vault_url='some_url' vault_secret='some_secret' vault_client_id='some_client_id' vault_tenant='some_tenant' vault_subscription_id='some_subscription'"`
 
 In out case, secrets achieve vault and csp agnostic versions by storing all terraform config under the key `deploy_tag`, this way we can tie terraform releases to their respective secrets and have repeatable deployments.
 
