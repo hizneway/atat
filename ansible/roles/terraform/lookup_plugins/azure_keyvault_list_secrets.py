@@ -118,7 +118,6 @@ def lookup_secret_non_msi(terms, vault_url, kwargs):
 
     try:
         from azure.common.credentials import ServicePrincipalCredentials
-        from azure.keyvault import KeyVaultClient
         from azure.keyvault.secrets import SecretClient
         from azure.identity import ClientSecretCredential
         from msrest.exceptions import AuthenticationError, ClientRequestError

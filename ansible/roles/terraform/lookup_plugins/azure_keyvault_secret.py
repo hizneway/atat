@@ -117,6 +117,7 @@ def lookup_secret_non_msi(terms, vault_url, kwargs):
     try:
         from azure.common.credentials import ServicePrincipalCredentials
         from azure.keyvault import KeyVaultClient
+        from azure.keyvault.secrets import SecretClient
         from msrest.exceptions import AuthenticationError, ClientRequestError
         from azure.keyvault.models.key_vault_error import KeyVaultErrorException
     except ImportError:
@@ -127,12 +128,9 @@ def lookup_secret_non_msi(terms, vault_url, kwargs):
     tenant_id = kwargs.pop('tenant_id', None)
 
     try:
-        credentials = ServicePrincipalCredentials(
-            client_id=client_id,
-            secret=secret,
-            tenant=tenant_id
-        )
-        client = KeyVaultClient(credentials)
+        credentials = ClientSecretCredential(tenant_id,client_id,secret)
+
+        client = SecretClient(vault_url, credential=credentials)
     except AuthenticationError:
         raise AnsibleError('Invalid credentials provided.')
 
