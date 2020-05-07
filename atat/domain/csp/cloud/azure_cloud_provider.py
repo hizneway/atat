@@ -1117,19 +1117,14 @@ class AzureCloudProvider(CloudProviderInterface):
         token_response = msal_app.acquire_token_for_client(scope)
         token = token_response.get("access_token")
 
-        headers = {
-            "Authorization": f"Bearer {token}",
-            "Content-Type": "application/json",
-        }
+        headers = {"Authorization": f"Bearer {token}"}
 
         # Send request
 
         endpoint = (
             f"{self.sdk.cloud.endpoints.microsoft_graph_resource_id}/v1.0/invitations"
         )
-        response = self.sdk.requests.post(
-            endpoint, data=json.dumps(body), headers=headers
-        )
+        response = self.sdk.requests.post(endpoint, json=body, headers=headers)
         response.raise_for_status()
 
         return UserCSPResult(id=response.json()["invitedUser"]["id"])
