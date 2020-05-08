@@ -40,13 +40,37 @@ This will install the required version of Ansible and related Azure SDK dependen
 (Disclaimer: these prescribed set of commands will change as we iterate, along w/ this doc. If you run into issues, please reach out.)
 
 
-### Bootstrap a terraform config to azure KeyVault
+A forward note;  The `deploy_tag` referenced below should be chosen wisely.  Its sole purpose is to guarantee repeatable deploys of terraform based on either an annotated git tag, a commit hash, or any other level of mapping of your Terraform code with the target Terraform the config intended for deploy.
+
+### Bootstrap terraform variable values as secrets to azure KeyVault
 
 This is designed for the scenario where you've been developing TF locally and haven't put anything in to keyvault.  Notice the `deploy_tag` is declared here. This is significant
-because it is the secret name under which all the values of your variable.tf file will live.
+because it is the secret name under which all the values of your variable.tf file will live
 
-`poetry run ansible-playbook ops.yml  --extra-vars "ops=true bootstrap_terraform=true deploy_tag='v0.0.1' tf_dir='/path/containing/variables.tf' vault_url='http://vault-url' vault_secret='secret' vault_client_id='client_id' vault_tenant='tenant' vault_subscription_id='subscription_id'" `
+This should happen at the end of your local development session when you're ready to let TF be executed by a machine in the cloud.
 
+`poetry run ansible-playbook ops.yml  --extra-vars "ops=true bootstrap_terraform=true deploy_tag='v0.0.1' tf_dir='/path/containing/tf_variables/file' vault_url='http://vault-url' vault_secret='secret' vault_client_id='client_id' vault_tenant='tenant' vault_subscription_id='subscription_id'" `
+
+### Updating Terraform config values already in azure KeyVault
+
+The modifications (today) are done atomically, in RESTful fashion.  Meaning, an update takes whats in your `variables.tf` and puts its contents under the `deploy_tag` secret name every time and it doesn't consider whats already in KeyVault.  
+
+Another way to think about this update flow; It assumes on disk your `variables.tf` file is in the state of `n+x` w/ what lives in KeyVault for the chosen deploy tag.  
+
+If you're unsure how out of sync your local `variables.tf` and KeyVault `deploy_tag` values are, hop down to the next use case to find out.
+
+`poetry run ansible-playbook ops.yml  --extra-vars "ops=true bootstrap_terraform=true deploy_tag='v0.0.2' tf_dir='/path/containing/tf_variables/file' vault_url='http://vault-url' vault_secret='secret' vault_client_id='client_id' vault_tenant='tenant' vault_subscription_id='subscription_id'" `
+
+
+## Verifying whats in KeyVault with whats in `variables.tf`
+
+You can use this as a reference to update your current `variables.tf` or just verify that your next push is additive/destructive in the way you intend.
+
+If thats not true or you're unsure, the step after this will show you how to pull down current state to disk in the form of `retrieved.[deploy_tag].tfvars.json`.  
+
+Notice `secrets_to_file` is defined.
+
+`ansible-playbook site.yml --extra-vars "ops=true secrets_to_file=true deploy_tag='v0.0.2' tf_dir='/path/containing/tf_variables/file' vault_url='http://vault-url' vault_secret='secret' vault_client_id='client_id' vault_tenant='tenant' vault_subscription_id='subscription_id'"`
 
 
 ## Usage Example
