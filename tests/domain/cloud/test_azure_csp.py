@@ -1383,12 +1383,16 @@ class TestGetCalculatorCreds:
     def test_get_calculator_creds_succeeds(self, mock_azure: AzureCloudProvider):
         assert mock_azure._get_calculator_creds() == MOCK_ACCESS_TOKEN
 
-    def test_get_calculator_creds_fails(self, mock_azure: AzureCloudProvider):
-        mock_azure.sdk.adal.AuthenticationContext.return_value.acquire_token_with_client_credentials.side_effect = AdalError(
-            "Adal Error"
+    def test_get_calculator_creds_fails(self, unmocked_cloud_provider):
+        cloud_provider = unmocked_cloud_provider
+        mock_result = mock_requests_response(
+            status=401, json_data={"error": "invalid request"},
         )
+        cloud_provider.sdk.requests.get = Mock()
+        cloud_provider.sdk.requests.get.side_effect = [mock_result]
+
         with pytest.raises(AuthenticationException):
-            mock_azure._get_calculator_creds()
+            cloud_provider._get_calculator_creds()
 
 
 def test_get_calculator_url(mock_azure: AzureCloudProvider):
