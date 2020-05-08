@@ -37,9 +37,17 @@ This will install the required version of Ansible and related Azure SDK dependen
 
 
 ## ATAT Use Cases
+(Disclaimer: these prescribed set of commands will change as we iterate, along w/ this doc. If you run into issues, please reach out.)
+
 
 ### Bootstrap a terraform config to azure KeyVault
-`poetry run ansible-playbook `
+
+This is designed for the scenario where you've been developing TF locally and haven't put anything in to keyvault.  Notice the `deploy_tag` is declared here. This is significant
+because it is the secret name under which all the values of your variable.tf file will live.
+
+`poetry run ansible-playbook ops.yml  --extra-vars "ops=true bootstrap_terraform=true deploy_tag='v0.0.1' tf_dir='/path/containing/variables.tf' vault_url='http://vault-url' vault_secret='secret' vault_client_id='client_id' vault_tenant='tenant' vault_subscription_id='subscription_id'" `
+
+
 
 ## Usage Example
 
