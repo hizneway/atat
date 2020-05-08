@@ -1,4 +1,5 @@
-from __future__ import (absolute_import, division, print_function)
+from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
 DOCUMENTATION = """
@@ -90,13 +91,12 @@ from ansible.plugins.lookup import LookupBase
 
 
 class LookupModule(LookupBase):
-
     def run(self, terms, variables, **kwargs):
         token = utils.acquire_token()
-        vault_url = kwargs.pop('vault_url', None)
+        vault_url = kwargs.pop("vault_url", None)
 
         if vault_url is None:
-            raise AnsibleError('Failed to get valid vault url.')
+            raise AnsibleError("Failed to get valid vault url.")
         if token:
             return utils.lookup_secret_msi(token, terms, vault_url)
         else:

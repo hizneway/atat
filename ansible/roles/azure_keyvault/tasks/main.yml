@@ -12,3 +12,8 @@
 - name: wipe secrets
   import_tasks: wipe_secrets.yml
   when: wipe_secrets is defined
+
+
+- name: get secrets
+  import_tasks: get_secrets.yml
+  when: get_secrets == true
