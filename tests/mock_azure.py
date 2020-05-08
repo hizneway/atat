@@ -96,4 +96,7 @@ def mock_azure(monkeypatch):
     monkeypatch.setattr(
         azure_cloud_provider, "_get_keyvault_token", Mock(return_value="TOKEN")
     )
+    monkeypatch.setattr(
+        azure_cloud_provider, "_get_service_principal_token", Mock(return_value="TOKEN")
+    )
     return azure_cloud_provider
