@@ -70,7 +70,7 @@ If thats not true or you're unsure, the step after this will show you how to pul
 
 Notice `secrets_to_file` is defined.
 
-`poetry run ansible-playbook site.yml --extra-vars "ops=true secrets_to_file=true deploy_tag='v0.0.2' tf_dir='/path/containing/tf_variables/file' vault_url='http://vault-url' vault_secret='secret' vault_client_id='client_id' vault_tenant='tenant' vault_subscription_id='subscription_id'"`
+`poetry run ansible-playbook ops.yml --extra-vars "ops=true secrets_to_file=true deploy_tag='v0.0.2' tf_dir='/path/containing/tf_variables/file' vault_url='http://vault-url' vault_secret='secret' vault_client_id='client_id' vault_tenant='tenant' vault_subscription_id='subscription_id'"`
 
 
 ## Usage Example
