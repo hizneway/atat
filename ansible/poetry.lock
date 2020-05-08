@@ -42,6 +42,21 @@ six = ">=1.6"
 
 [[package]]
 category = "main"
+description = "Microsoft Azure Identity Library for Python"
+name = "azure-identity"
+optional = false
+python-versions = "*"
+version = "1.3.1"
+
+[package.dependencies]
+azure-core = ">=1.0.0,<2.0.0"
+cryptography = ">=2.1.4"
+msal = ">=1.0.0,<2.0.0"
+msal-extensions = ">=0.1.3,<0.2.0"
+six = ">=1.6"
+
+[[package]]
+category = "main"
 description = "Microsoft Azure Key Vault Client Libraries for Python"
 name = "azure-keyvault"
 optional = false
@@ -166,6 +181,33 @@ version = "1.1.1"
 
 [[package]]
 category = "main"
+description = "The Microsoft Authentication Library (MSAL) for Python library enables your app to access the Microsoft Cloud by supporting authentication of users with Microsoft Azure Active Directory accounts (AAD) and Microsoft Accounts (MSA) using industry standard OAuth2 and OpenID Connect."
+name = "msal"
+optional = false
+python-versions = "*"
+version = "1.2.0"
+
+[package.dependencies]
+requests = ">=2.0.0,<3"
+
+[package.dependencies.PyJWT]
+extras = ["crypto"]
+version = ">=1.0.0,<2"
+
+[[package]]
+category = "main"
+description = ""
+name = "msal-extensions"
+optional = false
+python-versions = "*"
+version = "0.1.3"
+
+[package.dependencies]
+msal = ">=0.4.1,<2.0.0"
+portalocker = ">=1.0,<2.0"
+
+[[package]]
+category = "main"
 description = "AutoRest swagger generator Python client runtime."
 name = "msrest"
 optional = false
@@ -208,6 +250,21 @@ signedtoken = ["cryptography", "pyjwt (>=1.0.0)"]
 
 [[package]]
 category = "main"
+description = "Wraps the portalocker recipe for easy usage"
+name = "portalocker"
+optional = false
+python-versions = "*"
+version = "1.7.0"
+
+[package.dependencies]
+pywin32 = "!=226"
+
+[package.extras]
+docs = ["sphinx (>=1.7.1)"]
+tests = ["flake8 (>=3.5.0)", "pytest (>=3.4.0)", "pytest-cache (>=1.0)", "pytest-cov (>=2.5.1)", "pytest-flakes (>=2.0.0)", "pytest-pep8 (>=1.0.6)", "sphinx (>=1.7.1)"]
+
+[[package]]
+category = "main"
 description = "C parser in Python"
 name = "pycparser"
 optional = false
@@ -240,10 +297,19 @@ six = ">=1.5"
 
 [[package]]
 category = "main"
+description = "Python for Window Extensions"
+marker = "platform_system == \"Windows\""
+name = "pywin32"
+optional = false
+python-versions = "*"
+version = "227"
+
+[[package]]
+category = "main"
 description = "YAML parser and emitter for Python"
 name = "pyyaml"
 optional = false
-python-versions = "*"
+python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
 version = "5.3.1"
 
 [[package]]
@@ -301,7 +367,7 @@ secure = ["certifi", "cryptography (>=1.3.4)", "idna (>=2.0.0)", "pyOpenSSL (>=0
 socks = ["PySocks (>=1.5.6,<1.5.7 || >1.5.7,<2.0)"]
 
 [metadata]
-content-hash = "ec99df1cc07d3bdf67dd7fe6b704a2cfba90a5e0609e29d269684e0a2cafc6f0"
+content-hash = "f9c2f97a3364ff8e22708181d19a53e626f8253d030d2bd882714da77a476924"
 python-versions = "3.7.3"
 
 [metadata.files]
@@ -319,6 +385,10 @@ azure-common = [
 azure-core = [
     {file = "azure-core-1.5.0.zip", hash = "sha256:afa6a6ae577859392e1ed3acb024bf5bddeb1bbb67f3191c35c587505ff431a0"},
     {file = "azure_core-1.5.0-py2.py3-none-any.whl", hash = "sha256:2b7613b37ff6503312e5ec7c9ce2efab8fa0dbfe4c6c1d3bf91bab51db9bd6dc"},
+]
+azure-identity = [
+    {file = "azure-identity-1.3.1.zip", hash = "sha256:5a59c36b4b05bdaec455c390feda71b6495fc828246593404351b9a41c2e877a"},
+    {file = "azure_identity-1.3.1-py2.py3-none-any.whl", hash = "sha256:3775d5d244d65bde19d9ba76b95b1c82484a7a09f8b13140b106bc84df601d35"},
 ]
 azure-keyvault = [
     {file = "azure-keyvault-4.0.0.zip", hash = "sha256:e85f5bd6cb4f10b3248b99bbf02e3acc6371d366846897027d4153f18025a2d7"},
@@ -438,6 +508,14 @@ markupsafe = [
     {file = "MarkupSafe-1.1.1-cp38-cp38-win_amd64.whl", hash = "sha256:e8313f01ba26fbbe36c7be1966a7b7424942f670f38e666995b88d012765b9be"},
     {file = "MarkupSafe-1.1.1.tar.gz", hash = "sha256:29872e92839765e546828bb7754a68c418d927cd064fd4708fab9fe9c8bb116b"},
 ]
+msal = [
+    {file = "msal-1.2.0-py2.py3-none-any.whl", hash = "sha256:7014151d7ea54a3df192b203b1c168d3d7d0f82d5738e05a70537d511b127c03"},
+    {file = "msal-1.2.0.tar.gz", hash = "sha256:de98eabd7fa3cc36c7b8c11ac28a1a56538b37fb04894aeb4b485bcd9ecb175f"},
+]
+msal-extensions = [
+    {file = "msal-extensions-0.1.3.tar.gz", hash = "sha256:59e171a9a4baacdbf001c66915efeaef372fb424421f1a4397115a3ddd6205dc"},
+    {file = "msal_extensions-0.1.3-py2.py3-none-any.whl", hash = "sha256:c5a32b8e1dce1c67733dcdf8aa8bebcff5ab123e779ef7bc14e416bd0da90037"},
+]
 msrest = [
     {file = "msrest-0.6.13-py2.py3-none-any.whl", hash = "sha256:22349c718f632e37beee0dd10f7ea41984ded136db2199a9d3c6f1f3942868e9"},
     {file = "msrest-0.6.13.tar.gz", hash = "sha256:9050fbbb95dd9e8f4008d7227e4dc5662e8b605c89e5621b0dd09ac7f04cf01d"},
@@ -450,6 +528,10 @@ oauthlib = [
     {file = "oauthlib-3.1.0-py2.py3-none-any.whl", hash = "sha256:df884cd6cbe20e32633f1db1072e9356f53638e4361bef4e8b03c9127c9328ea"},
     {file = "oauthlib-3.1.0.tar.gz", hash = "sha256:bee41cc35fcca6e988463cacc3bcb8a96224f470ca547e697b604cc697b2f889"},
 ]
+portalocker = [
+    {file = "portalocker-1.7.0-py2.py3-none-any.whl", hash = "sha256:874d6063c6ceb185fe4771da41b01872d2c56d292db746698f8ad7bf1833c905"},
+    {file = "portalocker-1.7.0.tar.gz", hash = "sha256:091364838ed6fbb68ea291c28982d1e56125c0d9e3fad5a4ac001db54dd862dc"},
+]
 pycparser = [
     {file = "pycparser-2.20-py2.py3-none-any.whl", hash = "sha256:7582ad22678f0fcd81102833f60ef8d0e57288b6b5fb00323d101be910e35705"},
     {file = "pycparser-2.20.tar.gz", hash = "sha256:2d475327684562c3a96cc71adf7dc8c4f0565175cf86b6d7a404ff4c771f15f0"},
@@ -461,6 +543,20 @@ pyjwt = [
 python-dateutil = [
     {file = "python-dateutil-2.8.1.tar.gz", hash = "sha256:73ebfe9dbf22e832286dafa60473e4cd239f8592f699aa5adaf10050e6e1823c"},
     {file = "python_dateutil-2.8.1-py2.py3-none-any.whl", hash = "sha256:75bb3f31ea686f1197762692a9ee6a7550b59fc6ca3a1f4b5d7e32fb98e2da2a"},
+]
+pywin32 = [
+    {file = "pywin32-227-cp27-cp27m-win32.whl", hash = "sha256:371fcc39416d736401f0274dd64c2302728c9e034808e37381b5e1b22be4a6b0"},
+    {file = "pywin32-227-cp27-cp27m-win_amd64.whl", hash = "sha256:4cdad3e84191194ea6d0dd1b1b9bdda574ff563177d2adf2b4efec2a244fa116"},
+    {file = "pywin32-227-cp35-cp35m-win32.whl", hash = "sha256:f4c5be1a293bae0076d93c88f37ee8da68136744588bc5e2be2f299a34ceb7aa"},
+    {file = "pywin32-227-cp35-cp35m-win_amd64.whl", hash = "sha256:a929a4af626e530383a579431b70e512e736e9588106715215bf685a3ea508d4"},
+    {file = "pywin32-227-cp36-cp36m-win32.whl", hash = "sha256:300a2db938e98c3e7e2093e4491439e62287d0d493fe07cce110db070b54c0be"},
+    {file = "pywin32-227-cp36-cp36m-win_amd64.whl", hash = "sha256:9b31e009564fb95db160f154e2aa195ed66bcc4c058ed72850d047141b36f3a2"},
+    {file = "pywin32-227-cp37-cp37m-win32.whl", hash = "sha256:47a3c7551376a865dd8d095a98deba954a98f326c6fe3c72d8726ca6e6b15507"},
+    {file = "pywin32-227-cp37-cp37m-win_amd64.whl", hash = "sha256:31f88a89139cb2adc40f8f0e65ee56a8c585f629974f9e07622ba80199057511"},
+    {file = "pywin32-227-cp38-cp38-win32.whl", hash = "sha256:7f18199fbf29ca99dff10e1f09451582ae9e372a892ff03a28528a24d55875bc"},
+    {file = "pywin32-227-cp38-cp38-win_amd64.whl", hash = "sha256:7c1ae32c489dc012930787f06244426f8356e129184a02c25aef163917ce158e"},
+    {file = "pywin32-227-cp39-cp39-win32.whl", hash = "sha256:c054c52ba46e7eb6b7d7dfae4dbd987a1bb48ee86debe3f245a2884ece46e295"},
+    {file = "pywin32-227-cp39-cp39-win_amd64.whl", hash = "sha256:f27cec5e7f588c3d1051651830ecc00294f90728d19c3bf6916e6dba93ea357c"},
 ]
 pyyaml = [
     {file = "PyYAML-5.3.1-cp27-cp27m-win32.whl", hash = "sha256:74809a57b329d6cc0fdccee6318f44b9b8649961fa73144a98735b0aaf029f1f"},

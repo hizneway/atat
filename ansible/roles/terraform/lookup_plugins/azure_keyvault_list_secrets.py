@@ -117,11 +117,10 @@ def lookup_secret_non_msi(terms, vault_url, kwargs):
     logging.getLogger('msrest.service_client').addHandler(logging.NullHandler())
 
     try:
-        from azure.common.credentials import ServicePrincipalCredentials
         from azure.keyvault.secrets import SecretClient
         from azure.identity import ClientSecretCredential
         from msrest.exceptions import AuthenticationError, ClientRequestError
-        from azure.keyvault.models.key_vault_error import KeyVaultErrorException
+        from azure.core.exceptions import ResourceNotFoundError
     except ImportError:
         raise AnsibleError('The azure_keyvault_list_secrets lookup plugin requires azure.keyvault and azure.common.credentials to be installed.')
 
@@ -144,7 +143,7 @@ def lookup_secret_non_msi(terms, vault_url, kwargs):
               ret.append(secret_property.name)
         except ClientRequestError:
             raise AnsibleError('Error occurred in request')
-        except KeyVaultErrorException:
+        except ResourceNotFoundError:
             raise AnsibleError('Failed to fetch secret ' + term + '.')
     return ret
 
