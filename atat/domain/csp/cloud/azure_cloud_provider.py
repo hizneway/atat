@@ -1386,17 +1386,19 @@ class AzureCloudProvider(CloudProviderInterface):
 
     @log_and_raise_exceptions
     def _get_calculator_creds(self):
-        authority = f"{self.sdk.cloud.endpoints.active_directory}/{self.root_tenant_id}"
-        context = self.sdk.adal.AuthenticationContext(authority=authority)
-        calc_resource = self.config.get("AZURE_CALC_RESOURCE")
-        token_response = context.acquire_token_with_client_credentials(
-            calc_resource,
-            self.config.get("AZURE_CALC_CLIENT_ID"),
-            self.config.get("AZURE_CALC_SECRET"),
-        )
-        token = token_response.get("accessToken")
+        url = f"{self.sdk.cloud.endpoints.active_directory}/{self.root_tenant_id}/oauth2/token"
+        resource = self.config.get("AZURE_CALC_RESOURCE")
+        payload = {
+            "grant_type": "client_credentials",
+            "client_id": self.config.get("AZURE_CALC_CLIENT_ID"),
+            "client_secret": self.config.get("AZURE_CALC_SECRET"),
+            "resource": resource,
+        }
+        token_response = self.sdk.requests.get(url, data=payload, timeout=30)
+        token_response.raise_for_status()
+        token = token_response.json().get("access_token")
         if token is None:
-            message = f"Failed to get token for resource '{calc_resource}' in tenant '{tenant_id}'"
+            message = f"Failed to get token for resource '{resource}' in tenant '{self.root_tenant_id}'"
             app.logger.error(message, exc_info=1)
             raise AuthenticationException(message)
         else:
