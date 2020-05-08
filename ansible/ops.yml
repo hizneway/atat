@@ -2,6 +2,3 @@
 
 
 - import_playbook: bootstrap_pw_dev.yml
-  when: bootstrap_terraform is defined
-
-  

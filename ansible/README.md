@@ -49,7 +49,7 @@ because it is the secret name under which all the values of your variable.tf fil
 
 This should happen at the end of your local development session when you're ready to let TF be executed by a machine in the cloud.
 
-`poetry run ansible-playbook ops.yml  --extra-vars "ops=true bootstrap_terraform=true deploy_tag='v0.0.1' tf_dir='/path/containing/tf_variables/file' vault_url='http://vault-url' vault_secret='secret' vault_client_id='client_id' vault_tenant='tenant' vault_subscription_id='subscription_id'" `
+`poetry run ansible-playbook ops.yml  --extra-vars "bootstrap_terraform=true deploy_tag='v0.0.1' tf_dir='/path/containing/tf_variables/file' vault_url='http://vault-url' vault_secret='secret' vault_client_id='client_id' vault_tenant='tenant' vault_subscription_id='subscription_id'" `
 
 ### Updating Terraform config values already in azure KeyVault
 
@@ -59,7 +59,7 @@ Another way to think about this update flow; It assumes on disk your `variables.
 
 If you're unsure how out of sync your local `variables.tf` and KeyVault `deploy_tag` values are, hop down to the next use case to find out.
 
-`poetry run ansible-playbook ops.yml  --extra-vars "ops=true bootstrap_terraform=true deploy_tag='v0.0.2' tf_dir='/path/containing/tf_variables/file' vault_url='http://vault-url' vault_secret='secret' vault_client_id='client_id' vault_tenant='tenant' vault_subscription_id='subscription_id'" `
+`poetry run ansible-playbook ops.yml  --extra-vars "bootstrap_terraform=true deploy_tag='v0.0.2' tf_dir='/path/containing/tf_variables/file' vault_url='http://vault-url' vault_secret='secret' vault_client_id='client_id' vault_tenant='tenant' vault_subscription_id='subscription_id'" `
 
 
 ## Verifying whats in KeyVault with whats in `variables.tf`
@@ -70,7 +70,7 @@ If thats not true or you're unsure, the step after this will show you how to pul
 
 Notice `secrets_to_file` is defined.
 
-`poetry run ansible-playbook ops.yml --extra-vars "ops=true secrets_to_file=true deploy_tag='v0.0.2' tf_dir='/path/containing/tf_variables/file' vault_url='http://vault-url' vault_secret='secret' vault_client_id='client_id' vault_tenant='tenant' vault_subscription_id='subscription_id'"`
+`poetry run ansible-playbook ops.yml --extra-vars "secrets_to_file=true deploy_tag='v0.0.2' tf_dir='/path/containing/tf_variables/file' vault_url='http://vault-url' vault_secret='secret' vault_client_id='client_id' vault_tenant='tenant' vault_subscription_id='subscription_id'"`
 
 
 ## Usage Example
