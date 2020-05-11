@@ -116,11 +116,6 @@ def log_and_raise_exceptions(func):
             app.logger.error(status_code, message, exc_info=1)
             raise UnknownServerException(status_code, f"{message}. {str(exc)}")
 
-        except cloud.sdk.adal.AdalError as exc:
-            message = f"ADAL error calling {func.__name__}"
-            app.logger.error(message, exc_info=1)
-            raise AuthenticationException(message)
-
     return wrapped_func
 
 
@@ -129,11 +124,9 @@ class AzureSDKProvider(object):
         from msrestazure.azure_cloud import (
             AZURE_PUBLIC_CLOUD,
         )  # TODO: choose cloud type from config
-        import adal
         import requests
 
         self.cloud = AZURE_PUBLIC_CLOUD
-        self.adal = adal
         self.requests = requests
 
 
