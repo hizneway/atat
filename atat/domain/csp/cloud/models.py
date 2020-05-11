@@ -563,6 +563,7 @@ class UserMixin(BaseModel):
 
 class UserCSPPayload(BaseCSPPayload, UserMixin):
     display_name: str
+    tenant_host_name: str
     email: str
 
 
