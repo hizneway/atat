@@ -1097,7 +1097,23 @@ class AzureCloudProvider(CloudProviderInterface):
             UserCSPResult -- a result object containing the AAD ID.
         """
 
-        # Create invitation body
+        graph_api = self.sdk.cloud.endpoints.microsoft_graph_resource_id
+        login_api = self.sdk.cloud.endpoints.active_directory
+
+        # Request a graph api authorization token
+
+        body = {
+            "client_id": self.client_id,
+            "grant_type": "client_credentials",
+            "client_info": 1,
+            "client_secret": self.secret_key,
+            "scope": f"{graph_api}/.default",
+        }
+
+        url = f"{login_api}/{self.tenant_id}/oauth2/v2.0/token"
+        token = self.sdk.requests.post(url, data=body).json()["access_token"]
+
+        # Use the graph api to invite a user
 
         body = {
             "invitedUserDisplayName": payload.display_name,
@@ -1107,24 +1123,9 @@ class AzureCloudProvider(CloudProviderInterface):
             "invitedUserType": "Member",
         }
 
-        # Set up bearer token header
-
-        authority = f"{self.sdk.cloud.endpoints.active_directory}/{self.tenant_id}"
-        msal_app = self.sdk.msal.ConfidentialClientApplication(
-            self.client_id, self.secret_key, authority=authority
-        )
-        scope = f"{self.sdk.cloud.endpoints.microsoft_graph_resource_id}/.default"
-        token_response = msal_app.acquire_token_for_client(scope)
-        token = token_response.get("access_token")
-
+        url = f"{graph_api}/v1.0/invitations"
         headers = {"Authorization": f"Bearer {token}"}
-
-        # Send request
-
-        endpoint = (
-            f"{self.sdk.cloud.endpoints.microsoft_graph_resource_id}/v1.0/invitations"
-        )
-        response = self.sdk.requests.post(endpoint, json=body, headers=headers)
+        response = self.sdk.requests.post(url, json=body, headers=headers)
         response.raise_for_status()
 
         return UserCSPResult(id=response.json()["invitedUser"]["id"])
