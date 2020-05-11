@@ -143,7 +143,7 @@ class AzureCloudProvider(CloudProviderInterface):
 
         self.client_id = config["AZURE_CLIENT_ID"]
         self.secret_key = config["AZURE_SECRET_KEY"]
-        self.tenant_id = config["AZURE_TENANT_ID"]
+        self.root_tenant_id = config["AZURE_TENANT_ID"]
         self.vault_url = config["AZURE_VAULT_URL"]
         self.ps_client_id = config["AZURE_POWERSHELL_CLIENT_ID"]
         self.graph_resource = config["AZURE_GRAPH_RESOURCE"]
@@ -164,9 +164,7 @@ class AzureCloudProvider(CloudProviderInterface):
 
     @log_and_raise_exceptions
     def _get_keyvault_token(self):
-        url = (
-            f"{self.sdk.cloud.endpoints.active_directory}/{self.tenant_id}/oauth2/token"
-        )
+        url = f"{self.sdk.cloud.endpoints.active_directory}/{self.root_tenant_id}/oauth2/token"
         payload = {
             "grant_type": "client_credentials",
             "client_id": self.client_id,
@@ -502,7 +500,7 @@ class AzureCloudProvider(CloudProviderInterface):
         self.create_tenant_creds(
             tenant_id,
             KeyVaultCredentials(
-                root_tenant_id=self.tenant_id,
+                root_tenant_id=self.root_tenant_id,
                 root_sp_client_id=self.client_id,
                 root_sp_key=self.secret_key,
                 tenant_id=tenant_id,
@@ -1291,7 +1289,7 @@ class AzureCloudProvider(CloudProviderInterface):
         return {
             "client_id": self.client_id,
             "secret_key": self.secret_key,
-            "tenant_id": self.tenant_id,
+            "root_tenant_id": self.root_tenant_id,
         }
 
     def _get_tenant_principal_token(self, tenant_id, resource=None):
@@ -1323,7 +1321,7 @@ class AzureCloudProvider(CloudProviderInterface):
 
     def _source_root_creds(self):
         return KeyVaultCredentials(
-            root_tenant_id=self._root_creds.get("tenant_id"),
+            root_tenant_id=self._root_creds.get("root_tenant_id"),
             root_sp_client_id=self._root_creds.get("client_id"),
             root_sp_key=self._root_creds.get("secret_key"),
         )
@@ -1386,7 +1384,7 @@ class AzureCloudProvider(CloudProviderInterface):
 
     @log_and_raise_exceptions
     def _get_calculator_creds(self):
-        authority = f"{self.sdk.cloud.endpoints.active_directory}/{self.tenant_id}"
+        authority = f"{self.sdk.cloud.endpoints.active_directory}/{self.root_tenant_id}"
         context = self.sdk.adal.AuthenticationContext(authority=authority)
         calc_resource = self.config.get("AZURE_CALC_RESOURCE")
         token_response = context.acquire_token_with_client_credentials(
