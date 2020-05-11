@@ -91,19 +91,6 @@ def mock_requests():
     return mock_requests
 
 
-def mock_msal():
-    import msal
-
-    mock_msal = Mock(spec=msal)
-    mock_msal.ConfidentialClientApplication.return_value.acquire_token_for_client.return_value = {
-        "access_token": MOCK_ACCESS_TOKEN
-    }
-    mock_msal.ConfidentialClientApplication.return_value.acquire_token_by_username_password.return_value = {
-        "access_token": MOCK_ACCESS_TOKEN
-    }
-    return mock_msal
-
-
 class MockAzureSDK(object):
     def __init__(self):
 
@@ -113,7 +100,6 @@ class MockAzureSDK(object):
         self.azure_exceptions = mock_azure_exceptions()
         self.cloud = mock_cloud_details()
         self.adal = mock_adal()
-        self.msal = mock_msal()
         self.requests = mock_requests()
 
 

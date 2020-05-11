@@ -1,5 +1,4 @@
 import json
-import msal
 
 from flask import current_app as app
 from functools import wraps
@@ -141,7 +140,6 @@ class AzureSDKProvider(object):
         self.azure_exceptions = exceptions
         self.cloud = AZURE_PUBLIC_CLOUD
         self.adal = adal
-        self.msal = msal
         self.requests = requests
 
 
