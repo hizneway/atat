@@ -78,14 +78,23 @@ def mock_azure(monkeypatch):
     )
     monkeypatch.setattr(azure_cloud_provider, "set_secret", Mock(return_value=None))
     monkeypatch.setattr(
-        azure_cloud_provider, "_get_keyvault_token", Mock(return_value="TOKEN")
+        azure_cloud_provider,
+        "_get_keyvault_token",
+        Mock(return_value=MOCK_ACCESS_TOKEN),
     )
     monkeypatch.setattr(
-        azure_cloud_provider, "_get_service_principal_token", Mock(return_value="TOKEN")
+        azure_cloud_provider,
+        "_get_service_principal_token",
+        Mock(return_value=MOCK_ACCESS_TOKEN),
     )
     monkeypatch.setattr(
         azure_cloud_provider,
         "_get_user_principal_token_for_resource",
-        Mock(return_value="TOKEN"),
+        Mock(return_value=MOCK_ACCESS_TOKEN),
+    )
+    monkeypatch.setattr(
+        azure_cloud_provider,
+        "_get_calculator_creds",
+        Mock(return_value=MOCK_ACCESS_TOKEN),
     )
     return azure_cloud_provider
