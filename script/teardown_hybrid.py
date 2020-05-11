@@ -1,4 +1,3 @@
-import adal
 import requests
 from msrestazure.azure_cloud import AZURE_PUBLIC_CLOUD
 import os
@@ -44,15 +43,23 @@ def list_app_registrations(token):
 
 
 def get_user_token(cloud, tenant_id, username, password, ps_client_id):
-    context = adal.AuthenticationContext(
-        f"{cloud.endpoints.active_directory}/{tenant_id}"
-    )
-
-    token_response = context.acquire_token_with_username_password(
-        GRAPH_API, username, password, ps_client_id
-    )
-
-    return token_response["accessToken"]
+    url = f"{cloud.endpoints.active_directory}/{tenant_id}/oauth2/token"
+    resource = GRAPH_API
+    payload = {
+        "client_id": ps_client_id,
+        "grant_type": "password",
+        "username": username,
+        "password": password,
+        "resource": resource,
+    }
+    token_response = requests.get(url, data=payload, timeout=30)
+    token_response.raise_for_status()
+    token = token_response.json().get("access_token")
+    if token is None:
+        message = f"Failed to get user principal token for resource '{resource}' in tenant '{tenant_id}'"
+        raise RuntimeError(message)
+    else:
+        return token
 
 
 if __name__ == "__main__":
