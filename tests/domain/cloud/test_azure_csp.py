@@ -5,7 +5,7 @@ from uuid import uuid4
 import pendulum
 import pydantic
 import pytest
-from adal.adal_error import AdalError
+from tests.factories import ApplicationFactory, EnvironmentFactory
 from tests.mock_azure import mock_azure, MOCK_ACCESS_TOKEN  # pylint: disable=W0611
 from tests.mock_azure import AZURE_CONFIG
 
@@ -1478,12 +1478,16 @@ def test_get_service_principal_token_fails(unmocked_cloud_provider):
         cloud_provider._get_service_principal_token("resource", "client", "secret")
 
 
-def test_get_user_principal_token_for_resource_fails(mock_azure: AzureCloudProvider):
-    mock_azure.sdk.adal.AuthenticationContext.return_value.acquire_token_with_username_password.side_effect = AdalError(
-        "Adal Error"
+def test_get_user_principal_token_for_resource_fails(unmocked_cloud_provider):
+    cloud_provider = unmocked_cloud_provider
+    mock_result = mock_requests_response(
+        status=401, json_data={"error": "invalid request"},
     )
+    cloud_provider.sdk.requests.get = Mock()
+    cloud_provider.sdk.requests.get.side_effect = [mock_result]
+
     with pytest.raises(AuthenticationException):
-        mock_azure._get_user_principal_token_for_resource(
+        cloud_provider._get_user_principal_token_for_resource(
             "username", "password", "tenant_id", "my_resource"
         )
 
