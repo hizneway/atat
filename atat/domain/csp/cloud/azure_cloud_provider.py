@@ -297,9 +297,10 @@ class AzureCloudProvider(CloudProviderInterface):
 
         return InitialMgmtGroupCSPResult(**response)
 
+    @log_and_raise_exceptions
     def create_initial_mgmt_group_verification(
         self, payload: InitialMgmtGroupVerificationCSPPayload
-    ):
+    ) -> InitialMgmtGroupVerificationCSPResult:
         """Verify the creation of the root management group.
 
         A management group is a collection of subscriptions and management
@@ -308,18 +309,16 @@ class AzureCloudProvider(CloudProviderInterface):
 
         https://docs.microsoft.com/en-us/azure/governance/management-groups/overview
         """
-        creds = self._source_tenant_creds(payload.tenant_id)
-        credentials = self._get_credential_obj(
-            {
-                "client_id": creds.root_sp_client_id,
-                "secret_key": creds.root_sp_key,
-                "tenant_id": creds.root_tenant_id,
-            },
-            resource=self.sdk.cloud.endpoints.resource_manager,
+        sp_token = self._get_tenant_principal_token(self.tenant_id)
+        headers = {
+            "Authorization": f"Bearer {sp_token}",
+        }
+        response = self.sdk.requests.get(
+            f"{self.sdk.cloud.endpoints.resource_manager}providers/Microsoft.Management/managementGroups/{payload.management_group_name}?api-version=2020-02-01",
+            headers=headers,
         )
-
-        response = self._get_management_group(credentials, creds.tenant_id)
-        return InitialMgmtGroupVerificationCSPResult(**response.as_dict())
+        response.raise_for_status()
+        return InitialMgmtGroupVerificationCSPResult(**response.json())
 
     def _create_management_group(
         self, credentials, management_group_id, display_name, parent_id=None,
@@ -347,11 +346,6 @@ class AzureCloudProvider(CloudProviderInterface):
         # response object? Will it always raise its own error
         # instead?
         return create_request.result()
-
-    def _get_management_group(self, credentials, management_group_id):
-        mgmgt_group_client = self.sdk.managementgroups.ManagementGroupsAPI(credentials)
-        response = mgmgt_group_client.management_groups.get(management_group_id)
-        return response
 
     @log_and_raise_exceptions
     def _create_policy_definition(self, session, root_management_group_name, policy):

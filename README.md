@@ -222,7 +222,7 @@ Integration tests that use the hybrid cloud provider are skipped by default and 
 ```
 env $(cat .env.hybrid | xargs) poetry run pytest --no-cov --hybrid tests/domain/cloud/test_hybrid_csp.py
 ```
-The config values required by the hybrid tests are outlined in the [Hybrid Configuration](#hybrid-configuration) section. Note that the `--hybrid` parameter is also required for hybrid tests to run. 
+The config values required by the hybrid tests are outlined in the [Hybrid Configuration](#hybrid-configuration) section. Note that the `--hybrid` parameter is also required for hybrid tests to run.
 
 This project also runs Javascript tests using jest. To run the Javascript tests:
 
@@ -371,6 +371,8 @@ docker-compose up
 The app will be available on http://localhost:8080.
 
 The build assumes that you have redis and postgres running on their usual ports on your host machine; it does not pull images for those services. The docker-compose build is not suitable for development because it does not mount or reload working files.
+
+Note that the uWSGI config used for this build in the repo root is symlinked from deploy/azure/uwsgi.ini. See the Kubernetes README in deploy/README.md for details.
 
 ### Dev login
 
