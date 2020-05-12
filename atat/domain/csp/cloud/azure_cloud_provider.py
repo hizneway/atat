@@ -1,9 +1,9 @@
 import json
+
+from flask import current_app as app
 from functools import wraps
 from secrets import token_hex, token_urlsafe
 from uuid import uuid4
-
-from flask import current_app as app
 
 from atat.utils import sha256_hex
 
@@ -75,6 +75,7 @@ from .models import (
     UserRoleCSPResult,
 )
 from .policy import AzurePolicyManager
+
 
 # This needs to be a fully pathed role definition identifier, not just a UUID
 # TODO: Extract these from sdk msrestazure.azure_cloud import AZURE_PUBLIC_CLOUD
@@ -1093,14 +1094,29 @@ class AzureCloudProvider(CloudProviderInterface):
         Returns:
             UserCSPResult -- a result object containing the AAD ID.
         """
-        graph_token = self._get_tenant_principal_token(
+
+        # Request a graph api authorization token
+
+        token = self._get_tenant_principal_token(
             payload.tenant_id, resource=self.graph_resource
         )
 
-        result = self._create_active_directory_user(graph_token, payload)
-        self._update_active_directory_user_email(graph_token, result.id, payload)
+        # Use the graph api to invite a user
 
-        return result
+        body = {
+            "invitedUserDisplayName": payload.display_name,
+            "invitedUserEmailAddress": payload.email,
+            "inviteRedirectUrl": "https://portal.azure.com",
+            "sendInvitationMessage": True,
+            "invitedUserType": "Member",
+        }
+
+        url = f"{self.graph_resource}/v1.0/invitations"
+        headers = {"Authorization": f"Bearer {token}"}
+        response = self.sdk.requests.post(url, json=body, headers=headers)
+        response.raise_for_status()
+
+        return UserCSPResult(id=response.json()["invitedUser"]["id"])
 
     @log_and_raise_exceptions
     def _create_active_directory_user(self, graph_token, payload) -> UserCSPResult:

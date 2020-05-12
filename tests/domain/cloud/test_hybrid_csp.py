@@ -8,6 +8,7 @@ from atat.domain.csp.cloud.exceptions import UserProvisioningException
 from atat.domain.csp.cloud.models import (
     EnvironmentCSPPayload,
     KeyVaultCredentials,
+    UserCSPPayload,
     UserRoleCSPPayload,
     CostManagementQueryCSPPayload,
     InitialMgmtGroupVerificationCSPPayload,
@@ -323,3 +324,17 @@ def test_create_initial_mgmt_group_verification(csp):
         response.id
         == f"/providers/Microsoft.Management/managementGroups/{csp.azure.tenant_id}"
     )
+
+
+@pytest.mark.hybrid
+def test_create_user(csp):
+    payload = UserCSPPayload(
+        tenant_id=csp.azure.tenant_id,
+        display_name="Test Testerson",
+        tenant_host_name="testtenant",
+        email="test@testerson.test",
+        password="asdfghjkl",  # pragma: allowlist secret
+    )
+
+    result = csp.azure.create_user(payload)
+    assert result.id
