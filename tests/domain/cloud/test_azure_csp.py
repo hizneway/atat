@@ -1269,9 +1269,9 @@ def test_update_active_directory_user_password_profile(
 
 
 def test_create_user(mock_azure: AzureCloudProvider):
-    r1 = mock_requests_response(json_data={"access_token": "foo"})
-    r2 = mock_requests_response(json_data={"invitedUser": {"id": "id"}})
-    mock_azure.sdk.requests.post.side_effect = [r1, r2]
+    mock_azure.sdk.requests.post.return_value = mock_requests_response(
+        json_data={"invitedUser": {"id": "id"}}
+    )
 
     payload = UserCSPPayload(
         tenant_id=uuid4().hex,

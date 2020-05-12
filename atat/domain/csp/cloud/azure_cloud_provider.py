@@ -1095,21 +1095,11 @@ class AzureCloudProvider(CloudProviderInterface):
             UserCSPResult -- a result object containing the AAD ID.
         """
 
-        graph_api = self.sdk.cloud.endpoints.microsoft_graph_resource_id
-        login_api = self.sdk.cloud.endpoints.active_directory
-
         # Request a graph api authorization token
 
-        body = {
-            "client_id": self.client_id,
-            "grant_type": "client_credentials",
-            "client_info": 1,
-            "client_secret": self.secret_key,
-            "scope": f"{graph_api}/.default",
-        }
-
-        url = f"{login_api}/{self.tenant_id}/oauth2/v2.0/token"
-        token = self.sdk.requests.post(url, data=body).json()["access_token"]
+        token = self._get_tenant_principal_token(
+            payload.tenant_id, resource=self.graph_resource
+        )
 
         # Use the graph api to invite a user
 
@@ -1121,7 +1111,7 @@ class AzureCloudProvider(CloudProviderInterface):
             "invitedUserType": "Member",
         }
 
-        url = f"{graph_api}/v1.0/invitations"
+        url = f"{self.graph_resource}/v1.0/invitations"
         headers = {"Authorization": f"Bearer {token}"}
         response = self.sdk.requests.post(url, json=body, headers=headers)
         response.raise_for_status()
