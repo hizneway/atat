@@ -59,10 +59,10 @@ class HybridCloudProvider(object):
         self.azure.create_tenant_creds(
             self.tenant_id,
             KeyVaultCredentials(
-                root_tenant_id=self.azure.tenant_id,
+                root_tenant_id=self.azure.root_tenant_id,
                 root_sp_client_id=self.azure.client_id,
                 root_sp_key=self.azure.secret_key,
-                tenant_id=self.azure.tenant_id,
+                tenant_id=self.azure.root_tenant_id,
                 tenant_admin_username=tenant_admin_username,
                 tenant_admin_password=tenant_admin_password,
             ),
@@ -143,7 +143,7 @@ class HybridCloudProvider(object):
             """Necessary to ensure the root tenant id credentials are saved in
             KeyVault at the end of this stage.
             """
-            creds.tenant_id = self.azure.tenant_id
+            creds.tenant_id = self.azure.root_tenant_id
             original_update_tenant_creds(tenant_id, creds)
 
         with monkeypatched(self.azure, "_get_tenant_admin_token", lambda *_a: token):
@@ -165,12 +165,14 @@ class HybridCloudProvider(object):
     def create_initial_mgmt_group(
         self, payload: InitialMgmtGroupCSPPayload
     ) -> InitialMgmtGroupCSPResult:
+        payload.tenant_id = self.azure.root_tenant_id
         payload.display_name = f"{HYBRID_PREFIX} {payload.display_name}"
         return self.azure.create_initial_mgmt_group(payload)
 
     def create_initial_mgmt_group_verification(
         self, payload: InitialMgmtGroupVerificationCSPPayload
     ) -> InitialMgmtGroupVerificationCSPResult:
+        payload.tenant_id = self.azure.root_tenant_id
         return self.azure.create_initial_mgmt_group_verification(payload)
 
     def create_tenant_admin_ownership(
@@ -182,7 +184,7 @@ class HybridCloudProvider(object):
         """
 
         token = self.azure._get_elevated_management_token(payload.tenant_id)
-        payload.tenant_id = self.azure.tenant_id
+        payload.tenant_id = self.azure.root_tenant_id
         with monkeypatched(
             self.azure, "_get_elevated_management_token", lambda _: token
         ):
@@ -203,7 +205,7 @@ class HybridCloudProvider(object):
         """
 
         token = self.azure._get_elevated_management_token(payload.tenant_id)
-        payload.tenant_id = self.azure.tenant_id
+        payload.tenant_id = self.azure.root_tenant_id
         with monkeypatched(
             self.azure, "_get_elevated_management_token", lambda _: token
         ):
@@ -215,7 +217,7 @@ class HybridCloudProvider(object):
         token = self.azure._get_tenant_principal_token(
             payload.tenant_id, resource=self.azure.graph_resource
         )
-        payload.tenant_id = self.azure.tenant_id
+        payload.tenant_id = self.azure.root_tenant_id
         with monkeypatched(
             self.azure, "_get_tenant_principal_token", lambda *a, **kw: token
         ):
