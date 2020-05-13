@@ -92,9 +92,4 @@ def mock_azure(monkeypatch):
         "_get_user_principal_token_for_resource",
         Mock(return_value=MOCK_ACCESS_TOKEN),
     )
-    monkeypatch.setattr(
-        azure_cloud_provider,
-        "_get_calculator_creds",
-        Mock(return_value=MOCK_ACCESS_TOKEN),
-    )
     return azure_cloud_provider
