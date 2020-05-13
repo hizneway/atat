@@ -18,7 +18,7 @@
     project_path: "{{tf_dir}}"
     state: "planned"
     plan_file: "plan.tfplan"
-    variables: "{{  kv_tf  }}"
+    variables: "{{ kv_tf  }}"
   register: tf_run
 
 
