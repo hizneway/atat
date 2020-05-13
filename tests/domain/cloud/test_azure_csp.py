@@ -1477,8 +1477,8 @@ def test_get_service_principal_token_fails(unmocked_cloud_provider):
     mock_result = mock_requests_response(
         status=401, json_data={"error": "invalid request"},
     )
-    cloud_provider.sdk.requests.get = Mock()
-    cloud_provider.sdk.requests.get.side_effect = [mock_result]
+    cloud_provider.sdk.requests.post = Mock()
+    cloud_provider.sdk.requests.post.side_effect = [mock_result]
 
     with pytest.raises(AuthenticationException):
         cloud_provider._get_service_principal_token("resource", "client", "secret")

@@ -215,7 +215,7 @@ class HybridCloudProvider(object):
         self, payload: BillingOwnerCSPPayload
     ) -> BillingOwnerCSPResult:
         token = self.azure._get_tenant_principal_token(
-            payload.tenant_id, resource=self.azure.graph_resource
+            payload.tenant_id, scope=self.azure.graph_resource + "/.default"
         )
         payload.tenant_id = self.azure.root_tenant_id
         with monkeypatched(

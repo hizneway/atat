@@ -1013,7 +1013,7 @@ class AzureCloudProvider(CloudProviderInterface):
         """
 
         graph_token = self._get_tenant_principal_token(
-            payload.tenant_id, resource=self.graph_resource
+            payload.tenant_id, scope=self.graph_resource + "/.default"
         )
 
         # Step 1: Create an AAD identity for the user
@@ -1090,8 +1090,8 @@ class AzureCloudProvider(CloudProviderInterface):
 
         # Request a graph api authorization token
 
-        token = self._get_tenant_principal_token(
-            payload.tenant_id, resource=self.graph_resource
+        graph_token = self._get_tenant_principal_token(
+            payload.tenant_id, scope=self.graph_resource + "/.default"
         )
 
         # Use the graph api to invite a user
@@ -1105,7 +1105,7 @@ class AzureCloudProvider(CloudProviderInterface):
         }
 
         url = f"{self.graph_resource}/v1.0/invitations"
-        headers = {"Authorization": f"Bearer {token}"}
+        headers = {"Authorization": f"Bearer {graph_token}"}
         response = self.sdk.requests.post(url, json=body, headers=headers)
         response.raise_for_status()
 
@@ -1240,21 +1240,23 @@ class AzureCloudProvider(CloudProviderInterface):
 
     @log_and_raise_exceptions
     def _get_service_principal_token(
-        self, tenant_id, client_id, secret_key, resource=None
+        self, tenant_id, client_id, secret_key, scope=None
     ):
-        url = f"{self.sdk.cloud.endpoints.active_directory}/{tenant_id}/oauth2/token"
-        resource = resource or self.sdk.cloud.endpoints.resource_manager
+        url = (
+            f"{self.sdk.cloud.endpoints.active_directory}/{tenant_id}/oauth2/v2.0/token"
+        )
+        payload_scope = scope or self.sdk.cloud.endpoints.resource_manager + ".default"
         payload = {
             "grant_type": "client_credentials",
             "client_id": client_id,
             "client_secret": secret_key,
-            "resource": resource,
+            "scope": payload_scope,
         }
-        token_response = self.sdk.requests.get(url, data=payload, timeout=30)
+        token_response = self.sdk.requests.post(url, data=payload, timeout=30)
         token_response.raise_for_status()
         token = token_response.json().get("access_token")
         if token is None:
-            message = f"Failed to get service principal token for resource '{resource}' in tenant '{tenant_id}'"
+            message = f"Failed to get service principal token for scope '{payload_scope}' in tenant '{tenant_id}'"
             app.logger.error(message, exc_info=1)
             raise AuthenticationException(message)
         else:
@@ -1290,13 +1292,13 @@ class AzureCloudProvider(CloudProviderInterface):
             "root_tenant_id": self.root_tenant_id,
         }
 
-    def _get_tenant_principal_token(self, tenant_id, resource=None):
+    def _get_tenant_principal_token(self, tenant_id, scope=None):
         creds = self._source_tenant_creds(tenant_id)
         return self._get_service_principal_token(
             creds.tenant_id,
             creds.tenant_sp_client_id,
             creds.tenant_sp_key,
-            resource=resource,
+            scope=scope,
         )
 
     @log_and_raise_exceptions
