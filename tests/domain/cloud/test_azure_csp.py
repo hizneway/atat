@@ -692,11 +692,15 @@ def test_create_tenant_principal_app(
     mock_azure: AzureCloudProvider, mock_http_error_response
 ):
     mock_result = mock_requests_response(json_data={"appId": "appId", "id": "id"})
+    mock_token_response = mock_requests_response(
+        json_data={"access_token": MOCK_ACCESS_TOKEN}
+    )
 
     mock_azure.sdk.requests.post.side_effect = [
         mock_azure.sdk.requests.exceptions.ConnectionError,
         mock_azure.sdk.requests.exceptions.Timeout,
         mock_http_error_response,
+        mock_token_response,
         mock_result,
     ]
 
@@ -724,11 +728,15 @@ def test_create_tenant_principal(
     mock_azure: AzureCloudProvider, mock_http_error_response
 ):
     mock_result = mock_requests_response(json_data={"id": "principal_id"})
+    mock_token_response = mock_requests_response(
+        json_data={"access_token": MOCK_ACCESS_TOKEN}
+    )
 
     mock_azure.sdk.requests.post.side_effect = [
         mock_azure.sdk.requests.exceptions.ConnectionError,
         mock_azure.sdk.requests.exceptions.Timeout,
         mock_http_error_response,
+        mock_token_response,
         mock_result,
     ]
 
@@ -754,11 +762,15 @@ def test_create_tenant_principal_credential(
     mock_azure: AzureCloudProvider, mock_http_error_response
 ):
     mock_result = mock_requests_response(json_data={"secretText": "new secret key"})
+    mock_token_response = mock_requests_response(
+        json_data={"access_token": MOCK_ACCESS_TOKEN}
+    )
 
     mock_azure.sdk.requests.post.side_effect = [
         mock_azure.sdk.requests.exceptions.ConnectionError,
         mock_azure.sdk.requests.exceptions.Timeout,
         mock_http_error_response,
+        mock_token_response,
         mock_result,
     ]
 
@@ -795,6 +807,9 @@ def test_create_admin_role_definition(
             ]
         }
     )
+    mock_token_response = mock_requests_response(
+        json_data={"access_token": MOCK_ACCESS_TOKEN}
+    )
 
     mock_azure.sdk.requests.get.side_effect = [
         mock_azure.sdk.requests.exceptions.ConnectionError,
@@ -802,6 +817,7 @@ def test_create_admin_role_definition(
         mock_http_error_response,
         mock_result,
     ]
+    mock_azure.sdk.requests.post.return_value = mock_token_response
 
     payload = AdminRoleDefinitionCSPPayload(
         **{"tenant_id": "6d2d2d6c-a6d6-41e1-8bb1-73d11475f8f4"}
@@ -889,11 +905,15 @@ def test_create_principal_admin_role(
 ):
 
     mock_result = mock_requests_response(json_data={"id": "id"})
+    mock_token_response = mock_requests_response(
+        json_data={"access_token": MOCK_ACCESS_TOKEN}
+    )
 
     mock_azure.sdk.requests.post.side_effect = [
         mock_azure.sdk.requests.exceptions.ConnectionError,
         mock_azure.sdk.requests.exceptions.Timeout,
         mock_http_error_response,
+        mock_token_response,
         mock_result,
     ]
 
@@ -1484,16 +1504,14 @@ def test_get_service_principal_token_fails(unmocked_cloud_provider):
         cloud_provider._get_service_principal_token("resource", "client", "secret")
 
 
-def test_get_user_principal_token_for_resource_fails(unmocked_cloud_provider):
-    cloud_provider = unmocked_cloud_provider
+def test_get_user_principal_token_for_scope_fails(mock_azure):
     mock_result = mock_requests_response(
         status=401, json_data={"error": "invalid request"},
     )
-    cloud_provider.sdk.requests.get = Mock()
-    cloud_provider.sdk.requests.get.side_effect = [mock_result]
+    mock_azure.sdk.requests.post.return_value = mock_result
 
     with pytest.raises(AuthenticationException):
-        cloud_provider._get_user_principal_token_for_resource(
+        mock_azure._get_user_principal_token_for_scope(
             "username", "password", "tenant_id", "my_resource"
         )
 
