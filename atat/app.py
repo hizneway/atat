@@ -395,6 +395,6 @@ def register_jinja_globals(app):
         {
             "url_for": _url_for,
             "service_desk_url": app.config.get("SERVICE_DESK_URL"),
-            "build_info": f"<!-- v{app.config.get('APP_VERSION')} {app.config.get('GIT_SHA', '')} -->",
+            "build_info": f"{app.config.get('APP_VERSION')} {app.config.get('GIT_SHA', '')}",
         }
     )
