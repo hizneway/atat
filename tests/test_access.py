@@ -623,11 +623,6 @@ def test_task_orders_download_task_order_pdf_access(get_url_assert_status, monke
     get_url_assert_status(rando, url, 404)
 
 
-# task_orders.form_step_one_add_pdf
-# task_orders.form_step_two_add_number
-# task_orders.form_step_three_add_clins
-# task_orders.form_step_four_review
-# task_orders.form_step_five_confirm_signature
 def test_task_orders_new_get_routes(get_url_assert_status):
     get_routes = [
         "task_orders.form_step_one_add_pdf",

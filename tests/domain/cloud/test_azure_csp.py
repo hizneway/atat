@@ -1,20 +1,20 @@
 import json
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, call
 from uuid import uuid4
 
 import pendulum
 import pydantic
 import pytest
 from adal.adal_error import AdalError
-from tests.factories import ApplicationFactory, EnvironmentFactory
 from tests.mock_azure import mock_azure, MOCK_ACCESS_TOKEN  # pylint: disable=W0611
-from tests.mock_azure import AZURE_CONFIG, MockAzureSDK
+from tests.mock_azure import AZURE_CONFIG
 
 from atat.domain.csp.cloud import AzureCloudProvider
 from atat.domain.csp.cloud.exceptions import (
     AuthenticationException,
     ConnectionException,
     DomainNameException,
+    ResourceProvisioningError,
     UnknownServerException,
     UserProvisioningException,
 )
@@ -116,73 +116,91 @@ def unmocked_cloud_provider():
     return azure_cloud_provider
 
 
-def mock_management_group_create(mock_azure, spec_dict):
-    mock_azure.sdk.managementgroups.ManagementGroupsAPI.return_value.management_groups.create_or_update.return_value.result.return_value = (
-        spec_dict
+def test_create_environment_succeeds(mock_azure: AzureCloudProvider, monkeypatch):
+    monkeypatch.setattr(
+        mock_azure,
+        "_create_management_group",
+        Mock(return_value={"id": "management/group/path/TestName"}),
     )
-
-
-def mock_management_group_get(mock_azure, spec_dict):
-    mock_azure.sdk.managementgroups.ManagementGroupsAPI.return_value.management_groups.get.return_value.as_dict.return_value = (
-        spec_dict
-    )
-
-
-def test_create_environment_succeeds(mock_azure: AzureCloudProvider):
-    environment = EnvironmentFactory.create()
-    mock_management_group_create(mock_azure, {"id": "Test Id"})
-
     payload = EnvironmentCSPPayload(
-        tenant_id="1234", display_name=environment.name, parent_id=str(uuid4())
+        tenant_id="1234",
+        display_name="TestName",
+        parent_id="management/group/path/Parent",
     )
     result = mock_azure.create_environment(payload)
 
-    assert result.id == "Test Id"
+    assert result.id == "management/group/path/TestName"
 
 
-def test_create_application_succeeds(mock_azure: AzureCloudProvider):
-    application = ApplicationFactory.create()
-    mock_management_group_create(mock_azure, {"id": "Test Id"})
-
+def test_create_application_succeeds(mock_azure: AzureCloudProvider, monkeypatch):
     payload = ApplicationCSPPayload(
-        tenant_id="1234", display_name=application.name, parent_id=str(uuid4())
+        tenant_id="1234",
+        display_name="Test Name",
+        parent_id="management/group/path/Parent",
+    )
+    management_group_id = f"management/group/path/{payload.management_group_name}"
+    monkeypatch.setattr(
+        mock_azure,
+        "_create_management_group",
+        Mock(return_value={"id": management_group_id}),
     )
 
     result: ApplicationCSPResult = mock_azure.create_application(payload)
+    assert result.id == management_group_id
 
-    assert result.id == "Test Id"
 
-
-def test_create_initial_mgmt_group_succeeds(mock_azure: AzureCloudProvider):
-    application = ApplicationFactory.create()
-    mock_management_group_create(mock_azure, {"id": "Test Id", "name": "Test Name"})
-
+def test_create_initial_mgmt_group_succeeds(
+    mock_azure: AzureCloudProvider, monkeypatch
+):
     payload = InitialMgmtGroupCSPPayload(
-        tenant_id="1234",
-        display_name=application.name,
-        management_group_name=str(uuid4()),
+        tenant_id="123", display_name="A Management Group"
+    )
+    management_group_id = f"management/group/path/{payload.management_group_name}"
+    monkeypatch.setattr(
+        mock_azure,
+        "_create_management_group",
+        Mock(
+            return_value={
+                "id": management_group_id,
+                "name": payload.management_group_name,
+            }
+        ),
     )
     result: InitialMgmtGroupCSPResult = mock_azure.create_initial_mgmt_group(payload)
 
-    assert result.root_management_group_id == "Test Id"
-    assert result.root_management_group_name == "Test Name"
+    # TODO: The initial mgmt group != the root management group
+    assert result.root_management_group_id == management_group_id
+    assert result.root_management_group_name == payload.management_group_name
 
 
-def test_create_initial_mgmt_group_verification_succeed(mock_azure: AzureCloudProvider):
-    application = ApplicationFactory.create()
-    mock_management_group_get(mock_azure, {"id": "Test Id"})
+def test_create_initial_mgmt_group_verification(
+    mock_azure: AzureCloudProvider, mock_http_error_response
+):
+    mock_id = "management/group/path/TestName"
 
-    management_group_name = str(uuid4())
+    mock_azure.sdk.requests.get.side_effect = [
+        mock_azure.sdk.requests.exceptions.ConnectionError,
+        mock_azure.sdk.requests.exceptions.Timeout,
+        mock_http_error_response,
+        mock_requests_response(json_data={"id": mock_id}),
+    ]
 
     payload = InitialMgmtGroupVerificationCSPPayload(
-        tenant_id="1234", management_group_name=management_group_name
+        tenant_id="1234", management_group_name="TestName"
     )
+
+    with pytest.raises(ConnectionException):
+        mock_azure.create_initial_mgmt_group_verification(payload)
+    with pytest.raises(ConnectionException):
+        mock_azure.create_initial_mgmt_group_verification(payload)
+    with pytest.raises(UnknownServerException, match=r".*500 Server Error.*"):
+        mock_azure.create_initial_mgmt_group_verification(payload)
+
     result: InitialMgmtGroupVerificationCSPResult = mock_azure.create_initial_mgmt_group_verification(
         payload
     )
 
-    assert result.id == "Test Id"
-    # assert result.name == management_group_name
+    assert result.id == mock_id
 
 
 def test_disable_user(mock_azure: AzureCloudProvider, mock_http_error_response):
@@ -1262,12 +1280,9 @@ def test_update_active_directory_user_password_profile(
 
 
 def test_create_user(mock_azure: AzureCloudProvider):
-
-    mock_result_create = mock_requests_response(json_data={"id": "id"})
-    mock_azure.sdk.requests.post.return_value = mock_result_create
-
-    mock_result_update = mock_requests_response()
-    mock_azure.sdk.requests.patch.return_value = mock_result_update
+    mock_azure.sdk.requests.post.return_value = mock_requests_response(
+        json_data={"invitedUser": {"id": "id"}}
+    )
 
     payload = UserCSPPayload(
         tenant_id=uuid4().hex,
@@ -1463,3 +1478,132 @@ def test_get_user_principal_token_for_resource_fails(mock_azure: AzureCloudProvi
         mock_azure._get_user_principal_token_for_resource(
             "username", "password", "tenant_id", "my_resource"
         )
+
+
+class TestCreateManagementGroup:
+    def test_status_code_200(self, mock_azure: AzureCloudProvider, monkeypatch):
+        mock_session_object = Mock()
+        mock_session_object.put = Mock(
+            return_value=mock_requests_response(status=200, json_data={"some": "data"})
+        )
+        mock_azure.sdk.requests.Session.return_value = mock_session_object
+        result = mock_azure._create_management_group(
+            "management_group_id", "display_name", "tenant_id"
+        )
+        assert result == {"some": "data"}
+
+    def test_status_code_202(self, mock_azure: AzureCloudProvider, monkeypatch):
+        # Mock session object
+        mock_session_object = Mock()
+        mock_session_object.put = Mock(
+            return_value=mock_requests_response(
+                status=202, headers={"Azure-AsyncOperation": "http://url.com"}
+            )
+        )
+        mock_azure.sdk.requests.Session.return_value = mock_session_object
+
+        # Mock _poll_management_group_creation_job
+        mock_poll_management_group_creation_job = Mock()
+        monkeypatch.setattr(
+            mock_azure,
+            "_poll_management_group_creation_job",
+            mock_poll_management_group_creation_job,
+        )
+
+        mock_azure._create_management_group(
+            "management_group_id", "display_name", "tenant_id"
+        )
+        mock_poll_management_group_creation_job.assert_called_once_with(
+            "http://url.com", mock_session_object
+        )
+
+    def test_raises_exceptions(
+        self, mock_azure: AzureCloudProvider, mock_http_error_response
+    ):
+        put_results = [
+            mock_azure.sdk.requests.exceptions.ConnectionError,
+            mock_azure.sdk.requests.exceptions.Timeout,
+            mock_http_error_response,
+        ]
+        mock_session_object = Mock()
+        mock_session_object.put = Mock(side_effect=put_results)
+        mock_azure.sdk.requests.Session.return_value = mock_session_object
+
+        with pytest.raises(ConnectionException):
+            mock_azure._create_management_group(
+                "management_group_id", "display_name", "tenant_id"
+            )
+        with pytest.raises(ConnectionException):
+            mock_azure._create_management_group(
+                "management_group_id", "display_name", "tenant_id"
+            )
+        with pytest.raises(UnknownServerException, match=r".*500 Server Error.*"):
+            mock_azure._create_management_group(
+                "management_group_id", "display_name", "tenant_id"
+            )
+
+
+class TestPollManagementGroupCreationJob:
+    def test_succeeds(self, mock_azure):
+        mock_session_object = Mock()
+        mock_session_object.get = Mock(
+            side_effect=[
+                mock_requests_response(
+                    headers={"Retry-After": 0}, json_data={"status": "In Progress"}
+                ),
+                mock_requests_response(
+                    headers={"Retry-After": 0}, json_data={"status": "In Progress"}
+                ),
+                mock_requests_response(
+                    headers={"Retry-After": 0}, json_data={"status": "Succeeded"}
+                ),
+            ]
+        )
+        mock_azure.sdk.requests.Session.return_value = mock_session_object
+
+        result = mock_azure._poll_management_group_creation_job(
+            "url", mock_session_object
+        )
+
+        calls = [call("url"), call("url"), call("url")]
+        mock_session_object.get.assert_has_calls(calls)
+        assert result["status"] == "Succeeded"
+
+    def test_provisioning_error(self, mock_azure):
+        def make_error(status):
+            return {
+                "status": status,
+                "error": {"code": "11234", "message": "An error occured"},
+            }
+
+        mock_session_object = Mock()
+        mock_session_object.get = Mock(
+            side_effect=[
+                mock_requests_response(json_data=make_error("Canceled")),
+                mock_requests_response(json_data=make_error("Failed")),
+            ]
+        )
+        mock_azure.sdk.requests.Session.return_value = mock_session_object
+
+        with pytest.raises(ResourceProvisioningError):
+            mock_azure._poll_management_group_creation_job("url", mock_session_object)
+        with pytest.raises(ResourceProvisioningError):
+            mock_azure._poll_management_group_creation_job("url", mock_session_object)
+
+    def test_http_error(self, mock_azure, mock_http_error_response):
+        mock_session_object = Mock()
+        mock_session_object.get = Mock(
+            side_effect=[
+                mock_azure.sdk.requests.exceptions.ConnectionError,
+                mock_azure.sdk.requests.exceptions.Timeout,
+                mock_http_error_response,
+            ]
+        )
+        mock_azure.sdk.requests.Session.return_value = mock_session_object
+
+        with pytest.raises(ConnectionException):
+            mock_azure._poll_management_group_creation_job("url", mock_session_object)
+        with pytest.raises(ConnectionException):
+            mock_azure._poll_management_group_creation_job("url", mock_session_object)
+        with pytest.raises(UnknownServerException, match=r".*500 Server Error.*"):
+            mock_azure._poll_management_group_creation_job("url", mock_session_object)

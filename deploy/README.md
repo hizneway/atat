@@ -84,7 +84,7 @@ If certbot tries to write to directories that require root privileges, you can i
 certbot --config-dir ~/.certbot/config --work-dir ~/.certbot/workdir --logs-dir ~/.certbot/logs certonly --manual
 ```
 You may be prompted to enter an email address, generally we've used the address of our tech lead in the past. If you asked to subscribe to any newsletters, decline.
-You may also be prompted to agree to a terms of services, which you should do. 
+You may also be prompted to agree to a terms of services, which you should do.
 
 You will be prompted to enter the domain names you want a cert for. Enter **both** the main and auth domains as a comma separated list. For instance:
 
@@ -150,7 +150,7 @@ Once the updated ConfigMap is applied, you can roll the deployment with some ver
 kubectl -n master rollout restart deployment atst
 ```
 
-This will start new pods for the web service, and the new ACME challenge will be available from the NGINX web server. You can verify this by loading the link certbot provides and verifying that you get the ACME challenge content you expect. If the files are loading correctly, proceed forward with certbot. 
+This will start new pods for the web service, and the new ACME challenge will be available from the NGINX web server. You can verify this by loading the link certbot provides and verifying that you get the ACME challenge content you expect. If the files are loading correctly, proceed forward with certbot.
 
 You may need to repeat this process for the second domain. If the validation is successful, certbot will write new certificates to your host machine, typically in a directory such as `~/.certbot/config/live/azure.atat.code.mil/`
 
@@ -295,3 +295,7 @@ There are 3 steps to using the FlexVol to access secrets from KeyVault
     mykey.txt
     mysecret.pem
     ```
+
+# Miscellaneous Notes
+
+- The uWSGI config file in deploy/azure/uwsgi.ini is symlinked from that location to the repo root. It serves as a configuration reference and can be used for tests of the Docker build. The primary copy needs to reside in the same location as the kustomization.yml file because kustomize will not load files that are symlinks or live in parent directories for security reasons.

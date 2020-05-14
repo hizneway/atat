@@ -32,34 +32,10 @@ KEYVAULT_SECRET = {
     **AUTH_CREDENTIALS,
     "tenant_id": "mock_tenant_id",
     "tenant_admin_username": "mock_tenant_admin_username",
-    "tenant_admin_password": "mock_tenant_admin_password",
+    "tenant_admin_password": "mock_tenant_admin_password",  # pragma: allowlist secret
 }
 
 MOCK_ACCESS_TOKEN = "TOKEN"
-
-
-def mock_managementgroups():
-    from azure.mgmt import managementgroups
-
-    return Mock(spec=managementgroups)
-
-
-def mock_credentials():
-    import azure.common.credentials as credentials
-
-    return Mock(spec=credentials)
-
-
-def mock_identity():
-    import azure.identity as identity
-
-    return Mock(spec=identity)
-
-
-def mock_azure_exceptions():
-    from azure.core import exceptions
-
-    return exceptions
 
 
 def mock_cloud_details():
@@ -93,11 +69,6 @@ def mock_requests():
 
 class MockAzureSDK(object):
     def __init__(self):
-
-        self.managementgroups = mock_managementgroups()
-        self.credentials = mock_credentials()
-        self.identity = mock_identity()
-        self.azure_exceptions = mock_azure_exceptions()
         self.cloud = mock_cloud_details()
         self.adal = mock_adal()
         self.requests = mock_requests()
