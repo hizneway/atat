@@ -1047,7 +1047,7 @@ class AzureCloudProvider(CloudProviderInterface):
         header = {"Authorization": f"Bearer {token}"}
         url = f"{self.graph_resource}/v1.0/users/{payload.user_principal_name}"
         result = self.sdk.requests.get(url, headers=header)
-        if result.ok:
+        if result.status_code == 200:
             return UserCSPResult(**result.json())
         return None
 
