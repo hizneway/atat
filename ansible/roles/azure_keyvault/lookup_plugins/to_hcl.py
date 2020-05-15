@@ -22,7 +22,6 @@ from ansible.errors import AnsibleError, AnsibleParserError
 from ansible.plugins.lookup import LookupBase
 from ansible.utils.display import Display
 import hcl
-import os
 
 display = Display()
 
