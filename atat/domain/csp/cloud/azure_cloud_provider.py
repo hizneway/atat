@@ -957,19 +957,21 @@ class AzureCloudProvider(CloudProviderInterface):
         response.raise_for_status()
 
         result = response.json()
-        roleList = result.get("value")
-
-        DEFAULT_ADMIN_RD_ID = "794bb258-3e31-42ff-9ee4-731a72f62851"
-        admin_role_def_id = next(
-            (
-                role.get("id")
-                for role in roleList
-                if role.get("displayName") == "Company Administrator"
-            ),
-            DEFAULT_ADMIN_RD_ID,
-        )
-
-        return AdminRoleDefinitionCSPResult(admin_role_def_id=admin_role_def_id)
+        role_list = result.get("value")
+        try:
+            admin_role_def_id = next(
+                (
+                    role.get("id")
+                    for role in role_list
+                    if role.get("displayName") == "Company Administrator"
+                )
+            )
+            return AdminRoleDefinitionCSPResult(admin_role_def_id=admin_role_def_id)
+        except StopIteration:
+            raise ResourceProvisioningError(
+                "Azure role definition",
+                "Could not locate Azure Global Admin / Company Admin role",
+            )
 
     @log_and_raise_exceptions
     def create_principal_admin_role(self, payload: PrincipalAdminRoleCSPPayload):
