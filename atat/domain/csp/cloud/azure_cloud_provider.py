@@ -270,9 +270,10 @@ class AzureCloudProvider(CloudProviderInterface):
 
         https://docs.microsoft.com/en-us/azure/governance/management-groups/overview
         """
-        sp_token = self._get_tenant_principal_token(payload.tenant_id)
+
+        mgmt_token = self._get_elevated_management_token(payload.tenant_id)
         headers = {
-            "Authorization": f"Bearer {sp_token}",
+            "Authorization": f"Bearer {mgmt_token}",
         }
         response = self.sdk.requests.get(
             f"{self.sdk.cloud.endpoints.resource_manager}providers/Microsoft.Management/managementGroups/{payload.management_group_name}?api-version=2020-02-01",
