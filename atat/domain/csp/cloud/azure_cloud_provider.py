@@ -998,6 +998,49 @@ class AzureCloudProvider(CloudProviderInterface):
         result.raise_for_status()
         return PrincipalAdminRoleCSPResult(**result.json())
 
+    @log_and_raise_exceptions
+    def _get_billing_admin_role_template_id(self, graph_token):
+        auth_header = {
+            "Authorization": f"Bearer {graph_token}",
+        }
+        url = f"{self.graph_resource}/v1.0/directoryRoleTemplates"
+        response = self.sdk.requests.get(url, headers=auth_header)
+        response.raise_for_status()
+        try:
+            role_template = next(
+                (
+                    role_template
+                    for role_template in response.json()["value"]
+                    if role_template["displayName"] == "Billing Administrator"
+                ),
+            )
+            return role_template["id"]
+        except StopIteration:
+            raise UserProvisioningException(
+                "Could not find Billing Administrator role template ID."
+            )
+
+    @log_and_raise_exceptions
+    def _activate_billing_admin_role(self, graph_token, role_template_id):
+        auth_header = {
+            "Authorization": f"Bearer {graph_token}",
+        }
+        request_body = {"roleTemplateId": role_template_id}
+        url = f"{self.graph_resource}/v1.0/directoryRoles"
+        response = self.sdk.requests.post(url, headers=auth_header, json=request_body)
+        response.raise_for_status()
+        return response.json()["id"]
+
+    def _activate_and_return_billing_admin_role_id(self, graph_token):
+        billing_admin_role_template_id = self._get_billing_admin_role_template_id(
+            graph_token
+        )
+        billing_admin_role_id = self._activate_billing_admin_role(
+            graph_token, billing_admin_role_template_id
+        )
+        return billing_admin_role_id
+
+    @log_and_raise_exceptions
     def create_billing_owner(self, payload: BillingOwnerCSPPayload):
         """Create a billing account owner, which is a billing role that can
         manage everything for a billing account.
@@ -1008,13 +1051,19 @@ class AzureCloudProvider(CloudProviderInterface):
         graph_token = self._get_tenant_principal_token(
             payload.tenant_id, scope=self.graph_resource + "/.default"
         )
-
         # Step 1: Create an AAD identity for the user
         user_result = self._create_active_directory_user(graph_token, payload)
         # Step 2: Set the recovery email
         self._update_active_directory_user_email(graph_token, user_result.id, payload)
-        # Step 3: Find the Billing Administrator role ID
+        # Step 3: Try and retrieve the billing admin role id. If it isn't found,
+        # activate the Billing Admin role and return the id
+        # TODO: Find out if we need to check for the Billing Admin role first
+        # for provisioning. Will the Billing Admin role be applied by defaut?
         billing_admin_role_id = self._get_billing_owner_role(graph_token)
+        if billing_admin_role_id is None:
+            billing_admin_role_id = self._activate_and_return_billing_admin_role_id(
+                graph_token
+            )
         # Step 4: Assign the Billing Administrator role to the new user
         self._assign_billing_owner_role(
             graph_token, billing_admin_role_id, user_result.id
@@ -1038,11 +1087,7 @@ class AzureCloudProvider(CloudProviderInterface):
 
         result = self.sdk.requests.post(url, headers=auth_header, json=request_body)
         result.raise_for_status()
-
-        if result.ok:
-            return True
-        else:
-            raise UserProvisioningException("Could not assign billing admin role")
+        return True
 
     @log_and_raise_exceptions
     def _get_billing_owner_role(self, graph_token):
@@ -1053,16 +1098,10 @@ class AzureCloudProvider(CloudProviderInterface):
         url = f"{self.graph_resource}/v1.0/directoryRoles"
         result = self.sdk.requests.get(url, headers=auth_header)
         result.raise_for_status()
-
-        if result.ok:
-            result = result.json()
-            for role in result["value"]:
-                if role["displayName"] == "Billing Administrator":
-                    return role["id"]
-        else:
-            raise UserProvisioningException(
-                "Could not find Billing Administrator role ID; role may not be enabled."
-            )
+        result = result.json()
+        for role in result["value"]:
+            if role["displayName"] == "Billing Administrator":
+                return role["id"]
 
     def create_user(self, payload: UserCSPPayload) -> UserCSPResult:
         """Create a user in an Azure Active Directory instance.
