@@ -1399,24 +1399,6 @@ def test_update_tenant_creds(mock_azure: AzureCloudProvider, monkeypatch):
     assert updated_secret == KeyVaultCredentials(**{**existing_secrets, **new_secrets})
 
 
-class TestGetCalculatorCreds:
-    def test_get_calculator_creds_succeeds(self, mock_azure):
-        mock_result = mock_requests_response(
-            status=200, json_data={"access_token": MOCK_ACCESS_TOKEN},
-        )
-        mock_azure.sdk.requests.get.return_value = mock_result
-        assert mock_azure._get_calculator_creds() == MOCK_ACCESS_TOKEN
-
-    def test_get_calculator_creds_fails(self, mock_azure):
-        mock_result = mock_requests_response(
-            status=401, json_data={"error": "invalid request"},
-        )
-        mock_azure.sdk.requests.get.return_value = mock_result
-
-        with pytest.raises(AuthenticationException):
-            mock_azure._get_calculator_creds()
-
-
 def test_get_calculator_url(mock_azure: AzureCloudProvider):
     mock_result = mock_requests_response(
         status=200, json_data={"access_token": MOCK_ACCESS_TOKEN},
