@@ -1371,26 +1371,11 @@ class AzureCloudProvider(CloudProviderInterface):
         if result.ok:
             return CostManagementQueryCSPResult(**result.json())
 
-    @log_and_raise_exceptions
-    def _get_calculator_creds(self):
-        url = f"{self.sdk.cloud.endpoints.active_directory}/{self.root_tenant_id}/oauth2/token"
-        resource = self.config.get("AZURE_CALC_RESOURCE")
-        payload = {
-            "grant_type": "client_credentials",
-            "client_id": self.config.get("AZURE_CALC_CLIENT_ID"),
-            "client_secret": self.config.get("AZURE_CALC_SECRET"),
-            "resource": resource,
-        }
-        token_response = self.sdk.requests.get(url, data=payload, timeout=30)
-        token_response.raise_for_status()
-        token = token_response.json().get("access_token")
-        if token is None:
-            message = f"Failed to get token for resource '{resource}' in tenant '{self.root_tenant_id}'"
-            app.logger.error(message, exc_info=1)
-            raise AuthenticationException(message)
-        else:
-            return token
-
     def get_calculator_url(self):
-        calc_access_token = self._get_calculator_creds()
+        calc_access_token = self._get_service_principal_token(
+            self.root_tenant_id,
+            self.config.get("AZURE_CALC_CLIENT_ID"),
+            self.config.get("AZURE_CALC_SECRET"),
+            scope=self.config.get("AZURE_CALC_RESOURCE"),
+        )
         return f"{self.config.get('AZURE_CALC_URL')}?access_token={calc_access_token}"
