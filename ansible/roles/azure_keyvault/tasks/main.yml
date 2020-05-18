@@ -16,12 +16,5 @@
 
 - name: get secrets
   import_tasks: get_secrets.yml
-<<<<<<< HEAD
-<<<<<<< HEAD
-  when: get_secrets is defined
-=======
   when: get_secrets is defined 
->>>>>>> DRYs up formatting to a single task, fixes quotes issue
-=======
-  when: get_secrets is defined 
->>>>>>> 0234d0a2f8b0a819e35db36751ad50d71879634c
+
