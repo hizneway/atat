@@ -6,7 +6,7 @@ This folder contains Kubernetes deployment configuration for Azure. The followin
 
 Applying the K8s config relies on a combination of kustomize and envsubst. Kustomize comes packaged with kubectl v0.14 and higher. envsubst is part of the gettext package. It can be installed with `brew install gettext` for MacOS users.
 
-The production configuration (azure.atat.code.mil, currently) is reflected in the configuration found in the `deploy/azure` directory. Configuration for a staging environment relies on kustomize to overwrite the production config with values appropriate for that environment. You can find more information about using kustomize [here](https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kustomization/). Kustomize does not manage templating, and certain values need to be templated. These include:
+The production configuration (master.atat.dev, currently) is reflected in the configuration found in the `deploy/azure` directory. Configuration for a staging environment relies on kustomize to overwrite the production config with values appropriate for that environment. You can find more information about using kustomize [here](https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kustomization/). Kustomize does not manage templating, and certain values need to be templated. These include:
 
 - CONTAINER_IMAGE: The ATAT container image to use.
 - PORT_PREFIX: "8" for production, "9" for staging.
@@ -89,7 +89,7 @@ You may also be prompted to agree to a terms of services, which you should do.
 You will be prompted to enter the domain names you want a cert for. Enter **both** the main and auth domains as a comma separated list. For instance:
 
 ```
-jedi.atat.code.mil,jedi-auth.atat.code.mil
+atat.dev, *.atat.dev
 ```
 
 You must agree to have your IP logged to proceed.
@@ -107,7 +107,7 @@ ty--Ip1l5bAE1RWk3aL5EnI76OKL-iueFtkRLheugUw.nqBL619amlBbWsSSfB8zqcZowwEI-sFdok57
 
 And make it available on your web server at this URL:
 
-http://auth-staging.atat.code.mil/.well-known/acme-challenge/ty--Ip1l5bAE1RWk3aL5EnI76OKL-iueFtkRLheugUw
+http://auth-staging.atat.dev/.well-known/acme-challenge/ty--Ip1l5bAE1RWk3aL5EnI76OKL-iueFtkRLheugUw
 ------------------------------------------------------------------------------------------
 Press Enter to Continue
 ```
@@ -152,12 +152,12 @@ kubectl -n master rollout restart deployment atst
 
 This will start new pods for the web service, and the new ACME challenge will be available from the NGINX web server. You can verify this by loading the link certbot provides and verifying that you get the ACME challenge content you expect. If the files are loading correctly, proceed forward with certbot.
 
-You may need to repeat this process for the second domain. If the validation is successful, certbot will write new certificates to your host machine, typically in a directory such as `~/.certbot/config/live/azure.atat.code.mil/`
+You may need to repeat this process for the second domain. If the validation is successful, certbot will write new certificates to your host machine, typically in a directory such as `~/.certbot/config/live/master.atat.dev/`
 
 You may need to combine the newly created `cert.pem` and `privkey.pem` files into one file. Here's how you might do that:
 
 ```sh
-cd ~/.certbot/config/live/azure.atat.code.mil/
+cd ~/.certbot/config/live/master.atat.dev/
 cp cert.pem all.pem
 cat privkey.pem >> all.pem
 ```
