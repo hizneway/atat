@@ -1,6 +1,8 @@
 import json
+import time
 from functools import wraps
 from secrets import token_hex, token_urlsafe
+from typing import Dict
 from uuid import uuid4
 
 from flask import current_app as app
@@ -12,6 +14,7 @@ from .exceptions import (
     AuthenticationException,
     ConnectionException,
     DomainNameException,
+    ResourceProvisioningError,
     UnknownServerException,
     UserProvisioningException,
 )
@@ -123,20 +126,12 @@ def log_and_raise_exceptions(func):
 
 class AzureSDKProvider(object):
     def __init__(self):
-        from azure.mgmt import managementgroups
-        import azure.common.credentials as credentials
-        import azure.identity as identity
-        from azure.core import exceptions
         from msrestazure.azure_cloud import (
             AZURE_PUBLIC_CLOUD,
         )  # TODO: choose cloud type from config
         import adal
         import requests
 
-        self.managementgroups = managementgroups
-        self.credentials = credentials
-        self.identity = identity
-        self.azure_exceptions = exceptions
         self.cloud = AZURE_PUBLIC_CLOUD
         self.adal = adal
         self.requests = requests
@@ -148,7 +143,7 @@ class AzureCloudProvider(CloudProviderInterface):
 
         self.client_id = config["AZURE_CLIENT_ID"]
         self.secret_key = config["AZURE_SECRET_KEY"]
-        self.tenant_id = config["AZURE_TENANT_ID"]
+        self.root_tenant_id = config["AZURE_TENANT_ID"]
         self.vault_url = config["AZURE_VAULT_URL"]
         self.ps_client_id = config["AZURE_POWERSHELL_CLIENT_ID"]
         self.graph_resource = config["AZURE_GRAPH_RESOURCE"]
@@ -169,9 +164,7 @@ class AzureCloudProvider(CloudProviderInterface):
 
     @log_and_raise_exceptions
     def _get_keyvault_token(self):
-        url = (
-            f"{self.sdk.cloud.endpoints.active_directory}/{self.tenant_id}/oauth2/token"
-        )
+        url = f"{self.sdk.cloud.endpoints.active_directory}/{self.root_tenant_id}/oauth2/token"
         payload = {
             "grant_type": "client_credentials",
             "client_id": self.client_id,
@@ -229,20 +222,10 @@ class AzureCloudProvider(CloudProviderInterface):
         return result_value
 
     def create_environment(self, payload: EnvironmentCSPPayload):
-        creds = self._source_tenant_creds(payload.tenant_id)
-        credentials = self._get_credential_obj(
-            {
-                "client_id": creds.tenant_sp_client_id,
-                "secret_key": creds.tenant_sp_key,
-                "tenant_id": creds.tenant_id,
-            },
-            resource=self.sdk.cloud.endpoints.resource_manager,
-        )
-
         response = self._create_management_group(
-            credentials,
             payload.management_group_name,
             payload.display_name,
+            payload.tenant_id,
             payload.parent_id,
         )
 
@@ -250,30 +233,23 @@ class AzureCloudProvider(CloudProviderInterface):
 
     @log_and_raise_exceptions
     def create_application(self, payload: ApplicationCSPPayload):
-        creds = self._source_tenant_creds(payload.tenant_id)
-        credentials = self._get_credential_obj(
-            {
-                "client_id": creds.tenant_sp_client_id,
-                "secret_key": creds.tenant_sp_key,
-                "tenant_id": creds.tenant_id,
-            },
-            resource=self.sdk.cloud.endpoints.resource_manager,
-        )
-
         response = self._create_management_group(
-            credentials,
             payload.management_group_name,
             payload.display_name,
+            payload.tenant_id,
             payload.parent_id,
         )
 
         return ApplicationCSPResult(**response)
 
     def create_initial_mgmt_group(self, payload: InitialMgmtGroupCSPPayload):
-        """Creates the root management group for the Portfolio tenant.
-
-        The management group created in this step is the parent to all future
-        management groups created for applications and environments.
+        """Creates the initial management group in the Portfolio tenant.
+        
+        Every tenant has a "Root Management Group" (RMG), but this RMG isn't
+        provisioned by Azure until another management group is created. In this
+        step, we provision a management group solely to trigger the creation of 
+        the RMG. After this step, we create all other management groups for 
+        applications and environments under the RMG.
 
         A management group is a collection of subscriptions and management
         groups to which "governance conditions" can be applied. These resources
@@ -281,18 +257,8 @@ class AzureCloudProvider(CloudProviderInterface):
 
         https://docs.microsoft.com/en-us/azure/governance/management-groups/overview
         """
-
-        creds = self._source_tenant_creds(payload.tenant_id)
-        credentials = self._get_credential_obj(
-            {
-                "client_id": creds.root_sp_client_id,
-                "secret_key": creds.root_sp_key,
-                "tenant_id": creds.root_tenant_id,
-            },
-            resource=self.sdk.cloud.endpoints.resource_manager,
-        )
         response = self._create_management_group(
-            credentials, payload.management_group_name, payload.display_name,
+            payload.management_group_name, payload.display_name, payload.tenant_id,
         )
 
         return InitialMgmtGroupCSPResult(**response)
@@ -309,7 +275,7 @@ class AzureCloudProvider(CloudProviderInterface):
 
         https://docs.microsoft.com/en-us/azure/governance/management-groups/overview
         """
-        sp_token = self._get_tenant_principal_token(self.tenant_id)
+        sp_token = self._get_tenant_principal_token(payload.tenant_id)
         headers = {
             "Authorization": f"Bearer {sp_token}",
         }
@@ -320,32 +286,67 @@ class AzureCloudProvider(CloudProviderInterface):
         response.raise_for_status()
         return InitialMgmtGroupVerificationCSPResult(**response.json())
 
+    @log_and_raise_exceptions
     def _create_management_group(
-        self, credentials, management_group_id, display_name, parent_id=None,
+        self, management_group_id, display_name, tenant_id, parent_id=None,
     ):
-        mgmgt_group_client = self.sdk.managementgroups.ManagementGroupsAPI(credentials)
-        create_parent_grp_info = self.sdk.managementgroups.models.CreateParentGroupInfo(
-            id=parent_id
-        )
-        create_mgmt_grp_details = self.sdk.managementgroups.models.CreateManagementGroupDetails(
-            parent=create_parent_grp_info
-        )
-        mgmt_grp_create = self.sdk.managementgroups.models.CreateManagementGroupRequest(
-            name=management_group_id,
-            display_name=display_name,
-            details=create_mgmt_grp_details,
-        )
+        sp_token = self._get_tenant_principal_token(tenant_id)
+        session = self.sdk.requests.Session()
+        session.headers = {
+            "Authorization": f"Bearer {sp_token}",
+        }
+        if parent_id is None:
+            parent_id = f"/providers/Microsoft.Management/managementGroups/{tenant_id}"
 
-        create_request = mgmgt_group_client.management_groups.create_or_update(
-            management_group_id, mgmt_grp_create
+        request_body = {
+            "properties": {"displayName": display_name, "parent": {"id": parent_id},}
+        }
+        response = session.put(
+            f"{self.sdk.cloud.endpoints.resource_manager}providers/Microsoft.Management/managementGroups/{management_group_id}?api-version=2020-02-01",
+            json=request_body,
         )
+        response.raise_for_status()
+        if response.status_code == 202:
+            status_url = response.headers["Azure-AsyncOperation"]
+            return self._poll_management_group_creation_job(status_url, session)
+        else:
+            return response.json()
 
-        # result is a synchronous wait, might need to do a poll instead to handle first mgmt group create
-        # since we were told it could take 10+ minutes to complete, unless this handles that polling internally
-        # TODO: what to do is status is not 'Succeeded' on the
-        # response object? Will it always raise its own error
-        # instead?
-        return create_request.result()
+    @log_and_raise_exceptions
+    def _poll_management_group_creation_job(self, url: str, session) -> Dict:
+        """Polls the management group creation job until it is resolved and 
+        returns the result.
+        
+        https://docs.microsoft.com/en-us/azure/azure-resource-manager/management/async-operations
+
+        Args:
+            url: The url to check for job completion, provided by the 
+                Azure-AsyncOperation response header after creating the 
+                management group.
+            session: a requests session populated with a service principal 
+                bearer token.
+        Returns:
+            A dictionary of details of the created management group
+
+        Raises:
+            ResourceProvisioningError: Something went wrong when trying to 
+                create the management group
+            RequestException: Something went wrong when trying to make the request
+        """
+
+        while True:
+            response = session.get(url)
+            response.raise_for_status()
+            response_json = response.json()
+            status = response_json["status"]
+            if status == "Succeeded":
+                return response_json
+            elif status in ("Failed", "Canceled"):
+                error_message = f"{response_json['error']['message']}\nError code: {response_json['error']['code']}"
+                raise ResourceProvisioningError("management group", f"{error_message}")
+            else:
+                time.sleep(int(response.headers.get("Retry-After", 10)))
+                continue
 
     @log_and_raise_exceptions
     def _create_policy_definition(self, session, root_management_group_name, policy):
@@ -499,7 +500,7 @@ class AzureCloudProvider(CloudProviderInterface):
         self.create_tenant_creds(
             tenant_id,
             KeyVaultCredentials(
-                root_tenant_id=self.tenant_id,
+                root_tenant_id=self.root_tenant_id,
                 root_sp_client_id=self.client_id,
                 root_sp_key=self.secret_key,
                 tenant_id=tenant_id,
@@ -1093,14 +1094,29 @@ class AzureCloudProvider(CloudProviderInterface):
         Returns:
             UserCSPResult -- a result object containing the AAD ID.
         """
-        graph_token = self._get_tenant_principal_token(
+
+        # Request a graph api authorization token
+
+        token = self._get_tenant_principal_token(
             payload.tenant_id, resource=self.graph_resource
         )
 
-        result = self._create_active_directory_user(graph_token, payload)
-        self._update_active_directory_user_email(graph_token, result.id, payload)
+        # Use the graph api to invite a user
 
-        return result
+        body = {
+            "invitedUserDisplayName": payload.display_name,
+            "invitedUserEmailAddress": payload.email,
+            "inviteRedirectUrl": "https://portal.azure.com",
+            "sendInvitationMessage": True,
+            "invitedUserType": "Member",
+        }
+
+        url = f"{self.graph_resource}/v1.0/invitations"
+        headers = {"Authorization": f"Bearer {token}"}
+        response = self.sdk.requests.post(url, json=body, headers=headers)
+        response.raise_for_status()
+
+        return UserCSPResult(id=response.json()["invitedUser"]["id"])
 
     @log_and_raise_exceptions
     def _create_active_directory_user(self, graph_token, payload) -> UserCSPResult:
@@ -1268,29 +1284,12 @@ class AzureCloudProvider(CloudProviderInterface):
         else:
             return token
 
-    def _get_credential_obj(self, creds, resource=None):
-        return self.sdk.credentials.ServicePrincipalCredentials(
-            client_id=creds.get("client_id"),
-            secret=creds.get("secret_key"),
-            tenant=creds.get("tenant_id"),
-            resource=resource,
-            cloud_environment=self.sdk.cloud,
-        )
-
-    def _get_client_secret_credential_obj(self):
-        creds = self._source_root_creds()
-        return self.sdk.identity.ClientSecretCredential(
-            tenant_id=creds.root_tenant_id,
-            client_id=creds.root_sp_client_id,
-            client_secret=creds.root_sp_key,
-        )
-
     @property
     def _root_creds(self):
         return {
             "client_id": self.client_id,
             "secret_key": self.secret_key,
-            "tenant_id": self.tenant_id,
+            "root_tenant_id": self.root_tenant_id,
         }
 
     def _get_tenant_principal_token(self, tenant_id, resource=None):
@@ -1322,7 +1321,7 @@ class AzureCloudProvider(CloudProviderInterface):
 
     def _source_root_creds(self):
         return KeyVaultCredentials(
-            root_tenant_id=self._root_creds.get("tenant_id"),
+            root_tenant_id=self._root_creds.get("root_tenant_id"),
             root_sp_client_id=self._root_creds.get("client_id"),
             root_sp_key=self._root_creds.get("secret_key"),
         )
@@ -1385,7 +1384,7 @@ class AzureCloudProvider(CloudProviderInterface):
 
     @log_and_raise_exceptions
     def _get_calculator_creds(self):
-        authority = f"{self.sdk.cloud.endpoints.active_directory}/{self.tenant_id}"
+        authority = f"{self.sdk.cloud.endpoints.active_directory}/{self.root_tenant_id}"
         context = self.sdk.adal.AuthenticationContext(authority=authority)
         calc_resource = self.config.get("AZURE_CALC_RESOURCE")
         token_response = context.acquire_token_with_client_credentials(

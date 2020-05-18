@@ -1,0 +1,36 @@
+# deploy
+---
+
+# ops_keyvault_* use service principle that has read and list rights to target vault
+
+- name: "print config to json"
+  include_role:
+    name: azure_keyvault
+  vars:
+    get_secrets: true
+    deploy_tag: deploy_tag
+
+
+
+
+- name: tf plan
+  terraform:
+    project_path: "{{tf_dir}}"
+    state: "planned"
+    plan_file: "plan.tfplan"
+    variables: "{{  kv_tf  }}"
+  register: tf_run
+
+
+- debug:
+   msg: "{{tf_run.command}}"
+
+
+- name: tf apply
+  terraform:
+    project_path: "{{tf_dir}}"
+    state: "{{ desired_state }}"
+    plan_file: "plan.tfplan"
+    variables: "{{ kv_tf }}"
+  register: tf_run
+  when: desired_state is defined

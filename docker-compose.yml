@@ -11,7 +11,9 @@ services:
       - sockets:/var/run/uwsgi
     environment:
       PGHOST: host.docker.internal
-      REDIS_URI: "redis://host.docker.internal:6379"
+      REDIS_HOST: host.docker.internal:6379
+      TZ: UTC
+      LOG_JSON: "true"
 
   frontend:
     image: nginx:1.13-alpine

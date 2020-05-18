@@ -85,6 +85,19 @@ class EnvironmentCreationException(GeneralCSPException):
         )
 
 
+class ResourceProvisioningError(GeneralCSPException):
+    """Failed to provision a cloud-specific resource
+    """
+
+    def __init__(self, resource, reason):
+        self.resource = resource
+        self.reason = reason
+
+    @property
+    def message(self):
+        return f"Failed to provision {self.resource}: {self.reason}"
+
+
 class UserProvisioningException(GeneralCSPException):
     """Failed to provision a user
     """
