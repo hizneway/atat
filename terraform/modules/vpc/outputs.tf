@@ -9,5 +9,5 @@ output "id" {
 }
 
 output "vpc_name" {
-value = "${var.name}-${var.environment}-vpc"
+  value = "${var.name}-${var.environment}-vpc"
 }

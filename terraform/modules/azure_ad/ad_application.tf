@@ -3,6 +3,6 @@
 
 resource "azuread_application" "app" {
 
-  name                       = var.name
+  name = var.name
 
 }
