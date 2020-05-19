@@ -8,6 +8,7 @@ from uuid import uuid4
 from flask import current_app as app
 
 from atat.utils import sha256_hex
+from atat.domain.csp.cloud.utils import get_user_principal_token_for_scope
 
 from .cloud_provider_interface import CloudProviderInterface
 from .exceptions import (
@@ -1253,25 +1254,7 @@ class AzureCloudProvider(CloudProviderInterface):
 
     @log_and_raise_exceptions
     def _get_user_principal_token_for_scope(self, username, password, tenant_id, scope):
-        url = (
-            f"{self.sdk.cloud.endpoints.active_directory}/{tenant_id}/oauth2/v2.0/token"
-        )
-        payload = {
-            "client_id": self.ps_client_id,
-            "grant_type": "password",
-            "username": username,
-            "password": password,
-            "scope": scope,
-        }
-        token_response = self.sdk.requests.post(url, data=payload, timeout=30)
-        token_response.raise_for_status()
-        token = token_response.json().get("access_token")
-        if token is None:
-            message = f"Failed to get user principal token for scope '{scope}' in tenant '{tenant_id}'"
-            app.logger.error(message, exc_info=1)
-            raise AuthenticationException(message)
-        else:
-            return token
+        return get_user_principal_token_for_scope(username, password, tenant_id, scope)
 
     @property
     def _root_creds(self):
