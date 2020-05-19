@@ -1,13 +1,13 @@
-import requests
-from msrestazure.azure_cloud import AZURE_PUBLIC_CLOUD
 import os
 import sys
+import requests
 
 parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.append(parent_dir)
 
 from atat.app import make_config
 from atat.domain.csp.cloud.hybrid_cloud_provider import HYBRID_PREFIX
+from atat.domain.csp.cloud.utils import get_user_principal_token_for_scope
 
 
 GRAPH_API = "https://graph.microsoft.com"
@@ -42,26 +42,6 @@ def list_app_registrations(token):
     ]
 
 
-def get_user_token(cloud, tenant_id, username, password, ps_client_id):
-    url = f"{cloud.endpoints.active_directory}/{tenant_id}/oauth2/token"
-    resource = GRAPH_API
-    payload = {
-        "client_id": ps_client_id,
-        "grant_type": "password",
-        "username": username,
-        "password": password,
-        "resource": resource,
-    }
-    token_response = requests.get(url, data=payload, timeout=30)
-    token_response.raise_for_status()
-    token = token_response.json().get("access_token")
-    if token is None:
-        message = f"Failed to get user principal token for resource '{resource}' in tenant '{tenant_id}'"
-        raise RuntimeError(message)
-    else:
-        return token
-
-
 if __name__ == "__main__":
     """
     This script deletes applications created by the HybridCloudProvider
@@ -85,8 +65,8 @@ if __name__ == "__main__":
 
     tenant_id, username, password, ps_client_id = [config[s] for s in required_config]
 
-    token = get_user_token(
-        AZURE_PUBLIC_CLOUD, tenant_id, username, password, ps_client_id,
+    token = get_user_principal_token_for_scope(
+        username, password, tenant_id, GRAPH_API + "/.default"
     )
     apps = list_app_registrations(token)
     if len(apps) > 0:
