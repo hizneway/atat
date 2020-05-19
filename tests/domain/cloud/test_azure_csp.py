@@ -692,15 +692,13 @@ def test_create_tenant_principal_app(
     mock_azure: AzureCloudProvider, mock_http_error_response
 ):
     mock_result = mock_requests_response(json_data={"appId": "appId", "id": "id"})
-    mock_token_response = mock_requests_response(
-        json_data={"access_token": MOCK_ACCESS_TOKEN}
-    )
+    mock_azure._get_user_principal_token_for_scope = Mock()
+    mock_azure._get_user_principal_token_for_scope.return_value = MOCK_ACCESS_TOKEN
 
     mock_azure.sdk.requests.post.side_effect = [
         mock_azure.sdk.requests.exceptions.ConnectionError,
         mock_azure.sdk.requests.exceptions.Timeout,
         mock_http_error_response,
-        mock_token_response,
         mock_result,
     ]
 
@@ -728,15 +726,13 @@ def test_create_tenant_principal(
     mock_azure: AzureCloudProvider, mock_http_error_response
 ):
     mock_result = mock_requests_response(json_data={"id": "principal_id"})
-    mock_token_response = mock_requests_response(
-        json_data={"access_token": MOCK_ACCESS_TOKEN}
-    )
+    mock_azure._get_user_principal_token_for_scope = Mock()
+    mock_azure._get_user_principal_token_for_scope.return_value = MOCK_ACCESS_TOKEN
 
     mock_azure.sdk.requests.post.side_effect = [
         mock_azure.sdk.requests.exceptions.ConnectionError,
         mock_azure.sdk.requests.exceptions.Timeout,
         mock_http_error_response,
-        mock_token_response,
         mock_result,
     ]
 
@@ -762,15 +758,13 @@ def test_create_tenant_principal_credential(
     mock_azure: AzureCloudProvider, mock_http_error_response
 ):
     mock_result = mock_requests_response(json_data={"secretText": "new secret key"})
-    mock_token_response = mock_requests_response(
-        json_data={"access_token": MOCK_ACCESS_TOKEN}
-    )
+    mock_azure._get_user_principal_token_for_scope = Mock()
+    mock_azure._get_user_principal_token_for_scope.return_value = MOCK_ACCESS_TOKEN
 
     mock_azure.sdk.requests.post.side_effect = [
         mock_azure.sdk.requests.exceptions.ConnectionError,
         mock_azure.sdk.requests.exceptions.Timeout,
         mock_http_error_response,
-        mock_token_response,
         mock_result,
     ]
 
@@ -807,9 +801,8 @@ def test_create_admin_role_definition(
             ]
         }
     )
-    mock_token_response = mock_requests_response(
-        json_data={"access_token": MOCK_ACCESS_TOKEN}
-    )
+    mock_azure._get_user_principal_token_for_scope = Mock()
+    mock_azure._get_user_principal_token_for_scope.return_value = MOCK_ACCESS_TOKEN
 
     mock_azure.sdk.requests.get.side_effect = [
         mock_azure.sdk.requests.exceptions.ConnectionError,
@@ -817,7 +810,6 @@ def test_create_admin_role_definition(
         mock_http_error_response,
         mock_result,
     ]
-    mock_azure.sdk.requests.post.return_value = mock_token_response
 
     payload = AdminRoleDefinitionCSPPayload(
         **{"tenant_id": "6d2d2d6c-a6d6-41e1-8bb1-73d11475f8f4"}
@@ -905,15 +897,13 @@ def test_create_principal_admin_role(
 ):
 
     mock_result = mock_requests_response(json_data={"id": "id"})
-    mock_token_response = mock_requests_response(
-        json_data={"access_token": MOCK_ACCESS_TOKEN}
-    )
+    mock_azure._get_user_principal_token_for_scope = Mock()
+    mock_azure._get_user_principal_token_for_scope.return_value = MOCK_ACCESS_TOKEN
 
     mock_azure.sdk.requests.post.side_effect = [
         mock_azure.sdk.requests.exceptions.ConnectionError,
         mock_azure.sdk.requests.exceptions.Timeout,
         mock_http_error_response,
-        mock_token_response,
         mock_result,
     ]
 
