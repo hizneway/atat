@@ -383,6 +383,8 @@ def apply_json_logger():
 
 def register_jinja_globals(app):
     static_url = app.config.get("STATIC_URL", "/static/")
+    app_version = app.config.get("APP_VERSION", "")
+    git_sha = app.config.get("GIT_SHA", "")
 
     def _url_for(endpoint, **values):
         if endpoint == "static":
@@ -395,6 +397,6 @@ def register_jinja_globals(app):
         {
             "url_for": _url_for,
             "service_desk_url": app.config.get("SERVICE_DESK_URL"),
-            "build_info": f"{app.config.get('APP_VERSION')} {app.config.get('GIT_SHA', '')}",
+            "build_info": f"{app_version} {git_sha}",
         }
     )
