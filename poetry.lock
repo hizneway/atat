@@ -240,6 +240,14 @@ version = "1.4"
 
 [[package]]
 category = "main"
+description = "A collection of cache libraries in the same API interface."
+name = "cachelib"
+optional = false
+python-versions = "*"
+version = "0.1"
+
+[[package]]
+category = "main"
 description = "Distributed Task Queue."
 name = "celery"
 optional = false
@@ -467,10 +475,11 @@ description = "Adds server-side session support to your Flask application"
 name = "flask-session"
 optional = false
 python-versions = "*"
-version = "0.3.1"
+version = "0.3.2"
 
 [package.dependencies]
 Flask = ">=0.8"
+cachelib = "*"
 
 [[package]]
 category = "main"
@@ -1455,7 +1464,7 @@ docs = ["sphinx", "jaraco.packaging (>=3.2)", "rst.linker (>=1.9)"]
 testing = ["jaraco.itertools", "func-timeout"]
 
 [metadata]
-content-hash = "9a2e1a5ce59dc502c7a62f28abc796a5cadb0bc0e793605c8b8cca8c02f4a95c"
+content-hash = "eb70cd67cae3f16b5ffc01afd8336503318aadd0550e5fa63ec9a58b3457560a"
 python-versions = "3.7.3"
 
 [metadata.files]
@@ -1538,6 +1547,10 @@ black = [
 ]
 blinker = [
     {file = "blinker-1.4.tar.gz", hash = "sha256:471aee25f3992bd325afa3772f1063dbdbbca947a041b8b89466dc00d606f8b6"},
+]
+cachelib = [
+    {file = "cachelib-0.1-py3-none-any.whl", hash = "sha256:1c79bb1e83b339fa4e65c8281b9e5311027540c76516ee98a66c151e629e37f1"},
+    {file = "cachelib-0.1.tar.gz", hash = "sha256:8b889b509d372095357b8705966e1282d40835c4126d7c2b07fd414514d8ae8d"},
 ]
 celery = [
     {file = "celery-4.4.2-py2.py3-none-any.whl", hash = "sha256:5b4b37e276033fe47575107a2775469f0b721646a08c96ec2c61531e4fe45f2a"},
@@ -1675,8 +1688,8 @@ flask-assets = [
     {file = "Flask_Assets-2.0-py3-none-any.whl", hash = "sha256:2845bd3b479be9db8556801e7ebc2746ce2d9edb4e7b64a1c786ecbfc1e5867b"},
 ]
 flask-session = [
-    {file = "Flask-Session-0.3.1.tar.gz", hash = "sha256:a31c27e0c3287f00c825b3d9625aba585f4df4cccedb1e7dd5a69a215881a731"},
-    {file = "Flask_Session-0.3.1-py2.py3-none-any.whl", hash = "sha256:b9b32126bfc52c3169089f2ed9a40e34b589527bda48b633428e07d39d9c8792"},
+    {file = "Flask-Session-0.3.2.tar.gz", hash = "sha256:0768e2bbf06f963ec1aa711bde7aa32dc39ff70f89b495d6db687d899eae4423"},
+    {file = "Flask_Session-0.3.2-py2.py3-none-any.whl", hash = "sha256:d75eb27f918421ccaf1ba86353348b84ecf07fc64ce40ff7ad05a190c4bf50f1"},
 ]
 flask-sqlalchemy = [
     {file = "Flask-SQLAlchemy-2.4.1.tar.gz", hash = "sha256:6974785d913666587949f7c2946f7001e4fa2cb2d19f4e69ead02e4b8f50b33d"},
