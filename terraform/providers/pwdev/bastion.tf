@@ -38,5 +38,7 @@ module "bastion" {
 =======
 >>>>>>> formats terraform, updates provider
 
+  bastion_ssh_pub_key_path = var.bastion_ssh_pub_key_path
+
 
 }
