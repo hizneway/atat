@@ -20,12 +20,7 @@ LICENSE
 
 # Skip envrc
 .envrc
-
-# Skip terraform
-terraform
-
-# Skip kubernetes and Docker config stuff
-deploy
+.env*
 
 # exclude build artifacts and docker directories
 .venv

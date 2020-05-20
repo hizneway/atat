@@ -46,7 +46,7 @@ def protected_routes(app):
     return _protected_routes
 
 
-sample_config = make_config({"CRL_STORAGE_PROVIDER": "LOCAL"})
+sample_config = make_config({"default": {"CRL_STORAGE_PROVIDER": "LOCAL"}})
 sample_app = make_app(sample_config)
 _PROTECTED_ROUTES = protected_routes(sample_app)
 
@@ -97,7 +97,7 @@ def user_with(*perm_sets_names):
 
 @pytest.fixture(scope="session")
 def app(request):
-    config = make_config(direct_config={"DEBUG": False})
+    config = make_config(direct_config={"default": {"DEBUG": False}})
     _app = make_app(config)
 
     ctx = _app.app_context()
@@ -623,11 +623,6 @@ def test_task_orders_download_task_order_pdf_access(get_url_assert_status, monke
     get_url_assert_status(rando, url, 404)
 
 
-# task_orders.form_step_one_add_pdf
-# task_orders.form_step_two_add_number
-# task_orders.form_step_three_add_clins
-# task_orders.form_step_four_review
-# task_orders.form_step_five_confirm_signature
 def test_task_orders_new_get_routes(get_url_assert_status):
     get_routes = [
         "task_orders.form_step_one_add_pdf",

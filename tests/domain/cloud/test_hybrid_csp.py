@@ -8,7 +8,10 @@ from atat.domain.csp.cloud.exceptions import UserProvisioningException
 from atat.domain.csp.cloud.models import (
     EnvironmentCSPPayload,
     KeyVaultCredentials,
+    UserCSPPayload,
     UserRoleCSPPayload,
+    CostManagementQueryCSPPayload,
+    InitialMgmtGroupVerificationCSPPayload,
 )
 from atat.jobs import do_create_application, do_create_environment_role, do_create_user
 from atat.models import PortfolioStates, PortfolioStateMachine
@@ -24,7 +27,6 @@ from tests.factories import (
     TaskOrderFactory,
     UserFactory,
 )
-from uuid import uuid4
 
 
 @pytest.fixture(scope="function")
@@ -80,12 +82,12 @@ def test_hybrid_provision_portfolio(pytestconfig, state_machine: PortfolioStateM
 @pytest.mark.hybrid
 def test_hybrid_create_application_job(session, csp):
     csp.azure.create_tenant_creds(
-        csp.azure.tenant_id,
+        csp.azure.root_tenant_id,
         KeyVaultCredentials(
-            root_tenant_id=csp.azure.tenant_id,
+            root_tenant_id=csp.azure.root_tenant_id,
             root_sp_client_id=csp.azure.client_id,
             root_sp_key=csp.azure.secret_key,
-            tenant_id=csp.azure.tenant_id,
+            tenant_id=csp.azure.root_tenant_id,
             tenant_sp_key=csp.azure.secret_key,
             tenant_sp_client_id=csp.azure.client_id,
         ),
@@ -93,7 +95,7 @@ def test_hybrid_create_application_job(session, csp):
 
     portfolio = PortfolioFactory.create(
         csp_data={
-            "tenant_id": csp.azure.tenant_id,
+            "tenant_id": csp.azure.root_tenant_id,
             "root_management_group_id": csp.azure.config["AZURE_ROOT_MGMT_GROUP_ID"],
         }
     )
@@ -106,23 +108,23 @@ def test_hybrid_create_application_job(session, csp):
 
 
 @pytest.mark.hybrid
-def test_hybrid_create_environment_job(session, csp):
+def test_hybrid_create_environment_job(csp):
     environment = EnvironmentFactory.create()
 
     csp.azure.create_tenant_creds(
-        csp.azure.tenant_id,
+        csp.azure.root_tenant_id,
         KeyVaultCredentials(
-            root_tenant_id=csp.azure.tenant_id,
+            root_tenant_id=csp.azure.root_tenant_id,
             root_sp_client_id=csp.azure.client_id,
             root_sp_key=csp.azure.secret_key,
-            tenant_id=csp.azure.tenant_id,
+            tenant_id=csp.azure.root_tenant_id,
             tenant_sp_key=csp.azure.secret_key,
             tenant_sp_client_id=csp.azure.client_id,
         ),
     )
 
     payload = EnvironmentCSPPayload(
-        tenant_id=csp.azure.tenant_id,
+        tenant_id=csp.azure.root_tenant_id,
         display_name=environment.name,
         parent_id=csp.azure.config["AZURE_ROOT_MGMT_GROUP_ID"],
     )
@@ -133,12 +135,40 @@ def test_hybrid_create_environment_job(session, csp):
 
 
 @pytest.mark.hybrid
+def test_get_reporting_data(csp):
+    from_date = pendulum.now().subtract(years=1).add(days=1).format("YYYY-MM-DD")
+    to_date = pendulum.now().format("YYYY-MM-DD")
+
+    csp.azure.create_tenant_creds(
+        csp.azure.root_tenant_id,
+        KeyVaultCredentials(
+            root_tenant_id=csp.azure.root_tenant_id,
+            root_sp_client_id=csp.azure.client_id,
+            root_sp_key=csp.azure.secret_key,
+            tenant_id=csp.azure.root_tenant_id,
+            tenant_sp_key=csp.azure.secret_key,
+            tenant_sp_client_id=csp.azure.client_id,
+        ),
+    )
+
+    payload = CostManagementQueryCSPPayload(
+        tenant_id=csp.azure.root_tenant_id,
+        from_date=from_date,
+        to_date=to_date,
+        billing_profile_properties={"invoice_sections": [{"invoice_section_id": "",}],},
+    )
+
+    result = csp.get_reporting_data(payload)
+    assert result.name
+
+
+@pytest.mark.hybrid
 class TestHybridUserManagement:
     @pytest.fixture
     def portfolio(self, app, csp):
         return PortfolioFactory.create(
             csp_data={
-                "tenant_id": csp.azure.tenant_id,
+                "tenant_id": csp.azure.root_tenant_id,
                 "domain_name": f"dancorriganpromptworks",
             }
         )
@@ -181,12 +211,12 @@ class TestHybridUserManagement:
 
     def test_hybrid_create_user_job(self, session, csp, app_role_1, portfolio):
         csp.azure.create_tenant_creds(
-            csp.azure.tenant_id,
+            csp.azure.root_tenant_id,
             KeyVaultCredentials(
-                root_tenant_id=csp.azure.tenant_id,
+                root_tenant_id=csp.azure.root_tenant_id,
                 root_sp_client_id=csp.azure.client_id,
                 root_sp_key=csp.azure.secret_key,
-                tenant_id=csp.azure.tenant_id,
+                tenant_id=csp.azure.root_tenant_id,
                 tenant_sp_key=csp.azure.secret_key,
                 tenant_sp_client_id=csp.azure.client_id,
             ),
@@ -226,12 +256,12 @@ class TestHybridUserManagement:
 
     def test_hybrid_disable_user(self, session, csp, portfolio, app, app_role_1):
         csp.azure.create_tenant_creds(
-            csp.azure.tenant_id,
+            csp.azure.root_tenant_id,
             KeyVaultCredentials(
-                root_tenant_id=csp.azure.tenant_id,
+                root_tenant_id=csp.azure.root_tenant_id,
                 root_sp_client_id=csp.azure.client_id,
                 root_sp_key=csp.azure.secret_key,
-                tenant_id=csp.azure.tenant_id,
+                tenant_id=csp.azure.root_tenant_id,
                 tenant_sp_key=csp.azure.secret_key,
                 tenant_sp_client_id=csp.azure.client_id,
             ),
@@ -242,7 +272,7 @@ class TestHybridUserManagement:
         session.rollback()
 
         payload = UserRoleCSPPayload(
-            tenant_id=csp.azure.tenant_id,
+            tenant_id=csp.azure.root_tenant_id,
             role="owner",
             management_group_id=app.config["AZURE_ROOT_MGMT_GROUP_ID"],
             user_object_id=app_role_1.cloud_id,
@@ -250,7 +280,7 @@ class TestHybridUserManagement:
 
         create_user_role_result = csp.azure.create_user_role(payload)
         disable_user_result = csp.azure.disable_user(
-            csp.azure.tenant_id, create_user_role_result.id
+            csp.azure.root_tenant_id, create_user_role_result.id
         )
         assert disable_user_result["id"] == create_user_role_result.id
 
@@ -259,19 +289,19 @@ class TestHybridUserManagement:
         environment_role.environment.cloud_id = app.config["AZURE_ROOT_MGMT_GROUP_ID"]
         environment_role.application_role.cloud_id = app.config["AZURE_USER_OBJECT_ID"]
         environment_role.environment.portfolio.csp_data = {
-            "tenant_id": csp.azure.tenant_id,
+            "tenant_id": csp.azure.root_tenant_id,
             "domain_name": "dancorriganpromptworks",
         }
 
         session.commit()
 
         csp.azure.create_tenant_creds(
-            csp.azure.tenant_id,
+            csp.azure.root_tenant_id,
             KeyVaultCredentials(
-                root_tenant_id=csp.azure.tenant_id,
+                root_tenant_id=csp.azure.root_tenant_id,
                 root_sp_client_id=csp.azure.client_id,
                 root_sp_key=csp.azure.secret_key,
-                tenant_id=csp.azure.tenant_id,
+                tenant_id=csp.azure.root_tenant_id,
                 tenant_sp_key=csp.azure.secret_key,
                 tenant_sp_client_id=csp.azure.client_id,
             ),
@@ -282,3 +312,30 @@ class TestHybridUserManagement:
         except UserProvisioningException as e:
             if "RoleAssignmentExists" not in str(e):
                 raise e
+
+
+@pytest.mark.hybrid
+def test_create_initial_mgmt_group_verification(csp):
+    payload = InitialMgmtGroupVerificationCSPPayload(
+        tenant_id=csp.azure.root_tenant_id,
+        management_group_name=csp.azure.root_tenant_id,
+    )
+    response = csp.azure.create_initial_mgmt_group_verification(payload)
+    assert (
+        response.id
+        == f"/providers/Microsoft.Management/managementGroups/{csp.azure.root_tenant_id}"
+    )
+
+
+@pytest.mark.hybrid
+def test_create_user(csp):
+    payload = UserCSPPayload(
+        tenant_id=csp.azure.root_tenant_id,
+        display_name="Test Testerson",
+        tenant_host_name="testtenant",
+        email="test@testerson.test",
+        password="asdfghjkl",  # pragma: allowlist secret
+    )
+
+    result = csp.azure.create_user(payload)
+    assert result.id

@@ -28,7 +28,7 @@ def test_csrf_error(csrf_enabled_app, client):
 
 @pytest.fixture
 def blowup_app(notification_sender):
-    _blowup_app = make_app(make_config(direct_config={"DEBUG": False}))
+    _blowup_app = make_app(make_config(direct_config={"default": {"DEBUG": False}}))
     _blowup_app.notification_sender = notification_sender
 
     @_blowup_app.route("/throw")

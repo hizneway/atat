@@ -60,7 +60,7 @@ locally:
   You will have to either create symlinks to the binaries or update the path.  Both are probably not necessary:
   ```
   brew link --force --overwrite node@10
-  echo 'export PATH="/usr/local/opt/node@10/bin:$PATH"' >> ~/.zshrc 
+  echo 'export PATH="/usr/local/opt/node@10/bin:$PATH"' >> ~/.zshrc
   ```
 
 ### Cloning
@@ -215,10 +215,14 @@ To run lint, static analysis, and Python unit tests:
 To run only the Python unit tests:
 
     poetry run python -m pytest
+**Integration tests with the Hybrid Interface**
 
-Integration tests that use the hybrid cloud provider are skipped by default. To run these tests, add a `--hybrid` flag when running pytest:
+Integration tests that use the hybrid cloud provider are skipped by default and should be run on their own, as some of the required hybrid configuration values may cause certain non-hybrid tests to fail. As a result, it's recommended that you do not `EXPORT` these hybrid config values into your shell environment, but instead load them only for that command with something like the following:
 
-    poetry run python -m pytest --hybrid
+```
+env $(cat .env.hybrid | xargs) poetry run pytest --no-cov --hybrid tests/domain/cloud/test_hybrid_csp.py
+```
+The config values required by the hybrid tests are outlined in the [Hybrid Configuration](#hybrid-configuration) section. Note that the `--hybrid` parameter is also required for hybrid tests to run.
 
 This project also runs Javascript tests using jest. To run the Javascript tests:
 
@@ -234,21 +238,32 @@ To generate coverage reports for the Javascript tests:
 
 ## Configuration
 
+### Setting Configuration
+
+All config settings must be declared in "config/base.ini", even if they are null. Configuration is set in the following order:
+
+1. Settings from "config/base.ini" are read in and applied.
+2. If FLASK_ENV is set as an environment variable and there is an INI file with a matching name, that INI file is read in and applied. For instance, if FLASK_ENV is set to "prod" and a "prod.ini" file exists, those values will be applied and will override any values set by the base.ini.
+3. MSFT supports an [OSS Kubernetes plugin](https://github.com/Azure/kubernetes-keyvault-flexvol) for mounting objects from Azure Key Vault into containers. We use this feature to store application secrets in a Key Vault instance and set them in the container at runtime (see "deploy/README.md" for more details). This is done by mounting the secrets into a known directory and specifying it with an environment variable, OVERRIDE_CONFIG_DIRECTORY. If OVERRIDE_CONFIG_DIRECTORY is set, ATAT will do the following:
+  1. Find the specified directory. For example, "/config"
+  1. Search for files in that directory with names matching known settings. For example, a file called "AZURE_ACCOUNT_NAME".
+  1. Read in the contents of those files and set the content as the value for that setting. These will override any values previously set. For example, if the file "AZURE_ACCOUNT_NAME" has the content "my-azure-account-name", that content will be set as the value for the AZURE_ACCOUNT_NAME setting.
+4. Finally, ATAT will check for the presence of environment variables matching all known config values. If a matching environment variable exists, its value will override whatever value was previously set.
+
+### Config Guide
+
+#### General Config
+
 - `ASSETS_URL`: URL to host which serves static assets (such as a CDN).
 - `AZURE_ACCOUNT_NAME`: The name for the Azure blob storage account
-- `AZURE_ADMIN_ROLE_ASSIGNMENT_ID`: The fully pathed role assignment ID that associates a user with admin privileges to the root tenant of the Hybrid Cloud
 - `AZURE_BILLING_ACCOUNT_NAME`: The name for the root Azure billing account
 - `AZURE_CALC_CLIENT_ID`: The client id used to generate a token for the Azure pricing calculator
 - `AZURE_CALC_RESOURCE`: The resource URL used to generate a token for the Azure pricing calculator
 - `AZURE_CALC_SECRET`: The secret key used to generate a token for the Azure pricing calculator
 - `AZURE_CALC_URL`: The redirect URL for the Azure pricing calculator
 - `AZURE_LOGIN_URL`: The URL used to login for an Azure instance.
-- `AZURE_ROOT_MGMT_GROUP_ID`: [HYBRID TEST ONLY] The fully pathed root management group ID for the Hybrid Cloud.
 - `AZURE_STORAGE_KEY`: A valid secret key for the Azure blob storage account
 - `AZURE_TO_BUCKET_NAME`: The Azure blob storage container name for task order uploads
-- `AZURE_TENANT_ADMIN_USERNAME`: Username of an admin user associated with the "root" tenant id used in the Hybrid Cloud Provider
-- `AZURE_TENANT_ADMIN_PASSWORD`: Password associated with the "root" tenant id used in the Hybrid Cloud Provider
-- `AZURE_USER_OBJECT_ID`: Object Id of an admin user associated with the "root" tenant id used in the Hybrid Cloud Provider
 - `BLOB_STORAGE_URL`: URL to Azure blob storage container.
 - `CAC_URL`: URL for the CAC authentication route.
 - `CA_CHAIN`: Path to the CA chain file.
@@ -282,7 +297,7 @@ To generate coverage reports for the Javascript tests:
 - `REDIS_URI`: URI for the redis server.
 - `SECRET_KEY`: String key which will be used to sign the session cookie. Should be a long string of random bytes. https://flask.palletsprojects.com/en/1.1.x/config/#SECRET_KEY
 - `SERVER_NAME`: Hostname for ATAT. Only needs to be specified in contexts where the hostname cannot be inferred from the request, such as Celery workers. https://flask.palletsprojects.com/en/1.1.x/config/#SERVER_NAME
-- `SERVICE_DESK_URL`: The URL for the service desk.  This is the site that will be displayed when the Support button is pressed. 
+- `SERVICE_DESK_URL`: The URL for the service desk.  This is the site that will be displayed when the Support button is pressed.
 - `SESSION_COOKIE_NAME`: String value specifying the name to use for the session cookie. https://flask.palletsprojects.com/en/1.1.x/config/#SESSION_COOKIE_NAME
 - `SESSION_COOKIE_DOMAIN`: String value specifying the name to use for the session cookie. This should be set to the root domain so that it is valid for both the main site and the authentication subdomain. https://flask.palletsprojects.com/en/1.1.x/config/#SESSION_COOKIE_DOMAIN
 - `SESSION_KEY_PREFIX`: A prefix that is added before all session keys: https://pythonhosted.org/Flask-Session/#configuration
@@ -294,6 +309,17 @@ To generate coverage reports for the Javascript tests:
 - `STATIC_URL`: URL specifying where static assets are hosted.
 - `USE_AUDIT_LOG`: Boolean value describing if ATAT should write to the audit log table in the database. Set to "false" by default for performance reasons.
 - `WTF_CSRF_ENABLED`: Boolean value specifying if WTForms should protect against CSRF. Should be set to "true" unless running automated tests.
+
+#### Hybrid Configuration
+
+Configuration variables that are needed solely to run Hybrid tests are in the `[hybrid]` section of the base configuration file.
+- `AZURE_ADMIN_ROLE_ASSIGNMENT_ID`: The fully pathed role assignment ID that associates a user with admin privileges to the root tenant of the Hybrid Cloud
+- `AZURE_BILLING_PROFILE_ID`: ID of the billing profile used for Cost Management queries with the Hybrid interface.
+- `AZURE_INVOICE_SECTION_ID`: ID of the invoice section used for Cost Management queries with the Hybrid interface.
+- `AZURE_ROOT_MGMT_GROUP_ID`: The fully pathed root management group ID for the Hybrid Cloud.
+- `AZURE_TENANT_ADMIN_PASSWORD`: Password associated with the "root" tenant id used in the Hybrid Cloud Provider
+- `AZURE_TENANT_ADMIN_USERNAME`: Username of an admin user associated with the "root" tenant id used in the Hybrid Cloud Provider
+- `AZURE_USER_OBJECT_ID`: Object Id of an admin user associated with the "root" tenant id used in the Hybrid Cloud Provider
 
 ### UI Test Automation
 
@@ -345,6 +371,8 @@ docker-compose up
 The app will be available on http://localhost:8080.
 
 The build assumes that you have redis and postgres running on their usual ports on your host machine; it does not pull images for those services. The docker-compose build is not suitable for development because it does not mount or reload working files.
+
+Note that the uWSGI config used for this build in the repo root is symlinked from deploy/azure/uwsgi.ini. See the Kubernetes README in deploy/README.md for details.
 
 ### Dev login
 

@@ -1,7 +1,6 @@
 namespace: atat
 resources:
   - azure.yml
-  - uwsgi-config.yml
   - atst-envvars-configmap.yml
   - atst-nginx-configmap.yml
   - atst-worker-envvars-configmap.yml
@@ -12,3 +11,10 @@ resources:
   - acme-challenges.yml
   - nginx-snippets.yml
   - autoscaling.yml
+configMapGenerator:
+- name: uwsgi-config
+  namespace: atat
+  files:
+  - uwsgi.ini
+generatorOptions:
+  disableNameSuffixHash: true

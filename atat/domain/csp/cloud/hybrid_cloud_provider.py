@@ -5,6 +5,7 @@ from atat.domain.csp.cloud.mock_cloud_provider import MockCloudProvider
 from atat.domain.csp.cloud.models import *
 from typing import Dict, Union
 from uuid import uuid4
+from operator import itemgetter
 
 
 @contextlib.contextmanager
@@ -58,10 +59,10 @@ class HybridCloudProvider(object):
         self.azure.create_tenant_creds(
             self.tenant_id,
             KeyVaultCredentials(
-                root_tenant_id=self.azure.tenant_id,
+                root_tenant_id=self.azure.root_tenant_id,
                 root_sp_client_id=self.azure.client_id,
                 root_sp_key=self.azure.secret_key,
-                tenant_id=self.azure.tenant_id,
+                tenant_id=self.azure.root_tenant_id,
                 tenant_admin_username=tenant_admin_username,
                 tenant_admin_password=tenant_admin_password,
             ),
@@ -133,7 +134,7 @@ class HybridCloudProvider(object):
         self, payload: TenantPrincipalCredentialCSPPayload
     ) -> TenantPrincipalCredentialCSPResult:
         token = self.azure._get_tenant_admin_token(
-            payload.tenant_id, self.azure.graph_resource
+            payload.tenant_id, self.azure.graph_resource + "/.default"
         )
 
         original_update_tenant_creds = self.azure.update_tenant_creds
@@ -142,7 +143,7 @@ class HybridCloudProvider(object):
             """Necessary to ensure the root tenant id credentials are saved in
             KeyVault at the end of this stage.
             """
-            creds.tenant_id = self.azure.tenant_id
+            creds.tenant_id = self.azure.root_tenant_id
             original_update_tenant_creds(tenant_id, creds)
 
         with monkeypatched(self.azure, "_get_tenant_admin_token", lambda *_a: token):
@@ -164,12 +165,14 @@ class HybridCloudProvider(object):
     def create_initial_mgmt_group(
         self, payload: InitialMgmtGroupCSPPayload
     ) -> InitialMgmtGroupCSPResult:
+        payload.tenant_id = self.azure.root_tenant_id
         payload.display_name = f"{HYBRID_PREFIX} {payload.display_name}"
         return self.azure.create_initial_mgmt_group(payload)
 
     def create_initial_mgmt_group_verification(
         self, payload: InitialMgmtGroupVerificationCSPPayload
     ) -> InitialMgmtGroupVerificationCSPResult:
+        payload.tenant_id = self.azure.root_tenant_id
         return self.azure.create_initial_mgmt_group_verification(payload)
 
     def create_tenant_admin_ownership(
@@ -181,7 +184,7 @@ class HybridCloudProvider(object):
         """
 
         token = self.azure._get_elevated_management_token(payload.tenant_id)
-        payload.tenant_id = self.azure.tenant_id
+        payload.tenant_id = self.azure.root_tenant_id
         with monkeypatched(
             self.azure, "_get_elevated_management_token", lambda _: token
         ):
@@ -202,7 +205,7 @@ class HybridCloudProvider(object):
         """
 
         token = self.azure._get_elevated_management_token(payload.tenant_id)
-        payload.tenant_id = self.azure.tenant_id
+        payload.tenant_id = self.azure.root_tenant_id
         with monkeypatched(
             self.azure, "_get_elevated_management_token", lambda _: token
         ):
@@ -212,9 +215,9 @@ class HybridCloudProvider(object):
         self, payload: BillingOwnerCSPPayload
     ) -> BillingOwnerCSPResult:
         token = self.azure._get_tenant_principal_token(
-            payload.tenant_id, resource=self.azure.graph_resource
+            payload.tenant_id, scope=self.azure.graph_resource + "/.default"
         )
-        payload.tenant_id = self.azure.tenant_id
+        payload.tenant_id = self.azure.root_tenant_id
         with monkeypatched(
             self.azure, "_get_tenant_principal_token", lambda *a, **kw: token
         ):
@@ -260,3 +263,15 @@ class HybridCloudProvider(object):
 
     def disable_user(self, tenant_id: str, role_assignment_cloud_id: str) -> Dict:
         return self.azure.disable_user(tenant_id, role_assignment_cloud_id)
+
+    def get_reporting_data(self, payload: CostManagementQueryCSPPayload):
+        billing_account_id, billing_profile_id, invoice_section_id = itemgetter(
+            "AZURE_BILLING_ACCOUNT_NAME",
+            "AZURE_BILLING_PROFILE_ID",
+            "AZURE_INVOICE_SECTION_ID",
+        )(self.azure.config)
+
+        isi = f"/providers/Microsoft.Billing/billingAccounts/{billing_account_id}/billingProfiles/{billing_profile_id}/invoiceSections/{invoice_section_id}"
+        payload.invoice_section_id = isi
+
+        return self.azure.get_reporting_data(payload)

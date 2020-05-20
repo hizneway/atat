@@ -32,66 +32,16 @@ KEYVAULT_SECRET = {
     **AUTH_CREDENTIALS,
     "tenant_id": "mock_tenant_id",
     "tenant_admin_username": "mock_tenant_admin_username",
-    "tenant_admin_password": "mock_tenant_admin_password",
+    "tenant_admin_password": "mock_tenant_admin_password",  # pragma: allowlist secret
 }
 
 MOCK_ACCESS_TOKEN = "TOKEN"
-
-
-def mock_managementgroups():
-    from azure.mgmt import managementgroups
-
-    return Mock(spec=managementgroups)
-
-
-def mock_credentials():
-    import azure.common.credentials as credentials
-
-    return Mock(spec=credentials)
-
-
-def mock_identity():
-    import azure.identity as identity
-
-    return Mock(spec=identity)
-
-
-def mock_secrets():
-    from azure.keyvault import secrets
-
-    mock_secrets = Mock(spec=secrets)
-    mock_secrets.SecretClient.return_value.get_secret.return_value.value = json.dumps(
-        KEYVAULT_SECRET
-    )
-    mock_secrets.SecretClient.return_value.set_secret.return_value = None
-    return mock_secrets
-
-
-def mock_azure_exceptions():
-    from azure.core import exceptions
-
-    return exceptions
 
 
 def mock_cloud_details():
     from msrestazure.azure_cloud import AZURE_PUBLIC_CLOUD
 
     return AZURE_PUBLIC_CLOUD
-
-
-def mock_adal():
-    import adal
-    from adal.adal_error import AdalError
-
-    mock_adal = Mock(spec=adal)
-    mock_adal.AdalError = AdalError
-    mock_adal.AuthenticationContext.return_value.acquire_token_with_client_credentials.return_value = {
-        "accessToken": MOCK_ACCESS_TOKEN
-    }
-    mock_adal.AuthenticationContext.return_value.acquire_token_with_username_password.return_value = {
-        "accessToken": MOCK_ACCESS_TOKEN
-    }
-    return mock_adal
 
 
 def mock_requests():
@@ -104,14 +54,7 @@ def mock_requests():
 
 class MockAzureSDK(object):
     def __init__(self):
-
-        self.managementgroups = mock_managementgroups()
-        self.credentials = mock_credentials()
-        self.identity = mock_identity()
-        self.secrets = mock_secrets()
-        self.azure_exceptions = mock_azure_exceptions()
         self.cloud = mock_cloud_details()
-        self.adal = mock_adal()
         self.requests = mock_requests()
 
 
@@ -127,5 +70,21 @@ def mock_azure(monkeypatch):
     )
     azure_cloud_provider = AzureCloudProvider(
         AZURE_CONFIG, azure_sdk_provider=MockAzureSDK()
+    )
+    monkeypatch.setattr(
+        azure_cloud_provider,
+        "get_secret",
+        Mock(return_value=json.dumps(KEYVAULT_SECRET)),
+    )
+    monkeypatch.setattr(azure_cloud_provider, "set_secret", Mock(return_value=None))
+    monkeypatch.setattr(
+        azure_cloud_provider,
+        "_get_keyvault_token",
+        Mock(return_value=MOCK_ACCESS_TOKEN),
+    )
+    monkeypatch.setattr(
+        azure_cloud_provider,
+        "_get_service_principal_token",
+        Mock(return_value=MOCK_ACCESS_TOKEN),
     )
     return azure_cloud_provider
