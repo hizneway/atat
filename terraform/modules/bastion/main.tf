@@ -106,18 +106,6 @@ resource "azurerm_kubernetes_cluster" "k8s_bastion" {
 
       log_analytics_workspace_id = var.log_analytics_workspace_id
 
-resource "azurerm_public_ip" "aks_bastion_lb_ip" {
-  name                = "cloudzero-pwdev-network-bastion-ip"
-  location            = var.region
-  resource_group_name = var.rg
-  allocation_method   = "Static"
-  sku                 = "Standard"
-
-  tags = {
-    Name        = "aks-bastion"
-    environment = "Bastion"
-  }
-}
 
 
 locals {
@@ -135,7 +123,7 @@ resource "azurerm_kubernetes_cluster" "k8s_bastion" {
   resource_group_name     = var.rg
   dns_prefix              = "atat-aks-bastion"
   private_cluster_enabled = "true"
-
+  node_resource_group = "${var.rg}-aks-node-rg"
 
 
   network_profile {
@@ -147,14 +135,7 @@ resource "azurerm_kubernetes_cluster" "k8s_bastion" {
     service_cidr       = "10.1.253.0/26"
     load_balancer_sku  = "Standard"
 
-    load_balancer_profile {
 
-      #  managed_outbound_ip_count = 1
-      # need to add this to TF
-      outbound_ip_address_ids = ["/subscriptions/95934d54-980d-47cc-9bce-3a96bf9a2d1b/resourceGroups/MC_cloudzero-pwdev-jump_bastion-aks_eastus/providers/Microsoft.Network/publicIPAddresses/050869a3-609e-4ad6-b4f4-142e9fb9ee5f"]
-
-
-    }
   }
 
 
@@ -183,7 +164,7 @@ resource "azurerm_kubernetes_cluster" "k8s_bastion" {
 
   linux_profile {
 
-    admin_username = "azureuser"
+    admin_username = "breakglass"
     ssh_key {
       key_data = file("${var.bastion_ssh_pub_key_path}")
     }
@@ -198,7 +179,7 @@ resource "azurerm_kubernetes_cluster" "k8s_bastion" {
     vm_size               = "Standard_B2s"
     os_disk_size_gb       = 30
     vnet_subnet_id        = azurerm_subnet.mgmt_subnet.id
-    enable_node_public_ip = true # Nodes need a public IP for external resources. FIXME: Switch to NAT Gateway if its available in our subscription
+    enable_node_public_ip = false # Nodes need a public IP for external resources. FIXME: Switch to NAT Gateway if its available in our subscription
     type                  = "AvailabilitySet"
     enable_auto_scaling   = false
     node_count            = 1

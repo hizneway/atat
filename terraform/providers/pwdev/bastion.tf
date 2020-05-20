@@ -23,5 +23,7 @@ module "bastion" {
   log_analytics_workspace_id = var.log_analytics_workspace_id
 
 
+  bastion_ssh_pub_key_path = var.bastion_ssh_pub_key_path
+
 
 }
