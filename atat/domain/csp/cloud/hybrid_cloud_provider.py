@@ -26,7 +26,6 @@ class HybridCloudProvider(object):
     def __init__(self, azure: AzureCloudProvider, mock: MockCloudProvider, config):
         self.azure = azure
         self.mock = mock
-        self.mock_tenant_id = str(uuid4())
         self.hybrid_tenant_id = config["AZURE_HYBRID_TENANT_ID"]
         self.domain_name = config["AZURE_HYBRID_TENANT_DOMAIN"]
 
@@ -44,11 +43,12 @@ class HybridCloudProvider(object):
         tenant_admin_username = self.azure.config["AZURE_TENANT_ADMIN_USERNAME"]
         tenant_admin_password = self.azure.config["AZURE_TENANT_ADMIN_PASSWORD"]
         user_object_id = self.azure.config["AZURE_USER_OBJECT_ID"]
+        mock_tenant_id = str(uuid4())
 
         # This is our mocked result of what would have been the API call to
         # create a tenant.
         result_dict = {
-            "tenant_id": self.mock_tenant_id,
+            "tenant_id": mock_tenant_id,
             "user_id": "HybridCSPIntegrationTestUser",
             "user_object_id": user_object_id,
             "tenant_admin_username": tenant_admin_username,
@@ -58,7 +58,7 @@ class HybridCloudProvider(object):
         # Here we use the tenant id as a KeyVault key to store the primary
         # point of contact credentials.
         self.azure.create_tenant_creds(
-            self.mock_tenant_id,
+            mock_tenant_id,
             KeyVaultCredentials(
                 root_tenant_id=self.azure.root_tenant_id,
                 root_sp_client_id=self.azure.client_id,
