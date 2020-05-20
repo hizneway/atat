@@ -1,8 +1,11 @@
 
 
+<<<<<<< HEAD
 
 
 
+=======
+>>>>>>> adds bastion tf
 module "bastion" {
 
   source                  = "../../modules/bastion"
@@ -12,6 +15,7 @@ module "bastion" {
   mgmt_subnet_vpc_name    = module.vpc.vpc_name
   bastion_subnet_rg       = module.vpc.resource_group_name
   bastion_subnet_vpc_name = module.vpc.vpc_name
+<<<<<<< HEAD
   mgmt_subnet_cidr        = "10.1.250.0/24"
   bastion_subnet_cidr     = "10.1.4.0/24"
   bastion_aks_sp_secret   = var.bastion_aks_sp_secret
@@ -25,6 +29,10 @@ module "bastion" {
 
   bastion_ssh_pub_key_path   = var.bastion_ssh_pub_key_path
   log_analytics_workspace_id = var.log_analytics_workspace_id
+=======
+  mgmt_subnet_cidr        = "10.1.254.0/24"
+  bastion_subnet_cidr     = "10.1.4.0/24"
+>>>>>>> adds bastion tf
 
 
 }
