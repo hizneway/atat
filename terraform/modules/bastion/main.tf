@@ -15,17 +15,15 @@ resource "azurerm_subnet" "azure_bastion_subnet" {
 
 }
 
-
 # add mgmgt subnet
 
 resource "azurerm_subnet" "mgmt_subnet" {
 
+  name                 = "mgr-subnet"
+  resource_group_name  = var.mgmt_subnet_rg
+  virtual_network_name = var.mgmt_subnet_vpc_name
+  address_prefixes     = ["${var.mgmt_subnet_cidr}"]
 
-
-  name                                           = "mgr-subnet"
-  resource_group_name                            = var.mgmt_subnet_rg
-  virtual_network_name                           = var.mgmt_subnet_vpc_name
-  address_prefixes                               = ["${var.mgmt_subnet_cidr}"]
   enforce_private_link_endpoint_network_policies = true
 
 
@@ -36,6 +34,7 @@ resource "azurerm_subnet" "mgmt_subnet" {
 
 
 # add azure AzureBastion
+
 
 resource "azurerm_public_ip" "bastion_ip" {
   name                = "bastion-ip"
@@ -58,15 +57,8 @@ resource "azurerm_bastion_host" "host" {
 }
 
 
+
 # add aks cluster 1 node, 2vcpu 4 gb ram
-
-
-
-locals {
-  key_path        = "config"
-  authorized_keys = fileset(local.key_path, "*.pub")
-}
-
 
 
 resource "azurerm_kubernetes_cluster" "k8s_bastion" {
@@ -79,6 +71,14 @@ resource "azurerm_kubernetes_cluster" "k8s_bastion" {
   private_cluster_enabled = "true"
   node_resource_group     = "${var.rg}-aks-node-rg"
 
+
+  linux_profile {
+     admin_username = "bastion"
+    ssh_key {
+
+       key_data = "file(${var.bastion_ssh_pub_key_path})"
+    }
+  }
 
   network_profile {
 
@@ -102,8 +102,10 @@ resource "azurerm_kubernetes_cluster" "k8s_bastion" {
 
     oms_agent {
 
-      enabled                    = true
+      enabled = true
+
       log_analytics_workspace_id = var.log_analytics_workspace_id
+
 
     }
 
@@ -137,16 +139,3 @@ resource "azurerm_kubernetes_cluster" "k8s_bastion" {
     owner       = var.owner
   }
 }
-
-
-
-
-
-
-
-
-
-# ansible:
-# add ssh key to cluster node
-# install azure cli
-# configure kubectl to talk to atat
