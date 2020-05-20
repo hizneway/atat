@@ -15,11 +15,15 @@ module "bastion" {
   mgmt_subnet_cidr        = "10.1.250.0/24"
   bastion_subnet_cidr     = "10.1.4.0/24"
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> formats terraform, updates provider
   bastion_aks_sp_secret   = var.bastion_aks_sp_secret
   bastion_aks_sp_id       = var.bastion_aks_sp_id
   environment             = var.environment
   owner                   = var.owner
   name                    = var.name
+<<<<<<< HEAD
 
   bastion_ssh_pub_key_path   = var.bastion_ssh_pub_key_path
   log_analytics_workspace_id = var.log_analytics_workspace_id
@@ -31,6 +35,8 @@ module "bastion" {
   owner = var.owner
   name = var.name
 >>>>>>> adds azure bastion, bastion subnet, mgmt subnet, bastion k8s single node cluster
+=======
+>>>>>>> formats terraform, updates provider
 
 
 }
