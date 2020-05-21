@@ -1041,7 +1041,7 @@ class AzureCloudProvider(CloudProviderInterface):
         return billing_admin_role_id
 
     @log_and_raise_exceptions
-    def get_existing_billing_owner(
+    def _get_existing_billing_owner(
         self, token: str, payload: BillingOwnerCSPPayload
     ) -> Optional[UserCSPResult]:
         header = {"Authorization": f"Bearer {token}"}
@@ -1063,7 +1063,7 @@ class AzureCloudProvider(CloudProviderInterface):
         )
 
         # Step 1: Retrieve or create an AAD identity for the user
-        user_result = self.get_existing_billing_owner(graph_token, payload)
+        user_result = self._get_existing_billing_owner(graph_token, payload)
         if not user_result:
             user_result = self._create_active_directory_user(graph_token, payload)
 
