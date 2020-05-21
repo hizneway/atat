@@ -6,19 +6,11 @@ resource "azurerm_subnet" "azure_bastion_subnet" {
 
 
 
-<<<<<<< HEAD
   name                                           = "mgr-subnet"
   resource_group_name                            = var.bastion_subnet_rg
   virtual_network_name                           = var.bastion_subnet_vpc_name
   address_prefixes                               = ["${var.bastion_subnet_cidr}"]
   enforce_private_link_endpoint_network_policies = true
-=======
-
-  name                 = "AzureBastionSubnet"
-  resource_group_name  = var.bastion_subnet_rg
-  virtual_network_name = var.bastion_subnet_vpc_name
-  address_prefixes       = ["${var.bastion_subnet_cidr}"]
->>>>>>> fixes cidrs
 
 
 }
@@ -30,12 +22,8 @@ resource "azurerm_subnet" "mgmt_subnet" {
   name                 = "mgr-subnet"
   resource_group_name  = var.mgmt_subnet_rg
   virtual_network_name = var.mgmt_subnet_vpc_name
-<<<<<<< HEAD
   address_prefixes     = ["${var.mgmt_subnet_cidr}"]
 
-=======
-  address_prefixes       = ["${var.mgmt_subnet_cidr}"]
->>>>>>> fixes cidrs
   enforce_private_link_endpoint_network_policies = true
 
 
