@@ -169,7 +169,7 @@ resource "azurerm_kubernetes_cluster" "k8s_bastion" {
     vm_size               = "Standard_B2s"
     os_disk_size_gb       = 30
     vnet_subnet_id        = azurerm_subnet.mgmt_subnet.id
-    enable_node_public_ip = false # Nodes need a public IP for external resources. FIXME: Switch to NAT Gateway if its available in our subscription
+    enable_node_public_ip = false
     type                  = "AvailabilitySet"
     enable_auto_scaling   = false
     node_count            = 1
