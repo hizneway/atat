@@ -12,6 +12,7 @@ from atat.domain.csp.cloud.models import (
     UserRoleCSPPayload,
     CostManagementQueryCSPPayload,
     SubscriptionCreationCSPPayload,
+    SubscriptionVerificationCSPPayload,
 )
 from atat.jobs import do_create_application, do_create_environment_role, do_create_user
 from atat.models import PortfolioStates, PortfolioStateMachine
@@ -189,6 +190,37 @@ def test_create_subscription(csp):
     )
 
     csp.create_subscription_creation(payload)
+
+
+def test_create_subscription_mocked(csp):
+    # TODO: When we finally move over to azure, this mocked test should
+    # probably be removed in favor of the above "test_create_subscription"
+    # test.
+    payload = SubscriptionCreationCSPPayload(
+        tenant_id="tenant id",
+        displayName="display name",
+        parentGroupId="parent group id",
+        billingAccountName="billing account name",
+        billingProfileName="billing profile name",
+        invoiceSectionName="invoice section name",
+    )
+
+    sub = csp.create_subscription(payload)
+    sub_creation = csp.create_subscription_creation(payload)
+
+    assert (
+        sub.subscription_verify_url
+        == sub_creation.subscription_verify_url
+        == "https://zombo.com"
+    )
+    assert sub.subscription_retry_after == sub_creation.subscription_retry_after == 10
+
+
+def test_create_subscription_verification(csp):
+    payload = SubscriptionVerificationCSPPayload(
+        tenantId="tenant id", subscriptionVerifyUrl="subscription verify url"
+    )
+    assert csp.create_subscription_verification(payload).subscription_id
 
 
 @pytest.mark.hybrid

@@ -287,7 +287,7 @@ class HybridCloudProvider(object):
         return self.mock.create_subscription(payload)
 
     def create_subscription_creation(self, payload: SubscriptionCreationCSPPayload):
-        return self.mock.reate_subscription_creation(payload)
+        return self.mock.create_subscription_creation(payload)
 
     def create_subscription_verification(
         self, payload: SubscriptionVerificationCSPPayload
