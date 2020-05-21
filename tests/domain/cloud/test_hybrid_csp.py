@@ -162,6 +162,7 @@ def test_get_reporting_data(csp):
     assert result.name
 
 
+@pytest.mark.skip(reason="This test cannot complete due to permission issues.")
 @pytest.mark.hybrid
 def test_create_subscription(csp):
     environment = EnvironmentFactory.create()
