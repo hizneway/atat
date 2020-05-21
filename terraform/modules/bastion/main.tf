@@ -100,10 +100,8 @@ resource "azurerm_kubernetes_cluster" "k8s_bastion" {
 
   addon_profile {
 
-<<<<<<< HEAD
     oms_agent {
 
-<<<<<<< HEAD
       enabled = true
 
       log_analytics_workspace_id = var.log_analytics_workspace_id
@@ -112,21 +110,6 @@ resource "azurerm_kubernetes_cluster" "k8s_bastion" {
     }
 
   }
-=======
-resource "azurerm_public_ip" "aks_bastion_lb_ip" {
-  name                = "cloudzero-pwdev-network-bastion-ip"
-  location            = var.region
-  resource_group_name = var.rg
-  allocation_method   = "Static"
-  sku                 = "Standard"
-
-  tags = {
-    Name        = "aks-bastion"
-    environment = "Bastion"
-  }
-}
-=======
->>>>>>> updates bastion vars
 
 
 locals {
@@ -150,21 +133,19 @@ resource "azurerm_kubernetes_cluster" "k8s_bastion" {
   network_profile {
 
     network_plugin     = "azure"
-    dns_service_ip     = "10.1.253.10"
+    dns_service_ip     = "10.254.253.10"
     docker_bridge_cidr = "172.17.0.1/16"
     outbound_type      = "loadBalancer"
-    service_cidr       = "10.1.253.0/26"
+    service_cidr       = "10.254.253.0/26"
     load_balancer_sku  = "Standard"
 
 
   }
 
 
-
-
-  role_based_access_control {
-
-    enabled = true
+  service_principal {
+    client_id     = var.bastion_aks_sp_id
+    client_secret = var.bastion_aks_sp_secret
   }
 
   addon_profile {
@@ -178,19 +159,7 @@ resource "azurerm_kubernetes_cluster" "k8s_bastion" {
 
   }
 
-  service_principal {
-    client_id     = var.bastion_aks_sp_id
-    client_secret = var.bastion_aks_sp_secret
-  }
 
-  linux_profile {
-
-    admin_username = "breakglass"
-    ssh_key {
-      key_data = file("${var.bastion_ssh_pub_key_path}")
-    }
-
-  }
 
 
 
