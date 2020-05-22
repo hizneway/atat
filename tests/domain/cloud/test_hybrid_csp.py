@@ -51,7 +51,7 @@ def portfolio():
 
 @pytest.fixture(scope="function")
 def csp(app):
-    return HybridCSP(app, simulate_failures=True).cloud
+    return HybridCSP(app, simulate_failures=False).cloud
 
 
 @pytest.fixture(scope="function")
