@@ -141,8 +141,8 @@ def test_get_reporting_data(csp):
     assert result.name
 
 
-@pytest.mark.skip(reason="This test cannot complete due to permission issues.")
 @pytest.mark.hybrid
+@pytest.mark.xfail(reason="This test cannot complete due to permission issues.")
 def test_create_subscription(csp):
     environment = EnvironmentFactory.create()
 
@@ -158,6 +158,7 @@ def test_create_subscription(csp):
     csp.create_subscription_creation(payload)
 
 
+@pytest.mark.hybrid
 def test_create_subscription_mocked(csp):
     # TODO: When we finally move over to azure, this mocked test should
     # probably be removed in favor of the above "test_create_subscription"
@@ -182,6 +183,7 @@ def test_create_subscription_mocked(csp):
     assert sub.subscription_retry_after == sub_creation.subscription_retry_after == 10
 
 
+@pytest.mark.hybrid
 def test_create_subscription_verification(csp):
     payload = SubscriptionVerificationCSPPayload(
         tenantId="tenant id", subscriptionVerifyUrl="subscription verify url"
