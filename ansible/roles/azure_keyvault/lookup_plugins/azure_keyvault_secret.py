@@ -98,6 +98,6 @@ class LookupModule(LookupBase):
         if vault_url is None:
             raise AnsibleError("Failed to get valid vault url.")
         if token:
-            return utils.lookup_secret_msi(token, terms, vault_url,timeout=.05)
+            return utils.lookup_secret_msi(token, terms, vault_url)
         else:
             return utils.lookup_secret_non_msi(terms, vault_url, kwargs)
