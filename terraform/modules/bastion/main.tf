@@ -35,6 +35,18 @@ resource "azurerm_subnet" "mgmt_subnet" {
 
 # add azure AzureBastion
 
+resource "azurerm_public_ip" "bastion_ip" {
+  name                = "bastion-ip"
+  location            = var.region
+  resource_group_name = var.rg
+  allocation_method   = "Static"
+  sku                 = "Standard"
+}
+
+resource "azurerm_bastion_host" "host" {
+  name                = "jit-bastion"
+  location            = var.region
+  resource_group_name = var.rg
 
 resource "azurerm_public_ip" "bastion_ip" {
   name                = "bastion-ip"
