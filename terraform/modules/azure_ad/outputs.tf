@@ -14,7 +14,7 @@ output "oauth2_permissions" {
 }
 
 output "sp_object_id" {
-value = azuread_service_principal.principal.object_id
+  value = azuread_service_principal.principal.object_id
 
 }
 output "name" {
