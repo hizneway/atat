@@ -135,7 +135,7 @@ resource "azurerm_kubernetes_cluster" "k8s_bastion" {
   resource_group_name     = var.rg
   dns_prefix              = "atat-aks-bastion"
   private_cluster_enabled = "true"
-  node_resource_group = "${var.rg}-aks-node-rg"
+  node_resource_group     = "${var.rg}-aks-node-rg"
 
 
   network_profile {
