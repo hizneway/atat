@@ -111,11 +111,11 @@ def test_hybrid_create_application_job(csp, portfolio, session):
 
 
 @pytest.mark.hybrid
-def test_hybrid_create_environment_job(csp):
+def test_hybrid_create_environment(csp):
     environment = EnvironmentFactory.create()
 
     payload = EnvironmentCSPPayload(
-        tenant_id=csp.hybrid_tenant_id,
+        tenant_id=csp.mock_tenant_id,
         display_name=environment.name,
         parent_id=csp.hybrid_tenant_id,
     )
@@ -126,7 +126,21 @@ def test_hybrid_create_environment_job(csp):
 
 
 @pytest.mark.hybrid
-def test_get_reporting_data(csp):
+def test_get_reporting_data(csp, app, monkeypatch):
+    """This test requires credentials for an app registration that has the
+    "Invoice Section Reader" role for the invoice section scope being queried.
+    """
+
+    def _override_source_tenant_creds(tenant_id):
+        return KeyVaultCredentials(
+            tenant_id=csp.azure.root_tenant_id,
+            tenant_sp_client_id=app.config["AZURE_HYBRID_REPORTING_CLIENT_ID"],
+            tenant_sp_key=app.config["AZURE_HYBRID_REPORTING_SECRET"],
+        )
+
+    monkeypatch.setattr(
+        csp.azure, "_source_tenant_creds", _override_source_tenant_creds
+    )
     from_date = pendulum.now().subtract(years=1).add(days=1).format("YYYY-MM-DD")
     to_date = pendulum.now().format("YYYY-MM-DD")
 
