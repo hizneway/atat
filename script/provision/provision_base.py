@@ -5,6 +5,7 @@ import sys
 
 from atat.domain.csp.cloud import AzureCloudProvider
 from atat.domain.csp.cloud.models import KeyVaultCredentials
+from atat.app import make_config
 
 parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
 sys.path.append(parent_dir)
@@ -14,7 +15,7 @@ def get_provider_and_inputs(input_path):
     with open(input_path, "r") as input_file:
         details = json.loads(input_file.read())
         creds = details.get("creds")
-        config = details.get("config")
+        config = make_config({"default": details.get("config")})
 
         cloud = AzureCloudProvider(config)
 
