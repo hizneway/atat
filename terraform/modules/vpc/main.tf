@@ -34,7 +34,7 @@ resource "azurerm_subnet" "subnet" {
   resource_group_name  = azurerm_resource_group.vpc.name
   virtual_network_name = azurerm_virtual_network.vpc.name
   address_prefixes     = [element(split(",", each.value), 0)]
-  service_endpoints = split(",", var.service_endpoints[each.key])
+  service_endpoints    = split(",", var.service_endpoints[each.key])
 }
 
 resource "azurerm_route_table" "route_table" {
