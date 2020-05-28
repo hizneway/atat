@@ -14,6 +14,6 @@ output "vpc_name" {
 
 output "resource_group_name" {
 
- value = "${var.name}-${var.environment}-vpc"
+  value = "${var.name}-${var.environment}-vpc"
 
 }
