@@ -161,7 +161,13 @@ resource "azurerm_kubernetes_cluster" "k8s_bastion" {
     oms_agent {
 
       enabled                    = true
+<<<<<<< HEAD
       log_analytics_workspace_id = var.log_analytics_workspace_id
+=======
+
+      log_analytics_workspace_id = var.log_analytics_workspace_id
+
+>>>>>>> removes merge conflicts
 
     }
 
