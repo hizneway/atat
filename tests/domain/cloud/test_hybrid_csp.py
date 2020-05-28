@@ -1,5 +1,6 @@
 import pendulum
 import pytest
+from time import sleep
 from uuid import uuid4
 
 from atat.domain.csp import HybridCSP
@@ -92,6 +93,11 @@ def test_hybrid_provision_portfolio(state_machine: PortfolioStateMachine):
         )
 
         state_machine.trigger_next_transition(csp_data=collected_data)
+        # TODO: The _get_service_principal_token method call within
+        # create_initial_mgmt_group fails periodically. There must be some kind
+        # of race condition on the Azure side we're not accounting for. This
+        # sleep is temporary and we should solve the race condition.
+        sleep(1)
         assert (
             "created" in state_machine.state.value
             or state_machine.state == PortfolioStates.COMPLETED
