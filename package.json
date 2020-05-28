@@ -18,7 +18,7 @@
     "ally.js": "^1.4.1",
     "autoprefixer": "^9.8.4",
     "babel-polyfill": "^6.26.0",
-    "date-fns": "^1.29.0",
+    "date-fns": "^2.14.0",
     "ramda": "^0.27.0",
     "stickybits": "^3.7.7",
     "svg-innerhtml": "^1.1.0",
@@ -45,7 +45,7 @@
     "parcel-bundler/**/lodash": "^4.17.13",
     "minimist": ">=1.2.2",
     "acorn": ">=5.7.4 <6.0.0 || >=6.4.1 <7.0.0 || >=7.1.1",
-    "uswds/**/acorn":"^6.4.1",
+    "uswds/**/acorn": "^6.4.1",
     "kind-of": ">=6.0.3"
   },
   "browserslist": [
