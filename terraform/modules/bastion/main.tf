@@ -192,9 +192,6 @@ resource "azurerm_kubernetes_cluster" "k8s_bastion" {
 
 
 
->>>>>>> adds azure bastion, bastion subnet, mgmt subnet, bastion k8s single node cluster
-
-
 
 
 
