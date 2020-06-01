@@ -1353,9 +1353,12 @@ def test_create_billing_owner(mock_azure: AzureCloudProvider):
     # return value for PATCH doesn't matter much
     mock_azure.sdk.requests.patch.return_value = mock_requests_response()
     # return value for GET needs to be a JSON object with a list of role definitions
-    mock_azure.sdk.requests.get.return_value = mock_requests_response(
+
+    r1 = mock_requests_response(status=400)
+    r2 = mock_requests_response(
         json_data={"value": [{"displayName": "Billing Administrator", "id": "4567"}]}
     )
+    mock_azure.sdk.requests.get.side_effect = [r1, r2]
 
     payload = BillingOwnerCSPPayload(
         tenant_id=uuid4().hex,
@@ -1365,6 +1368,33 @@ def test_create_billing_owner(mock_azure: AzureCloudProvider):
 
     result = mock_azure.create_billing_owner(payload)
     assert result.billing_owner_id == final_result
+
+
+def test_create_billing_owner_uses_existing_resources(mock_azure: AzureCloudProvider):
+    # mock POST so that it returns a message for an already existing role assignment
+    mock_azure.sdk.requests.post.return_value = mock_requests_response(
+        json_data={"error": {"message": "A conflicting objectl"}}
+    )
+
+    # return value for PATCH doesn't matter much
+    mock_azure.sdk.requests.patch.return_value = mock_requests_response()
+
+    # return value for GET needs to be a JSON object with a list of role definitions
+    # Return a value for an existing user
+    r1 = mock_requests_response(json_data={"displayName": "foo", "id": "1234"})
+    r2 = mock_requests_response(
+        json_data={"value": [{"displayName": "Billing Administrator", "id": "4567"}]}
+    )
+    mock_azure.sdk.requests.get.side_effect = [r1, r2]
+
+    payload = BillingOwnerCSPPayload(
+        tenant_id=uuid4().hex,
+        domain_name="rebelalliance",
+        password_recovery_email_address="many@bothans.org",
+    )
+
+    result = mock_azure.create_billing_owner(payload)
+    assert result.billing_owner_id == "1234"
 
 
 def test_update_tenant_creds(mock_azure: AzureCloudProvider, monkeypatch):
@@ -1603,3 +1633,96 @@ class TestPollManagementGroupCreationJob:
             mock_azure._poll_management_group_creation_job("url", mock_session_object)
         with pytest.raises(UnknownServerException, match=r".*500 Server Error.*"):
             mock_azure._poll_management_group_creation_job("url", mock_session_object)
+
+
+class TestGetBillingAdminRoleTemplateId:
+    def test_returns_template_id(self, mock_azure):
+        mock_azure.sdk.requests.get.return_value = mock_requests_response(
+            json_data={
+                "value": [
+                    {
+                        "description": "description-value",
+                        "displayName": "Billing Administrator",
+                        "id": "id-value",
+                    }
+                ]
+            }
+        )
+        result = mock_azure._get_billing_admin_role_template_id("MOCK_TOKEN")
+        assert result == "id-value"
+
+    def test_raises_provisioning_error(self, mock_azure):
+        mock_azure.sdk.requests.get.return_value = mock_requests_response(
+            json_data={
+                "value": [
+                    {
+                        "description": "description-value",
+                        "displayName": "Something Random",
+                        "id": "id-value",
+                    }
+                ]
+            }
+        )
+        with pytest.raises(UserProvisioningException):
+            mock_azure._get_billing_admin_role_template_id("MOCK_TOKEN")
+
+    def test_raises_http_errors(self, mock_azure, mock_http_error_response):
+        mock_azure.sdk.requests.get.side_effect = [
+            mock_azure.sdk.requests.exceptions.ConnectionError,
+            mock_azure.sdk.requests.exceptions.Timeout,
+            mock_http_error_response,
+        ]
+        with pytest.raises(ConnectionException):
+            mock_azure._get_billing_admin_role_template_id("MOCK_TOKEN")
+        with pytest.raises(ConnectionException):
+            mock_azure._get_billing_admin_role_template_id("MOCK_TOKEN")
+        with pytest.raises(UnknownServerException, match=r".*500 Server Error.*"):
+            mock_azure._get_billing_admin_role_template_id("MOCK_TOKEN")
+
+
+class TestActivateBillingAdminRole:
+    def test_returns_role_id(self, mock_azure):
+        mock_azure.sdk.requests.post.return_value = mock_requests_response(
+            json_data={
+                "description": "description-value",
+                "displayName": "displayName-value",
+                "roleTemplateId": "roleTemplateId-value",
+                "id": "id-value",
+            }
+        )
+        result = mock_azure._activate_billing_admin_role("MOCK_TOKEN", "123456789")
+        assert result == "id-value"
+
+    def test_raises_http_errors(self, mock_azure, mock_http_error_response):
+        mock_azure.sdk.requests.post.side_effect = [
+            mock_azure.sdk.requests.exceptions.ConnectionError,
+            mock_azure.sdk.requests.exceptions.Timeout,
+            mock_http_error_response,
+        ]
+        with pytest.raises(ConnectionException):
+            mock_azure._activate_billing_admin_role("MOCK_TOKEN", "123456789")
+        with pytest.raises(ConnectionException):
+            mock_azure._activate_billing_admin_role("MOCK_TOKEN", "123456789")
+        with pytest.raises(UnknownServerException, match=r".*500 Server Error.*"):
+            mock_azure._activate_billing_admin_role("MOCK_TOKEN", "123456789")
+
+
+def test_activate_and_return_billing_admin_role_id(mock_azure, monkeypatch):
+    token = "MOCK_TOKEN"
+    template_id = 12345
+
+    mock_get_billing_admin_role_template_id = Mock(return_value=template_id)
+    mock_activate_billing_admin_role = Mock()
+    monkeypatch.setattr(
+        mock_azure,
+        "_get_billing_admin_role_template_id",
+        mock_get_billing_admin_role_template_id,
+    )
+    monkeypatch.setattr(
+        mock_azure, "_activate_billing_admin_role", mock_activate_billing_admin_role,
+    )
+
+    mock_azure._activate_and_return_billing_admin_role_id(token)
+
+    mock_get_billing_admin_role_template_id.assert_called_once_with(token)
+    mock_activate_billing_admin_role.assert_called_once_with(token, template_id)

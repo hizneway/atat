@@ -2,7 +2,7 @@ import json
 import time
 from functools import wraps
 from secrets import token_hex, token_urlsafe
-from typing import Dict
+from typing import Dict, Optional
 from uuid import uuid4
 
 from flask import current_app as app
@@ -90,7 +90,7 @@ DEFAULT_POLICY_SET_DEFINITION_NAME = "Default JEDI Policy Set"
 
 def log_and_raise_exceptions(func):
     """Wraps Azure cloud provider API calls to catch `requests` exceptions,
-    log them, and re-raise them as our CSP exceptions. 
+    log them, and re-raise them as our CSP exceptions.
 
     The cloud parameter below represents an AzureCloudProvider class instance,
     i.e. `self`, since this decorator is applied to class methods.
@@ -239,11 +239,11 @@ class AzureCloudProvider(CloudProviderInterface):
 
     def create_initial_mgmt_group(self, payload: InitialMgmtGroupCSPPayload):
         """Creates the initial management group in the Portfolio tenant.
-        
+
         Every tenant has a "Root Management Group" (RMG), but this RMG isn't
         provisioned by Azure until another management group is created. In this
-        step, we provision a management group solely to trigger the creation of 
-        the RMG. After this step, we create all other management groups for 
+        step, we provision a management group solely to trigger the creation of
+        the RMG. After this step, we create all other management groups for
         applications and environments under the RMG.
 
         A management group is a collection of subscriptions and management
@@ -270,9 +270,10 @@ class AzureCloudProvider(CloudProviderInterface):
 
         https://docs.microsoft.com/en-us/azure/governance/management-groups/overview
         """
-        sp_token = self._get_tenant_principal_token(payload.tenant_id)
+
+        mgmt_token = self._get_elevated_management_token(payload.tenant_id)
         headers = {
-            "Authorization": f"Bearer {sp_token}",
+            "Authorization": f"Bearer {mgmt_token}",
         }
         response = self.sdk.requests.get(
             f"{self.sdk.cloud.endpoints.resource_manager}providers/Microsoft.Management/managementGroups/{payload.management_group_name}?api-version=2020-02-01",
@@ -309,22 +310,22 @@ class AzureCloudProvider(CloudProviderInterface):
 
     @log_and_raise_exceptions
     def _poll_management_group_creation_job(self, url: str, session) -> Dict:
-        """Polls the management group creation job until it is resolved and 
+        """Polls the management group creation job until it is resolved and
         returns the result.
-        
+
         https://docs.microsoft.com/en-us/azure/azure-resource-manager/management/async-operations
 
         Args:
-            url: The url to check for job completion, provided by the 
-                Azure-AsyncOperation response header after creating the 
+            url: The url to check for job completion, provided by the
+                Azure-AsyncOperation response header after creating the
                 management group.
-            session: a requests session populated with a service principal 
+            session: a requests session populated with a service principal
                 bearer token.
         Returns:
             A dictionary of details of the created management group
 
         Raises:
-            ResourceProvisioningError: Something went wrong when trying to 
+            ResourceProvisioningError: Something went wrong when trying to
                 create the management group
             RequestException: Something went wrong when trying to make the request
         """
@@ -685,7 +686,7 @@ class AzureCloudProvider(CloudProviderInterface):
             "managementGroupId": payload.parent_group_id,
         }
 
-        url = f"{self.sdk.cloud.endpoints.resource_manager}/providers/Microsoft.Billing/billingAccounts/{payload.billing_account_name}/billingProfiles/{payload.billing_profile_name}/invoiceSections/{payload.invoice_section_name}/providers/Microsoft.Subscription/createSubscription?api-version=2019-10-01-preview"
+        url = f"{self.sdk.cloud.endpoints.resource_manager}providers/Microsoft.Billing/billingAccounts/{payload.billing_account_name}/billingProfiles/{payload.billing_profile_name}/invoiceSections/{payload.invoice_section_name}/providers/Microsoft.Subscription/createSubscription?api-version=2018-11-01-preview"
 
         auth_header = {
             "Authorization": f"Bearer {sp_token}",
@@ -956,19 +957,21 @@ class AzureCloudProvider(CloudProviderInterface):
         response.raise_for_status()
 
         result = response.json()
-        roleList = result.get("value")
-
-        DEFAULT_ADMIN_RD_ID = "794bb258-3e31-42ff-9ee4-731a72f62851"
-        admin_role_def_id = next(
-            (
-                role.get("id")
-                for role in roleList
-                if role.get("displayName") == "Company Administrator"
-            ),
-            DEFAULT_ADMIN_RD_ID,
-        )
-
-        return AdminRoleDefinitionCSPResult(admin_role_def_id=admin_role_def_id)
+        role_list = result.get("value")
+        try:
+            admin_role_def_id = next(
+                (
+                    role.get("id")
+                    for role in role_list
+                    if role.get("displayName") == "Company Administrator"
+                )
+            )
+            return AdminRoleDefinitionCSPResult(admin_role_def_id=admin_role_def_id)
+        except StopIteration:
+            raise ResourceProvisioningError(
+                "Azure role definition",
+                "Could not locate Azure Global Admin / Company Admin role",
+            )
 
     @log_and_raise_exceptions
     def create_principal_admin_role(self, payload: PrincipalAdminRoleCSPPayload):
@@ -995,6 +998,59 @@ class AzureCloudProvider(CloudProviderInterface):
         result.raise_for_status()
         return PrincipalAdminRoleCSPResult(**result.json())
 
+    @log_and_raise_exceptions
+    def _get_billing_admin_role_template_id(self, graph_token):
+        auth_header = {
+            "Authorization": f"Bearer {graph_token}",
+        }
+        url = f"{self.graph_resource}/v1.0/directoryRoleTemplates"
+        response = self.sdk.requests.get(url, headers=auth_header)
+        response.raise_for_status()
+        try:
+            role_template = next(
+                (
+                    role_template
+                    for role_template in response.json()["value"]
+                    if role_template["displayName"] == "Billing Administrator"
+                ),
+            )
+            return role_template["id"]
+        except StopIteration:
+            raise UserProvisioningException(
+                "Could not find Billing Administrator role template ID."
+            )
+
+    @log_and_raise_exceptions
+    def _activate_billing_admin_role(self, graph_token, role_template_id):
+        auth_header = {
+            "Authorization": f"Bearer {graph_token}",
+        }
+        request_body = {"roleTemplateId": role_template_id}
+        url = f"{self.graph_resource}/v1.0/directoryRoles"
+        response = self.sdk.requests.post(url, headers=auth_header, json=request_body)
+        response.raise_for_status()
+        return response.json()["id"]
+
+    def _activate_and_return_billing_admin_role_id(self, graph_token):
+        billing_admin_role_template_id = self._get_billing_admin_role_template_id(
+            graph_token
+        )
+        billing_admin_role_id = self._activate_billing_admin_role(
+            graph_token, billing_admin_role_template_id
+        )
+        return billing_admin_role_id
+
+    @log_and_raise_exceptions
+    def _get_existing_billing_owner(
+        self, token: str, payload: BillingOwnerCSPPayload
+    ) -> Optional[UserCSPResult]:
+        header = {"Authorization": f"Bearer {token}"}
+        url = f"{self.graph_resource}/v1.0/users/{payload.user_principal_name}"
+        result = self.sdk.requests.get(url, headers=header)
+        if result.status_code == 200:
+            return UserCSPResult(**result.json())
+        return None
+
     def create_billing_owner(self, payload: BillingOwnerCSPPayload):
         """Create a billing account owner, which is a billing role that can
         manage everything for a billing account.
@@ -1006,12 +1062,22 @@ class AzureCloudProvider(CloudProviderInterface):
             payload.tenant_id, scope=self.graph_resource + "/.default"
         )
 
-        # Step 1: Create an AAD identity for the user
-        user_result = self._create_active_directory_user(graph_token, payload)
+        # Step 1: Retrieve or create an AAD identity for the user
+        user_result = self._get_existing_billing_owner(graph_token, payload)
+        if not user_result:
+            user_result = self._create_active_directory_user(graph_token, payload)
+
         # Step 2: Set the recovery email
         self._update_active_directory_user_email(graph_token, user_result.id, payload)
-        # Step 3: Find the Billing Administrator role ID
+        # Step 3: Try and retrieve the billing admin role id. If it isn't found,
+        # activate the Billing Admin role and return the id
+        # TODO: Find out if we need to check for the Billing Admin role first
+        # for provisioning. Will the Billing Admin role be applied by defaut?
         billing_admin_role_id = self._get_billing_owner_role(graph_token)
+        if billing_admin_role_id is None:
+            billing_admin_role_id = self._activate_and_return_billing_admin_role_id(
+                graph_token
+            )
         # Step 4: Assign the Billing Administrator role to the new user
         self._assign_billing_owner_role(
             graph_token, billing_admin_role_id, user_result.id
@@ -1034,12 +1100,13 @@ class AzureCloudProvider(CloudProviderInterface):
         url = f"{self.graph_resource}/beta/roleManagement/directory/roleAssignments"
 
         result = self.sdk.requests.post(url, headers=auth_header, json=request_body)
-        result.raise_for_status()
 
-        if result.ok:
+        error = result.json().get("error")
+        if error and "A conflicting object" in error.get("message"):
             return True
-        else:
-            raise UserProvisioningException("Could not assign billing admin role")
+
+        result.raise_for_status()
+        return True
 
     @log_and_raise_exceptions
     def _get_billing_owner_role(self, graph_token):
@@ -1050,16 +1117,10 @@ class AzureCloudProvider(CloudProviderInterface):
         url = f"{self.graph_resource}/v1.0/directoryRoles"
         result = self.sdk.requests.get(url, headers=auth_header)
         result.raise_for_status()
-
-        if result.ok:
-            result = result.json()
-            for role in result["value"]:
-                if role["displayName"] == "Billing Administrator":
-                    return role["id"]
-        else:
-            raise UserProvisioningException(
-                "Could not find Billing Administrator role ID; role may not be enabled."
-            )
+        result = result.json()
+        for role in result["value"]:
+            if role["displayName"] == "Billing Administrator":
+                return role["id"]
 
     def create_user(self, payload: UserCSPPayload) -> UserCSPResult:
         """Create a user in an Azure Active Directory instance.
