@@ -73,10 +73,10 @@ resource "azurerm_kubernetes_cluster" "k8s_bastion" {
 
 
   linux_profile {
-     admin_username = "bastion"
+    admin_username = "bastion"
     ssh_key {
 
-       key_data = "file(${var.bastion_ssh_pub_key_path})"
+      key_data = "file(${var.bastion_ssh_pub_key_path})"
     }
   }
 
