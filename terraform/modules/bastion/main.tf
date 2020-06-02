@@ -127,7 +127,10 @@ resource "azurerm_kubernetes_cluster" "k8s_bastion" {
   resource_group_name     = var.rg
   dns_prefix              = "atat-aks-bastion"
   private_cluster_enabled = "true"
-  node_resource_group = "${var.rg}-aks-node-rg"
+  node_resource_group     = "${var.rg}-aks-node-rg"
+
+
+
 
 
   network_profile {
@@ -158,43 +161,6 @@ resource "azurerm_kubernetes_cluster" "k8s_bastion" {
     }
 
   }
-
-
-
-
-
-
-  default_node_pool {
-    name                  = "default"
-    vm_size               = "Standard_B2s"
-    os_disk_size_gb       = 30
-    vnet_subnet_id        = azurerm_subnet.mgmt_subnet.id
-    enable_node_public_ip = false
-    type                  = "AvailabilitySet"
-    enable_auto_scaling   = false
-    node_count            = 1
-  }
-
-  lifecycle {
-    ignore_changes = [
-      default_node_pool.0.node_count
-    ]
-  }
-
-  tags = {
-    Name        = "bastion-aks"
-    environment = var.environment
-    owner       = var.owner
-  }
-}
-
-
-
-
-
-
-
-
 
   default_node_pool {
     name                  = "default"
