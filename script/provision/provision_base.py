@@ -56,7 +56,7 @@ def update_and_write(inputs, result, output_path):
 
 def handle(f):
     parser = argparse.ArgumentParser(
-        description="Process some integers.",
+        description="ATAT manual provisioning",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(
