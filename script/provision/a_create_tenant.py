@@ -24,8 +24,8 @@ def create_tenant(csp, inputs):
     result = csp.create_tenant(create_tenant_payload)
 
     # Update inputs with credential information. This will be written to file inside handle().
-    # Note: The curent implementation of Mock CSP doesn't call update_tenant_creds()
-    if creds is not None:
+    # Note: The current implementation of Mock CSP doesn't call update_tenant_creds()
+    if creds:
         inputs.get("creds").update({k: v for k, v in creds.dict().items() if v})
 
     return dict(result)
