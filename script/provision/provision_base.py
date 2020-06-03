@@ -4,13 +4,9 @@ import pprint
 import sys
 import argparse
 
-from atat.domain.csp.cloud import (
-    AzureCloudProvider,
-    HybridCloudProvider,
-    MockCloudProvider,
-)
 from atat.domain.csp.cloud.models import KeyVaultCredentials
 from atat.app import make_config
+from atat.domain.csp import CSP
 
 
 parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
@@ -23,7 +19,7 @@ def get_provider_and_inputs(input_path, csp):
         creds = details.get("creds")
         config = make_config({"default": details.get("config")})
 
-        cloud = get_provider(csp, config)
+        cloud = CSP(csp, config, with_failure=False).cloud
 
         def fake_source_creds(tenant_id=None):
             return KeyVaultCredentials(**creds)
@@ -31,19 +27,6 @@ def get_provider_and_inputs(input_path, csp):
         cloud._source_creds = fake_source_creds
 
         return cloud, details
-
-
-def get_provider(csp, config):
-    azure = AzureCloudProvider(config)
-    mock = MockCloudProvider(config, with_failure=False)
-    hybrid = HybridCloudProvider(azure, mock, config)
-
-    if csp == "azure":
-        return azure
-    elif csp == "mock-test":
-        return mock
-    elif csp == "hybrid":
-        return hybrid
 
 
 def update_and_write(inputs, result, output_path):
