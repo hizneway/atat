@@ -71,3 +71,19 @@ variable "bucket_cors_properties" {
 }
 
 variable "log_analytics_workspace_id" {}
+
+variable "private_k8s_resource_group" {}
+
+variable "private_k8s_subnet_cidr" {}
+
+variable "private_aks_service_dns" {}
+
+variable "private_aks_service_cidr" {}
+
+variable "private_aks_docker_bridge_cidr" {}
+
+variable "aks_ssh_pub_key_path" {}
+
+variable "private_aks_sp_secret" {}
+
+variable "private_aks_sp_id" {}

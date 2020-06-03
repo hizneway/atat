@@ -5,7 +5,7 @@
 resource "azurerm_subnet" "azure_bastion_subnet" {
 
 
-
+  
   name                                           = "mgr-subnet"
   resource_group_name                            = var.bastion_subnet_rg
   virtual_network_name                           = var.bastion_subnet_vpc_name

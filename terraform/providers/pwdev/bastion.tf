@@ -5,6 +5,8 @@
 
 module "bastion" {
 
+
+  jit                        = false
   source                     = "../../modules/bastion"
   rg                         = "${var.name}-${var.environment}-jump"
   region                     = var.region
