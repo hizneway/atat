@@ -7,18 +7,16 @@ from .reports import MockReportingProvider
 
 class CSP:
     def __init__(self, csp, config, **kwargs):
-        azure = AzureCloudProvider(config)
-        mock = MockCloudProvider(config, **kwargs)
-        hybrid = HybridCloudProvider(azure, mock, config)
-
         if csp == "azure":
-            self.cloud = azure
+            self.cloud = AzureCloudProvider(config)
             self.files = AzureFileService(config)
         elif csp in ("mock-test", "mock"):
-            self.cloud = mock
+            self.cloud = MockCloudProvider(config, **kwargs)
             self.files = MockFileService(config)
         elif csp == "hybrid":
-            self.cloud = hybrid
+            azure = AzureCloudProvider(config)
+            mock = MockCloudProvider(config, **kwargs)
+            self.cloud = HybridCloudProvider(azure, mock, config)
             self.files = AzureFileService(config)
         else:
             raise Exception(f"Unexpected CSP value provided: {csp}")
