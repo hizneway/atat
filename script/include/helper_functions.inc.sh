@@ -1,5 +1,8 @@
 # helper_functions.inc.sh: General helper functions
 
+# source create_db_extension
+source ./script/create_db_extension.sh
+
 # Check pip to see if the given package is installed
 # (returns 0 if installed, 2 if not installed)
 check_system_pip_for () {
@@ -44,6 +47,9 @@ reset_db() {
 
   # Create a fresh DB
   createdb "${database_name}"
+
+  # create uuid extension
+  create_db_extension "${database_name}"
 
   # Run migrations
   migrate_db
