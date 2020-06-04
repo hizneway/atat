@@ -9,7 +9,10 @@
 - Make our model classes the "seam" between ATAT and Azure nomenclature.
 
   - Build payload classes so that their properties align with the parameters used in Azure documentation
-  - Build response classes so that payload data is transformed to use identifiers that make sense for ATAT
+  - Build response classes so that data is transformed to use identifiers that make sense for ATAT. Call out instances when we stray from Azure naming conventions with comments
+
+    - For example, an endpoint may return a payload with some property `name`, but we understand that in the context of future API calls, it might make more sense to use the name `<object>_id`. Use the name that is preferable to us (`object_id` in this instance), but document this intentional change with a comment.
+
   - Only store UUIDs or simple string identifiers in a portfolio's CSP data dictionary, and use these identifiers to build the path for "fully pathed" resources
 
 ## Hybrid Cloud Provider
