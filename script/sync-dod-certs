@@ -6,7 +6,7 @@ CAS_FILE_NAME="Certificates_PKCS7_v5.3_DoD"
 CA_CHAIN="ssl/server-certs/ca-chain.pem"
 
 echo "Resetting CA bundle..."
-rm ssl/server-certs/ca-chain.pem &> /dev/null || true
+rm $CA_CHAIN &> /dev/null || true
 touch $CA_CHAIN
 
 if [[ $FLASK_ENV != "prod" ]]; then
