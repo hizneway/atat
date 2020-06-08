@@ -57,7 +57,13 @@ def portfolio(csp, app):
 
 @pytest.fixture(scope="function")
 def csp(app):
-    csp = CSP("hybrid", app, simulate_failures=False).cloud
+    csp = CSP(
+        "hybrid",
+        app.config,
+        with_delay=False,
+        with_failure=False,
+        with_authorization=False,
+    ).cloud
     csp.mock_tenant_id = str(uuid4())
 
     csp.azure.create_tenant_creds(
