@@ -53,7 +53,11 @@ from atat.utils.localization import translate
 
 @pytest.fixture(autouse=True, scope="function")
 def csp():
-    return Mock(wraps=MockCloudProvider({}, with_delay=False, with_failure=False))
+    return Mock(
+        wraps=MockCloudProvider(
+            {}, with_delay=False, with_failure=False, with_authorization=False
+        )
+    )
 
 
 @pytest.fixture(scope="function")
