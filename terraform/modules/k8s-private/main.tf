@@ -11,6 +11,44 @@ resource "azurerm_subnet" "private_aks_subnet" {
 }
 
 
+resource "azurerm_route_table" "route_table" {
+  name                = "${var.name}-${var.environment}-private-aks"
+  location            = var.region
+  resource_group_name = var.rg
+}
+
+
+
+resource "azurerm_subnet_route_table_association" "route_table" {
+
+  subnet_id      = azurerm_subnet.private_aks_subnet.id
+  route_table_id = azurerm_route_table.route_table.id
+}
+
+# Default Routes
+resource "azurerm_route" "local_route" {
+  name                = "${var.name}-${var.environment}-default"
+  resource_group_name = var.rg
+  route_table_name    = azurerm_route_table.route_table.name
+  address_prefix      = var.subnet_cidr
+  next_hop_type       = "VnetLocal"
+}
+
+resource "azurerm_route" "internet_route" {
+  name                = "${var.name}-${var.environment}-internet"
+  resource_group_name = var.rg
+  route_table_name    = azurerm_route_table.route_table.name
+  address_prefix      = "0.0.0.0/0"
+  next_hop_type       = "Internet"
+}
+
+
+
+
+
+#associate this w/ nsg
+
+
 resource "azurerm_kubernetes_cluster" "k8s_private" {
 
 
@@ -35,7 +73,7 @@ resource "azurerm_kubernetes_cluster" "k8s_private" {
     network_plugin     = "azure"
     dns_service_ip     = var.service_dns
     docker_bridge_cidr = var.docker_bridge_cidr
-    outbound_type      = "loadBalancer"
+    outbound_type      = "userDefinedRouting"
     service_cidr       = var.service_cidr
     load_balancer_sku  = "Standard"
 
