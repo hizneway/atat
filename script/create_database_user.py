@@ -24,19 +24,24 @@ def create_database_user(username, password, dbname):
     trans = conn.begin()
     engine = trans.connection.engine
 
-    engine.execute(
-        f"CREATE ROLE {username} WITH LOGIN NOSUPERUSER INHERIT NOCREATEDB NOCREATEROLE NOREPLICATION PASSWORD '{password}';\n"
-        f"GRANT ALL PRIVILEGES ON DATABASE {dbname} TO {username};\n"
-        f"ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL PRIVILEGES ON TABLES TO {username}; \n"
-        f"ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL PRIVILEGES ON SEQUENCES TO {username}; \n"
-        f"ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL PRIVILEGES ON FUNCTIONS TO {username}; \n"
-    )
+    try:
+        engine.execute(
+            f"CREATE ROLE {username} WITH LOGIN NOSUPERUSER INHERIT NOCREATEDB NOCREATEROLE NOREPLICATION PASSWORD '{password}'; "
+            f"GRANT ALL PRIVILEGES ON DATABASE {dbname} TO {username};\n"
+            f"ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL PRIVILEGES ON TABLES TO {username}; \n"
+            f"ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL PRIVILEGES ON SEQUENCES TO {username}; \n"
+            f"ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL PRIVILEGES ON FUNCTIONS TO {username}; \n"
+        )
+    except sqlalchemy.exc.ProgrammingError as err:
+        print(f"Database role {username} not created")
+        print(err.orig)
 
     try:
         # TODO: make this more configurable
         engine.execute(f"GRANT {username} TO azure_pg_admin;")
     except sqlalchemy.exc.ProgrammingError as err:
-        print(f"Cannot grant new role {username} to azure_pg_admin")
+        print(f"Unable to grant new role {username} to azure_pg_admin")
+        print(err.orig)
 
     for table in meta.tables:
         engine.execute(f"ALTER TABLE {table} OWNER TO {username};\n")
