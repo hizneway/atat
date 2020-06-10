@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # Add root application dir to the python path
 import os
 import sys
