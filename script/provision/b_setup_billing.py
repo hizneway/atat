@@ -9,6 +9,8 @@ from atat.domain.csp.cloud.models import (
     BillingProfileVerificationCSPPayload,
 )
 from script.provision.provision_base import handle
+from atat.domain.csp.cloud.exceptions import GeneralCSPException
+import time
 
 
 def poll_billing(csp, inputs, csp_response):
@@ -16,7 +18,11 @@ def poll_billing(csp, inputs, csp_response):
         get_billing_profile = BillingProfileVerificationCSPPayload(
             **{**inputs.get("initial_inputs"), **inputs.get("csp_data"), **csp_response}
         )
-        return csp.create_billing_profile_verification(get_billing_profile)
+        try:
+            return csp.create_billing_profile_verification(get_billing_profile)
+        except GeneralCSPException:
+            time.sleep(10)
+            return poll_billing(csp, inputs, csp_response)
     else:
         return csp_response
 
