@@ -29,11 +29,13 @@ def get_provider_and_inputs(input_path, csp):
         return cloud, details
 
 
-def update_and_write(inputs, result, output_path):
+def update_and_write(inputs, result, output_path, verbose=True):
     inputs["csp_data"].update(result)
-    print(f"Updated inputs {pprint.pformat(inputs, indent=2)}")
+    if verbose:
+        print(f"Updated inputs {pprint.pformat(inputs, indent=2)}")
     with open(output_path, "w") as output_file:
-        print(f"writing to {output_path}")
+        if verbose:
+            print(f"writing to {output_path}")
         output_file.write(json.dumps(inputs, indent=4))
 
 
