@@ -8,11 +8,10 @@ from script.provision import (
     f_purchase_aadp,
 )
 import json
+import pytest
 
 
 class TestManualProvisioning:
-    init_input_file = "script/provision/sample.json"
-
     def _helper(self, prov_func, input_path, output_path):
         csp, inputs = get_provider_and_inputs(input_path, "mock-test")
         result = prov_func(csp, inputs)
@@ -20,50 +19,48 @@ class TestManualProvisioning:
         with open(output_path) as json_file:
             assert json.load(json_file)
 
-    def test_create_tenant(self, tmp_path_factory):
-        tmp_path = tmp_path_factory.getbasetemp()
+    @pytest.fixture(scope="session")
+    def output_dir(self, tmp_path_factory):
+        return tmp_path_factory.getbasetemp()
+
+    def test_create_tenant(self, output_dir):
         self._helper(
             a_create_tenant.create_tenant,
-            self.init_input_file,
-            tmp_path / "create_tenant.json",
+            "script/provision/sample.json",
+            output_dir / "create_tenant.json",
         )
 
-    def test_setup_billing(self, tmp_path_factory):
-        tmp_path = tmp_path_factory.getbasetemp()
+    def test_setup_billing(self, output_dir):
         self._helper(
             b_setup_billing.setup_billing,
-            tmp_path / "create_tenant.json",
-            tmp_path / "setup_billing.json",
+            output_dir / "create_tenant.json",
+            output_dir / "setup_billing.json",
         )
 
-    def test_grant_access(self, tmp_path_factory):
-        tmp_path = tmp_path_factory.getbasetemp()
+    def test_grant_access(self, output_dir):
         self._helper(
             c_billing_profile_tenant_access.grant_access,
-            tmp_path / "setup_billing.json",
-            tmp_path / "grant_access.json",
+            output_dir / "setup_billing.json",
+            output_dir / "grant_access.json",
         )
 
-    def test_setup_to_billing(self, tmp_path_factory):
-        tmp_path = tmp_path_factory.getbasetemp()
+    def test_setup_to_billing(self, output_dir):
         self._helper(
             d_setup_to_billing.setup_to_billing,
-            tmp_path / "grant_access.json",
-            tmp_path / "setup_to_billing.json",
+            output_dir / "grant_access.json",
+            output_dir / "setup_to_billing.json",
         )
 
-    def test_report_clin(self, tmp_path_factory):
-        tmp_path = tmp_path_factory.getbasetemp()
+    def test_report_clin(self, output_dir):
         self._helper(
             e_report_clin.report_clin,
-            tmp_path / "setup_to_billing.json",
-            tmp_path / "report_clin.json",
+            output_dir / "setup_to_billing.json",
+            output_dir / "report_clin.json",
         )
 
-    def test_purchase_aadp(self, tmp_path_factory):
-        tmp_path = tmp_path_factory.getbasetemp()
+    def test_purchase_aadp(self, output_dir):
         self._helper(
             f_purchase_aadp.purchase_aadp,
-            tmp_path / "report_clin.json",
-            tmp_path / "purchase_aadp.json",
+            output_dir / "report_clin.json",
+            output_dir / "purchase_aadp.json",
         )
