@@ -7,6 +7,7 @@ import logging
 from OpenSSL import crypto, SSL
 from flask import current_app as app
 
+from atat.utils.processify import processify
 from .util import load_crl_locations_cache, serialize_crl_locations_cache, CRL_LIST
 
 # error codes from OpenSSL: https://github.com/openssl/openssl/blob/2c75f03b39de2fa7d006bc0f0d7c58235a54d9bb/include/openssl/x509_vfy.h#L111
@@ -161,6 +162,7 @@ class CRLCache(CRLInterface):
 
         return store
 
+    @processify
     def crl_check(self, cert):
         parsed = crypto.load_certificate(crypto.FILETYPE_PEM, cert)
         store = self._get_store(parsed)
@@ -187,9 +189,3 @@ class CRLCache(CRLInterface):
                     type(err), err.args
                 )
             )
-
-        finally:
-            del context
-            del store
-            del parsed
-            gc.collect()
