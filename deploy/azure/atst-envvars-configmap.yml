@@ -18,7 +18,7 @@ data:
   LIMIT_CONCURRENT_SESSIONS: "true"
   LOG_JSON: "true"
   MAIL_PORT: "587"
-  MAIL_SENDER: postmaster@atat.code.mil
+  MAIL_SENDER: postmaster@mail.atat.dev
   MAIL_SERVER: smtp.mailgun.org
   MAIL_TLS: "true"
   OVERRIDE_CONFIG_DIRECTORY: /config
