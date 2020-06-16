@@ -146,14 +146,19 @@ class CRLCache(CRLInterface):
 
     def _add_certificate_chain_to_store(self, store, issuer):
         ca = self.certificate_authorities.get(issuer.der())
+        store.add_cert(ca)
+
         while issuer != ca.get_issuer():
+            issuer = ca.get_issuer()
+            ca = self.certificate_authorities.get(issuer.der())
             store.add_cert(ca)
+
             self._log(
                 "STORE ID: {}. Adding CA with subject {}".format(
                     id(store), ca.get_subject()
                 )
             )
-            ca = self.certificate_authorities.get(issuer.der())
+
         return store
 
     def crl_check(self, cert):
