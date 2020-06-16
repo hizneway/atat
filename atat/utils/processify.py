@@ -10,6 +10,8 @@ def processify(func):
     is *pickable*.
     The created process is joined, so the code does not
     run in parallel.
+
+    https://gist.github.com/schlamar/2311116
     """
 
     def process_func(q, *args, **kwargs):
