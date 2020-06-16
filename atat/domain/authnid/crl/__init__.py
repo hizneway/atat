@@ -1,3 +1,4 @@
+import gc
 import os
 import re
 import hashlib
@@ -159,6 +160,7 @@ class CRLCache(CRLInterface):
         parsed = crypto.load_certificate(crypto.FILETYPE_PEM, cert)
         store = self._get_store(parsed)
         context = crypto.X509StoreContext(store, parsed)
+
         try:
             context.verify_certificate()
             return True
@@ -180,3 +182,9 @@ class CRLCache(CRLInterface):
                     type(err), err.args
                 )
             )
+
+        finally:
+            del context
+            del store
+            del parsed
+            gc.collect()
