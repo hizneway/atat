@@ -6,6 +6,7 @@ import logging
 from OpenSSL import crypto, SSL
 from flask import current_app as app
 
+from atat.utils.processify import processify
 from .util import load_crl_locations_cache, serialize_crl_locations_cache, CRL_LIST
 
 # error codes from OpenSSL: https://github.com/openssl/openssl/blob/2c75f03b39de2fa7d006bc0f0d7c58235a54d9bb/include/openssl/x509_vfy.h#L111
@@ -146,23 +147,26 @@ class CRLCache(CRLInterface):
     def _add_certificate_chain_to_store(self, store, issuer):
         ca = self.certificate_authorities.get(issuer.der())
         store.add_cert(ca)
-        self._log(
-            "STORE ID: {}. Adding CA with subject {}".format(
-                id(store), ca.get_subject()
+
+        while issuer != ca.get_issuer():
+            issuer = ca.get_issuer()
+            ca = self.certificate_authorities.get(issuer.der())
+            store.add_cert(ca)
+
+            self._log(
+                "STORE ID: {}. Adding CA with subject {}".format(
+                    id(store), ca.get_subject()
+                )
             )
-        )
 
-        if issuer == ca.get_issuer():
-            # i.e., it is the root CA and we are at the end of the chain
-            return store
+        return store
 
-        else:
-            return self._add_certificate_chain_to_store(store, ca.get_issuer())
-
+    @processify
     def crl_check(self, cert):
         parsed = crypto.load_certificate(crypto.FILETYPE_PEM, cert)
         store = self._get_store(parsed)
         context = crypto.X509StoreContext(store, parsed)
+
         try:
             context.verify_certificate()
             return True
