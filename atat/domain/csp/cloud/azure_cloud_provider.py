@@ -1202,13 +1202,7 @@ class AzureCloudProvider(CloudProviderInterface):
             url, headers=auth_header, json=request_body, timeout=30
         )
         result.raise_for_status()
-
-        if result.ok:
-            return True
-        else:
-            raise UserProvisioningException(
-                f"Failed update user email: {response.json()}"
-            )
+        return True
 
     @log_and_raise_exceptions
     def _update_active_directory_user_password_profile(self, graph_token, payload):
@@ -1230,13 +1224,7 @@ class AzureCloudProvider(CloudProviderInterface):
             url, headers=auth_header, json=request_body, timeout=30
         )
         result.raise_for_status()
-
-        if result.ok:
-            return True
-        else:
-            raise UserProvisioningException(
-                f"Failed update user password profile: {response.json()}"
-            )
+        return True
 
     def create_user_role(self, payload: UserRoleCSPPayload):
         graph_token = self._get_tenant_principal_token(payload.tenant_id)
@@ -1347,8 +1335,6 @@ class AzureCloudProvider(CloudProviderInterface):
 
         result = self.sdk.requests.post(url, headers=auth_header, timeout=30)
         result.raise_for_status()
-        if not result.ok:
-            raise AuthenticationException("Failed to elevate access")
 
         return mgmt_token
 
@@ -1412,8 +1398,7 @@ class AzureCloudProvider(CloudProviderInterface):
             timeout=30,
         )
         result.raise_for_status()
-        if result.ok:
-            return CostManagementQueryCSPResult(**result.json())
+        return CostManagementQueryCSPResult(**result.json())
 
     def get_calculator_url(self):
         calc_access_token = self._get_service_principal_token(
