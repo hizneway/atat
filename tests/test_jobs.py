@@ -135,7 +135,7 @@ def test_create_environment_job_is_idempotent(csp, session):
 
 def test_create_application_job(session, csp):
     portfolio = PortfolioFactory.create(
-        csp_data={"tenant_id": str(uuid4()), "root_management_group_id": str(uuid4())}
+        csp_data={"tenant_id": str(uuid4()), "root_management_group_name": str(uuid4())}
     )
     application = ApplicationFactory.create(portfolio=portfolio, cloud_id=None)
     do_create_application(csp, application.id)
