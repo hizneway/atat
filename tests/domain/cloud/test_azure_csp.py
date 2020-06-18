@@ -120,7 +120,12 @@ def test_create_environment_succeeds(mock_azure: AzureCloudProvider, monkeypatch
     monkeypatch.setattr(
         mock_azure,
         "_create_management_group",
-        Mock(return_value={"id": "management/group/path/TestName"}),
+        Mock(
+            return_value={
+                "id": "management/group/path/TestName",
+                "name": "0000000-0000-0000-0000-000000000000",
+            }
+        ),
     )
     payload = EnvironmentCSPPayload(
         tenant_id="1234",
@@ -142,7 +147,12 @@ def test_create_application_succeeds(mock_azure: AzureCloudProvider, monkeypatch
     monkeypatch.setattr(
         mock_azure,
         "_create_management_group",
-        Mock(return_value={"id": management_group_id}),
+        Mock(
+            return_value={
+                "id": management_group_id,
+                "name": "0000000-0000-0000-0000-000000000000",
+            }
+        ),
     )
 
     result: ApplicationCSPResult = mock_azure.create_application(payload)
@@ -155,7 +165,7 @@ def test_create_initial_mgmt_group_succeeds(
     payload = InitialMgmtGroupCSPPayload(
         tenant_id="123", display_name="A Management Group"
     )
-    management_group_id = f"management/group/path/{payload.management_group_name}"
+    management_group_id = f"/providers/Microsoft.Management/managementGroups/{payload.management_group_name}"
     monkeypatch.setattr(
         mock_azure,
         "_create_management_group",

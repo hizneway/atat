@@ -80,7 +80,7 @@ def do_create_application(csp: CloudProviderInterface, application_id=None):
             return
 
         csp_details = application.portfolio.csp_data
-        parent_id = csp_details["root_management_group_id"]
+        parent_id = f"/providers/Microsoft.Management/managementGroups/{csp_details['root_management_group_name']}"
         tenant_id = csp_details["tenant_id"]
 
         app.logger.debug(f"application.id = {application.id}")
@@ -93,7 +93,9 @@ def do_create_application(csp: CloudProviderInterface, application_id=None):
         )
 
         app_result = csp.create_application(payload)
-        application.cloud_id = app_result.id
+        application.cloud_id = (
+            f"/providers/Microsoft.Management/managementGroups/{app_result.name}"
+        )
         db.session.add(application)
         db.session.commit()
 
