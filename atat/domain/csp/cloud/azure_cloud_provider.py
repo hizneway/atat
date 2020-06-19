@@ -112,10 +112,24 @@ def log_and_raise_exceptions(func):
             raise ConnectionException(message)
 
         except cloud.sdk.requests.exceptions.HTTPError as exc:
-            status_code = str(exc)[:3]
-            message = f"Error calling {func.__name__}"
-            app.logger.error(status_code, message, exc_info=1)
-            raise UnknownServerException(status_code, f"{message}. {str(exc)}")
+            exc_string = str(exc)
+            status_code = exc_string[:3]
+            message = f"error calling {func.__name__}"
+
+            log_format = "%s %s"
+            log_values = [status_code, message]
+
+            if exc.response and exc.response.json():
+                response_body = json.dumps(exc.response.json())
+                log_format += "\n\nResponse Body:\n%s"
+                log_values.append(response_body)
+
+            app.logger.error(
+                log_format, *log_values, exc_info=1,
+            )
+            raise UnknownServerException(
+                status_code, f"{message.capitalize()}. {exc_string}"
+            )
 
     return wrapped_func
 
@@ -195,8 +209,7 @@ class AzureCloudProvider(CloudProviderInterface):
         )
 
         result.raise_for_status()
-        result_value = result.json()
-        return result_value
+        return result.json()
 
     @log_and_raise_exceptions
     def get_secret(self, secret_key):
