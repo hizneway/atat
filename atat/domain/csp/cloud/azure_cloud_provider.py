@@ -119,10 +119,14 @@ def log_and_raise_exceptions(func):
             log_format = "%s %s"
             log_values = [status_code, message]
 
-            if exc.response and exc.response.json():
-                response_body = json.dumps(exc.response.json())
-                log_format += "\n\nResponse Body:\n%s"
-                log_values.append(response_body)
+            try:
+                response_body = exc.response.json()
+                if response_body:
+                    log_format += "\n\nResponse Body:\n%s"
+                    log_values.append(json.dumps(response_body))
+            # No response or body is not parsable to JSON
+            except (AttributeError, json.decoder.JSONDecodeError):
+                pass
 
             app.logger.error(
                 log_format, *log_values, exc_info=1,
