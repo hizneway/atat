@@ -26,7 +26,7 @@ class CSP:
 
 def make_csp_provider(app, csp=None):
     simulate_failures = app.config.get("SIMULATE_API_FAILURE", False)
-    app.logger.info(f"Created a cloud service provider in '{csp}' mode!")
+    app.logger.info("Created a cloud service provider in '%s' mode!", csp)
     app.csp = CSP(
         csp,
         app.config,
