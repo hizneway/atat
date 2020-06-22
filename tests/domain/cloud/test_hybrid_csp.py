@@ -42,7 +42,7 @@ def portfolio(csp, app):
         csp_data={
             "tenant_id": csp.mock_tenant_id,
             "domain_name": app.config["AZURE_HYBRID_TENANT_DOMAIN"],
-            "root_management_group_id": csp.hybrid_tenant_id,
+            "root_management_group_name": csp.hybrid_tenant_id,
         },
     )
 
