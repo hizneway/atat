@@ -84,12 +84,14 @@ export default {
   },
 
   computed: {
-    maxStartProp: function () {
-      return format(this.maxStartDate, 'YYYY-MM-DD')
+    maxStartProp: function() {
+      // https://github.com/date-fns/date-fns/blob/master/docs/unicodeTokens.md
+      return format(this.maxStartDate, 'yyyy-MM-dd')
     },
 
-    minEndProp: function () {
-      return format(this.minEndDate, 'YYYY-MM-DD')
+    minEndProp: function() {
+      // https://github.com/date-fns/date-fns/blob/master/docs/unicodeTokens.md
+      return format(this.minEndDate, 'yyyy-MM-dd')
     },
 
     valid: function () {
