@@ -10,6 +10,7 @@ from tests.mock_azure import mock_azure, MOCK_ACCESS_TOKEN  # pylint: disable=W0
 from tests.mock_azure import AZURE_CONFIG
 
 from atat.domain.csp.cloud import AzureCloudProvider
+from atat.domain.csp.cloud.azure_cloud_provider import log_and_raise_exceptions
 from atat.domain.csp.cloud.exceptions import (
     AuthenticationException,
     ConnectionException,
@@ -114,6 +115,36 @@ def mock_http_error_response(mock_azure):
 def unmocked_cloud_provider():
     azure_cloud_provider = AzureCloudProvider(AZURE_CONFIG)
     return azure_cloud_provider
+
+
+class TestLogAndRaiseExceptions:
+    def test_formats_message_and_includes_response_body(
+        self, mock_azure: AzureCloudProvider, mock_logger
+    ):
+        @log_and_raise_exceptions
+        def some_func(mock_azure):
+            raise mock_azure.sdk.requests.exceptions.HTTPError(
+                "500 Error oh no.",
+                response=mock_requests_response(status=500, json_data={"some": "json"}),
+            )
+
+        with pytest.raises(UnknownServerException):
+            some_func(mock_azure)
+        assert (
+            mock_logger.messages[0]
+            == '500 error calling some_func\n\nResponse Body:\n{"some": "json"}'
+        )
+
+    def test_handles_empty_response(self, mock_azure: AzureCloudProvider, mock_logger):
+        @log_and_raise_exceptions
+        def some_func(mock_azure):
+            raise mock_azure.sdk.requests.exceptions.HTTPError(
+                "500 Error oh no.", response=mock_requests_response(status=500),
+            )
+
+        with pytest.raises(UnknownServerException):
+            some_func(mock_azure)
+        assert mock_logger.messages[0] == "500 error calling some_func"
 
 
 def test_create_environment_succeeds(mock_azure: AzureCloudProvider, monkeypatch):

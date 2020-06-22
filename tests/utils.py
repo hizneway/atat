@@ -50,6 +50,7 @@ class FakeLogger:
         self._log("exception", msg, *args, **kwargs)
 
     def _log(self, _lvl, msg, *args, **kwargs):
+        msg = msg % (args)
         self.messages.append(msg)
         if "extra" in kwargs:
             self.extras.append(kwargs["extra"])

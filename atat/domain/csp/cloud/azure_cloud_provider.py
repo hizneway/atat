@@ -112,10 +112,28 @@ def log_and_raise_exceptions(func):
             raise ConnectionException(message)
 
         except cloud.sdk.requests.exceptions.HTTPError as exc:
-            status_code = str(exc)[:3]
-            message = f"Error calling {func.__name__}"
-            app.logger.error(status_code, message, exc_info=1)
-            raise UnknownServerException(status_code, f"{message}. {str(exc)}")
+            exc_string = str(exc)
+            status_code = exc_string[:3]
+            message = f"error calling {func.__name__}"
+
+            log_format = "%s %s"
+            log_values = [status_code, message]
+
+            try:
+                response_body = exc.response.json()
+                if response_body:
+                    log_format += "\n\nResponse Body:\n%s"
+                    log_values.append(json.dumps(response_body))
+            # No response or body is not parsable to JSON
+            except (AttributeError, json.decoder.JSONDecodeError):
+                pass
+
+            app.logger.error(
+                log_format, *log_values, exc_info=1,
+            )
+            raise UnknownServerException(
+                status_code, f"{message.capitalize()}. {exc_string}"
+            )
 
     return wrapped_func
 
@@ -195,8 +213,7 @@ class AzureCloudProvider(CloudProviderInterface):
         )
 
         result.raise_for_status()
-        result_value = result.json()
-        return result_value
+        return result.json()
 
     @log_and_raise_exceptions
     def get_secret(self, secret_key):
@@ -1202,13 +1219,7 @@ class AzureCloudProvider(CloudProviderInterface):
             url, headers=auth_header, json=request_body, timeout=30
         )
         result.raise_for_status()
-
-        if result.ok:
-            return True
-        else:
-            raise UserProvisioningException(
-                f"Failed update user email: {response.json()}"
-            )
+        return True
 
     @log_and_raise_exceptions
     def _update_active_directory_user_password_profile(self, graph_token, payload):
@@ -1230,13 +1241,7 @@ class AzureCloudProvider(CloudProviderInterface):
             url, headers=auth_header, json=request_body, timeout=30
         )
         result.raise_for_status()
-
-        if result.ok:
-            return True
-        else:
-            raise UserProvisioningException(
-                f"Failed update user password profile: {response.json()}"
-            )
+        return True
 
     def create_user_role(self, payload: UserRoleCSPPayload):
         graph_token = self._get_tenant_principal_token(payload.tenant_id)
@@ -1347,8 +1352,6 @@ class AzureCloudProvider(CloudProviderInterface):
 
         result = self.sdk.requests.post(url, headers=auth_header, timeout=30)
         result.raise_for_status()
-        if not result.ok:
-            raise AuthenticationException("Failed to elevate access")
 
         return mgmt_token
 
@@ -1412,8 +1415,7 @@ class AzureCloudProvider(CloudProviderInterface):
             timeout=30,
         )
         result.raise_for_status()
-        if result.ok:
-            return CostManagementQueryCSPResult(**result.json())
+        return CostManagementQueryCSPResult(**result.json())
 
     def get_calculator_url(self):
         calc_access_token = self._get_service_principal_token(
