@@ -82,7 +82,7 @@ def logout():
     _nullify_session(session)
 
     if dod_id:
-        app.logger.info(f"user with EDIPI {dod_id} has logged out")
+        app.logger.info("user with EDIPI %s has logged out", dod_id)
     else:
         app.logger.info("unauthenticated user has logged out")
 
