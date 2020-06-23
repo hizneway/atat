@@ -1139,6 +1139,7 @@ class AzureCloudProvider(CloudProviderInterface):
             if role["displayName"] == "Billing Administrator":
                 return role["id"]
 
+    @log_and_raise_exceptions
     def create_user(self, payload: UserCSPPayload) -> UserCSPResult:
         """Create a user in an Azure Active Directory instance.
         Unlike most of the methods on this interface, this requires
@@ -1243,6 +1244,7 @@ class AzureCloudProvider(CloudProviderInterface):
         result.raise_for_status()
         return True
 
+    @log_and_raise_exceptions
     def create_user_role(self, payload: UserRoleCSPPayload):
         graph_token = self._get_tenant_principal_token(payload.tenant_id)
 

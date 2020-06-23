@@ -1330,10 +1330,15 @@ def test_update_active_directory_user_password_profile(
     assert result
 
 
-def test_create_user(mock_azure: AzureCloudProvider):
-    mock_azure.sdk.requests.post.return_value = mock_requests_response(
-        json_data={"invitedUser": {"id": "id"}}
-    )
+def test_create_user(mock_azure: AzureCloudProvider, mock_http_error_response):
+    mock_result = mock_requests_response(json_data={"invitedUser": {"id": "id"}})
+
+    mock_azure.sdk.requests.post.side_effect = [
+        mock_azure.sdk.requests.exceptions.ConnectionError,
+        mock_azure.sdk.requests.exceptions.Timeout,
+        mock_http_error_response,
+        mock_result,
+    ]
 
     payload = UserCSPPayload(
         tenant_id=uuid4().hex,
@@ -1343,6 +1348,13 @@ def test_create_user(mock_azure: AzureCloudProvider):
         password="asdfghjkl",  # pragma: allowlist secret
     )
 
+    with pytest.raises(ConnectionException):
+        mock_azure.create_user(payload)
+    with pytest.raises(ConnectionException):
+        mock_azure.create_user(payload)
+    with pytest.raises(UnknownServerException, match=r".*500 Server Error.*"):
+        mock_azure.create_user(payload)
+
     result = mock_azure.create_user(payload)
     assert result.id == "id"
 
@@ -1350,7 +1362,11 @@ def test_create_user(mock_azure: AzureCloudProvider):
 def test_create_user_role(mock_azure: AzureCloudProvider):
 
     mock_result_create = mock_requests_response(json_data={"id": "id"})
-    mock_azure.sdk.requests.put.return_value = mock_result_create
+    mock_azure.sdk.requests.put.side_effect = [
+        mock_azure.sdk.requests.exceptions.ConnectionError,
+        mock_azure.sdk.requests.exceptions.Timeout,
+        mock_result_create,
+    ]
 
     payload = UserRoleCSPPayload(
         tenant_id=uuid4().hex,
@@ -1358,7 +1374,10 @@ def test_create_user_role(mock_azure: AzureCloudProvider):
         management_group_id=str(uuid4()),
         role="owner",
     )
-
+    with pytest.raises(ConnectionException):
+        mock_azure.create_user_role(payload)
+    with pytest.raises(ConnectionException):
+        mock_azure.create_user_role(payload)
     result = mock_azure.create_user_role(payload)
 
     assert result.id == "id"
