@@ -158,6 +158,11 @@ class HybridCloudProvider(object):
     ) -> AdminRoleDefinitionCSPResult:
         return self.azure.create_admin_role_definition(payload)
 
+    def create_principal_app_invite_permission(
+        self, payload: PrincipalAppInvitePermissionCSPPayload
+    ) -> PrincipalAppInvitePermissionCSPResult:
+        return self.azure.create_principal_app_invite_permission(payload)
+
     def create_principal_admin_role(
         self, payload: PrincipalAdminRoleCSPPayload
     ) -> PrincipalAdminRoleCSPResult:

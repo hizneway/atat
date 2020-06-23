@@ -47,6 +47,8 @@ from .models import (
     PoliciesCSPResult,
     PrincipalAdminRoleCSPPayload,
     PrincipalAdminRoleCSPResult,
+    PrincipalAppInvitePermissionCSPPayload,
+    PrincipalAppInvitePermissionCSPResult,
     ProductPurchaseCSPPayload,
     ProductPurchaseCSPResult,
     ProductPurchaseVerificationCSPPayload,
@@ -958,6 +960,11 @@ class AzureCloudProvider(CloudProviderInterface):
             principal_client_id=payload.principal_app_id,
             principal_creds_established=True,
         )
+
+    def create_principal_app_invite_permission(
+        self, payload: PrincipalAppInvitePermissionCSPPayload
+    ) -> PrincipalAppInvitePermissionCSPResult:
+        return PrincipalAppInvitePermissionCSPResult()
 
     @log_and_raise_exceptions
     def create_admin_role_definition(self, payload: AdminRoleDefinitionCSPPayload):

@@ -38,6 +38,8 @@ from .models import (
     PoliciesCSPResult,
     PrincipalAdminRoleCSPPayload,
     PrincipalAdminRoleCSPResult,
+    PrincipalAppInvitePermissionCSPPayload,
+    PrincipalAppInvitePermissionCSPResult,
     ProductPurchaseCSPPayload,
     ProductPurchaseCSPResult,
     ProductPurchaseVerificationCSPPayload,
@@ -543,3 +545,12 @@ class MockCloudProvider(CloudProviderInterface):
         return PoliciesCSPResult(
             policy_assignment_id=f"{AZURE_MGMNT_PATH}{payload.root_management_group_name}/providers/Microsoft.Authorization/policyAssignments/Default JEDI Policy Set",
         )
+
+    def create_principal_app_invite_permission(
+        self, payload: PrincipalAppInvitePermissionCSPPayload
+    ) -> PrincipalAppInvitePermissionCSPResult:
+        self._maybe_raise(self.NETWORK_FAILURE_PCT, self.NETWORK_EXCEPTION)
+        self._maybe_raise(self.SERVER_FAILURE_PCT, self.SERVER_EXCEPTION)
+        self._maybe_raise(self.UNAUTHORIZED_RATE, self.AUTHORIZATION_EXCEPTION)
+
+        return PrincipalAppInvitePermissionCSPResult()
