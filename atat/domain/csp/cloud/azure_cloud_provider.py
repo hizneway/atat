@@ -316,12 +316,11 @@ class AzureCloudProvider(CloudProviderInterface):
         session.headers = {
             "Authorization": f"Bearer {sp_token}",
         }
-        if parent_id is None:
-            parent_id = f"/providers/Microsoft.Management/managementGroups/{tenant_id}"
+        request_body = {"properties": {"displayName": display_name}}
 
-        request_body = {
-            "properties": {"displayName": display_name, "parent": {"id": parent_id},}
-        }
+        if parent_id:
+            request_body["properties"]["parent"] = {"id": parent_id}
+
         response = session.put(
             f"{self.sdk.cloud.endpoints.resource_manager}providers/Microsoft.Management/managementGroups/{management_group_id}?api-version=2020-02-01",
             json=request_body,
@@ -329,9 +328,31 @@ class AzureCloudProvider(CloudProviderInterface):
         response.raise_for_status()
         if response.status_code == 202:
             status_url = response.headers["Azure-AsyncOperation"]
-            return self._poll_management_group_creation_job(status_url, session)
+            poll_resp = self._poll_management_group_creation_job(status_url, session)
+            if parent_id:
+                self._force_apply_mgmt_grp_parent(
+                    session, parent_id, display_name, management_group_id
+                )
+            return poll_resp
         else:
-            return response.json()
+            resp = response.json()
+            if parent_id:
+                self._force_apply_mgmt_grp_parent(
+                    session, parent_id, display_name, management_group_id
+                )
+            return resp
+
+    @log_and_raise_exceptions
+    def _force_apply_mgmt_grp_parent(
+        self, session, parent_id, display_name, management_group_id
+    ):
+        request_body = {"displayName": display_name, "parentId": parent_id}
+        response = session.patch(
+            f"{self.sdk.cloud.endpoints.resource_manager}providers/Microsoft.Management/managementGroups/{management_group_id}?api-version=2020-02-01",
+            json=request_body,
+        )
+        response.raise_for_status()
+        return True
 
     @log_and_raise_exceptions
     def _poll_management_group_creation_job(self, url: str, session) -> Dict:

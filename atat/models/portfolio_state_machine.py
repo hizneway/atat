@@ -115,8 +115,8 @@ class PortfolioStateMachine(
 
     @property
     def current_stage(self) -> str:
-        """Returns the current stage of the CSP provisioning process       
-        
+        """Returns the current stage of the CSP provisioning process
+
         E.g. TENANT_IN_PROGRESS -> tenant
         """
         for stage_state in StageStates:
