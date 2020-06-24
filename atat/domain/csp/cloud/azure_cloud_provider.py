@@ -311,6 +311,20 @@ class AzureCloudProvider(CloudProviderInterface):
     def _create_management_group(
         self, management_group_id, display_name, tenant_id, parent_id=None,
     ):
+        """
+        Create a new Azure management group.
+
+        https://docs.microsoft.com/en-us/rest/api/resources/managementgroups/createorupdate
+        Args:
+            management_group_id: a simple ID for the management group, like a GUID (i.e., not fully qualified)
+            display_name: a display name for the management group
+            tenant_id: the ID for the Azure Active Directory tenant to create the management group in
+            parent_id: (optional) the ID of the parent for the management group
+        Returns:
+            ManagementGroup: https://docs.microsoft.com/en-us/rest/api/resources/managementgroups/createorupdate#managementgroup
+            or
+            AzureAsyncOperationResults: https://docs.microsoft.com/en-us/rest/api/resources/managementgroups/createorupdate#azureasyncoperationresults
+        """
         sp_token = self._get_tenant_principal_token(tenant_id)
         session = self.sdk.requests.Session()
         session.headers = {
@@ -326,32 +340,46 @@ class AzureCloudProvider(CloudProviderInterface):
             json=request_body,
         )
         response.raise_for_status()
+
         if response.status_code == 202:
             status_url = response.headers["Azure-AsyncOperation"]
-            poll_resp = self._poll_management_group_creation_job(status_url, session)
-            if parent_id:
-                self._force_apply_mgmt_grp_parent(
-                    session, parent_id, display_name, management_group_id
-                )
-            return poll_resp
+            resp = self._poll_management_group_creation_job(status_url, session)
         else:
             resp = response.json()
-            if parent_id:
-                self._force_apply_mgmt_grp_parent(
-                    session, parent_id, display_name, management_group_id
-                )
-            return resp
+
+        if parent_id:
+            # This should not be necessary, but Azure is currently not
+            # respecting the specified parent in the request body of the
+            # initial call, so we update it here.
+            self._force_apply_mgmt_grp_parent(
+                session, parent_id, display_name, management_group_id
+            )
+
+        return resp
 
     @log_and_raise_exceptions
     def _force_apply_mgmt_grp_parent(
         self, session, parent_id, display_name, management_group_id
     ):
+        """
+        Update an existing management group to specify its parent.
+
+        https://docs.microsoft.com/en-us/rest/api/resources/managementgroups/update
+        Args:
+            session: a requests session object
+            parent_id: the ID of the parent for the management group
+            display_name: a display name for the management group
+            management_group_id: a simple ID for the management group, like a GUID (i.e., not fully qualified)
+        Returns:
+            True
+        """
         request_body = {"displayName": display_name, "parentId": parent_id}
         response = session.patch(
             f"{self.sdk.cloud.endpoints.resource_manager}providers/Microsoft.Management/managementGroups/{management_group_id}?api-version=2020-02-01",
             json=request_body,
         )
         response.raise_for_status()
+
         return True
 
     @log_and_raise_exceptions
