@@ -175,7 +175,9 @@ def do_create_environment(csp: CloudProviderInterface, environment_id=None):
             tenant_id=tenant_id, display_name=environment.name, parent_id=parent_id
         )
         env_result = csp.create_environment(payload)
-        environment.cloud_id = env_result.id
+        environment.cloud_id = (
+            f"/providers/Microsoft.Management/managementGroups/{env_result.name}"
+        )
         db.session.add(environment)
         db.session.commit()
 

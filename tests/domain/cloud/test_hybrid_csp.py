@@ -14,7 +14,12 @@ from atat.domain.csp.cloud.models import (
     SubscriptionCreationCSPPayload,
     SubscriptionVerificationCSPPayload,
 )
-from atat.jobs import do_create_application, do_create_environment_role, do_create_user
+from atat.jobs import (
+    do_create_application,
+    do_create_environment,
+    do_create_environment_role,
+    do_create_user,
+)
 from atat.models import PortfolioStates, PortfolioStateMachine
 import tests.factories as factories
 from tests.factories import (
@@ -131,6 +136,18 @@ class TestIntegration:
 
         return portfolio
 
+    @pytest.fixture(scope="function")
+    def tenant_id(self, portfolio):
+        return portfolio.csp_data["tenant_id"]
+
+    @pytest.fixture(scope="session")
+    def application(self, portfolio):
+        return ApplicationFactory.create(portfolio=portfolio, cloud_id=None)
+
+    @pytest.fixture(scope="session")
+    def environment(self, application):
+        return EnvironmentFactory.create(application=application, cloud_id=None)
+
     @pytest.fixture(scope="session")
     def csp(self, app):
         csp = CSP(
@@ -186,39 +203,35 @@ class TestIntegration:
         response.raise_for_status()
         return response.json()
 
-    def test_hybrid_create_application_job(self, csp, portfolio, session):
-        application = ApplicationFactory.create(portfolio=portfolio, cloud_id=None)
-
+    def test_hybrid_create_application_job(self, csp, application, tenant_id, session):
         do_create_application(csp, application.id)
         session.refresh(application)
 
         assert application.cloud_id
 
-        mgmt_grp_resp = self._get_management_group(
-            csp, portfolio.csp_data["tenant_id"], application.cloud_id
-        )
+        mgmt_grp_resp = self._get_management_group(csp, tenant_id, application.cloud_id)
 
-        # the root management group should be the parent of the management
+        # the portfolio management group should be the parent of the management
         # group we just created for the application
         assert (
-            portfolio.csp_data["root_management_group_name"]
+            application.portfolio.csp_data["root_management_group_name"]
             in mgmt_grp_resp["properties"]["details"]["parent"]["id"]
         )
 
+    def test_hybrid_create_environment_job(self, csp, environment, tenant_id, session):
+        do_create_environment(csp, environment.id)
+        session.refresh(environment)
 
-@pytest.mark.hybrid
-def test_hybrid_create_environment(csp):
-    environment = EnvironmentFactory.create()
+        assert environment.cloud_id
 
-    payload = EnvironmentCSPPayload(
-        tenant_id=csp.mock_tenant_id,
-        display_name=environment.name,
-        parent_id=csp.hybrid_tenant_id,
-    )
+        mgmt_grp_resp = self._get_management_group(csp, tenant_id, environment.cloud_id)
 
-    result = csp.create_environment(payload)
-
-    assert result.id
+        # the application management group should be the parent of the management
+        # group we just created for the environment
+        assert (
+            environment.application.cloud_id
+            in mgmt_grp_resp["properties"]["details"]["parent"]["id"]
+        )
 
 
 @pytest.mark.hybrid
