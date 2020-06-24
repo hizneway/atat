@@ -195,8 +195,8 @@ class BillingProfileTenantAccessCSPResult(AliasModel):
         }
 
 
-class PrincipalAppInvitePermissionCSPPayload(AliasModel):
-    pass
+class PrincipalAppInvitePermissionCSPPayload(BaseCSPPayload):
+    principal_id: str
 
 
 class PrincipalAppInvitePermissionCSPResult(AliasModel):
