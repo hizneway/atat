@@ -6,11 +6,13 @@ resource "azurerm_subnet" "azure_bastion_subnet" {
 
 
 
-  name                                           = "mgr-subnet"
+  name                                           = "AzureBastionSubnet"
   resource_group_name                            = var.bastion_subnet_rg
   virtual_network_name                           = var.bastion_subnet_vpc_name
   address_prefixes                               = ["${var.bastion_subnet_cidr}"]
   enforce_private_link_endpoint_network_policies = true
+
+
 
 
 }
@@ -25,6 +27,8 @@ resource "azurerm_subnet" "mgmt_subnet" {
   address_prefixes     = ["${var.mgmt_subnet_cidr}"]
 
   enforce_private_link_endpoint_network_policies = true
+
+  service_endpoints = ["Microsoft.Sql","Microsoft.KeyVault"]
 
 
 }

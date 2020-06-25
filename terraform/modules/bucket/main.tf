@@ -49,7 +49,7 @@ resource "azurerm_storage_account_network_rules" "acls" {
 }
 
 resource "azurerm_storage_container" "bucket" {
-  name                  = "content"
+  name                  = "tfstate"
   storage_account_name  = azurerm_storage_account.bucket.name
   container_access_type = var.container_access_type
 }

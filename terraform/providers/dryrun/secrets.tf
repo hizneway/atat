@@ -9,7 +9,7 @@ module "operator_keyvault" {
   admin_principals  = var.admin_users
   tenant_principals = {}
   policy            = "Deny"
-  subnet_ids        = [module.vpc.subnet_list["aks"].id]
+  subnet_ids        = [module.vpc.subnet_list["aks"].id,module.bastion.mgmt_subnet_id]
   whitelist         = var.admin_user_whitelist
   workspace_id      = module.logs.workspace_id
 }
