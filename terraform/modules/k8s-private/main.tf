@@ -8,7 +8,7 @@ resource "azurerm_subnet" "private_aks_subnet" {
   enforce_private_link_endpoint_network_policies = true
 
 
-  service_endpoints = ["Microsoft.Sql","Microsoft.KeyVault"]
+  service_endpoints = ["Microsoft.Sql", "Microsoft.KeyVault"]
 
 
 }
