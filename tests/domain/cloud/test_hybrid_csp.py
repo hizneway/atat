@@ -101,32 +101,6 @@ def csp(app):
 
 @pytest.mark.hybrid
 class TestIntegration:
-    @pytest.fixture(scope="session", autouse=True)
-    def session(self, db, request):
-        """Creates a new database session for a test."""
-        connection = db.engine.connect()
-        transaction = connection.begin()
-
-        options = dict(bind=connection, binds={})
-        session = db.create_scoped_session(options=options)
-
-        db.session = session
-
-        factory_list = [
-            cls
-            for _name, cls in factories.__dict__.items()
-            if isinstance(cls, type) and cls.__module__ == "tests.factories"
-        ]
-        for factory in factory_list:
-            factory._meta.sqlalchemy_session = session
-            factory._meta.sqlalchemy_session_persistence = "commit"
-
-        yield session
-
-        transaction.rollback()
-        connection.close()
-        session.remove()
-
     @pytest.fixture(scope="session")
     def portfolio(self, csp, app):
         owner = UserFactory.create()
