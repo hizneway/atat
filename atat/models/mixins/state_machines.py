@@ -1,4 +1,5 @@
 from enum import Enum
+from typing import Dict
 
 
 class StateMachineMisconfiguredError(Exception):
@@ -31,6 +32,9 @@ class AzureStages(Enum):
     TENANT_PRINCIPAL_CREDENTIAL = "tenant principal credential"
     ADMIN_ROLE_DEFINITION = "admin role definition"
     PRINCIPAL_ADMIN_ROLE = "tenant principal admin"
+    PRINCIPAL_APP_GRAPH_API_PERMISSIONS = (
+        "grant invite permission to principal application"
+    )
     INITIAL_MGMT_GROUP = "initial management group"
     INITIAL_MGMT_GROUP_VERIFICATION = "initial management group verification"
     TENANT_ADMIN_OWNERSHIP = "tenant admin ownership"
@@ -40,7 +44,7 @@ class AzureStages(Enum):
     POLICIES = "policies"
 
 
-def _build_csp_states(csp_stages: Enum) -> dict:
+def _build_csp_states(csp_stages: Enum) -> Dict[str, str]:
     """Builds a complete dictionary of portfolio provisioning states for a CSP
     
     Includes system states, plus each CSP stage combined with each Stage State. 

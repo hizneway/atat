@@ -45,6 +45,7 @@ from atat.domain.csp.cloud.models import (
     PoliciesCSPResult,
     PrincipalAdminRoleCSPPayload,
     PrincipalAdminRoleCSPResult,
+    PrincipalAppGraphApiPermissionsCSPPayload,
     ProductPurchaseCSPPayload,
     ProductPurchaseCSPResult,
     ProductPurchaseVerificationCSPPayload,
@@ -1786,3 +1787,108 @@ def test_activate_and_return_billing_admin_role_id(mock_azure, monkeypatch):
 
     mock_get_billing_admin_role_template_id.assert_called_once_with(token)
     mock_activate_billing_admin_role.assert_called_once_with(token, template_id)
+
+
+class TestExtractServicePrincipalFromQuery:
+    def test_succeeds(self, mock_azure):
+        response = mock_requests_response(
+            json_data={"value": ["service_principal_object"]}
+        )
+        sp = mock_azure._extract_service_principal_from_query(response)
+        assert sp == "service_principal_object"
+
+    def test_throws_error(self, mock_azure):
+        response = mock_requests_response(json_data={"value": []})
+        with pytest.raises(ResourceProvisioningError):
+            mock_azure._extract_service_principal_from_query(response)
+
+
+class TestExtractAppRoleFromServicePrincipal:
+    def test_finds_target(self, mock_azure):
+        service_principal = {
+            "appRoles": [{"value": "Another.Value"}, {"value": "Target.Value"}]
+        }
+        ar = mock_azure._extract_app_role_from_service_principal(
+            service_principal, "Target.Value"
+        )
+        assert ar == {"value": "Target.Value"}
+
+    def test_throws_error_for_empty_list(self, mock_azure):
+        service_principal = {"appRoles": []}
+        with pytest.raises(ResourceProvisioningError):
+            mock_azure._extract_app_role_from_service_principal(
+                service_principal, "Target.Value"
+            )
+
+    def test_throws_error_for_missing_target(self, mock_azure):
+        service_principal = {"appRoles": [{"value": "Another.Value"}]}
+        with pytest.raises(ResourceProvisioningError):
+            mock_azure._extract_app_role_from_service_principal(
+                service_principal, "Target.Value"
+            )
+
+
+def test_create_principal_app_graph_api_permissions(
+    mock_azure, monkeypatch, mock_http_error_response
+):
+    monkeypatch.setattr(
+        mock_azure,
+        "_get_graph_sp_and_user_invite_app_role_ids",
+        Mock(return_value=("graph_api_sp_object_id", "user_invite_app_role_id")),
+    )
+
+    mock_azure._get_user_principal_token_for_scope = Mock(
+        return_value=MOCK_ACCESS_TOKEN
+    )
+
+    mock_azure.sdk.requests.post.side_effect = [
+        mock_azure.sdk.requests.exceptions.ConnectionError,
+        mock_azure.sdk.requests.exceptions.Timeout,
+        mock_http_error_response,
+        mock_requests_response(status=201),
+    ]
+
+    payload = PrincipalAppGraphApiPermissionsCSPPayload(
+        tenant_id="tenant_id", principal_id="principal_id"
+    )
+
+    with pytest.raises(ConnectionException):
+        mock_azure.create_principal_app_graph_api_permissions(payload)
+    with pytest.raises(ConnectionException):
+        mock_azure.create_principal_app_graph_api_permissions(payload)
+    with pytest.raises(UnknownServerException, match=r".*500 Server Error.*"):
+        mock_azure.create_principal_app_graph_api_permissions(payload)
+
+    assert mock_azure.create_principal_app_graph_api_permissions(payload)
+
+
+def test_get_graph_sp_and_user_invite_app_role_ids(
+    mock_azure, mock_http_error_response
+):
+    mock_result = mock_requests_response(
+        json_data={
+            "value": [
+                {
+                    "id": "service_principal_object_id",
+                    "appRoles": [{"id": "app_role_id", "value": "User.Invite.All"}],
+                }
+            ]
+        }
+    )
+    mock_azure.sdk.requests.get.side_effect = [
+        mock_azure.sdk.requests.exceptions.ConnectionError,
+        mock_azure.sdk.requests.exceptions.Timeout,
+        mock_http_error_response,
+        mock_result,
+    ]
+    with pytest.raises(ConnectionException):
+        mock_azure._get_graph_sp_and_user_invite_app_role_ids("token")
+    with pytest.raises(ConnectionException):
+        mock_azure._get_graph_sp_and_user_invite_app_role_ids("token")
+    with pytest.raises(UnknownServerException, match=r".*500 Server Error.*"):
+        mock_azure._get_graph_sp_and_user_invite_app_role_ids("token")
+
+    assert (
+        "service_principal_object_id",
+        "app_role_id",
+    ) == mock_azure._get_graph_sp_and_user_invite_app_role_ids("token")

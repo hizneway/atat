@@ -195,6 +195,14 @@ class BillingProfileTenantAccessCSPResult(AliasModel):
         }
 
 
+class PrincipalAppGraphApiPermissionsCSPPayload(BaseCSPPayload):
+    principal_id: str
+
+
+class PrincipalAppGraphApiPermissionsCSPResult(AliasModel):
+    pass
+
+
 class TaskOrderBillingCreationCSPPayload(BaseCSPPayload):
     billing_account_name: str
     billing_profile_name: str
@@ -692,6 +700,8 @@ __all__ = [
     "PoliciesCSPResult",
     "PrincipalAdminRoleCSPPayload",
     "PrincipalAdminRoleCSPResult",
+    "PrincipalAppGraphApiPermissionsCSPPayload",
+    "PrincipalAppGraphApiPermissionsCSPResult",
     "ProductPurchaseCSPPayload",
     "ProductPurchaseCSPResult",
     "ProductPurchaseVerificationCSPPayload",

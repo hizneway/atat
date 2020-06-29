@@ -2,7 +2,7 @@ import json
 import time
 from functools import wraps
 from secrets import token_hex, token_urlsafe
-from typing import Dict, Optional
+from typing import Dict, Optional, Tuple
 from uuid import uuid4
 
 from flask import current_app as app
@@ -47,6 +47,8 @@ from .models import (
     PoliciesCSPResult,
     PrincipalAdminRoleCSPPayload,
     PrincipalAdminRoleCSPResult,
+    PrincipalAppGraphApiPermissionsCSPPayload,
+    PrincipalAppGraphApiPermissionsCSPResult,
     ProductPurchaseCSPPayload,
     ProductPurchaseCSPResult,
     ProductPurchaseVerificationCSPPayload,
@@ -84,6 +86,12 @@ from .policy import AzurePolicyManager
 # TODO: Extract these from sdk msrestazure.azure_cloud import AZURE_PUBLIC_CLOUD
 AZURE_SKU_ID = "0001"  # probably a static sku specific to ATAT/JEDI
 REMOTE_ROOT_ROLE_DEF_ID = "/providers/Microsoft.Authorization/roleDefinitions/00000000-0000-4000-8000-000000000000"
+
+# This identifier is the application id of the Graph API. Azure automatically
+# creates a service principal for this application in each tenant. You can find
+# this application in the portal by going to "Enterprise Applications",
+# setting the "Application Type" to "all" and searching for "Microsoft Graph".
+GRAPH_API_APPLICATION_ID = "00000003-0000-0000-c000-000000000000"
 
 DEFAULT_POLICY_SET_DEFINITION_NAME = "Default JEDI Policy Set"
 
@@ -880,12 +888,7 @@ class AzureCloudProvider(CloudProviderInterface):
     def create_tenant_principal_app(self, payload: TenantPrincipalAppCSPPayload):
         """Creates an app registration for a Profile.
 
-        An Azure AD application is defined by its one and only application
-        object, which resides in the Azure AD tenant where the application was
-        registered, known as the application's "home" tenant.
-
-        https://docs.microsoft.com/en-us/azure/active-directory/develop/app-objects-and-service-principals
-        https://docs.microsoft.com/en-us/graph/api/resources/application?view=graph-rest-1.0
+        https://docs.microsoft.com/en-us/graph/api/application-post-applications?view=graph-rest-1.0&tabs=http
         """
 
         graph_token = self._get_tenant_admin_token(payload.tenant_id, self.graph_scope)
@@ -958,6 +961,112 @@ class AzureCloudProvider(CloudProviderInterface):
             principal_client_id=payload.principal_app_id,
             principal_creds_established=True,
         )
+
+    @log_and_raise_exceptions
+    def create_principal_app_graph_api_permissions(
+        self, payload: PrincipalAppGraphApiPermissionsCSPPayload
+    ) -> PrincipalAppGraphApiPermissionsCSPResult:
+        """Grant the User.Invite.All app role assignment to the tenant service principal
+
+        https://docs.microsoft.com/en-us/graph/api/serviceprincipal-post-approleassignments?view=graph-rest-1.0&tabs=http
+        """
+
+        graph_token = self._get_tenant_admin_token(payload.tenant_id, self.graph_scope)
+        (
+            graph_api_sp_object_id,
+            user_invite_app_role_id,
+        ) = self._get_graph_sp_and_user_invite_app_role_ids(graph_token)
+
+        request_body = {
+            "principalId": payload.principal_id,
+            "resourceId": graph_api_sp_object_id,
+            "appRoleId": user_invite_app_role_id,
+        }
+
+        response = self.sdk.requests.post(
+            f"{self.graph_resource}/v1.0/servicePrincipals/{payload.principal_id}/appRoleAssignments",
+            json=request_body,
+            headers={"Authorization": f"Bearer {graph_token}"},
+        )
+        response.raise_for_status()
+
+        return PrincipalAppGraphApiPermissionsCSPResult(**response.json())
+
+    def _extract_service_principal_from_query(self, response):
+        """Extract a service principal object from a response
+        
+        In `_get_graph_sp_and_user_invite_app_role_ids`, the query parameters 
+        should make it so that a single service principal object is returned in 
+        a list. This method returns that single service principal.
+
+        Returns:
+            servicePrincipal: https://docs.microsoft.com/en-us/graph/api/resources/serviceprincipal?view=graph-rest-1.0
+        
+        Raises:
+            ResourceProvisioningError: No service principal present
+
+        """
+        service_principal_list = response.json()["value"]
+        if not service_principal_list:
+            raise ResourceProvisioningError(
+                "app role assignment",
+                f"No service principals found with id '{GRAPH_API_APPLICATION_ID}'",
+            )
+        return service_principal_list[0]
+
+    def _extract_app_role_from_service_principal(
+        self, service_principal, app_role_value: str
+    ):
+        """extract an appRole object with a given value from a service principal object
+
+        Args:
+            service_principal: a servicePrincipal object https://docs.microsoft.com/en-us/graph/api/resources/serviceprincipal?view=graph-rest-1.0
+            app_role_value: the appRole `value` property to find in the list of appRoles
+
+        Returns:
+            appRole: https://docs.microsoft.com/en-us/graph/api/resources/approle?view=graph-rest-1.0
+        
+        Raises:
+            ResourceProvisioningError: No app role found in service principal's appRoles list with the given value
+        """
+        app_role = next(
+            (
+                ar
+                for ar in service_principal["appRoles"]
+                if ar["value"] == app_role_value
+            ),
+            None,
+        )
+        if not app_role:
+            raise ResourceProvisioningError(
+                "app role assignment",
+                f"No app role found with value '{app_role_value}'",
+            )
+        return app_role
+
+    @log_and_raise_exceptions
+    def _get_graph_sp_and_user_invite_app_role_ids(
+        self, graph_token
+    ) -> Tuple[str, str]:
+        """Get the service principal object id of the graph api and the app role
+        id for the `User.Invite.All` app role.
+
+        https://docs.microsoft.com/en-us/graph/api/serviceprincipal-list?view=graph-rest-1.0&tabs=http
+
+        Returns:
+            Tuple of the service principal object ID of the Graph API app 
+            registration and the app role id for "User.Invite.All"
+        """
+        response = self.sdk.requests.get(
+            f"{self.graph_resource}/v1.0/servicePrincipals?$filter=servicePrincipalNames/any(name:name+eq+'{GRAPH_API_APPLICATION_ID}')",
+            headers={"Authorization": f"Bearer {graph_token}"},
+        )
+        response.raise_for_status()
+        graph_service_principal = self._extract_service_principal_from_query(response)
+        user_invite_app_role = self._extract_app_role_from_service_principal(
+            graph_service_principal, "User.Invite.All"
+        )
+        return graph_service_principal["id"], user_invite_app_role["id"]
 
     @log_and_raise_exceptions
     def create_admin_role_definition(self, payload: AdminRoleDefinitionCSPPayload):
