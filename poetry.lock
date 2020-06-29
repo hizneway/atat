@@ -1353,7 +1353,7 @@ description = "A lightweight, object-oriented Python state machine implementatio
 name = "transitions"
 optional = false
 python-versions = "*"
-version = "0.8.1"
+version = "0.8.2"
 
 [package.dependencies]
 six = "*"
@@ -2167,8 +2167,8 @@ traitlets = [
     {file = "traitlets-4.3.3.tar.gz", hash = "sha256:d023ee369ddd2763310e4c3eae1ff649689440d4ae59d7485eb4cfbbe3e359f7"},
 ]
 transitions = [
-    {file = "transitions-0.8.1-py2.py3-none-any.whl", hash = "sha256:bd8021f0a04e4d91189d90b88d5e9f0a0f5de0c6e5baad224959dbe4c46c3d91"},
-    {file = "transitions-0.8.1.tar.gz", hash = "sha256:2b8cf2078ed189ffbb0f29421798d7a63ff0d7823682a0d69c01bd8240363cac"},
+    {file = "transitions-0.8.2-py2.py3-none-any.whl", hash = "sha256:57ceb045d58e491e676efea306e9c475f112eeb563b6c103eae2ff9bc33759fb"},
+    {file = "transitions-0.8.2.tar.gz", hash = "sha256:6ff7a3bfa4ac64b62993bb19dc2bb6a0ccbdf4e70b2cbae8350de6c916d77748"},
 ]
 typed-ast = [
     {file = "typed_ast-1.4.1-cp35-cp35m-manylinux1_i686.whl", hash = "sha256:73d785a950fc82dd2a25897d525d003f6378d1cb23ab305578394694202a58c3"},
