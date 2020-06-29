@@ -87,6 +87,10 @@ from .policy import AzurePolicyManager
 AZURE_SKU_ID = "0001"  # probably a static sku specific to ATAT/JEDI
 REMOTE_ROOT_ROLE_DEF_ID = "/providers/Microsoft.Authorization/roleDefinitions/00000000-0000-4000-8000-000000000000"
 
+# This identifier is the application id of the Graph API. Azure automatically
+# creates a service principal for this application in each tenant. You can find
+# this application in the portal by going to "Enterprise Applications",
+# setting the "Application Type" to "all" and searching for "Microsoft Graph".
 GRAPH_API_APPLICATION_ID = "00000003-0000-0000-c000-000000000000"
 
 DEFAULT_POLICY_SET_DEFINITION_NAME = "Default JEDI Policy Set"
