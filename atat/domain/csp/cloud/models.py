@@ -195,11 +195,11 @@ class BillingProfileTenantAccessCSPResult(AliasModel):
         }
 
 
-class PrincipalAppInvitePermissionCSPPayload(BaseCSPPayload):
+class PrincipalAppGraphApiPermissionsCSPPayload(BaseCSPPayload):
     principal_id: str
 
 
-class PrincipalAppInvitePermissionCSPResult(AliasModel):
+class PrincipalAppGraphApiPermissionsCSPResult(AliasModel):
     pass
 
 
@@ -700,8 +700,8 @@ __all__ = [
     "PoliciesCSPResult",
     "PrincipalAdminRoleCSPPayload",
     "PrincipalAdminRoleCSPResult",
-    "PrincipalAppInvitePermissionCSPPayload",
-    "PrincipalAppInvitePermissionCSPResult",
+    "PrincipalAppGraphApiPermissionsCSPPayload",
+    "PrincipalAppGraphApiPermissionsCSPResult",
     "ProductPurchaseCSPPayload",
     "ProductPurchaseCSPResult",
     "ProductPurchaseVerificationCSPPayload",

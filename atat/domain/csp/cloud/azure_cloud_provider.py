@@ -47,8 +47,8 @@ from .models import (
     PoliciesCSPResult,
     PrincipalAdminRoleCSPPayload,
     PrincipalAdminRoleCSPResult,
-    PrincipalAppInvitePermissionCSPPayload,
-    PrincipalAppInvitePermissionCSPResult,
+    PrincipalAppGraphApiPermissionsCSPPayload,
+    PrincipalAppGraphApiPermissionsCSPResult,
     ProductPurchaseCSPPayload,
     ProductPurchaseCSPResult,
     ProductPurchaseVerificationCSPPayload,
@@ -959,9 +959,9 @@ class AzureCloudProvider(CloudProviderInterface):
         )
 
     @log_and_raise_exceptions
-    def create_principal_app_invite_permission(
-        self, payload: PrincipalAppInvitePermissionCSPPayload
-    ) -> PrincipalAppInvitePermissionCSPResult:
+    def create_principal_app_graph_api_permissions(
+        self, payload: PrincipalAppGraphApiPermissionsCSPPayload
+    ) -> PrincipalAppGraphApiPermissionsCSPResult:
         """Grant the User.Invite.All app role assignment to the tenant service principal
 
         https://docs.microsoft.com/en-us/graph/api/serviceprincipal-post-approleassignments?view=graph-rest-1.0&tabs=http
@@ -986,7 +986,7 @@ class AzureCloudProvider(CloudProviderInterface):
         )
         response.raise_for_status()
 
-        return PrincipalAppInvitePermissionCSPResult(**response.json())
+        return PrincipalAppGraphApiPermissionsCSPResult(**response.json())
 
     def _extract_service_principal_from_query(self, response):
         """Extract a service principal object from a response

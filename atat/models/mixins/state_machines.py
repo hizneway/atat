@@ -32,7 +32,9 @@ class AzureStages(Enum):
     TENANT_PRINCIPAL_CREDENTIAL = "tenant principal credential"
     ADMIN_ROLE_DEFINITION = "admin role definition"
     PRINCIPAL_ADMIN_ROLE = "tenant principal admin"
-    PRINCIPAL_APP_INVITE_PERMISSION = "grant invite permission to principal application"
+    PRINCIPAL_APP_GRAPH_API_PERMISSIONS = (
+        "grant invite permission to principal application"
+    )
     INITIAL_MGMT_GROUP = "initial management group"
     INITIAL_MGMT_GROUP_VERIFICATION = "initial management group verification"
     TENANT_ADMIN_OWNERSHIP = "tenant admin ownership"

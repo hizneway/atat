@@ -236,7 +236,7 @@ def test_fsm_transition_start(state_machine: PortfolioStateMachine):
         PortfolioStates.TENANT_PRINCIPAL_CREDENTIAL_CREATED,
         PortfolioStates.ADMIN_ROLE_DEFINITION_CREATED,
         PortfolioStates.PRINCIPAL_ADMIN_ROLE_CREATED,
-        PortfolioStates.PRINCIPAL_APP_INVITE_PERMISSION_CREATED,
+        PortfolioStates.PRINCIPAL_APP_GRAPH_API_PERMISSIONS_CREATED,
         PortfolioStates.INITIAL_MGMT_GROUP_CREATED,
         PortfolioStates.INITIAL_MGMT_GROUP_VERIFICATION_CREATED,
         PortfolioStates.TENANT_ADMIN_OWNERSHIP_CREATED,

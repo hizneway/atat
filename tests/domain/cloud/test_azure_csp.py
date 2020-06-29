@@ -45,7 +45,7 @@ from atat.domain.csp.cloud.models import (
     PoliciesCSPResult,
     PrincipalAdminRoleCSPPayload,
     PrincipalAdminRoleCSPResult,
-    PrincipalAppInvitePermissionCSPPayload,
+    PrincipalAppGraphApiPermissionsCSPPayload,
     ProductPurchaseCSPPayload,
     ProductPurchaseCSPResult,
     ProductPurchaseVerificationCSPPayload,
@@ -1828,7 +1828,7 @@ class TestExtractAppRoleFromServicePrincipal:
             )
 
 
-def test_create_principal_app_invite_permission(
+def test_create_principal_app_graph_api_permissions(
     mock_azure, monkeypatch, mock_http_error_response
 ):
     monkeypatch.setattr(
@@ -1848,18 +1848,18 @@ def test_create_principal_app_invite_permission(
         mock_requests_response(status=201),
     ]
 
-    payload = PrincipalAppInvitePermissionCSPPayload(
+    payload = PrincipalAppGraphApiPermissionsCSPPayload(
         tenant_id="tenant_id", principal_id="principal_id"
     )
 
     with pytest.raises(ConnectionException):
-        mock_azure.create_principal_app_invite_permission(payload)
+        mock_azure.create_principal_app_graph_api_permissions(payload)
     with pytest.raises(ConnectionException):
-        mock_azure.create_principal_app_invite_permission(payload)
+        mock_azure.create_principal_app_graph_api_permissions(payload)
     with pytest.raises(UnknownServerException, match=r".*500 Server Error.*"):
-        mock_azure.create_principal_app_invite_permission(payload)
+        mock_azure.create_principal_app_graph_api_permissions(payload)
 
-    assert mock_azure.create_principal_app_invite_permission(payload)
+    assert mock_azure.create_principal_app_graph_api_permissions(payload)
 
 
 def test_get_graph_sp_and_user_invite_app_role_ids(
