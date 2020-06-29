@@ -351,16 +351,12 @@ class AzureCloudProvider(CloudProviderInterface):
             # This should not be necessary, but Azure is currently not
             # respecting the specified parent in the request body of the
             # initial call, so we update it here.
-            self._force_apply_mgmt_grp_parent(
-                session, parent_id, display_name, management_group_id
-            )
+            self._force_apply_mgmt_grp_parent(session, parent_id, management_group_id)
 
         return resp
 
     @log_and_raise_exceptions
-    def _force_apply_mgmt_grp_parent(
-        self, session, parent_id, display_name, management_group_id
-    ):
+    def _force_apply_mgmt_grp_parent(self, session, parent_id, management_group_id):
         """
         Update an existing management group to specify its parent.
 
@@ -368,12 +364,11 @@ class AzureCloudProvider(CloudProviderInterface):
         Args:
             session: a requests session object
             parent_id: the ID of the parent for the management group
-            display_name: a display name for the management group
             management_group_id: a simple ID for the management group, like a GUID (i.e., not fully qualified)
         Returns:
             True
         """
-        request_body = {"displayName": display_name, "parentId": parent_id}
+        request_body = {"parentId": parent_id}
         response = session.patch(
             f"{self.sdk.cloud.endpoints.resource_manager}providers/Microsoft.Management/managementGroups/{management_group_id}?api-version=2020-02-01",
             json=request_body,
