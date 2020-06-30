@@ -14,8 +14,14 @@ from atat.domain.csp.cloud.models import (
     SubscriptionCreationCSPPayload,
     SubscriptionVerificationCSPPayload,
 )
-from atat.jobs import do_create_application, do_create_environment_role, do_create_user
+from atat.jobs import (
+    do_create_application,
+    do_create_environment,
+    do_create_environment_role,
+    do_create_user,
+)
 from atat.models import PortfolioStates, PortfolioStateMachine
+import tests.factories as factories
 from tests.factories import (
     ApplicationFactory,
     ApplicationRoleFactory,
@@ -30,12 +36,28 @@ from tests.factories import (
 )
 
 
-@pytest.fixture(scope="function")
-def portfolio(csp, app):
+def _create_active_taskorder(factory: TaskOrderFactory, portfolio):
+    """
+    Since some of the fixtures in this module are scoped to the test session
+    and others to the function, they cannot easily share fixtures in common.
+    In order to DRY up some of the code, this method takes the
+    TaskOrderFactory as an argument. That way pytest does not object about
+    whether the SQLAlchemy session fixture underlying the factory is session
+    or function-scoped.
+    """
     today = pendulum.today()
     yesterday = today.subtract(days=1)
     future = today.add(days=100)
 
+    return factory.create(
+        portfolio=portfolio,
+        signed_at=yesterday,
+        clins=[CLINFactory.create(start_date=yesterday, end_date=future)],
+    )
+
+
+@pytest.fixture(scope="function")
+def portfolio(csp, app):
     owner = UserFactory.create()
     portfolio = PortfolioFactory.create(
         owner=owner,
@@ -46,11 +68,7 @@ def portfolio(csp, app):
         },
     )
 
-    TaskOrderFactory.create(
-        portfolio=portfolio,
-        signed_at=yesterday,
-        clins=[CLINFactory.create(start_date=yesterday, end_date=future)],
-    )
+    _create_active_taskorder(TaskOrderFactory, portfolio)
 
     return portfolio
 
@@ -81,60 +99,113 @@ def csp(app):
     return csp
 
 
-@pytest.fixture(scope="function")
-def state_machine(app, csp, portfolio):
-    return PortfolioStateMachineFactory.create(portfolio=portfolio, cloud=csp)
-
-
 @pytest.mark.hybrid
-def test_hybrid_provision_portfolio(state_machine: PortfolioStateMachine):
-    csp_data = {}
-    config = {"billing_account_name": "billing_account_name"}
+class TestIntegration:
+    @pytest.fixture(scope="session")
+    def portfolio(self, csp, app):
+        owner = UserFactory.create()
+        portfolio = PortfolioFactory.create(owner=owner,)
 
-    while state_machine.state != PortfolioStates.COMPLETED:
-        collected_data = dict(
-            list(csp_data.items())
-            + list(state_machine.portfolio.to_dictionary().items())
-            + list(config.items())
+        _create_active_taskorder(TaskOrderFactory, portfolio)
+
+        return portfolio
+
+    @pytest.fixture(scope="function")
+    def tenant_id(self, portfolio):
+        return portfolio.csp_data["tenant_id"]
+
+    @pytest.fixture(scope="session")
+    def application(self, portfolio):
+        return ApplicationFactory.create(portfolio=portfolio, cloud_id=None)
+
+    @pytest.fixture(scope="session")
+    def environment(self, application):
+        return EnvironmentFactory.create(application=application, cloud_id=None)
+
+    @pytest.fixture(scope="session")
+    def csp(self, app):
+        csp = CSP(
+            "hybrid",
+            app.config,
+            with_delay=False,
+            with_failure=False,
+            with_authorization=False,
+        ).cloud
+
+        return csp
+
+    @pytest.fixture(scope="session")
+    def state_machine(self, app, csp, portfolio):
+        return PortfolioStateMachineFactory.create(portfolio=portfolio, cloud=csp)
+
+    def test_hybrid_provision_portfolio(self, state_machine: PortfolioStateMachine):
+        csp_data = {}
+        config = {"billing_account_name": "billing_account_name"}
+
+        self.portfolio = state_machine.portfolio
+        self.csp = state_machine.cloud
+
+        while state_machine.state != PortfolioStates.COMPLETED:
+            collected_data = dict(
+                list(csp_data.items())
+                + list(state_machine.portfolio.to_dictionary().items())
+                + list(config.items())
+            )
+
+            state_machine.trigger_next_transition(csp_data=collected_data)
+            # TODO: The _get_service_principal_token method call within
+            # create_initial_mgmt_group fails periodically. There must be some kind
+            # of race condition on the Azure side we're not accounting for. This
+            # sleep is temporary and we should solve the race condition.
+            sleep(1)
+            assert (
+                "created" in state_machine.state.value
+                or state_machine.state == PortfolioStates.COMPLETED
+            )
+
+            csp_data = state_machine.portfolio.csp_data
+
+    def _get_management_group(self, csp, tenant_id, management_group_id):
+        sp_token = csp.azure._get_tenant_principal_token(tenant_id)
+        headers = {
+            "Authorization": f"Bearer {sp_token}",
+        }
+        response = csp.azure.sdk.requests.get(
+            f"{csp.azure.sdk.cloud.endpoints.resource_manager}{management_group_id}?api-version=2020-02-01",
+            headers=headers,
         )
+        response.raise_for_status()
+        return response.json()
 
-        state_machine.trigger_next_transition(csp_data=collected_data)
-        # TODO: The _get_service_principal_token method call within
-        # create_initial_mgmt_group fails periodically. There must be some kind
-        # of race condition on the Azure side we're not accounting for. This
-        # sleep is temporary and we should solve the race condition.
-        sleep(1)
+    def test_hybrid_create_application_job(self, csp, application, tenant_id, session):
+        do_create_application(csp, application.id)
+        session.refresh(application)
+
+        assert application.cloud_id
+
+        mgmt_grp_resp = self._get_management_group(csp, tenant_id, application.cloud_id)
+
+        # the portfolio management group should be the parent of the management
+        # group we just created for the application
         assert (
-            "created" in state_machine.state.value
-            or state_machine.state == PortfolioStates.COMPLETED
+            application.portfolio.csp_data["root_management_group_name"]
+            in mgmt_grp_resp["properties"]["details"]["parent"]["id"]
         )
 
-        csp_data = state_machine.portfolio.csp_data
+    def test_hybrid_create_environment_job(self, csp, environment, tenant_id, session):
+        do_create_environment(csp, environment.id)
+        session.refresh(environment)
 
+        assert environment.cloud_id
 
-@pytest.mark.hybrid
-def test_hybrid_create_application_job(csp, portfolio, session):
-    application = ApplicationFactory.create(portfolio=portfolio, cloud_id=None)
+        mgmt_grp_resp = self._get_management_group(csp, tenant_id, environment.cloud_id)
 
-    do_create_application(csp, application.id)
-    session.refresh(application)
-
-    assert application.cloud_id
-
-
-@pytest.mark.hybrid
-def test_hybrid_create_environment(csp):
-    environment = EnvironmentFactory.create()
-
-    payload = EnvironmentCSPPayload(
-        tenant_id=csp.mock_tenant_id,
-        display_name=environment.name,
-        parent_id=csp.hybrid_tenant_id,
-    )
-
-    result = csp.create_environment(payload)
-
-    assert result.id
+        # the application management group should be the parent of the management
+        # group we just created for the environment
+        assert (
+            environment.application.cloud_id
+            in mgmt_grp_resp["properties"]["details"]["parent"]["id"]
+        )
 
 
 @pytest.mark.hybrid
