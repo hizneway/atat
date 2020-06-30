@@ -1870,7 +1870,9 @@ def test_get_graph_sp_and_user_invite_app_role_ids(
             "value": [
                 {
                     "id": "service_principal_object_id",
-                    "appRoles": [{"id": "app_role_id", "value": "User.Invite.All"}],
+                    "appRoles": [
+                        {"id": "app_role_id", "value": "Directory.ReadWrite.All"}
+                    ],
                 }
             ]
         }

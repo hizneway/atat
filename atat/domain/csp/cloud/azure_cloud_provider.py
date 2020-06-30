@@ -1010,7 +1010,8 @@ class AzureCloudProvider(CloudProviderInterface):
     def create_principal_app_graph_api_permissions(
         self, payload: PrincipalAppGraphApiPermissionsCSPPayload
     ) -> PrincipalAppGraphApiPermissionsCSPResult:
-        """Grant the User.Invite.All app role assignment to the tenant service principal
+        """Grant the Directory.ReadWrite.All app role assignment to the tenant 
+        service principal
 
         https://docs.microsoft.com/en-us/graph/api/serviceprincipal-post-approleassignments?view=graph-rest-1.0&tabs=http
         """
@@ -1093,13 +1094,13 @@ class AzureCloudProvider(CloudProviderInterface):
         self, graph_token
     ) -> Tuple[str, str]:
         """Get the service principal object id of the graph api and the app role
-        id for the `User.Invite.All` app role.
+        id for the `Directory.ReadWrite.All` app role.
 
         https://docs.microsoft.com/en-us/graph/api/serviceprincipal-list?view=graph-rest-1.0&tabs=http
 
         Returns:
             Tuple of the service principal object ID of the Graph API app 
-            registration and the app role id for "User.Invite.All"
+            registration and the app role id for "Directory.ReadWrite.All"
         """
         response = self.sdk.requests.get(
             f"{self.graph_resource}/v1.0/servicePrincipals?$filter=servicePrincipalNames/any(name:name+eq+'{GRAPH_API_APPLICATION_ID}')",
@@ -1108,7 +1109,7 @@ class AzureCloudProvider(CloudProviderInterface):
         response.raise_for_status()
         graph_service_principal = self._extract_service_principal_from_query(response)
         user_invite_app_role = self._extract_app_role_from_service_principal(
-            graph_service_principal, "User.Invite.All"
+            graph_service_principal, "Directory.ReadWrite.All"
         )
         return graph_service_principal["id"], user_invite_app_role["id"]
 
