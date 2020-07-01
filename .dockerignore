@@ -25,3 +25,5 @@ LICENSE
 # exclude build artifacts and docker directories
 .venv
 node_modules
+
+!/node_modules/uswds/dist/fonts/
