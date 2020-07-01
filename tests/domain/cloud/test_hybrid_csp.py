@@ -115,8 +115,24 @@ class TestIntegration:
         return portfolio.csp_data["tenant_id"]
 
     @pytest.fixture(scope="session")
+    def user(self):
+        first_name = f"test-user-{uuid4()}"
+        return UserFactory.create(
+            first_name=first_name, last_name="Solo", email=f"{first_name}@example.com"
+        )
+
+    @pytest.fixture(scope="session")
     def application(self, portfolio):
         return ApplicationFactory.create(portfolio=portfolio, cloud_id=None)
+
+    @pytest.fixture(scope="session")
+    def app_role(self, application, user):
+        return ApplicationRoleFactory.create(
+            application=application,
+            user=user,
+            status=ApplicationRoleStatus.ACTIVE,
+            cloud_id=None,
+        )
 
     @pytest.fixture(scope="session")
     def environment(self, application):
@@ -206,6 +222,15 @@ class TestIntegration:
             environment.application.cloud_id
             in mgmt_grp_resp["properties"]["details"]["parent"]["id"]
         )
+
+    def test_hybrid_create_user_job(self, session, csp, app_role, portfolio):
+        assert not app_role.cloud_id
+
+        session.begin_nested()
+        do_create_user(csp, [app_role.id])
+        session.rollback()
+
+        assert app_role.cloud_id
 
 
 @pytest.mark.hybrid
