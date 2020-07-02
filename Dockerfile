@@ -29,13 +29,15 @@ RUN yum updateinfo && \
 # https://stackoverflow.com/a/45417908
 RUN yum install openssl openssl-devel -y
 
+RUN yum autoremove python3
+
 # Install python 3.7.3
 RUN cd /usr/src \
       && wget https://www.python.org/ftp/python/3.7.3/Python-3.7.3.tgz \
       && tar xzf Python-3.7.3.tgz \
       && cd Python-3.7.3 \
       && ./configure --enable-optimizations \
-      && make altinstall \
+      && make install \
       && rm /usr/src/Python-3.7.3.tgz 
 
 # Install the `Python.h` file for compiling certain libraries.
@@ -123,21 +125,21 @@ RUN yum updateinfo && \
 # https://stackoverflow.com/a/45417908
 RUN yum install openssl openssl-devel -y
 
+RUN yum autoremove python3
+
 # Install python 3.7.3
 RUN cd /usr/src \
       && wget https://www.python.org/ftp/python/3.7.3/Python-3.7.3.tgz \
       && tar xzf Python-3.7.3.tgz \
       && cd Python-3.7.3 \
       && ./configure --enable-optimizations \
-      && make altinstall \
+      && make install \
       && rm /usr/src/Python-3.7.3.tgz 
 
 RUN yum updateinfo
-# Add postgres repository
 RUN yum module list
-# RUN dnf -y install https://download.postgresql.org/pub/repos/yum/reporpms/EL-8-x86_64/pgdg-redhat-repo-latest.noarch.rpm
-RUN dnf groupinfo "Development Tools"
 
+# TODO(heyzoos): Make this all work as part of the first stage.
 # Get the latest GPG key for enterprise linux 8.
 # https://yum.theforeman.org/
 # RUN wget "https://yum.theforeman.org/releases/2.1/RPM-GPG-KEY-foreman"
@@ -147,10 +149,9 @@ RUN dnf groupinfo "Development Tools"
 # Install postgresql client.
 # https://www.postgresql.org/download/linux/redhat/
 # TODO(heyzoos): WE NEED TO CHECK THE GPG KEY ASAP
+# TODO(heyzoos): Copy the out of these from the first stage to the final image.
 RUN dnf install -y https://download.postgresql.org/pub/repos/yum/reporpms/EL-8-x86_64/pgdg-redhat-repo-latest.noarch.rpm --nogpgcheck
-# RUN dnf -qy module disable postgresql
 RUN dnf install postgresql10 -y
-
 RUN dnf install python3-pip -y
 
 # Install dumb-init.
@@ -167,7 +168,9 @@ RUN dnf install python3-devel -y
 # Install uwsgi.
 # Logfile plugin is embedded by default.
 # https://uwsgi-docs.readthedocs.io/en/latest/Logging.html#logging-to-files
-RUN pip3 install uwsgi
+RUN pip3 install uwsgi pendulum poetry
+
+COPY . .
 
 COPY --from=builder /install/.venv/ ./.venv/
 COPY --from=builder /install/alembic/ ./alembic/
@@ -186,7 +189,7 @@ COPY --from=builder /install/uwsgi.ini .
 COPY --from=builder /usr/local/bin/uwsgi /usr/local/bin/uwsgi
 
 # Use dumb-init for proper signal handling
-ENTRYPOINT ["/usr/bin/dumb-init", "--"]
+ENTRYPOINT ["dumb-init", "--"]
 
 # Default command is to launch the server
 CMD ["uwsgi", "--ini", "uwsgi.ini"]
