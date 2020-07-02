@@ -74,12 +74,6 @@ class Test_display_status:
         )
         assert app_role_pending.display_status == "invite_pending"
 
-    def test_invite_accepted(self):
-        app_role_active = ApplicationRoleFactory.create(
-            status=ApplicationRoleStatus.ACTIVE
-        )
-        assert app_role_active.display_status == None
-
     def test_changes_pending(self):
         app_role_active = ApplicationRoleFactory.create(
             status=ApplicationRoleStatus.ACTIVE
@@ -88,3 +82,33 @@ class Test_display_status:
             application_role=app_role_active
         )
         assert env_role_pending.application_role.display_status == "changes_pending"
+
+    def test_invite_accepted_no_environments(self):
+        app_role_active = ApplicationRoleFactory.create(
+            status=ApplicationRoleStatus.ACTIVE
+        )
+        assert app_role_active.display_status is None
+
+    def test_invite_accepted_some_environments_pending(self):
+        app_role_active = ApplicationRoleFactory.create(
+            status=ApplicationRoleStatus.ACTIVE
+        )
+        EnvironmentRoleFactory.create(
+            application_role=app_role_active, status=EnvironmentRoleStatus.PENDING
+        )
+        EnvironmentRoleFactory.create(
+            application_role=app_role_active, status=EnvironmentRoleStatus.COMPLETED
+        )
+        assert app_role_active.display_status == "changes_pending"
+
+    def test_invite_accepted_all_environments_completed(self):
+        app_role_active = ApplicationRoleFactory.create(
+            status=ApplicationRoleStatus.ACTIVE
+        )
+        EnvironmentRoleFactory.create(
+            application_role=app_role_active, status=EnvironmentRoleStatus.COMPLETED
+        )
+        EnvironmentRoleFactory.create(
+            application_role=app_role_active, status=EnvironmentRoleStatus.COMPLETED
+        )
+        assert app_role_active.display_status is None
