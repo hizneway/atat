@@ -89,7 +89,7 @@ class Test_disable:
             status=EnvironmentRoleStatus.COMPLETED,
         )
         EnvironmentRoles.disable(environment_role.id)
-        assert environment_role.disabled
+        assert environment_role.is_disabled
 
     @patch("atat.domain.environment_roles.app.csp.cloud.disable_user")
     def test_has_cloud_id(self, disable_user, app):

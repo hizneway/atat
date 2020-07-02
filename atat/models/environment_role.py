@@ -70,7 +70,7 @@ class EnvironmentRole(
         return self.role
 
     @property
-    def disabled(self):
+    def is_disabled(self):
         return self.status == Status.DISABLED
 
     @property
