@@ -6,6 +6,7 @@ from atat.database import db
 from atat.models import (
     Environment,
     EnvironmentRole,
+    EnvironmentRoleStatus,
     Application,
     ApplicationRole,
     ApplicationRoleStatus,
@@ -31,7 +32,7 @@ class EnvironmentRoles(object):
                 EnvironmentRole.application_role_id == application_role_id,
                 EnvironmentRole.environment_id == environment_id,
                 EnvironmentRole.deleted == False,
-                EnvironmentRole.status != EnvironmentRole.Status.DISABLED,
+                EnvironmentRole.status != EnvironmentRoleStatus.DISABLED,
             )
             .one_or_none()
         )
@@ -103,7 +104,7 @@ class EnvironmentRoles(object):
                     ApplicationRole.deleted == False,
                     ApplicationRole.cloud_id != None,
                     ApplicationRole.status != ApplicationRoleStatus.DISABLED,
-                    EnvironmentRole.status != EnvironmentRole.Status.DISABLED,
+                    EnvironmentRole.status != EnvironmentRoleStatus.DISABLED,
                     EnvironmentRole.cloud_id.is_(None),
                     or_(
                         EnvironmentRole.claimed_until.is_(None),
@@ -123,7 +124,7 @@ class EnvironmentRoles(object):
             tenant_id = environment_role.environment.portfolio.tenant_id
             app.csp.cloud.disable_user(tenant_id, environment_role.cloud_id)
 
-        environment_role.status = EnvironmentRole.Status.DISABLED
+        environment_role.status = EnvironmentRoleStatus.DISABLED
         db.session.add(environment_role)
         db.session.commit()
 

@@ -14,6 +14,12 @@ class CSPRole(Enum):
     CONTRIBUTOR = "Contributor"
 
 
+class Status(Enum):
+    COMPLETED = "completed"
+    PENDING = "pending"
+    DISABLED = "disabled"
+
+
 class EnvironmentRole(
     Base,
     mixins.TimestampsMixin,
@@ -37,13 +43,6 @@ class EnvironmentRole(
     application_role = relationship("ApplicationRole")
 
     cloud_id = Column(String())
-
-    # TODO: Why is this implemented as a status enum? Seems like we only use
-    # the DISABLED state.
-    class Status(Enum):
-        PENDING = "pending"
-        COMPLETED = "completed"
-        DISABLED = "disabled"
 
     status = Column(
         SQLAEnum(Status, native_enum=False), default=Status.PENDING, nullable=False
@@ -72,11 +71,11 @@ class EnvironmentRole(
 
     @property
     def disabled(self):
-        return self.status == EnvironmentRole.Status.DISABLED
+        return self.status == Status.DISABLED
 
     @property
     def is_pending(self):
-        return self.status == EnvironmentRole.Status.PENDING
+        return self.status == Status.PENDING
 
     @property
     def event_details(self):

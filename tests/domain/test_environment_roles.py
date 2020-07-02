@@ -86,7 +86,7 @@ class Test_disable:
         environment_role = EnvironmentRoleFactory.create(
             application_role=application_role,
             environment=environment,
-            status=EnvironmentRole.Status.COMPLETED,
+            status=EnvironmentRoleStatus.COMPLETED,
         )
         EnvironmentRoles.disable(environment_role.id)
         assert environment_role.disabled
@@ -167,6 +167,6 @@ class TestPendingCreation:
     def test_disabled_env_role(self):
         appr = ApplicationRoleFactory.create(cloud_id="123")
         envr = EnvironmentRoleFactory.create(
-            application_role=appr, status=EnvironmentRole.Status.DISABLED
+            application_role=appr, status=EnvironmentRoleStatus.DISABLED
         )
         assert EnvironmentRoles.get_pending_creation() == []
