@@ -117,6 +117,16 @@ class EnvironmentRoles(object):
         return [id_ for id_, in results]
 
     @classmethod
+    def activate(cls, role, cloud_id):
+        """Assign a cloud id to an environment role and marks it as completed"""
+
+        role.status = EnvironmentRoleStatus.COMPLETED
+        role.cloud_id = cloud_id
+
+        db.session.add(role)
+        db.session.commit()
+
+    @classmethod
     def disable(cls, environment_role_id):
         environment_role = EnvironmentRoles.get_by_id(environment_role_id)
 
