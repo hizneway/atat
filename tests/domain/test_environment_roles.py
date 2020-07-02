@@ -3,7 +3,7 @@ from unittest.mock import patch
 import pytest
 
 from atat.domain.environment_roles import EnvironmentRoles
-from atat.models import EnvironmentRole, ApplicationRoleStatus
+from atat.models import EnvironmentRole, ApplicationRoleStatus, EnvironmentRoleStatus
 
 from tests.factories import *
 
@@ -39,6 +39,19 @@ def test_get(application_role, environment):
     assert environment_role
     assert environment_role.application_role == application_role
     assert environment_role.environment == environment
+
+
+def test_activate(application_role, environment):
+    role = EnvironmentRoleFactory.create(
+        application_role=application_role, environment=environment
+    )
+    assert role.cloud_id is None
+    assert role.status == EnvironmentRoleStatus.PENDING
+
+    EnvironmentRoles.activate(role, "123")
+
+    assert role.cloud_id == "123"
+    assert role.status == EnvironmentRoleStatus.COMPLETED
 
 
 def test_get_by_user_and_environment(application_role, environment):
