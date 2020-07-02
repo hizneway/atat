@@ -1,4 +1,4 @@
-FROM cloudzeropwdevregistry.azurecr.io/rhelubi:8.2 AS builder
+FROM cloudzeropwdevregistry.azurecr.io/rhel-py AS builder
 
 ARG CSP
 ARG CDN_URL=/static/assets/
@@ -28,17 +28,6 @@ RUN yum updateinfo && \
 # Install the necessary dependencies for SSL to be used by Python libraries.
 # https://stackoverflow.com/a/45417908
 RUN yum install openssl openssl-devel -y
-
-RUN yum autoremove python3
-
-# Install python 3.7.3
-RUN cd /usr/src \
-      && wget https://www.python.org/ftp/python/3.7.3/Python-3.7.3.tgz \
-      && tar xzf Python-3.7.3.tgz \
-      && cd Python-3.7.3 \
-      && ./configure --enable-optimizations \
-      && make install \
-      && rm /usr/src/Python-3.7.3.tgz 
 
 # Install the `Python.h` file for compiling certain libraries.
 RUN dnf install python3-devel -y
@@ -70,7 +59,7 @@ RUN rm -rf ./static/fonts \
       && yarn build-prod
 
 ## NEW IMAGE
-FROM cloudzeropwdevregistry.azurecr.io/rhelubi:8.2
+FROM cloudzeropwdevregistry.azurecr.io/rhel-py
 
 ### Very low chance of changing
 ###############################
@@ -99,7 +88,7 @@ RUN yum install shadow-utils.x86_64 -y
 # https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/6/html/deployment_guide/s2-groups-cl-tools
 RUN groupadd --system -g 101 atat
 
-# Create a system user `atst` with a non-existent home directory and add them to the `atat` group.
+# Create a system user `atst` and add them to the `atat` group.
 # https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/6/html/deployment_guide/s2-users-cl-tools
 RUN useradd --system atst -g atat
 
@@ -124,20 +113,6 @@ RUN yum updateinfo && \
 # Install the necessary dependencies for SSL to be used by Python libraries.
 # https://stackoverflow.com/a/45417908
 RUN yum install openssl openssl-devel -y
-
-RUN yum autoremove python3
-
-# Install python 3.7.3
-RUN cd /usr/src \
-      && wget https://www.python.org/ftp/python/3.7.3/Python-3.7.3.tgz \
-      && tar xzf Python-3.7.3.tgz \
-      && cd Python-3.7.3 \
-      && ./configure --enable-optimizations \
-      && make install \
-      && rm /usr/src/Python-3.7.3.tgz 
-
-RUN yum updateinfo
-RUN yum module list
 
 # TODO(heyzoos): Make this all work as part of the first stage.
 # Get the latest GPG key for enterprise linux 8.
