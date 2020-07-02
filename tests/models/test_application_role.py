@@ -61,19 +61,30 @@ def test_environment_roles():
     assert not EnvironmentRoles.get_by_user_and_environment(user.id, environment2.id)
 
 
-def test_display_status():
-    yesterday = pendulum.today().subtract(days=1)
-    expired_invite = ApplicationInvitationFactory.create(expiration_time=yesterday)
-    assert expired_invite.role.display_status == "invite_expired"
+class Test_display_status:
+    def test_expired_invite(self):
+        yesterday = pendulum.today().subtract(days=1)
+        expired_invite = ApplicationInvitationFactory.create(expiration_time=yesterday)
+        assert expired_invite.role.display_status == "invite_expired"
 
-    app_role_pending = ApplicationRoleFactory.create()
-    invite = ApplicationInvitationFactory.create(
-        role=app_role_pending, user=app_role_pending.user
-    )
-    assert app_role_pending.display_status == "invite_pending"
+    def test_invite_pending(self):
+        app_role_pending = ApplicationRoleFactory.create()
+        ApplicationInvitationFactory.create(
+            role=app_role_pending, user=app_role_pending.user
+        )
+        assert app_role_pending.display_status == "invite_pending"
 
-    app_role_active = ApplicationRoleFactory.create(status=ApplicationRoleStatus.ACTIVE)
-    assert app_role_active.display_status == None
+    def test_invite_accepted(self):
+        app_role_active = ApplicationRoleFactory.create(
+            status=ApplicationRoleStatus.ACTIVE
+        )
+        assert app_role_active.display_status == None
 
-    env_role_pending = EnvironmentRoleFactory.create(application_role=app_role_active)
-    assert env_role_pending.application_role.display_status == "changes_pending"
+    def test_changes_pending(self):
+        app_role_active = ApplicationRoleFactory.create(
+            status=ApplicationRoleStatus.ACTIVE
+        )
+        env_role_pending = EnvironmentRoleFactory.create(
+            application_role=app_role_active
+        )
+        assert env_role_pending.application_role.display_status == "changes_pending"
