@@ -20,10 +20,7 @@ RUN yum updateinfo && \
       tar \
       util-linux \
       wget \
-      zlib-devel \
-      # The equivalent to `build-essential`.
-      # Necessary to compile python and uwsgi.
-      gcc gcc-c++ make libffi-devel
+      zlib-devel
 
 # Install the `Python.h` file for compiling certain libraries.
 RUN dnf install python3-devel -y
