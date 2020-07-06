@@ -1,6 +1,29 @@
 version: 2.1
 
 commands:
+  azlogin:
+    steps:
+      - run:
+          name: Install Azure CLI
+          command: |
+            apk update
+            apk add bash py3-pip
+            apk add --virtual=build \
+              linux-headers gcc libffi-dev musl-dev openssl-dev python3-dev make
+            pip3 --no-cache-dir install -U pip
+            pip3 --no-cache-dir install azure-cli
+            apk del --purge build
+      - run:
+          name: Login to Azure CLI
+          shell: /bin/sh
+          command: |
+            az login \
+              --service-principal \
+              --tenant $AZURE_SP_TENANT \
+              --password $AZURE_SP_PASSWORD \
+              --username $AZURE_SP
+            echo "Successfully logged in to Azure CLI."
+            az acr login --name $AZURE_REGISTRY | grep "Succeeded"
   cache_docker_image:
     steps:
       - run:
@@ -71,27 +94,7 @@ commands:
           docker_layer_caching: true
           version: 18.06.0-ce
       - restore_docker_image
-      - run:
-          name: Install Azure CLI
-          command: |
-            apk update
-            apk add bash py3-pip
-            apk add --virtual=build \
-              linux-headers gcc libffi-dev musl-dev openssl-dev python3-dev make
-            pip3 --no-cache-dir install -U pip
-            pip3 --no-cache-dir install azure-cli
-            apk del --purge build
-      - run:
-          name: Login to Azure CLI
-          shell: /bin/sh
-          command: |
-            az login \
-              --service-principal \
-              --tenant $AZURE_SP_TENANT \
-              --password $AZURE_SP_PASSWORD \
-              --username $AZURE_SP
-            echo "Successfully logged in to Azure CLI."
-            az acr login --name $AZURE_REGISTRY | grep "Succeeded"
+      - azlogin
       - run:
           name: Install kubectl
           command: |
@@ -132,6 +135,7 @@ jobs:
     docker:
       - image: docker:18.06.0-ce-git
     steps:
+      - azlogin
       - checkout
       - setup_remote_docker:
           docker_layer_caching: true
