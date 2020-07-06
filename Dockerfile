@@ -109,7 +109,7 @@ RUN dnf install python3-devel -y
 # Install uwsgi.
 # Logfile plugin is embedded by default.
 # https://uwsgi-docs.readthedocs.io/en/latest/Logging.html#logging-to-files
-RUN pip3 install uwsgi pendulum poetry
+RUN pip3 install uwsgi pendulum
 
 COPY . .
 
