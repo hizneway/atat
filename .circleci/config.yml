@@ -134,12 +134,14 @@ jobs:
   docker-build:
     docker:
       - image: docker:18.06.0-ce-git
+    environment:
+      AZURE_REGISTRY: cloudzeropwdevregistry
     steps:
-      - azlogin
       - checkout
       - setup_remote_docker:
           docker_layer_caching: true
           version: 18.06.0-ce
+      - azlogin
       - run:
           name: Build image
           command: |
