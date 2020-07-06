@@ -25,10 +25,6 @@ RUN yum updateinfo && \
       # Necessary to compile python and uwsgi.
       gcc gcc-c++ make libffi-devel
 
-# Install the necessary dependencies for SSL to be used by Python libraries.
-# https://stackoverflow.com/a/45417908
-RUN yum install openssl openssl-devel -y
-
 # Install the `Python.h` file for compiling certain libraries.
 RUN dnf install python3-devel -y
 
@@ -92,28 +88,6 @@ RUN groupadd --system -g 101 atat
 # https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/6/html/deployment_guide/s2-users-cl-tools
 RUN useradd --system atst -g atat
 
-RUN yum updateinfo && \
-      yum install -y \
-      curl \
-      ca-certificates \
-      git \
-      gzip \
-      libffi \
-      nodejs \
-      rsync \
-      sudo \
-      tar \
-      util-linux \
-      wget \
-      zlib-devel \
-      # the equivalent to `build-essential`.
-      # necessary to compile python and uwsgi.
-      gcc gcc-c++ make libffi-devel
-
-# Install the necessary dependencies for SSL to be used by Python libraries.
-# https://stackoverflow.com/a/45417908
-RUN yum install openssl openssl-devel -y
-
 # TODO(heyzoos): Make this all work as part of the first stage.
 # Get the latest GPG key for enterprise linux 8.
 # https://yum.theforeman.org/
@@ -127,15 +101,10 @@ RUN yum install openssl openssl-devel -y
 # TODO(heyzoos): Copy the out of these from the first stage to the final image.
 RUN dnf install -y https://download.postgresql.org/pub/repos/yum/reporpms/EL-8-x86_64/pgdg-redhat-repo-latest.noarch.rpm --nogpgcheck
 RUN dnf install postgresql10 -y
-RUN dnf install python3-pip -y
 
 # Install dumb-init.
 # dumb-init is a simple process supervisor and init system designed to run as PID 1 inside minimal container environments.
 RUN pip3 install dumb-init
-
-# the equivalent to `build-essential`.
-# necessary to compile python and uwsgi.
-RUN yum install gcc gcc-c++ make libffi-devel
 
 # Install the `Python.h` file for compiling certain libraries.
 RUN dnf install python3-devel -y
