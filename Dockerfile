@@ -4,9 +4,7 @@ ARG IMAGE
 
 FROM $IMAGE as builder
 
-ARG CSP
 ARG CDN_URL=/static/assets/
-ARG AZURE_ACCOUNT_NAME=atat
 ENV TZ UTC
 
 WORKDIR /install
@@ -40,15 +38,14 @@ RUN dnf install yarn -y
 COPY . .
 
 # Install app dependencies
-RUN ./script/write_dotenv \
-      && pip3 install uwsgi poetry \ 
+RUN pip3 install uwsgi poetry \
       # TODO: Remove this when this issue is resolved:
       # https://github.com/sdispater/pendulum/issues/454#issuecomment-605519477
       && pip3 install pendulum
 
 RUN poetry env use python3.7
 
-RUN poetry install --no-root --no-dev 
+RUN poetry install --no-root --no-dev
 
 RUN yarn install
 

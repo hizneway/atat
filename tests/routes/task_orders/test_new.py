@@ -516,3 +516,16 @@ def test_update_and_render_next_handles_previous_invalid_data(
     )
 
     assert len(task_order.clins) == 2
+
+
+def test_upload_token(app, client, user_session, portfolio):
+    user_session(portfolio.owner)
+    response = client.get(
+        url_for("task_orders.upload_token", portfolio_id=portfolio.id)
+    )
+    assert response.status_code == 200
+    token_resp = response.get_json()
+    assert token_resp["cloudProvider"] == app.config["CSP"]
+    assert isinstance(token_resp["token"], dict)
+    assert isinstance(token_resp["objectName"], str)
+    assert isinstance(token_resp["config"], dict)
