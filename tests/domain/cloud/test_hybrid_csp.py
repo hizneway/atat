@@ -154,6 +154,7 @@ class TestIntegration:
     def state_machine(self, app, csp, portfolio):
         return PortfolioStateMachineFactory.create(portfolio=portfolio, cloud=csp)
 
+    @pytest.mark.depends(name="portfolio")
     def test_hybrid_provision_portfolio(self, state_machine: PortfolioStateMachine):
         csp_data = {}
         config = {"billing_account_name": "billing_account_name"}
@@ -193,6 +194,7 @@ class TestIntegration:
         response.raise_for_status()
         return response.json()
 
+    @pytest.mark.depends(name="application", on=["portfolio"])
     def test_hybrid_create_application_job(self, csp, application, tenant_id, session):
         do_create_application(csp, application.id)
         session.refresh(application)
@@ -208,6 +210,7 @@ class TestIntegration:
             in mgmt_grp_resp["properties"]["details"]["parent"]["id"]
         )
 
+    @pytest.mark.depends(on=["application"])
     def test_hybrid_create_environment_job(self, csp, environment, tenant_id, session):
         do_create_environment(csp, environment.id)
         session.refresh(environment)
@@ -223,6 +226,7 @@ class TestIntegration:
             in mgmt_grp_resp["properties"]["details"]["parent"]["id"]
         )
 
+    @pytest.mark.depends(on=["application"])
     def test_hybrid_create_user_job(self, session, csp, app_role, portfolio):
         assert not app_role.cloud_id
 
@@ -264,7 +268,9 @@ def test_get_reporting_data(csp, app, monkeypatch):
 
 
 @pytest.mark.hybrid
-@pytest.mark.xfail(reason="This test cannot complete due to permission issues.")
+@pytest.mark.skip(
+    reason="We are using the mock cloud provider's subscription method right now"
+)
 def test_create_subscription(csp):
     environment = EnvironmentFactory.create()
 

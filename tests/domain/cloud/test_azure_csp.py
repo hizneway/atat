@@ -1386,8 +1386,7 @@ def test_create_user_role(mock_azure: AzureCloudProvider):
 
 def test_create_user_role_failure(mock_azure: AzureCloudProvider):
 
-    mock_result_create = mock_requests_response(ok=False)
-    mock_azure.sdk.requests.put.return_value = mock_result_create
+    mock_azure.sdk.requests.put.side_effect = [mock_requests_response(ok=False)]
 
     payload = UserRoleCSPPayload(
         tenant_id=uuid4().hex,
