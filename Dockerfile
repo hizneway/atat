@@ -18,6 +18,7 @@ RUN yum updateinfo && \
       rsync \
       sudo \
       tar \
+      unzip \
       util-linux \
       wget \
       zlib-devel
