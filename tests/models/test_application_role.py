@@ -97,7 +97,7 @@ class Test_display_status:
             application_role=app_role_active, status=EnvironmentRoleStatus.PENDING
         )
         EnvironmentRoleFactory.create(
-            application_role=app_role_active, status=EnvironmentRoleStatus.COMPLETED
+            application_role=app_role_active, status=EnvironmentRoleStatus.ACTIVE
         )
         assert app_role_active.display_status == "changes_pending"
 
@@ -106,9 +106,9 @@ class Test_display_status:
             status=ApplicationRoleStatus.ACTIVE
         )
         EnvironmentRoleFactory.create(
-            application_role=app_role_active, status=EnvironmentRoleStatus.COMPLETED
+            application_role=app_role_active, status=EnvironmentRoleStatus.ACTIVE
         )
         EnvironmentRoleFactory.create(
-            application_role=app_role_active, status=EnvironmentRoleStatus.COMPLETED
+            application_role=app_role_active, status=EnvironmentRoleStatus.ACTIVE
         )
         assert app_role_active.display_status is None

@@ -432,7 +432,7 @@ class TestCreateEnvironmentRole:
         do_create_environment_role(csp, environment_role_id=env_role.id)
         session.rollback()
         assert env_role.cloud_id == "a-cloud-id"
-        assert env_role.status == EnvironmentRoleStatus.COMPLETED
+        assert env_role.status == EnvironmentRoleStatus.ACTIVE
 
     def test_sends_email(self, monkeypatch, env_role, csp):
         send_mail = Mock()

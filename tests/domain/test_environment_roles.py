@@ -51,7 +51,7 @@ def test_activate(application_role, environment):
     EnvironmentRoles.activate(role, "123")
 
     assert role.cloud_id == "123"
-    assert role.status == EnvironmentRoleStatus.COMPLETED
+    assert role.status == EnvironmentRoleStatus.ACTIVE
 
 
 def test_get_by_user_and_environment(application_role, environment):
@@ -99,7 +99,7 @@ class Test_disable:
         environment_role = EnvironmentRoleFactory.create(
             application_role=application_role,
             environment=environment,
-            status=EnvironmentRoleStatus.COMPLETED,
+            status=EnvironmentRoleStatus.ACTIVE,
         )
         EnvironmentRoles.disable(environment_role.id)
         assert environment_role.is_disabled

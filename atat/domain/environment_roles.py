@@ -118,9 +118,9 @@ class EnvironmentRoles(object):
 
     @classmethod
     def activate(cls, role, cloud_id):
-        """Assign a cloud id to an environment role and marks it as completed"""
+        """Assign a cloud id to an environment role and marks it as active"""
 
-        role.status = EnvironmentRoleStatus.COMPLETED
+        role.status = EnvironmentRoleStatus.ACTIVE
         role.cloud_id = cloud_id
 
         db.session.add(role)

@@ -15,8 +15,8 @@ class CSPRole(Enum):
 
 
 class Status(Enum):
-    COMPLETED = "completed"
     PENDING = "pending"
+    ACTIVE = "active"
     DISABLED = "disabled"
 
 
