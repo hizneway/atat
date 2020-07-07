@@ -31,7 +31,7 @@ RUN yum install -y openssl-devel
 RUN yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm --nogpgcheck
 
 # Allows python to use SQLLite modules.
-RUN yum install -y libsqlite3x.x86_64
+RUN yum install -y sqlite sqlite-devel libsqlite3x.x86_64
 
 # Install python!
 # https://github.com/python/cpython#build-instructions
