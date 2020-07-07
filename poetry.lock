@@ -811,11 +811,12 @@ description = "AutoRest swagger generator Python client runtime. Azure-specific 
 name = "msrestazure"
 optional = false
 python-versions = "*"
-version = "0.6.3"
+version = "0.6.4"
 
 [package.dependencies]
 adal = ">=0.6.0,<2.0.0"
 msrest = ">=0.6.0,<2.0.0"
+six = "*"
 
 [[package]]
 category = "dev"
@@ -1898,8 +1899,8 @@ msrest = [
     {file = "msrest-0.6.13.tar.gz", hash = "sha256:9050fbbb95dd9e8f4008d7227e4dc5662e8b605c89e5621b0dd09ac7f04cf01d"},
 ]
 msrestazure = [
-    {file = "msrestazure-0.6.3-py2.py3-none-any.whl", hash = "sha256:0ae7f903ff81631512beef39602c4104a8fe04cb7d166f28a1ec43c0f0985749"},
-    {file = "msrestazure-0.6.3.tar.gz", hash = "sha256:0ec9db93eeea6a6cf1240624a04f49cd8bbb26b98d84a63a8220cfda858c2a96"},
+    {file = "msrestazure-0.6.4-py2.py3-none-any.whl", hash = "sha256:3de50f56147ef529b31e099a982496690468ecef33f0544cb0fa0cfe1e1de5b9"},
+    {file = "msrestazure-0.6.4.tar.gz", hash = "sha256:a06f0dabc9a6f5efe3b6add4bd8fb623aeadacf816b7a35b0f89107e0544d189"},
 ]
 mypy = [
     {file = "mypy-0.782-cp35-cp35m-macosx_10_6_x86_64.whl", hash = "sha256:2c6cde8aa3426c1682d35190b59b71f661237d74b053822ea3d748e2c9578a7c"},
