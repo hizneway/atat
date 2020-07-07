@@ -254,10 +254,6 @@ jobs:
   deploy-staging:
     docker:
       - image: docker:18.06.0-ce-git
-        environment:
-          AZURE_REGISTRY: cloudzeropwdevregistry
-          RESOURCE_GROUP: cloudzero-pwdev-vpc
-          CLUSTER_NAME: cloudzero-pwdev-k8s
     steps:
       - deploy:
           namespace: staging
@@ -266,10 +262,6 @@ jobs:
   deploy-master:
     docker:
       - image: docker:18.06.0-ce-git
-        environment:
-          AZURE_REGISTRY: cloudzeropwdevregistry
-          RESOURCE_GROUP: cloudzero-pwdev-vpc
-          CLUSTER_NAME: cloudzero-pwdev-k8s
     steps:
       - deploy:
           namespace: master
