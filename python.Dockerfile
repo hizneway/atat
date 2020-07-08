@@ -1,4 +1,8 @@
-FROM cloudzeropwdevregistry.azurecr.io/rhelubi:8.2
+# Image source is provided using `--build-arg IMAGE=<some-image>`.
+# https://docs.docker.com/engine/reference/commandline/build/#options
+ARG IMAGE
+
+FROM $IMAGE
 
 # Removes the specified packages from the system along with any
 # packages depending on the packages being removed.

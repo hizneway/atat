@@ -1,4 +1,8 @@
-FROM cloudzeropwdevregistry.azurecr.io/rhel-py AS builder
+# Image source is provided using `--build-arg IMAGE=<some-image>`.
+# https://docs.docker.com/engine/reference/commandline/build/#options
+ARG IMAGE
+
+FROM $IMAGE as builder
 
 ARG CSP
 ARG CDN_URL=/static/assets/
@@ -53,7 +57,7 @@ RUN rm -rf ./static/fonts \
       && yarn build-prod
 
 ## NEW IMAGE
-FROM cloudzeropwdevregistry.azurecr.io/rhel-py
+FROM $IMAGE
 
 ### Very low chance of changing
 ###############################
