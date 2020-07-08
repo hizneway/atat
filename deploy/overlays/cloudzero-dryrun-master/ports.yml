@@ -5,15 +5,15 @@ metadata:
   name: atst-main
   annotations:
     # service.beta.kubernetes.io/azure-load-balancer-internal: "true"
-    service.beta.kubernetes.io/azure-load-balancer-internal-subnet: "cloudzero-pwdev-public"
+    service.beta.kubernetes.io/azure-load-balancer-internal-subnet: "cloudzero-dryrun-public"
 spec:
   loadBalancerIP: ""
   ports:
   - port: 80
-    targetPort: 9342
+    targetPort: 8342
     name: http
   - port: 443
-    targetPort: 9442
+    targetPort: 8442
     name: https
 ---
 apiVersion: v1
@@ -22,13 +22,13 @@ metadata:
   name: atst-auth
   annotations:
     # service.beta.kubernetes.io/azure-load-balancer-internal: "true"
-    service.beta.kubernetes.io/azure-load-balancer-internal-subnet: "cloudzero-pwdev-public"
+    service.beta.kubernetes.io/azure-load-balancer-internal-subnet: "cloudzero-dryrun-public"
 spec:
   loadBalancerIP: ""
   ports:
   - port: 80
-    targetPort: 9343
+    targetPort: 8343
     name: http
   - port: 443
-    targetPort: 9443
+    targetPort: 8443
     name: https
