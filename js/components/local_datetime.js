@@ -1,4 +1,4 @@
-import { format } from 'date-fns'
+import { format, parseISO } from 'date-fns'
 
 export default {
   name: 'local-datetime',
@@ -7,13 +7,13 @@ export default {
     timestamp: String,
     format: {
       type: String,
-      default: 'MMM D YYYY H:mm',
+      default: 'MMM d yyyy H:mm',
     },
   },
 
   computed: {
     displayTime: function () {
-      return format(this.timestamp, this.format)
+      return format(parseISO(this.timestamp), this.format)
     },
   },
 

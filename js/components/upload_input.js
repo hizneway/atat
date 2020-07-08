@@ -118,12 +118,12 @@ export default {
         .then(({ token, objectName }) => buildUploader(token, objectName))
     },
     getDownloadLink: async function (filename, objectName) {
-      const {
-        downloadLink,
-      } = await fetch(
-        `/task_orders/${this.portfolioId}/download_link?filename=${filename}&objectName=${objectName}`,
-        { credentials: 'include' }
-      ).then((r) => r.json())
+      let baseUrl = window.location.href
+      let relativeUrl = `/task_orders/${this.portfolioId}/download_link?filename=${filename}&objectName=${objectName}`
+      let url = new URL(relativeUrl, baseUrl)
+      const { downloadLink } = await fetch(url, {
+        credentials: 'include',
+      }).then((r) => r.json())
       return downloadLink
     },
   },

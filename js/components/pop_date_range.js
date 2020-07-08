@@ -85,11 +85,11 @@ export default {
 
   computed: {
     maxStartProp: function () {
-      return format(this.maxStartDate, 'YYYY-MM-DD')
+      return format(this.maxStartDate, 'yyyy-MM-dd')
     },
 
     minEndProp: function () {
-      return format(this.minEndDate, 'YYYY-MM-DD')
+      return format(this.minEndDate, 'yyyy-MM-dd')
     },
 
     valid: function () {
