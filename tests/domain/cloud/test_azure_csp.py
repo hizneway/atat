@@ -1092,13 +1092,13 @@ def test_get_reporting_data(mock_azure: AzureCloudProvider, mock_http_error_resp
         **csp_data,
     )
     with pytest.raises(ConnectionException):
-        mock_azure.get_reporting_data(payload)
+        mock_azure.get_reporting_data(payload, "token")
     with pytest.raises(ConnectionException):
-        mock_azure.get_reporting_data(payload)
+        mock_azure.get_reporting_data(payload, "token")
     with pytest.raises(UnknownServerException, match=r".*500 Server Error.*"):
-        mock_azure.get_reporting_data(payload)
+        mock_azure.get_reporting_data(payload, "token")
 
-    data: CostManagementQueryCSPResult = mock_azure.get_reporting_data(payload)
+    data: CostManagementQueryCSPResult = mock_azure.get_reporting_data(payload, "token")
 
     assert isinstance(data, CostManagementQueryCSPResult)
     assert data.name == "e82d0cda-2ffb-4476-a98a-425c83c216f9"
@@ -1130,7 +1130,8 @@ def test_get_reporting_data_malformed_payload(mock_azure: AzureCloudProvider):
             assert mock_azure.get_reporting_data(
                 CostManagementQueryCSPPayload(
                     from_date="foo", to_date="bar", **malformed_payload,
-                )
+                ),
+                "token",
             )
 
 
