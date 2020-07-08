@@ -8,6 +8,7 @@ from flask import current_app as app
 from atat.database import db
 from atat.domain.application_roles import ApplicationRoles
 from atat.domain.applications import Applications
+from atat.domain.environment_roles import EnvironmentRoles
 from atat.domain.csp.cloud import CloudProviderInterface
 from atat.domain.csp.cloud.exceptions import GeneralCSPException
 from atat.domain.csp.cloud.models import (
@@ -18,7 +19,6 @@ from atat.domain.csp.cloud.models import (
     UserRoleCSPPayload,
 )
 from atat.domain.csp.cloud.utils import generate_user_principal_name
-from atat.domain.environment_roles import EnvironmentRoles
 from atat.domain.environments import Environments
 from atat.domain.portfolios import Portfolios
 from atat.domain.task_orders import TaskOrders
@@ -213,11 +213,7 @@ def do_create_environment_role(csp: CloudProviderInterface, environment_role_id=
             role=role,
         )
         result = csp.create_user_role(payload)
-
-        env_role.cloud_id = result.id
-
-        db.session.add(env_role)
-        db.session.commit()
+        EnvironmentRoles.activate(env_role, result.id)
 
         app.logger.info("Created environment role %s", env_role.cloud_id)
 

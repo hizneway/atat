@@ -63,10 +63,10 @@ class Environments(object):
     def update_env_role(cls, environment, application_role, new_role):
         env_role = EnvironmentRoles.get_for_update(application_role.id, environment.id)
 
-        if env_role and new_role and (env_role.disabled or env_role.deleted):
+        if env_role and new_role and (env_role.is_disabled or env_role.deleted):
             raise DisabledError("environment_role", env_role.id)
 
-        if env_role and env_role.role != new_role and not env_role.disabled:
+        if env_role and env_role.role != new_role and not env_role.is_disabled:
             env_role.role = new_role
             db.session.add(env_role)
         elif not env_role and new_role:
@@ -77,7 +77,7 @@ class Environments(object):
             )
             db.session.add(env_role)
 
-        if env_role and not new_role and not env_role.disabled:
+        if env_role and not new_role and not env_role.is_disabled:
             EnvironmentRoles.disable(env_role.id)
 
         db.session.commit()
