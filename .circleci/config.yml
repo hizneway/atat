@@ -134,8 +134,6 @@ jobs:
   docker-build:
     docker:
       - image: docker:18.06.0-ce-git
-    environment:
-      AZURE_REGISTRY: cloudzeropwdevregistry
     steps:
       - checkout
       - setup_remote_docker:
