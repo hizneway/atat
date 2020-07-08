@@ -16,6 +16,31 @@ if [ -z "${K8S_NAMESPACE+is_set}" ]; then
   K8S_NAMESPACE=atat
 fi
 
+# Expected settings. Script will error if these are not provided.
+SETTINGS=(
+  VMSS_CLIENT_ID
+  KEYVAULT_NAME
+  TENANT_ID
+  CONTAINER_IMAGE
+)
+
+# Loop all expected settings. Track ones that are missing and build
+# concatenated list for envsubst. If any are missing, exit.
+MISSING_SETTINGS=()
+for envvar in "${SETTINGS[@]}"; do
+  if [ -z "${!envvar}" ]; then
+    MISSING_SETTINGS+=(${envvar})
+  fi
+done
+
+if [[ ${#MISSING_SETTINGS[@]} > 0 ]]; then
+  >&2 echo "The following variables need to be set:"
+  for missing in "${MISSING_SETTINGS[@]}"; do
+    >&2 echo $missing
+  done
+  exit 1
+fi
+
 echo "Creating job..."
 envsubst < deploy/shared/migration.yaml | $K8S_CMD -n ${K8S_NAMESPACE} apply -f -
 

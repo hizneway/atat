@@ -56,7 +56,7 @@ spec:
               usepodidentity: "false"
               usevmmanagedidentity: "true"
               vmmanagedidentityclientid: $VMSS_CLIENT_ID
-              keyvaultname: "cz-pwdev-keyvault"
+              keyvaultname: $KEYVAULT_NAME
               keyvaultobjectnames: "AZURE-STORAGE-KEY;MAIL-PASSWORD;PGPASSWORD;REDIS-PASSWORD;SECRET-KEY"
               keyvaultobjectaliases: "AZURE_STORAGE_KEY;MAIL_PASSWORD;PGPASSWORD;REDIS_PASSWORD;SECRET_KEY"
               keyvaultobjecttypes: "secret;secret;secret;secret;key"
