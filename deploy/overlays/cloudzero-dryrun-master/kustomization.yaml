@@ -1,6 +1,6 @@
 namespace: master
 bases:
-  - ../cloudzero-pwdev-staging
+  - ../cloudzero-dryrun-staging
 resources:
   - namespace.yml
 patchesStrategicMerge:
