@@ -17,27 +17,12 @@ if [ -z "${K8S_NAMESPACE+is_set}" ]; then
 fi
 
 # Expected settings. Script will error if these are not provided.
-SETTINGS=(
-  VMSS_CLIENT_ID
-  KEYVAULT_NAME
-  TENANT_ID
-  CONTAINER_IMAGE
-)
-
-# Loop all expected settings. Track ones that are missing and build
-# concatenated list for envsubst. If any are missing, exit.
-MISSING_SETTINGS=()
-for envvar in "${SETTINGS[@]}"; do
-  if [ -z "${!envvar}" ]; then
-    MISSING_SETTINGS+=(${envvar})
-  fi
-done
-
-if [[ ${#MISSING_SETTINGS[@]} > 0 ]]; then
+if [ -z "${VMSS_CLIENT_ID+is_set}" ] ||
+   [ -z "${KEYVAULT_NAME+is_set}" ] ||
+   [ -z "${TENANT_ID+is_set}" ] ||
+   [ -z "${CONTAINER_IMAGE+is_set}" ]; then
   >&2 echo "The following variables need to be set:"
-  for missing in "${MISSING_SETTINGS[@]}"; do
-    >&2 echo $missing
-  done
+  >&2 echo "VMSS_CLIENT_ID, KEYVAULT_NAME, TENANT_ID, CONTAINER_IMAGE"
   exit 1
 fi
 
