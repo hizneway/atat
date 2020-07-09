@@ -83,3 +83,6 @@ js/test_templates
 
 # vscode config files
 .vscode/
+
+# mac indexing
+**/*.DS_Store
