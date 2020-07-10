@@ -238,21 +238,11 @@ class TestIntegration:
 
 
 @pytest.mark.hybrid
-def test_get_reporting_data(csp, app, monkeypatch):
+def test_get_reporting_data(csp, app):
     """This test requires credentials for an app registration that has the
     "Invoice Section Reader" role for the invoice section scope being queried.
     """
 
-    def _override_source_tenant_creds(tenant_id):
-        return KeyVaultCredentials(
-            tenant_id=csp.azure.root_tenant_id,
-            tenant_sp_client_id=app.config["AZURE_HYBRID_REPORTING_CLIENT_ID"],
-            tenant_sp_key=app.config["AZURE_HYBRID_REPORTING_SECRET"],
-        )
-
-    monkeypatch.setattr(
-        csp.azure, "_source_tenant_creds", _override_source_tenant_creds
-    )
     from_date = pendulum.now().subtract(years=1).add(days=1).format("YYYY-MM-DD")
     to_date = pendulum.now().format("YYYY-MM-DD")
 

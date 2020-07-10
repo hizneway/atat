@@ -320,8 +320,8 @@ Configuration variables that are needed solely to run Hybrid tests are in the `[
 - `AZURE_BILLING_PROFILE_ID`: ID of the billing profile used for Cost Management queries with the Hybrid interface.
 - `AZURE_HYBRID_CLIENT_ID`: [Testing only] Client ID of an app registration in the hybrid tenant used in all tests except for portfolio provisioning
 - `AZURE_HYBRID_SECRET_KEY`: [Testing only] Secret key for the app registration associated with the `AZURE_HYBRID_CLIENT_ID`
-- `AZURE_HYBRID_REPORTING_CLIENT_ID`: [Testing only] Client ID of an app registration with an "Invoice Section Reader" role for the invoice section defined by AZURE_INVOICE_SECTION_ID
-- `AZURE_HYBRID_REPORTING_SECRET`: [Testing only] Secret key for the app registration associated with the `AZURE_HYBRID_REPORTING_CLIENT_ID`
+- `AZURE_HYBRID_REPORTING_CLIENT_ID`: Client ID of an app registration with an "Invoice Section Reader" role for the invoice section defined by AZURE_INVOICE_SECTION_ID
+- `AZURE_HYBRID_REPORTING_SECRET`: Secret key for the app registration associated with the `AZURE_HYBRID_REPORTING_CLIENT_ID`
 - `AZURE_HYBRID_TENANT_DOMAIN`: The domain of the hybrid tenant
 - `AZURE_HYBRID_TENANT_ID`: ID of the tenant used to store resources provisioned during Hybrid tests
 - `AZURE_INVOICE_SECTION_ID`: ID of the invoice section used for Cost Management queries with the Hybrid interface.
