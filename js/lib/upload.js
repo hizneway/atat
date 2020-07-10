@@ -1,7 +1,7 @@
 import { BlobServiceClient } from '@azure/storage-blob'
 import 'whatwg-fetch'
 
-class AzureUploader {
+export class AzureUploader {
   constructor(accountName, containerName, sasToken, objectName) {
     this.accountName = accountName
     this.containerName = containerName
@@ -41,12 +41,16 @@ export class MockUploader {
   }
 }
 
-export const buildUploader = (token, objectName) => {
-  const cloudProvider = process.env.CLOUD_PROVIDER || 'mock'
+export const buildUploader = (
+  cloudProvider = 'mock',
+  token,
+  objectName,
+  config
+) => {
   if (cloudProvider === 'azure') {
     return new AzureUploader(
-      process.env.AZURE_ACCOUNT_NAME,
-      process.env.AZURE_CONTAINER_NAME,
+      config.azureAccountName,
+      config.azureContainerName,
       token,
       objectName
     )
