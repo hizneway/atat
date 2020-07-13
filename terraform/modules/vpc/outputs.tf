@@ -5,13 +5,13 @@ output "subnet_list" {
 }
 
 
-output "address_space" { value=azurerm_virtual_network.vpc.address_space[0]}
+output "address_space" { value = azurerm_virtual_network.vpc.address_space[0] }
 
 output "subnet_address_prefixes" {
 
-value = {
-  for k, address_prefix in azurerm_subnet.subnet : k => address_prefix
-}
+  value = {
+    for k, address_prefix in azurerm_subnet.subnet : k => address_prefix
+  }
 
 }
 
