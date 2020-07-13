@@ -212,6 +212,12 @@ class TestIntegration:
 
         assert env_role.cloud_id
 
+    @pytest.mark.depends(on=["environment_role"])
+    def test_hybrid_disable_user(self, csp, user, tenant_id, env_role):
+        env_role_cloud_id = env_role.cloud_id
+        disable_user_result = csp.azure.disable_user(tenant_id, env_role_cloud_id)
+        assert disable_user_result["id"] == env_role_cloud_id
+
 
 @pytest.mark.hybrid
 def test_get_reporting_data(csp, app):
