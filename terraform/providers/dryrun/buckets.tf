@@ -19,15 +19,15 @@ module "task_order_bucket" {
 # existing until TF is run. If this bucket is private, you would
 # not be able to access it when running TF without being on a VPN.
 module "tf_state" {
-  source       = "../../modules/bucket"
-  service_name = "cloudzeroddryruntfstate" # change for dry run
-  owner        = var.owner
-  name         = var.name
-  environment  = var.environment
-  region       = var.region
-  policy       = "Deny"
-  subnet_ids   = []
-  whitelist    = var.storage_admin_whitelist
-  account_kind = "Storage"
+  source                 = "../../modules/bucket"
+  service_name           = "cloudzeroddryruntfstate" # change for dry run
+  owner                  = var.owner
+  name                   = var.name
+  environment            = var.environment
+  region                 = var.region
+  policy                 = "Deny"
+  subnet_ids             = []
+  whitelist              = var.storage_admin_whitelist
+  account_kind           = "Storage"
   storage_container_name = var.tf_state_storage_container_name
 }
