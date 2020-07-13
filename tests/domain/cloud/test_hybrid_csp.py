@@ -36,6 +36,19 @@ from tests.factories import (
 )
 
 
+@pytest.fixture(scope="session")
+def csp(app):
+    csp = CSP(
+        "hybrid",
+        app.config,
+        with_delay=False,
+        with_failure=False,
+        with_authorization=False,
+    ).cloud
+
+    return csp
+
+
 def _create_active_taskorder(factory: TaskOrderFactory, portfolio):
     """
     Since some of the fixtures in this module are scoped to the test session
@@ -54,49 +67,6 @@ def _create_active_taskorder(factory: TaskOrderFactory, portfolio):
         signed_at=yesterday,
         clins=[CLINFactory.create(start_date=yesterday, end_date=future)],
     )
-
-
-@pytest.fixture(scope="function")
-def portfolio(csp, app):
-    owner = UserFactory.create()
-    portfolio = PortfolioFactory.create(
-        owner=owner,
-        csp_data={
-            "tenant_id": csp.mock_tenant_id,
-            "domain_name": app.config["AZURE_HYBRID_TENANT_DOMAIN"],
-            "root_management_group_name": csp.hybrid_tenant_id,
-        },
-    )
-
-    _create_active_taskorder(TaskOrderFactory, portfolio)
-
-    return portfolio
-
-
-@pytest.fixture(scope="function")
-def csp(app):
-    csp = CSP(
-        "hybrid",
-        app.config,
-        with_delay=False,
-        with_failure=False,
-        with_authorization=False,
-    ).cloud
-    csp.mock_tenant_id = str(uuid4())
-
-    csp.azure.create_tenant_creds(
-        csp.mock_tenant_id,
-        KeyVaultCredentials(
-            root_tenant_id=csp.azure.root_tenant_id,
-            root_sp_client_id=csp.azure.client_id,
-            root_sp_key=csp.azure.secret_key,
-            tenant_id=csp.hybrid_tenant_id,
-            tenant_sp_client_id=app.config["AZURE_HYBRID_CLIENT_ID"],
-            tenant_sp_key=app.config["AZURE_HYBRID_SECRET_KEY"],
-        ),
-    )
-
-    return csp
 
 
 @pytest.mark.hybrid
@@ -137,18 +107,6 @@ class TestIntegration:
     @pytest.fixture(scope="session")
     def environment(self, application):
         return EnvironmentFactory.create(application=application, cloud_id=None)
-
-    @pytest.fixture(scope="session")
-    def csp(self, app):
-        csp = CSP(
-            "hybrid",
-            app.config,
-            with_delay=False,
-            with_failure=False,
-            with_authorization=False,
-        ).cloud
-
-        return csp
 
     @pytest.fixture(scope="session")
     def state_machine(self, app, csp, portfolio):
