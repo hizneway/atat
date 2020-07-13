@@ -310,18 +310,20 @@ def remove_bad_crl(out_dir, crl_location):
 def log_error(logger, error_string, crl_location):
     if logger:
         logger.error(
-            f"{error_string}: Error downloading {crl_location}, removing file and continuing anyway"
+            "%s: Error downloading , removing file and continuing anyway",
+            error_string,
+            crl_location,
         )
 
 
 def refresh_crl(out_dir, target_dir, crl_uri, logger):
-    logger.info("updating CRL from {}".format(crl_uri))
+    logger.info("updating CRL from %s", crl_uri)
     try:
         was_updated, crl_path = write_crl(out_dir, target_dir, crl_uri)
         if was_updated:
-            logger.info("successfully synced CRL from {}".format(crl_uri))
+            logger.info("successfully synced CRL from %s", crl_uri)
         else:
-            logger.info("no updates for CRL from {}".format(crl_uri))
+            logger.info("no updates for CRL from %s")
 
         return crl_path
     except requests.exceptions.ChunkedEncodingError:

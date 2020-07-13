@@ -38,6 +38,8 @@ from .models import (
     PoliciesCSPResult,
     PrincipalAdminRoleCSPPayload,
     PrincipalAdminRoleCSPResult,
+    PrincipalAppGraphApiPermissionsCSPPayload,
+    PrincipalAppGraphApiPermissionsCSPResult,
     ProductPurchaseCSPPayload,
     ProductPurchaseCSPResult,
     ProductPurchaseVerificationCSPPayload,
@@ -483,14 +485,16 @@ class MockCloudProvider(CloudProviderInterface):
         self._maybe_raise(self.UNAUTHORIZED_RATE, GeneralCSPException)
 
         return ApplicationCSPResult(
-            id=f"{AZURE_MGMNT_PATH}{payload.management_group_name}"
+            id=f"{AZURE_MGMNT_PATH}{payload.management_group_name}",
+            name=payload.management_group_name,
         )
 
     def create_environment(self, payload: EnvironmentCSPPayload):
         self._maybe_raise(self.UNAUTHORIZED_RATE, GeneralCSPException)
 
         return EnvironmentCSPResult(
-            id=f"{AZURE_MGMNT_PATH}{payload.management_group_name}"
+            id=f"{AZURE_MGMNT_PATH}{payload.management_group_name}",
+            name=payload.management_group_name,
         )
 
     def create_user(self, payload: UserCSPPayload):
@@ -541,3 +545,12 @@ class MockCloudProvider(CloudProviderInterface):
         return PoliciesCSPResult(
             policy_assignment_id=f"{AZURE_MGMNT_PATH}{payload.root_management_group_name}/providers/Microsoft.Authorization/policyAssignments/Default JEDI Policy Set",
         )
+
+    def create_principal_app_graph_api_permissions(
+        self, payload: PrincipalAppGraphApiPermissionsCSPPayload
+    ) -> PrincipalAppGraphApiPermissionsCSPResult:
+        self._maybe_raise(self.NETWORK_FAILURE_PCT, self.NETWORK_EXCEPTION)
+        self._maybe_raise(self.SERVER_FAILURE_PCT, self.SERVER_EXCEPTION)
+        self._maybe_raise(self.UNAUTHORIZED_RATE, self.AUTHORIZATION_EXCEPTION)
+
+        return PrincipalAppGraphApiPermissionsCSPResult()

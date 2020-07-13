@@ -3,7 +3,7 @@ from unittest.mock import patch
 import pytest
 
 from atat.domain.environment_roles import EnvironmentRoles
-from atat.models import EnvironmentRole, ApplicationRoleStatus
+from atat.models import EnvironmentRole, ApplicationRoleStatus, EnvironmentRoleStatus
 
 from tests.factories import *
 
@@ -39,6 +39,19 @@ def test_get(application_role, environment):
     assert environment_role
     assert environment_role.application_role == application_role
     assert environment_role.environment == environment
+
+
+def test_activate(application_role, environment):
+    role = EnvironmentRoleFactory.create(
+        application_role=application_role, environment=environment
+    )
+    assert role.cloud_id is None
+    assert role.status == EnvironmentRoleStatus.PENDING
+
+    EnvironmentRoles.activate(role, "123")
+
+    assert role.cloud_id == "123"
+    assert role.status == EnvironmentRoleStatus.ACTIVE
 
 
 def test_get_by_user_and_environment(application_role, environment):
@@ -86,10 +99,10 @@ class Test_disable:
         environment_role = EnvironmentRoleFactory.create(
             application_role=application_role,
             environment=environment,
-            status=EnvironmentRole.Status.COMPLETED,
+            status=EnvironmentRoleStatus.ACTIVE,
         )
         EnvironmentRoles.disable(environment_role.id)
-        assert environment_role.disabled
+        assert environment_role.is_disabled
 
     @patch("atat.domain.environment_roles.app.csp.cloud.disable_user")
     def test_has_cloud_id(self, disable_user, app):
@@ -167,6 +180,6 @@ class TestPendingCreation:
     def test_disabled_env_role(self):
         appr = ApplicationRoleFactory.create(cloud_id="123")
         envr = EnvironmentRoleFactory.create(
-            application_role=appr, status=EnvironmentRole.Status.DISABLED
+            application_role=appr, status=EnvironmentRoleStatus.DISABLED
         )
         assert EnvironmentRoles.get_pending_creation() == []

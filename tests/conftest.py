@@ -115,7 +115,14 @@ def db(app, request):
     _db.drop_all()
 
 
-@pytest.fixture(scope="function", autouse=True)
+def determine_session_scope(fixture_name, config):
+    if config.getoption("--hybrid", None):
+        return "session"
+    else:
+        return "function"
+
+
+@pytest.fixture(scope=determine_session_scope, autouse=True)
 def session(db, request):
     """Creates a new database session for a test."""
     connection = db.engine.connect()

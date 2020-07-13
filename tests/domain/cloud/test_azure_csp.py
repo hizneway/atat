@@ -10,6 +10,7 @@ from tests.mock_azure import mock_azure, MOCK_ACCESS_TOKEN  # pylint: disable=W0
 from tests.mock_azure import AZURE_CONFIG
 
 from atat.domain.csp.cloud import AzureCloudProvider
+from atat.domain.csp.cloud.azure_cloud_provider import log_and_raise_exceptions
 from atat.domain.csp.cloud.exceptions import (
     AuthenticationException,
     ConnectionException,
@@ -44,6 +45,7 @@ from atat.domain.csp.cloud.models import (
     PoliciesCSPResult,
     PrincipalAdminRoleCSPPayload,
     PrincipalAdminRoleCSPResult,
+    PrincipalAppGraphApiPermissionsCSPPayload,
     ProductPurchaseCSPPayload,
     ProductPurchaseCSPResult,
     ProductPurchaseVerificationCSPPayload,
@@ -116,11 +118,46 @@ def unmocked_cloud_provider():
     return azure_cloud_provider
 
 
+class TestLogAndRaiseExceptions:
+    def test_formats_message_and_includes_response_body(
+        self, mock_azure: AzureCloudProvider, mock_logger
+    ):
+        @log_and_raise_exceptions
+        def some_func(mock_azure):
+            raise mock_azure.sdk.requests.exceptions.HTTPError(
+                "500 Error oh no.",
+                response=mock_requests_response(status=500, json_data={"some": "json"}),
+            )
+
+        with pytest.raises(UnknownServerException):
+            some_func(mock_azure)
+        assert (
+            mock_logger.messages[0]
+            == '500 error calling some_func\n\nResponse Body:\n{"some": "json"}'
+        )
+
+    def test_handles_empty_response(self, mock_azure: AzureCloudProvider, mock_logger):
+        @log_and_raise_exceptions
+        def some_func(mock_azure):
+            raise mock_azure.sdk.requests.exceptions.HTTPError(
+                "500 Error oh no.", response=mock_requests_response(status=500),
+            )
+
+        with pytest.raises(UnknownServerException):
+            some_func(mock_azure)
+        assert mock_logger.messages[0] == "500 error calling some_func"
+
+
 def test_create_environment_succeeds(mock_azure: AzureCloudProvider, monkeypatch):
     monkeypatch.setattr(
         mock_azure,
         "_create_management_group",
-        Mock(return_value={"id": "management/group/path/TestName"}),
+        Mock(
+            return_value={
+                "id": "management/group/path/TestName",
+                "name": "0000000-0000-0000-0000-000000000000",
+            }
+        ),
     )
     payload = EnvironmentCSPPayload(
         tenant_id="1234",
@@ -142,7 +179,12 @@ def test_create_application_succeeds(mock_azure: AzureCloudProvider, monkeypatch
     monkeypatch.setattr(
         mock_azure,
         "_create_management_group",
-        Mock(return_value={"id": management_group_id}),
+        Mock(
+            return_value={
+                "id": management_group_id,
+                "name": "0000000-0000-0000-0000-000000000000",
+            }
+        ),
     )
 
     result: ApplicationCSPResult = mock_azure.create_application(payload)
@@ -155,7 +197,7 @@ def test_create_initial_mgmt_group_succeeds(
     payload = InitialMgmtGroupCSPPayload(
         tenant_id="123", display_name="A Management Group"
     )
-    management_group_id = f"management/group/path/{payload.management_group_name}"
+    management_group_id = f"/providers/Microsoft.Management/managementGroups/{payload.management_group_name}"
     monkeypatch.setattr(
         mock_azure,
         "_create_management_group",
@@ -1050,13 +1092,13 @@ def test_get_reporting_data(mock_azure: AzureCloudProvider, mock_http_error_resp
         **csp_data,
     )
     with pytest.raises(ConnectionException):
-        mock_azure.get_reporting_data(payload)
+        mock_azure.get_reporting_data(payload, "token")
     with pytest.raises(ConnectionException):
-        mock_azure.get_reporting_data(payload)
+        mock_azure.get_reporting_data(payload, "token")
     with pytest.raises(UnknownServerException, match=r".*500 Server Error.*"):
-        mock_azure.get_reporting_data(payload)
+        mock_azure.get_reporting_data(payload, "token")
 
-    data: CostManagementQueryCSPResult = mock_azure.get_reporting_data(payload)
+    data: CostManagementQueryCSPResult = mock_azure.get_reporting_data(payload, "token")
 
     assert isinstance(data, CostManagementQueryCSPResult)
     assert data.name == "e82d0cda-2ffb-4476-a98a-425c83c216f9"
@@ -1088,7 +1130,8 @@ def test_get_reporting_data_malformed_payload(mock_azure: AzureCloudProvider):
             assert mock_azure.get_reporting_data(
                 CostManagementQueryCSPPayload(
                     from_date="foo", to_date="bar", **malformed_payload,
-                )
+                ),
+                "token",
             )
 
 
@@ -1289,10 +1332,15 @@ def test_update_active_directory_user_password_profile(
     assert result
 
 
-def test_create_user(mock_azure: AzureCloudProvider):
-    mock_azure.sdk.requests.post.return_value = mock_requests_response(
-        json_data={"invitedUser": {"id": "id"}}
-    )
+def test_create_user(mock_azure: AzureCloudProvider, mock_http_error_response):
+    mock_result = mock_requests_response(json_data={"invitedUser": {"id": "id"}})
+
+    mock_azure.sdk.requests.post.side_effect = [
+        mock_azure.sdk.requests.exceptions.ConnectionError,
+        mock_azure.sdk.requests.exceptions.Timeout,
+        mock_http_error_response,
+        mock_result,
+    ]
 
     payload = UserCSPPayload(
         tenant_id=uuid4().hex,
@@ -1302,6 +1350,13 @@ def test_create_user(mock_azure: AzureCloudProvider):
         password="asdfghjkl",  # pragma: allowlist secret
     )
 
+    with pytest.raises(ConnectionException):
+        mock_azure.create_user(payload)
+    with pytest.raises(ConnectionException):
+        mock_azure.create_user(payload)
+    with pytest.raises(UnknownServerException, match=r".*500 Server Error.*"):
+        mock_azure.create_user(payload)
+
     result = mock_azure.create_user(payload)
     assert result.id == "id"
 
@@ -1309,7 +1364,11 @@ def test_create_user(mock_azure: AzureCloudProvider):
 def test_create_user_role(mock_azure: AzureCloudProvider):
 
     mock_result_create = mock_requests_response(json_data={"id": "id"})
-    mock_azure.sdk.requests.put.return_value = mock_result_create
+    mock_azure.sdk.requests.put.side_effect = [
+        mock_azure.sdk.requests.exceptions.ConnectionError,
+        mock_azure.sdk.requests.exceptions.Timeout,
+        mock_result_create,
+    ]
 
     payload = UserRoleCSPPayload(
         tenant_id=uuid4().hex,
@@ -1317,7 +1376,10 @@ def test_create_user_role(mock_azure: AzureCloudProvider):
         management_group_id=str(uuid4()),
         role="owner",
     )
-
+    with pytest.raises(ConnectionException):
+        mock_azure.create_user_role(payload)
+    with pytest.raises(ConnectionException):
+        mock_azure.create_user_role(payload)
     result = mock_azure.create_user_role(payload)
 
     assert result.id == "id"
@@ -1325,8 +1387,7 @@ def test_create_user_role(mock_azure: AzureCloudProvider):
 
 def test_create_user_role_failure(mock_azure: AzureCloudProvider):
 
-    mock_result_create = mock_requests_response(ok=False)
-    mock_azure.sdk.requests.put.return_value = mock_result_create
+    mock_azure.sdk.requests.put.side_effect = [mock_requests_response(ok=False)]
 
     payload = UserRoleCSPPayload(
         tenant_id=uuid4().hex,
@@ -1726,3 +1787,110 @@ def test_activate_and_return_billing_admin_role_id(mock_azure, monkeypatch):
 
     mock_get_billing_admin_role_template_id.assert_called_once_with(token)
     mock_activate_billing_admin_role.assert_called_once_with(token, template_id)
+
+
+class TestExtractServicePrincipalFromQuery:
+    def test_succeeds(self, mock_azure):
+        response = mock_requests_response(
+            json_data={"value": ["service_principal_object"]}
+        )
+        sp = mock_azure._extract_service_principal_from_query(response)
+        assert sp == "service_principal_object"
+
+    def test_throws_error(self, mock_azure):
+        response = mock_requests_response(json_data={"value": []})
+        with pytest.raises(ResourceProvisioningError):
+            mock_azure._extract_service_principal_from_query(response)
+
+
+class TestExtractAppRoleFromServicePrincipal:
+    def test_finds_target(self, mock_azure):
+        service_principal = {
+            "appRoles": [{"value": "Another.Value"}, {"value": "Target.Value"}]
+        }
+        ar = mock_azure._extract_app_role_from_service_principal(
+            service_principal, "Target.Value"
+        )
+        assert ar == {"value": "Target.Value"}
+
+    def test_throws_error_for_empty_list(self, mock_azure):
+        service_principal = {"appRoles": []}
+        with pytest.raises(ResourceProvisioningError):
+            mock_azure._extract_app_role_from_service_principal(
+                service_principal, "Target.Value"
+            )
+
+    def test_throws_error_for_missing_target(self, mock_azure):
+        service_principal = {"appRoles": [{"value": "Another.Value"}]}
+        with pytest.raises(ResourceProvisioningError):
+            mock_azure._extract_app_role_from_service_principal(
+                service_principal, "Target.Value"
+            )
+
+
+def test_create_principal_app_graph_api_permissions(
+    mock_azure, monkeypatch, mock_http_error_response
+):
+    monkeypatch.setattr(
+        mock_azure,
+        "_get_graph_sp_and_user_invite_app_role_ids",
+        Mock(return_value=("graph_api_sp_object_id", "user_invite_app_role_id")),
+    )
+
+    mock_azure._get_user_principal_token_for_scope = Mock(
+        return_value=MOCK_ACCESS_TOKEN
+    )
+
+    mock_azure.sdk.requests.post.side_effect = [
+        mock_azure.sdk.requests.exceptions.ConnectionError,
+        mock_azure.sdk.requests.exceptions.Timeout,
+        mock_http_error_response,
+        mock_requests_response(status=201),
+    ]
+
+    payload = PrincipalAppGraphApiPermissionsCSPPayload(
+        tenant_id="tenant_id", principal_id="principal_id"
+    )
+
+    with pytest.raises(ConnectionException):
+        mock_azure.create_principal_app_graph_api_permissions(payload)
+    with pytest.raises(ConnectionException):
+        mock_azure.create_principal_app_graph_api_permissions(payload)
+    with pytest.raises(UnknownServerException, match=r".*500 Server Error.*"):
+        mock_azure.create_principal_app_graph_api_permissions(payload)
+
+    assert mock_azure.create_principal_app_graph_api_permissions(payload)
+
+
+def test_get_graph_sp_and_user_invite_app_role_ids(
+    mock_azure, mock_http_error_response
+):
+    mock_result = mock_requests_response(
+        json_data={
+            "value": [
+                {
+                    "id": "service_principal_object_id",
+                    "appRoles": [
+                        {"id": "app_role_id", "value": "Directory.ReadWrite.All"}
+                    ],
+                }
+            ]
+        }
+    )
+    mock_azure.sdk.requests.get.side_effect = [
+        mock_azure.sdk.requests.exceptions.ConnectionError,
+        mock_azure.sdk.requests.exceptions.Timeout,
+        mock_http_error_response,
+        mock_result,
+    ]
+    with pytest.raises(ConnectionException):
+        mock_azure._get_graph_sp_and_user_invite_app_role_ids("token")
+    with pytest.raises(ConnectionException):
+        mock_azure._get_graph_sp_and_user_invite_app_role_ids("token")
+    with pytest.raises(UnknownServerException, match=r".*500 Server Error.*"):
+        mock_azure._get_graph_sp_and_user_invite_app_role_ids("token")
+
+    assert (
+        "service_principal_object_id",
+        "app_role_id",
+    ) == mock_azure._get_graph_sp_and_user_invite_app_role_ids("token")

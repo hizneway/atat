@@ -1,6 +1,29 @@
 version: 2.1
 
 commands:
+  azlogin:
+    steps:
+      - run:
+          name: Install Azure CLI
+          command: |
+            apk update
+            apk add bash py3-pip
+            apk add --virtual=build \
+              linux-headers gcc libffi-dev musl-dev openssl-dev python3-dev make
+            pip3 --no-cache-dir install -U pip
+            pip3 --no-cache-dir install azure-cli
+            apk del --purge build
+      - run:
+          name: Login to Azure CLI
+          shell: /bin/sh
+          command: |
+            az login \
+              --service-principal \
+              --tenant $AZURE_SP_TENANT \
+              --password $AZURE_SP_PASSWORD \
+              --username $AZURE_SP
+            echo "Successfully logged in to Azure CLI."
+            az acr login --name $AZURE_REGISTRY | grep "Succeeded"
   cache_docker_image:
     steps:
       - run:
@@ -71,27 +94,7 @@ commands:
           docker_layer_caching: true
           version: 18.06.0-ce
       - restore_docker_image
-      - run:
-          name: Install Azure CLI
-          command: |
-            apk update
-            apk add bash py3-pip
-            apk add --virtual=build \
-              linux-headers gcc libffi-dev musl-dev openssl-dev python3-dev make
-            pip3 --no-cache-dir install -U pip
-            pip3 --no-cache-dir install azure-cli
-            apk del --purge build
-      - run:
-          name: Login to Azure CLI
-          shell: /bin/sh
-          command: |
-            az login \
-              --service-principal \
-              --tenant $AZURE_SP_TENANT \
-              --password $AZURE_SP_PASSWORD \
-              --username $AZURE_SP
-            echo "Successfully logged in to Azure CLI."
-            az acr login --name $AZURE_REGISTRY | grep "Succeeded"
+      - azlogin
       - run:
           name: Install kubectl
           command: |
@@ -136,11 +139,12 @@ jobs:
       - setup_remote_docker:
           docker_layer_caching: true
           version: 18.06.0-ce
+      - azlogin
       - run:
           name: Build image
           command: |
-            docker build . --build-arg GIT_SHA=${CIRCLE_SHA1} --build-arg AZURE_ACCOUNT_NAME=$AZURE_ACCOUNT_NAME --build-arg CSP=azure -f ./Dockerfile -t atat:builder --target builder
-            docker build . --build-arg GIT_SHA=${CIRCLE_SHA1} --build-arg AZURE_ACCOUNT_NAME=$AZURE_ACCOUNT_NAME --build-arg CSP=azure -f ./Dockerfile -t atat:latest
+            docker build . --build-arg GIT_SHA=${CIRCLE_SHA1} --build-arg IMAGE=${AZURE_REGISTRY}.azurecr.io/rhel-py -f ./Dockerfile -t atat:builder --target builder
+            docker build . --build-arg GIT_SHA=${CIRCLE_SHA1} --build-arg IMAGE=${AZURE_REGISTRY}.azurecr.io/rhel-py -f ./Dockerfile -t atat:latest
       - cache_docker_image
 
   test:
@@ -254,10 +258,6 @@ jobs:
   deploy-staging:
     docker:
       - image: docker:18.06.0-ce-git
-        environment:
-          AZURE_REGISTRY: cloudzeropwdevregistry
-          RESOURCE_GROUP: cloudzero-pwdev-vpc
-          CLUSTER_NAME: cloudzero-pwdev-k8s
     steps:
       - deploy:
           namespace: staging
@@ -266,10 +266,6 @@ jobs:
   deploy-master:
     docker:
       - image: docker:18.06.0-ce-git
-        environment:
-          AZURE_REGISTRY: cloudzeropwdevregistry
-          RESOURCE_GROUP: cloudzero-pwdev-vpc
-          CLUSTER_NAME: cloudzero-pwdev-k8s
     steps:
       - deploy:
           namespace: master

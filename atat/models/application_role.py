@@ -12,9 +12,9 @@ from atat.models.mixins.auditable import record_permission_sets_updates
 
 
 class Status(Enum):
+    PENDING = "pending"
     ACTIVE = "active"
     DISABLED = "disabled"
-    PENDING = "pending"
 
 
 application_roles_permission_sets = Table(

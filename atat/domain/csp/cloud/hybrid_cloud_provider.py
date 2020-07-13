@@ -28,6 +28,8 @@ class HybridCloudProvider(object):
         self.mock = mock
         self.hybrid_tenant_id = config["AZURE_HYBRID_TENANT_ID"]
         self.domain_name = config["AZURE_HYBRID_TENANT_DOMAIN"]
+        self.hybrid_reporting_client_id = config["AZURE_HYBRID_REPORTING_CLIENT_ID"]
+        self.hybrid_reporting_secret_key = config["AZURE_HYBRID_REPORTING_SECRET"]
 
     def create_tenant(self, payload: TenantCSPPayload) -> TenantCSPResult:
         """In this step, we store a tenant ID with a username and password
@@ -158,6 +160,11 @@ class HybridCloudProvider(object):
     ) -> AdminRoleDefinitionCSPResult:
         return self.azure.create_admin_role_definition(payload)
 
+    def create_principal_app_graph_api_permissions(
+        self, payload: PrincipalAppGraphApiPermissionsCSPPayload
+    ) -> PrincipalAppGraphApiPermissionsCSPResult:
+        return self.azure.create_principal_app_graph_api_permissions(payload)
+
     def create_principal_admin_role(
         self, payload: PrincipalAdminRoleCSPPayload
     ) -> PrincipalAdminRoleCSPResult:
@@ -271,10 +278,15 @@ class HybridCloudProvider(object):
             "AZURE_INVOICE_SECTION_ID",
         )(self.azure.config)
 
-        isi = f"/providers/Microsoft.Billing/billingAccounts/{billing_account_id}/billingProfiles/{billing_profile_id}/invoiceSections/{invoice_section_id}"
-        payload.invoice_section_id = isi
+        payload.invoice_section_id = f"/providers/Microsoft.Billing/billingAccounts/{billing_account_id}/billingProfiles/{billing_profile_id}/invoiceSections/{invoice_section_id}"
+        payload.tenant_id = self.azure.root_tenant_id
 
-        return self.azure.get_reporting_data(payload)
+        hybrid_reporting_token = self.azure._get_service_principal_token(
+            self.azure.root_tenant_id,
+            self.hybrid_reporting_client_id,
+            self.hybrid_reporting_secret_key,
+        )
+        return self.azure.get_reporting_data(payload, token=hybrid_reporting_token)
 
     def create_subscription(self, payload: SubscriptionCreationCSPPayload):
         # TODO: This will need to be updated to use the azure function.  The same with

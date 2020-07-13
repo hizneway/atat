@@ -74,6 +74,20 @@ variable "min_count" {
 
 variable "vpc_address_space" {}
 
+variable "client_id" {
+  type        = string
+  description = "The client ID for the Service Principal associated with the AKS cluster."
+}
+
+variable "client_secret" {
+  type        = string
+  description = "The client secret for the Service Principal associated with the AKS cluster."
+}
+
+variable "client_object_id" {
+  type        = string
+  description = "The client object_id for the Service Principal associated with the AKS cluster."
+}
 
 
 variable "vnet_id" {

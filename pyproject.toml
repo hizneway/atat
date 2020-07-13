@@ -57,6 +57,7 @@ beautifulsoup4 = "*"
 mypy = "*"
 rope = "*"
 black = "^19.10b0"
+pytest-depends = "^1.0.1"
 
 
 [tool.black]

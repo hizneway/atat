@@ -97,7 +97,7 @@ def current_user_setup(user):
     session["user_id"] = user.id
     session["last_login"] = user.last_login
     app.session_limiter.on_login(user)
-    app.logger.info(f"authentication succeeded for user with EDIPI {user.dod_id}")
+    app.logger.info("authentication succeeded for user with EDIPI %s", user.dod_id)
     Users.update_last_login(user)
 
 
@@ -111,7 +111,7 @@ def login_redirect():
         current_user_setup(user)
     except UnauthenticatedError as err:
         app.logger.info(
-            f"authentication failed for subject distinguished name {_client_s_dn()}"
+            "authentication failed for subject distinguished name %s", _client_s_dn()
         )
         raise err
 

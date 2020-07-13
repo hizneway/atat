@@ -195,6 +195,14 @@ class BillingProfileTenantAccessCSPResult(AliasModel):
         }
 
 
+class PrincipalAppGraphApiPermissionsCSPPayload(BaseCSPPayload):
+    principal_id: str
+
+
+class PrincipalAppGraphApiPermissionsCSPResult(AliasModel):
+    pass
+
+
 class TaskOrderBillingCreationCSPPayload(BaseCSPPayload):
     billing_account_name: str
     billing_profile_name: str
@@ -372,6 +380,7 @@ class ManagementGroupCSPPayload(AliasModel):
 
 class ManagementGroupCSPResponse(AliasModel):
     id: str
+    name: str
 
 
 class ManagementGroupGetCSPPayload(BaseCSPPayload):
@@ -395,14 +404,16 @@ class InitialMgmtGroupCSPPayload(ManagementGroupCSPPayload):
 
 
 class InitialMgmtGroupCSPResult(AliasModel):
-    root_management_group_id: str
     root_management_group_name: str
 
     class Config:
         fields = {
-            "root_management_group_id": "id",
             "root_management_group_name": "name",
         }
+
+    @property
+    def root_management_group_id(self):
+        return f"/providers/Microsoft.Management/managementGroups/{self.root_management_group_name}"
 
 
 class InitialMgmtGroupVerificationCSPPayload(ManagementGroupGetCSPPayload):
@@ -689,6 +700,8 @@ __all__ = [
     "PoliciesCSPResult",
     "PrincipalAdminRoleCSPPayload",
     "PrincipalAdminRoleCSPResult",
+    "PrincipalAppGraphApiPermissionsCSPPayload",
+    "PrincipalAppGraphApiPermissionsCSPResult",
     "ProductPurchaseCSPPayload",
     "ProductPurchaseCSPResult",
     "ProductPurchaseVerificationCSPPayload",

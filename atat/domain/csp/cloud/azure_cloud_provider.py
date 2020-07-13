@@ -2,7 +2,7 @@ import json
 import time
 from functools import wraps
 from secrets import token_hex, token_urlsafe
-from typing import Dict, Optional
+from typing import Dict, Optional, Tuple
 from uuid import uuid4
 
 from flask import current_app as app
@@ -47,6 +47,8 @@ from .models import (
     PoliciesCSPResult,
     PrincipalAdminRoleCSPPayload,
     PrincipalAdminRoleCSPResult,
+    PrincipalAppGraphApiPermissionsCSPPayload,
+    PrincipalAppGraphApiPermissionsCSPResult,
     ProductPurchaseCSPPayload,
     ProductPurchaseCSPResult,
     ProductPurchaseVerificationCSPPayload,
@@ -85,6 +87,12 @@ from .policy import AzurePolicyManager
 AZURE_SKU_ID = "0001"  # probably a static sku specific to ATAT/JEDI
 REMOTE_ROOT_ROLE_DEF_ID = "/providers/Microsoft.Authorization/roleDefinitions/00000000-0000-4000-8000-000000000000"
 
+# This identifier is the application id of the Graph API. Azure automatically
+# creates a service principal for this application in each tenant. You can find
+# this application in the portal by going to "Enterprise Applications",
+# setting the "Application Type" to "all" and searching for "Microsoft Graph".
+GRAPH_API_APPLICATION_ID = "00000003-0000-0000-c000-000000000000"
+
 DEFAULT_POLICY_SET_DEFINITION_NAME = "Default JEDI Policy Set"
 
 
@@ -112,10 +120,28 @@ def log_and_raise_exceptions(func):
             raise ConnectionException(message)
 
         except cloud.sdk.requests.exceptions.HTTPError as exc:
-            status_code = str(exc)[:3]
-            message = f"Error calling {func.__name__}"
-            app.logger.error(status_code, message, exc_info=1)
-            raise UnknownServerException(status_code, f"{message}. {str(exc)}")
+            exc_string = str(exc)
+            status_code = exc_string[:3]
+            message = f"error calling {func.__name__}"
+
+            log_format = "%s %s"
+            log_values = [status_code, message]
+
+            try:
+                response_body = exc.response.json()
+                if response_body:
+                    log_format += "\n\nResponse Body:\n%s"
+                    log_values.append(json.dumps(response_body))
+            # No response or body is not parsable to JSON
+            except (AttributeError, json.decoder.JSONDecodeError):
+                pass
+
+            app.logger.error(
+                log_format, *log_values, exc_info=1,
+            )
+            raise UnknownServerException(
+                status_code, f"{message.capitalize()}. {exc_string}"
+            )
 
     return wrapped_func
 
@@ -195,8 +221,7 @@ class AzureCloudProvider(CloudProviderInterface):
         )
 
         result.raise_for_status()
-        result_value = result.json()
-        return result_value
+        return result.json()
 
     @log_and_raise_exceptions
     def get_secret(self, secret_key):
@@ -286,27 +311,71 @@ class AzureCloudProvider(CloudProviderInterface):
     def _create_management_group(
         self, management_group_id, display_name, tenant_id, parent_id=None,
     ):
+        """
+        Create a new Azure management group.
+
+        https://docs.microsoft.com/en-us/rest/api/resources/managementgroups/createorupdate
+        Args:
+            management_group_id: a simple ID for the management group, like a GUID (i.e., not fully qualified)
+            display_name: a display name for the management group
+            tenant_id: the ID for the Azure Active Directory tenant to create the management group in
+            parent_id: (optional) the ID of the parent for the management group
+        Returns:
+            ManagementGroup: https://docs.microsoft.com/en-us/rest/api/resources/managementgroups/createorupdate#managementgroup
+            or
+            AzureAsyncOperationResults: https://docs.microsoft.com/en-us/rest/api/resources/managementgroups/createorupdate#azureasyncoperationresults
+        """
         sp_token = self._get_tenant_principal_token(tenant_id)
         session = self.sdk.requests.Session()
         session.headers = {
             "Authorization": f"Bearer {sp_token}",
         }
-        if parent_id is None:
-            parent_id = f"/providers/Microsoft.Management/managementGroups/{tenant_id}"
+        request_body = {"properties": {"displayName": display_name}}
 
-        request_body = {
-            "properties": {"displayName": display_name, "parent": {"id": parent_id},}
-        }
+        if parent_id:
+            request_body["properties"]["parent"] = {"id": parent_id}
+
         response = session.put(
             f"{self.sdk.cloud.endpoints.resource_manager}providers/Microsoft.Management/managementGroups/{management_group_id}?api-version=2020-02-01",
             json=request_body,
         )
         response.raise_for_status()
+
         if response.status_code == 202:
             status_url = response.headers["Azure-AsyncOperation"]
-            return self._poll_management_group_creation_job(status_url, session)
+            resp = self._poll_management_group_creation_job(status_url, session)
         else:
-            return response.json()
+            resp = response.json()
+
+        if parent_id:
+            # This should not be necessary, but Azure is currently not
+            # respecting the specified parent in the request body of the
+            # initial call, so we update it here.
+            self._force_apply_mgmt_grp_parent(session, parent_id, management_group_id)
+
+        return resp
+
+    @log_and_raise_exceptions
+    def _force_apply_mgmt_grp_parent(self, session, parent_id, management_group_id):
+        """
+        Update an existing management group to specify its parent.
+
+        https://docs.microsoft.com/en-us/rest/api/resources/managementgroups/update
+        Args:
+            session: a requests session object
+            parent_id: the ID of the parent for the management group
+            management_group_id: a simple ID for the management group, like a GUID (i.e., not fully qualified)
+        Returns:
+            True
+        """
+        request_body = {"parentId": parent_id}
+        response = session.patch(
+            f"{self.sdk.cloud.endpoints.resource_manager}providers/Microsoft.Management/managementGroups/{management_group_id}?api-version=2020-02-01",
+            json=request_body,
+        )
+        response.raise_for_status()
+
+        return True
 
     @log_and_raise_exceptions
     def _poll_management_group_creation_job(self, url: str, session) -> Dict:
@@ -863,12 +932,7 @@ class AzureCloudProvider(CloudProviderInterface):
     def create_tenant_principal_app(self, payload: TenantPrincipalAppCSPPayload):
         """Creates an app registration for a Profile.
 
-        An Azure AD application is defined by its one and only application
-        object, which resides in the Azure AD tenant where the application was
-        registered, known as the application's "home" tenant.
-
-        https://docs.microsoft.com/en-us/azure/active-directory/develop/app-objects-and-service-principals
-        https://docs.microsoft.com/en-us/graph/api/resources/application?view=graph-rest-1.0
+        https://docs.microsoft.com/en-us/graph/api/application-post-applications?view=graph-rest-1.0&tabs=http
         """
 
         graph_token = self._get_tenant_admin_token(payload.tenant_id, self.graph_scope)
@@ -941,6 +1005,113 @@ class AzureCloudProvider(CloudProviderInterface):
             principal_client_id=payload.principal_app_id,
             principal_creds_established=True,
         )
+
+    @log_and_raise_exceptions
+    def create_principal_app_graph_api_permissions(
+        self, payload: PrincipalAppGraphApiPermissionsCSPPayload
+    ) -> PrincipalAppGraphApiPermissionsCSPResult:
+        """Grant the Directory.ReadWrite.All app role assignment to the tenant 
+        service principal
+
+        https://docs.microsoft.com/en-us/graph/api/serviceprincipal-post-approleassignments?view=graph-rest-1.0&tabs=http
+        """
+
+        graph_token = self._get_tenant_admin_token(payload.tenant_id, self.graph_scope)
+        (
+            graph_api_sp_object_id,
+            user_invite_app_role_id,
+        ) = self._get_graph_sp_and_user_invite_app_role_ids(graph_token)
+
+        request_body = {
+            "principalId": payload.principal_id,
+            "resourceId": graph_api_sp_object_id,
+            "appRoleId": user_invite_app_role_id,
+        }
+
+        response = self.sdk.requests.post(
+            f"{self.graph_resource}/v1.0/servicePrincipals/{payload.principal_id}/appRoleAssignments",
+            json=request_body,
+            headers={"Authorization": f"Bearer {graph_token}"},
+        )
+        response.raise_for_status()
+
+        return PrincipalAppGraphApiPermissionsCSPResult(**response.json())
+
+    def _extract_service_principal_from_query(self, response):
+        """Extract a service principal object from a response
+        
+        In `_get_graph_sp_and_user_invite_app_role_ids`, the query parameters 
+        should make it so that a single service principal object is returned in 
+        a list. This method returns that single service principal.
+
+        Returns:
+            servicePrincipal: https://docs.microsoft.com/en-us/graph/api/resources/serviceprincipal?view=graph-rest-1.0
+        
+        Raises:
+            ResourceProvisioningError: No service principal present
+
+        """
+        service_principal_list = response.json()["value"]
+        if not service_principal_list:
+            raise ResourceProvisioningError(
+                "app role assignment",
+                f"No service principals found with id '{GRAPH_API_APPLICATION_ID}'",
+            )
+        return service_principal_list[0]
+
+    def _extract_app_role_from_service_principal(
+        self, service_principal, app_role_value: str
+    ):
+        """extract an appRole object with a given value from a service principal object
+
+        Args:
+            service_principal: a servicePrincipal object https://docs.microsoft.com/en-us/graph/api/resources/serviceprincipal?view=graph-rest-1.0
+            app_role_value: the appRole `value` property to find in the list of appRoles
+
+        Returns:
+            appRole: https://docs.microsoft.com/en-us/graph/api/resources/approle?view=graph-rest-1.0
+        
+        Raises:
+            ResourceProvisioningError: No app role found in service principal's appRoles list with the given value
+        """
+        app_role = next(
+            (
+                ar
+                for ar in service_principal["appRoles"]
+                if ar["value"] == app_role_value
+            ),
+            None,
+        )
+        if not app_role:
+            raise ResourceProvisioningError(
+                "app role assignment",
+                f"No app role found with value '{app_role_value}'",
+            )
+        return app_role
+
+    @log_and_raise_exceptions
+    def _get_graph_sp_and_user_invite_app_role_ids(
+        self, graph_token
+    ) -> Tuple[str, str]:
+        """Get the service principal object id of the graph api and the app role
+        id for the `Directory.ReadWrite.All` app role.
+
+        https://docs.microsoft.com/en-us/graph/api/serviceprincipal-list?view=graph-rest-1.0&tabs=http
+
+        Returns:
+            Tuple of the service principal object ID of the Graph API app 
+            registration and the app role id for "Directory.ReadWrite.All"
+        """
+        response = self.sdk.requests.get(
+            f"{self.graph_resource}/v1.0/servicePrincipals?$filter=servicePrincipalNames/any(name:name+eq+'{GRAPH_API_APPLICATION_ID}')",
+            headers={"Authorization": f"Bearer {graph_token}"},
+        )
+        response.raise_for_status()
+        graph_service_principal = self._extract_service_principal_from_query(response)
+        user_invite_app_role = self._extract_app_role_from_service_principal(
+            graph_service_principal, "Directory.ReadWrite.All"
+        )
+        return graph_service_principal["id"], user_invite_app_role["id"]
 
     @log_and_raise_exceptions
     def create_admin_role_definition(self, payload: AdminRoleDefinitionCSPPayload):
@@ -1122,6 +1293,7 @@ class AzureCloudProvider(CloudProviderInterface):
             if role["displayName"] == "Billing Administrator":
                 return role["id"]
 
+    @log_and_raise_exceptions
     def create_user(self, payload: UserCSPPayload) -> UserCSPResult:
         """Create a user in an Azure Active Directory instance.
         Unlike most of the methods on this interface, this requires
@@ -1202,13 +1374,7 @@ class AzureCloudProvider(CloudProviderInterface):
             url, headers=auth_header, json=request_body, timeout=30
         )
         result.raise_for_status()
-
-        if result.ok:
-            return True
-        else:
-            raise UserProvisioningException(
-                f"Failed update user email: {response.json()}"
-            )
+        return True
 
     @log_and_raise_exceptions
     def _update_active_directory_user_password_profile(self, graph_token, payload):
@@ -1230,14 +1396,9 @@ class AzureCloudProvider(CloudProviderInterface):
             url, headers=auth_header, json=request_body, timeout=30
         )
         result.raise_for_status()
+        return True
 
-        if result.ok:
-            return True
-        else:
-            raise UserProvisioningException(
-                f"Failed update user password profile: {response.json()}"
-            )
-
+    @log_and_raise_exceptions
     def create_user_role(self, payload: UserRoleCSPPayload):
         graph_token = self._get_tenant_principal_token(payload.tenant_id)
 
@@ -1347,8 +1508,6 @@ class AzureCloudProvider(CloudProviderInterface):
 
         result = self.sdk.requests.post(url, headers=auth_header, timeout=30)
         result.raise_for_status()
-        if not result.ok:
-            raise AuthenticationException("Failed to elevate access")
 
         return mgmt_token
 
@@ -1381,14 +1540,15 @@ class AzureCloudProvider(CloudProviderInterface):
         return KeyVaultCredentials(**json.loads(raw_creds))
 
     @log_and_raise_exceptions
-    def get_reporting_data(self, payload: CostManagementQueryCSPPayload):
+    def get_reporting_data(self, payload: CostManagementQueryCSPPayload, token=None):
         """
         Queries the Cost Management API for an invoice section's raw reporting data
 
         We query at the invoiceSection scope. The full scope path is passed in
         with the payload at the `invoice_section_id` key.
         """
-        token = self._get_tenant_principal_token(payload.tenant_id)
+        if token is None:
+            token = self._get_tenant_principal_token(payload.tenant_id)
 
         headers = {"Authorization": f"Bearer {token}"}
 
@@ -1412,8 +1572,7 @@ class AzureCloudProvider(CloudProviderInterface):
             timeout=30,
         )
         result.raise_for_status()
-        if result.ok:
-            return CostManagementQueryCSPResult(**result.json())
+        return CostManagementQueryCSPResult(**result.json())
 
     def get_calculator_url(self):
         calc_access_token = self._get_service_principal_token(

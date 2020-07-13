@@ -11,7 +11,7 @@ data:
   CELERY_DEFAULT_QUEUE: celery-staging
   CSP: hybrid
   FLASK_ENV: staging
-  PGDATABASE: cloudzero_dryrun_atat
+  PGDATABASE: cloudzero_dryrun
   PGHOST: 191.238.6.43
   PGUSER: atat@cloudzero-dryrun-sql
   PGSSLMODE: require
@@ -34,7 +34,7 @@ data:
   CELERY_DEFAULT_QUEUE: celery-staging
   CSP: hybrid
   FLASK_ENV: staging
-  PGDATABASE: cloudzero_dryrun_atat
+  PGDATABASE: cloudzero_dryrun
   PGHOST: 191.238.6.43
   PGUSER: atat@cloudzero-dryrun-sql
   PGSSLMODE: require

@@ -21,7 +21,7 @@ resource "azurerm_subnet" "azure_bastion_subnet" {
 
 resource "azurerm_subnet" "mgmt_subnet" {
 
-  name                 = "mgr-subnet"
+  name                 = "mgmt-subnet"
   resource_group_name  = var.mgmt_subnet_rg
   virtual_network_name = var.mgmt_subnet_vpc_name
   address_prefixes     = ["${var.mgmt_subnet_cidr}"]
@@ -80,7 +80,7 @@ resource "azurerm_kubernetes_cluster" "k8s_bastion" {
     admin_username = "bastion"
     ssh_key {
 
-      key_data = "file(${var.bastion_ssh_pub_key_path})"
+      key_data = file("${var.bastion_ssh_pub_key_path}")
     }
   }
 

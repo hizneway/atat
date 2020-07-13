@@ -1,6 +1,5 @@
 import os
 import sys
-import time
 
 parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
 sys.path.append(parent_dir)
@@ -10,20 +9,20 @@ from atat.domain.csp.cloud.models import (
     ProductPurchaseVerificationCSPPayload,
 )
 from script.provision.provision_base import handle
+from atat.domain.csp.cloud.exceptions import GeneralCSPException
+import time
 
 
 def poll_purchase(csp, inputs, csp_response):
     if csp_response.get("product_purchase_verify_url") is not None:
-        time.sleep(10)
         purchase_premium = ProductPurchaseVerificationCSPPayload(
             **{**inputs.get("initial_inputs"), **inputs.get("csp_data"), **csp_response}
         )
-        result = csp.create_product_purchase_verification(purchase_premium)
-        if result.get("status") == "ok":
-            csp_response = result.get("body").dict()
-            poll_purchase(csp, inputs, csp_response)
-        else:
-            return result.get("body").dict()
+        try:
+            return csp.create_product_purchase_verification(purchase_premium)
+        except GeneralCSPException:
+            time.sleep(10)
+            return poll_purchase(csp, inputs, csp_respons)
     else:
         return csp_response
 
@@ -34,7 +33,8 @@ def purchase_aadp(csp, inputs):
     )
 
     result = csp.create_product_purchase(purchase_premium)
-    return dict(result)
+    poll_result = poll_purchase(csp, inputs, result.dict())
+    return poll_result.dict()
 
 
 if __name__ == "__main__":
