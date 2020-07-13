@@ -4,7 +4,7 @@ output "subnet_list" {
   }
 }
 
-output "address_space" { 
+output "address_space" {
   value = azurerm_virtual_network.vpc.address_space[0]
 }
 
