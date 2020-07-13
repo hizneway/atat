@@ -20,12 +20,14 @@ from atat.jobs import (
     do_create_environment_role,
     do_create_user,
 )
-from atat.models import PortfolioStates, PortfolioStateMachine
-import tests.factories as factories
+from atat.models import (
+    PortfolioStates,
+    PortfolioStateMachine,
+    ApplicationRoleStatus,
+)
 from tests.factories import (
     ApplicationFactory,
     ApplicationRoleFactory,
-    ApplicationRoleStatus,
     CLINFactory,
     EnvironmentFactory,
     EnvironmentRoleFactory,
@@ -109,6 +111,12 @@ class TestIntegration:
         return EnvironmentFactory.create(application=application, cloud_id=None)
 
     @pytest.fixture(scope="session")
+    def env_role(self, app_role, environment):
+        return EnvironmentRoleFactory.create(
+            environment=environment, application_role=app_role
+        )
+
+    @pytest.fixture(scope="session")
     def state_machine(self, app, csp, portfolio):
         return PortfolioStateMachineFactory.create(portfolio=portfolio, cloud=csp)
 
@@ -168,7 +176,7 @@ class TestIntegration:
             in mgmt_grp_resp["properties"]["details"]["parent"]["id"]
         )
 
-    @pytest.mark.depends(on=["application"])
+    @pytest.mark.depends(name="environment", on=["application"])
     def test_hybrid_create_environment_job(self, csp, environment, tenant_id, session):
         do_create_environment(csp, environment.id)
         session.refresh(environment)
@@ -184,7 +192,7 @@ class TestIntegration:
             in mgmt_grp_resp["properties"]["details"]["parent"]["id"]
         )
 
-    @pytest.mark.depends(on=["application"])
+    @pytest.mark.depends(name="user", on=["application"])
     def test_hybrid_create_user_job(self, session, csp, app_role, portfolio):
         assert not app_role.cloud_id
 
@@ -193,6 +201,16 @@ class TestIntegration:
         session.rollback()
 
         assert app_role.cloud_id
+
+    @pytest.mark.depends(name="environment_role", on=["user", "environment"])
+    def test_hybrid_do_create_environment_role_job(self, session, csp, env_role):
+        assert env_role.cloud_id is None
+
+        session.begin_nested()
+        do_create_environment_role(csp, env_role.id)
+        session.rollback()
+
+        assert env_role.cloud_id
 
 
 @pytest.mark.hybrid
@@ -342,21 +360,3 @@ class TestHybridUserManagement:
             csp.mock_tenant_id, create_user_role_result.id
         )
         assert disable_user_result["id"] == create_user_role_result.id
-
-    def test_hybrid_do_create_environment_role_job(self, session, csp, app):
-        environment_role = EnvironmentRoleFactory.create()
-        environment_role.environment.cloud_id = csp.hybrid_tenant_id
-        environment_role.application_role.cloud_id = app.config["AZURE_USER_OBJECT_ID"]
-        environment_role.environment.portfolio.csp_data = {
-            "tenant_id": csp.mock_tenant_id,
-            "domain_name": app.config["AZURE_HYBRID_TENANT_DOMAIN"],
-        }
-
-        session.commit()
-
-        try:
-            do_create_environment_role(csp, environment_role.id)
-        except UserProvisioningException as e:
-            if "RoleAssignmentExists" not in str(e):
-                raise e
-
