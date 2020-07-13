@@ -1,5 +1,3 @@
-
-
 source       = "../../modules/bucket"
 service_name = "${var.name}${var.environment}tfstate"
 owner        = var.owner
@@ -18,7 +16,6 @@ variable "region" {}
 variable "owner" {}
 
 variable "name" {}
-
 
 variable "storage_admin_whitelist" {
   type = map

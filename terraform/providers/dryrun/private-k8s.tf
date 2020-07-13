@@ -1,5 +1,3 @@
-
-
 module "private-k8s" {
   source                     = "../../modules/k8s-private"
   rg                         = var.private_k8s_resource_group

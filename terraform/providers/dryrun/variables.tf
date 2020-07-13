@@ -15,7 +15,6 @@ variable "name" {}
 
 variable "virtual_network" {}
 
-
 variable "networks" {
   type = map
 }
@@ -64,7 +63,6 @@ variable "vpn_client_cidr" {
 }
 
 variable "bucket_cors_properties" {
-
   type        = list(map(string))
   description = "supports cors"
   default     = []
