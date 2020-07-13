@@ -1,15 +1,11 @@
-import pendulum
-import pytest
 from time import sleep
 from uuid import uuid4
 
+import pendulum
+import pytest
+
 from atat.domain.csp import CSP
-from atat.domain.csp.cloud.exceptions import UserProvisioningException
 from atat.domain.csp.cloud.models import (
-    EnvironmentCSPPayload,
-    KeyVaultCredentials,
-    UserCSPPayload,
-    UserRoleCSPPayload,
     CostManagementQueryCSPPayload,
     SubscriptionCreationCSPPayload,
     SubscriptionVerificationCSPPayload,
@@ -20,11 +16,7 @@ from atat.jobs import (
     do_create_environment_role,
     do_create_user,
 )
-from atat.models import (
-    PortfolioStates,
-    PortfolioStateMachine,
-    ApplicationRoleStatus,
-)
+from atat.models import ApplicationRoleStatus, PortfolioStateMachine, PortfolioStates
 from tests.factories import (
     ApplicationFactory,
     ApplicationRoleFactory,
