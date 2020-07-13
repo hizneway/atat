@@ -402,16 +402,3 @@ class TestHybridUserManagement:
             if "RoleAssignmentExists" not in str(e):
                 raise e
 
-
-@pytest.mark.hybrid
-def test_create_user(csp):
-    payload = UserCSPPayload(
-        tenant_id=csp.mock_tenant_id,
-        display_name="Test Testerson",
-        tenant_host_name="testtenant",
-        email="test@testerson.test",
-        password="asdfghjkl",  # pragma: allowlist secret
-    )
-
-    result = csp.azure.create_user(payload)
-    assert result.id
