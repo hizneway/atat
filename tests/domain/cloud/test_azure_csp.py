@@ -978,7 +978,7 @@ def test_create_subscription_creation(
         status=202, headers={"Location": "https://verify.me", "Retry-After": 10}
     )
 
-    mock_azure.sdk.requests.put.side_effect = [
+    mock_azure.sdk.requests.post.side_effect = [
         mock_azure.sdk.requests.exceptions.ConnectionError,
         mock_azure.sdk.requests.exceptions.Timeout,
         mock_http_error_response,

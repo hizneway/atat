@@ -755,13 +755,13 @@ class AzureCloudProvider(CloudProviderInterface):
             "managementGroupId": payload.parent_group_id,
         }
 
-        url = f"{self.sdk.cloud.endpoints.resource_manager}providers/Microsoft.Billing/billingAccounts/{payload.billing_account_name}/billingProfiles/{payload.billing_profile_name}/invoiceSections/{payload.invoice_section_name}/providers/Microsoft.Subscription/createSubscription?api-version=2018-11-01-preview"
+        url = f"{self.sdk.cloud.endpoints.resource_manager}providers/Microsoft.Billing/billingAccounts/{payload.billing_account_name}/billingProfiles/{payload.billing_profile_name}/invoiceSections/{payload.invoice_section_name}/providers/Microsoft.Subscription/createSubscription?api-version=2019-10-01-preview"
 
         auth_header = {
             "Authorization": f"Bearer {sp_token}",
         }
 
-        result = self.sdk.requests.put(
+        result = self.sdk.requests.post(
             url, headers=auth_header, json=request_body, timeout=30
         )
         result.raise_for_status()
