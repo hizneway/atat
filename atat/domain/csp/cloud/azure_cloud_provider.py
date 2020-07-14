@@ -769,27 +769,6 @@ class AzureCloudProvider(CloudProviderInterface):
             # 202 has location/retry after headers
             return SubscriptionCreationCSPResult(**result.headers, **result.json())
 
-    def create_subscription_creation(self, payload: SubscriptionCreationCSPPayload):
-        return self.create_subscription(payload)
-
-    @log_and_raise_exceptions
-    def create_subscription_verification(
-        self, payload: SubscriptionVerificationCSPPayload
-    ):
-        sp_token = self._get_tenant_principal_token(payload.tenant_id)
-
-        auth_header = {
-            "Authorization": f"Bearer {sp_token}",
-        }
-
-        result = self.sdk.requests.get(
-            payload.subscription_verify_url, headers=auth_header, timeout=30
-        )
-        result.raise_for_status()
-
-        # 202 has location/retry after headers
-        return SuscriptionVerificationCSPResult(**result.json())
-
     @log_and_raise_exceptions
     def create_product_purchase(self, payload: ProductPurchaseCSPPayload):
         sp_token = self._get_root_provisioning_token()
