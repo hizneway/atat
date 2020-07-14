@@ -14,6 +14,3 @@ variable "owner" {}
 variable "name" {}
 variable "bastion_ssh_pub_key_path" {}
 variable "log_analytics_workspace_id" {}
-variable "jit" {
-  type = bool
-}
