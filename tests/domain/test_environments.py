@@ -42,7 +42,7 @@ def test_update_env_role_no_access():
         env_role.application_role.id, env_role.environment.id
     )
     assert env_role.role is None
-    assert env_role.disabled
+    assert env_role.is_disabled
 
 
 def test_update_env_role_disabled_role():
@@ -56,7 +56,7 @@ def test_update_env_role_disabled_role():
         )
 
     assert env_role.role is None
-    assert env_role.disabled
+    assert env_role.is_disabled
 
     # An exception should not be raised when no new role is passed
     Environments.update_env_role(env_role.environment, env_role.application_role, None)

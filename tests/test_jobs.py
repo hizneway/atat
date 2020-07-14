@@ -5,8 +5,6 @@ from uuid import uuid4
 import pendulum
 import pytest
 from azure.core.exceptions import AzureError
-from celery.exceptions import Retry
-from pytest import raises
 from tests.factories import (
     ApplicationFactory,
     ApplicationRoleFactory,
@@ -43,6 +41,7 @@ from atat.jobs import (
 )
 from atat.models import (
     ApplicationRoleStatus,
+    EnvironmentRoleStatus,
     PortfolioStates,
     JobFailure,
     Portfolio,
@@ -53,7 +52,11 @@ from atat.utils.localization import translate
 
 @pytest.fixture(autouse=True, scope="function")
 def csp():
-    return Mock(wraps=MockCloudProvider({}, with_delay=False, with_failure=False))
+    return Mock(
+        wraps=MockCloudProvider(
+            {}, with_delay=False, with_failure=False, with_authorization=False
+        )
+    )
 
 
 @pytest.fixture(scope="function")
@@ -131,7 +134,7 @@ def test_create_environment_job_is_idempotent(csp, session):
 
 def test_create_application_job(session, csp):
     portfolio = PortfolioFactory.create(
-        csp_data={"tenant_id": str(uuid4()), "root_management_group_id": str(uuid4())}
+        csp_data={"tenant_id": str(uuid4()), "root_management_group_name": str(uuid4())}
     )
     application = ApplicationFactory.create(portfolio=portfolio, cloud_id=None)
     do_create_application(csp, application.id)
@@ -420,14 +423,16 @@ class TestCreateEnvironmentRole:
 
     @pytest.fixture
     def csp(self):
-        csp = Mock()
-        result = UserRoleCSPResult(id="a-cloud-id")
-        csp.create_user_role = MagicMock(return_value=result)
+        csp = MagicMock()
+        csp.create_user_role.return_value = UserRoleCSPResult(id="a-cloud-id")
         return csp
 
-    def test_success(self, env_role, csp):
+    def test_success(self, env_role, csp, session):
+        session.begin_nested()
         do_create_environment_role(csp, environment_role_id=env_role.id)
+        session.rollback()
         assert env_role.cloud_id == "a-cloud-id"
+        assert env_role.status == EnvironmentRoleStatus.ACTIVE
 
     def test_sends_email(self, monkeypatch, env_role, csp):
         send_mail = Mock()

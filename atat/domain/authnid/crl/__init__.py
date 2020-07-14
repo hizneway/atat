@@ -6,6 +6,7 @@ import logging
 from OpenSSL import crypto, SSL
 from flask import current_app as app
 
+from atat.utils.processify import processify
 from .util import load_crl_locations_cache, serialize_crl_locations_cache, CRL_LIST
 
 # error codes from OpenSSL: https://github.com/openssl/openssl/blob/2c75f03b39de2fa7d006bc0f0d7c58235a54d9bb/include/openssl/x509_vfy.h#L111
@@ -32,9 +33,11 @@ class CRLInterface:
     def __init__(self, *args, logger=None, **kwargs):
         self.logger = logger
 
-    def _log(self, message, level=logging.INFO):
+    def _log(self, message, *args, level=logging.INFO):
         if self.logger:
-            self.logger.log(level, message, extra={"tags": ["authorization", "crl"]})
+            self.logger.log(
+                level, message, *args, extra={"tags": ["authorization", "crl"]}
+            )
 
     def crl_check(self, cert):
         raise NotImplementedError()
@@ -53,9 +56,7 @@ class NoOpCRLCache(CRLInterface):
     def crl_check(self, cert):
         cn = self._get_cn(cert)
         self._log(
-            "Did not perform CRL validation for certificate with Common Name '{}'".format(
-                cn
-            )
+            "Did not perform CRL validation for certificate with Common Name '%s'", cn
         )
 
         return True
@@ -110,31 +111,31 @@ class CRLCache(CRLInterface):
                 return crypto.load_crl(crypto.FILETYPE_ASN1, crl_file.read())
             except crypto.Error:
                 self._log(
-                    "Could not load CRL at location {}".format(crl_location),
+                    "Could not load CRL at location %s",
+                    crl_location,
                     level=logging.WARNING,
                 )
 
     def _build_store(self, issuer):
         store = self.store_class()
-        self._log("STORE ID: {}. Building store.".format(id(store)))
+        self._log("STORE ID: %s. Building store.", id(store))
         store.set_flags(crypto.X509StoreFlags.CRL_CHECK)
         crl_location = self.crl_cache.get(issuer.der())
         issuer_name = get_common_name(issuer)
 
         if not crl_location:
             raise CRLInvalidException(
-                "Could not find matching CRL for issuer with Common Name {}".format(
-                    issuer_name
-                )
+                "Could not find matching CRL for issuer with Common Name %s",
+                issuer_name,
             )
 
         crl = self._load_crl(crl_location)
         store.add_crl(crl)
 
         self._log(
-            "STORE ID: {}. Adding CRL with issuer Common Name {}".format(
-                id(store), issuer_name
-            )
+            "STORE ID: %s. Adding CRL with issuer Common Name %s",
+            id(store),
+            issuer_name,
         )
 
         store = self._add_certificate_chain_to_store(store, crl.get_issuer())
@@ -146,23 +147,24 @@ class CRLCache(CRLInterface):
     def _add_certificate_chain_to_store(self, store, issuer):
         ca = self.certificate_authorities.get(issuer.der())
         store.add_cert(ca)
-        self._log(
-            "STORE ID: {}. Adding CA with subject {}".format(
-                id(store), ca.get_subject()
+
+        while issuer != ca.get_issuer():
+            issuer = ca.get_issuer()
+            ca = self.certificate_authorities.get(issuer.der())
+            store.add_cert(ca)
+
+            self._log(
+                "STORE ID: %s. Adding CA with subject {}", id(store), ca.get_subject()
             )
-        )
 
-        if issuer == ca.get_issuer():
-            # i.e., it is the root CA and we are at the end of the chain
-            return store
+        return store
 
-        else:
-            return self._add_certificate_chain_to_store(store, ca.get_issuer())
-
+    @processify
     def crl_check(self, cert):
         parsed = crypto.load_certificate(crypto.FILETYPE_PEM, cert)
         store = self._get_store(parsed)
         context = crypto.X509StoreContext(store, parsed)
+
         try:
             context.verify_certificate()
             return True
@@ -171,9 +173,9 @@ class CRLCache(CRLInterface):
             if err.args[0][0] == CRL_EXPIRED_ERROR_CODE:
                 if app.config.get("CRL_FAIL_OPEN"):
                     self._log(
-                        "Encountered expired CRL for certificate with CN {} and issuer CN {}, failing open.".format(
-                            parsed.get_subject().CN, parsed.get_issuer().CN
-                        ),
+                        "Encountered expired CRL for certificate with CN %s and issuer CN %s, failing open.",
+                        parsed.get_subject().CN,
+                        parsed.get_issuer().CN,
                         level=logging.WARNING,
                     )
                     return True

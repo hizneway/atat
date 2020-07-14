@@ -59,10 +59,10 @@ spec:
               mountPath: "/config"
           resources:
             requests:
-              memory: 400Mi
+              memory: 800Mi
               cpu: 940m
             limits:
-              memory: 400Mi
+              memory: 800Mi
               cpu: 940m
         - name: nginx
           image: $NGINX_CONTAINER_IMAGE

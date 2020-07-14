@@ -8,6 +8,7 @@ from flask import current_app as app
 from atat.database import db
 from atat.domain.application_roles import ApplicationRoles
 from atat.domain.applications import Applications
+from atat.domain.environment_roles import EnvironmentRoles
 from atat.domain.csp.cloud import CloudProviderInterface
 from atat.domain.csp.cloud.exceptions import GeneralCSPException
 from atat.domain.csp.cloud.models import (
@@ -18,7 +19,6 @@ from atat.domain.csp.cloud.models import (
     UserRoleCSPPayload,
 )
 from atat.domain.csp.cloud.utils import generate_user_principal_name
-from atat.domain.environment_roles import EnvironmentRoles
 from atat.domain.environments import Environments
 from atat.domain.portfolios import Portfolios
 from atat.domain.task_orders import TaskOrders
@@ -61,9 +61,10 @@ def send_mail(recipients, subject, body, attachments=[]):
 @celery.task(ignore_result=True)
 def send_notification_mail(recipients, subject, body):
     app.logger.info(
-        "Sending a notification to these recipients: {}\n\nSubject: {}\n\n{}".format(
-            recipients, subject, body
-        )
+        "Sending a notification to these recipients: %s\n\nSubject: %s\n\n%s",
+        recipients,
+        subject,
+        body,
     )
     app.mailer.send(recipients, subject, body)
 
@@ -75,25 +76,28 @@ def do_create_application(csp: CloudProviderInterface, application_id=None):
 
         if application.cloud_id:
             app.logger.warning(
-                f"Attempted to create application {application.cloud_id} when it already exists."
+                "Attempted to create application %s when it already exists.",
+                application.cloud_id,
             )
             return
 
         csp_details = application.portfolio.csp_data
-        parent_id = csp_details["root_management_group_id"]
+        parent_id = f"/providers/Microsoft.Management/managementGroups/{csp_details['root_management_group_name']}"
         tenant_id = csp_details["tenant_id"]
 
-        app.logger.debug(f"application.id = {application.id}")
-        app.logger.debug(f"application.portfolio.id = {application.portfolio.id}")
-        app.logger.debug(f"tenant_id = {tenant_id}")
-        app.logger.debug(f"parent_id = {parent_id}")
+        app.logger.debug("application.id = %s", application.id)
+        app.logger.debug("application.portfolio.id = %s", application.portfolio.id)
+        app.logger.debug("tenant_id = %s", tenant_id)
+        app.logger.debug("parent_id = %s", parent_id)
 
         payload = ApplicationCSPPayload(
             tenant_id=tenant_id, display_name=application.name, parent_id=parent_id
         )
 
         app_result = csp.create_application(payload)
-        application.cloud_id = app_result.id
+        application.cloud_id = (
+            f"/providers/Microsoft.Management/managementGroups/{app_result.name}"
+        )
         db.session.add(application)
         db.session.commit()
 
@@ -108,7 +112,7 @@ def do_create_user(csp: CloudProviderInterface, application_role_ids=None):
 
         if any([ar.cloud_id for ar in app_roles]):
             app.logger.warning(
-                f"Application role cloud ID {ar.cloud_id} already present."
+                "Application role cloud ID %s already present.", ar.cloud_id
             )
             return
 
@@ -144,7 +148,7 @@ def do_create_user(csp: CloudProviderInterface, application_role_ids=None):
             ),
         )
         app.logger.info(
-            f"Application role created notification email sent. User id: {user.id}"
+            "Application role created notification email sent. User id: %s", user.id
         )
 
 
@@ -155,7 +159,7 @@ def do_create_environment(csp: CloudProviderInterface, environment_id=None):
 
         if environment.cloud_id is not None:
             app.logger.warning(
-                f"Environment cloud ID {environment.cloud_id} already present."
+                "Environment cloud ID %s already present.", environment.cloud_id
             )
             return
 
@@ -163,15 +167,17 @@ def do_create_environment(csp: CloudProviderInterface, environment_id=None):
         parent_id = environment.application.cloud_id
         tenant_id = csp_details.get("tenant_id")
 
-        app.logger.debug(f"environment.portfolio.id = {environment.portfolio.id}")
-        app.logger.debug(f"parent_id = {parent_id}")
-        app.logger.debug(f"tenant_id = {tenant_id}")
+        app.logger.debug("environment.portfolio.id = %s", environment.portfolio.id)
+        app.logger.debug("parent_id = %s", parent_id)
+        app.logger.debug("tenant_id = %s", tenant_id)
 
         payload = EnvironmentCSPPayload(
             tenant_id=tenant_id, display_name=environment.name, parent_id=parent_id
         )
         env_result = csp.create_environment(payload)
-        environment.cloud_id = env_result.id
+        environment.cloud_id = (
+            f"/providers/Microsoft.Management/managementGroups/{env_result.name}"
+        )
         db.session.add(environment)
         db.session.commit()
 
@@ -183,7 +189,8 @@ def do_create_environment_role(csp: CloudProviderInterface, environment_role_id=
 
         if env_role.cloud_id is not None:
             app.logger.warning(
-                f"Attempting to create an environment role {env_role.cloud_id} that already exists."
+                "Attempting to create an environment role %s that already exists.",
+                env_role.cloud_id,
             )
             return
 
@@ -206,13 +213,9 @@ def do_create_environment_role(csp: CloudProviderInterface, environment_role_id=
             role=role,
         )
         result = csp.create_user_role(payload)
+        EnvironmentRoles.activate(env_role, result.id)
 
-        env_role.cloud_id = result.id
-
-        db.session.add(env_role)
-        db.session.commit()
-
-        app.logger.info(f"Created environment role {env_role.cloud_id}")
+        app.logger.info("Created environment role %s", env_role.cloud_id)
 
         user = env_role.application_role.user
         domain_name = csp_details.get("domain_name")
@@ -226,19 +229,13 @@ def do_create_environment_role(csp: CloudProviderInterface, environment_role_id=
             ),
         )
         app.logger.info(
-            f"Notification email sent for environment role creation. User id: {user.id}"
+            "Notification email sent for environment role creation. User id: %s",
+            user.id,
         )
 
 
 def render_email(template_path, context):
     return app.jinja_env.get_template(template_path).render(context)
-
-
-def do_work(fn, task, csp, **kwargs):
-    try:
-        fn(csp, **kwargs)
-    except GeneralCSPException as e:
-        raise task.retry(exc=e)
 
 
 def send_PPOC_email(portfolio_dict):
@@ -271,7 +268,7 @@ def make_initial_csp_data(portfolio):
 def do_provision_portfolio(csp: CloudProviderInterface, portfolio_id=None):
     portfolio = Portfolios.get_for_update(portfolio_id)
     fsm = Portfolios.get_or_create_state_machine(portfolio)
-    app.logger.info(f"Triggering next transition for portfolio {portfolio.id}")
+    app.logger.info("Triggering next transition for portfolio %s", portfolio.id)
     fsm.trigger_next_transition(csp_data=make_initial_csp_data(portfolio))
     if fsm.current_state == PortfolioStates.COMPLETED:
         send_PPOC_email(portfolio.to_dictionary())
@@ -283,34 +280,27 @@ def provision_portfolio(self: Task, portfolio_id=None):
     return portfolio_id
 
 
-@celery.task(bind=True, base=RecordFailure)
+@celery.task(bind=True, base=RecordFailure, autoretry_for=(GeneralCSPException,))
 def create_application(self: Task, application_id=None):
-    do_work(do_create_application, self, app.csp.cloud, application_id=application_id)
+    do_create_application(app.csp.cloud, application_id=application_id)
     return application_id
 
 
-@celery.task(bind=True, base=RecordFailure)
+@celery.task(bind=True, base=RecordFailure, autoretry_for=(GeneralCSPException,))
 def create_user(self: Task, application_role_ids=None):
-    do_work(
-        do_create_user, self, app.csp.cloud, application_role_ids=application_role_ids
-    )
+    do_create_user(app.csp.cloud, application_role_ids=application_role_ids)
     return application_role_ids
 
 
-@celery.task(bind=True, base=RecordFailure)
+@celery.task(bind=True, base=RecordFailure, autoretry_for=(GeneralCSPException,))
 def create_environment_role(self: Task, environment_role_id=None):
-    do_work(
-        do_create_environment_role,
-        self,
-        app.csp.cloud,
-        environment_role_id=environment_role_id,
-    )
+    do_create_environment_role(app.csp.cloud, environment_role_id=environment_role_id)
     return environment_role_id
 
 
-@celery.task(bind=True, base=RecordFailure)
+@celery.task(bind=True, base=RecordFailure, autoretry_for=(GeneralCSPException,))
 def create_environment(self: Task, environment_id=None):
-    do_work(do_create_environment, self, app.csp.cloud, environment_id=environment_id)
+    do_create_environment(app.csp.cloud, environment_id=environment_id)
     return environment_id
 
 

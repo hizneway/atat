@@ -320,8 +320,8 @@ Configuration variables that are needed solely to run Hybrid tests are in the `[
 - `AZURE_BILLING_PROFILE_ID`: ID of the billing profile used for Cost Management queries with the Hybrid interface.
 - `AZURE_HYBRID_CLIENT_ID`: [Testing only] Client ID of an app registration in the hybrid tenant used in all tests except for portfolio provisioning
 - `AZURE_HYBRID_SECRET_KEY`: [Testing only] Secret key for the app registration associated with the `AZURE_HYBRID_CLIENT_ID`
-- `AZURE_HYBRID_REPORTING_CLIENT_ID`: [Testing only] Client ID of an app registration with an "Invoice Section Reader" role for the invoice section defined by AZURE_INVOICE_SECTION_ID
-- `AZURE_HYBRID_REPORTING_SECRET`: [Testing only] Secret key for the app registration associated with the `AZURE_HYBRID_REPORTING_CLIENT_ID`
+- `AZURE_HYBRID_REPORTING_CLIENT_ID`: Client ID of an app registration with an "Invoice Section Reader" role for the invoice section defined by AZURE_INVOICE_SECTION_ID
+- `AZURE_HYBRID_REPORTING_SECRET`: Secret key for the app registration associated with the `AZURE_HYBRID_REPORTING_CLIENT_ID`
 - `AZURE_HYBRID_TENANT_DOMAIN`: The domain of the hybrid tenant
 - `AZURE_HYBRID_TENANT_ID`: ID of the tenant used to store resources provisioned during Hybrid tests
 - `AZURE_INVOICE_SECTION_ID`: ID of the invoice section used for Cost Management queries with the Hybrid interface.
@@ -329,9 +329,29 @@ Configuration variables that are needed solely to run Hybrid tests are in the `[
 - `AZURE_TENANT_ADMIN_USERNAME`: Username of an admin user associated with the "root" tenant id used in the Hybrid Cloud Provider
 - `AZURE_USER_OBJECT_ID`: Object Id of an admin user associated with the "root" tenant id used in the Hybrid Cloud Provider
 
-### UI Test Automation
 
-AT-AT uses [Ghost Inpsector](https://app.ghostinspector.com/), a testing PaaS
+### CircleCI Configuration
+
+CircleCI is our current CI/CD provider. The following variables need to be set in the project settings for CI/CD to run:
+
+- `AZURE_ACCOUNT_NAME`: The name of the Azure Storage Account used for task orders
+- `AZURE_REGISTRY`: The name of the Azure Container Registry for ATAT docker images
+- `AZURE_SERVER_NAME`: The domain name of the same Azure Container Registry as AZURE_REGISTRY (e.g. cloudzeroregistry.azurecr.io)
+- `AZURE_SP`: The human-readable name of a Service Principal with the "Azure Kubernetes Service Cluster User Role" to the AKS cluster and the "AcrPush" role to the Azure Container Registry
+- `AZURE_SP_PASSWORD`: A client secret for the AZURE_SP
+- `AZURE_SP_TENANT`: The Azure Active Directory tenant ID the AZURE_SP is associated with (same as TENANT_ID)
+- `CLUSTER_NAME`: The human-readable name of the Azure Kubernetes Cluster (e.g., cloudzero-dryrun-k8s)
+- `GI_API_KEY`: An API key for Ghost Inspector (see [its README](./uitests/README.md))
+- `GI_SUITE`: An ID for the suite of Ghost Inspector tests to be run (see [its README](./uitests/README.md))
+- `KEYVAULT_NAME`: The name of the Key Vault that ATAT will source its secret config from
+- `NGROK_TOKEN`: A token to allow Ghost Inspector to create an NGROK tunnel to a container instance of ATAT (see [the UI tests README](./uitests/README.md))
+- `RESOURCE_GROUP`: The resource group of the AKS cluster
+- `TENANT_ID`: The Azure Active Directory tenant ID ATAT's infrastructure is associated with
+- `VMSS_CLIENT_ID`: The client ID of the managed identity associated with the Virtual Machine Scale Set underlying the AKS cluster
+
+## UI Test Automation
+
+AT-AT uses [Ghost Inspector](https://app.ghostinspector.com/), a testing PaaS
 for UI test automation and as a form of integration testing.
 These tests do not run locally as part of the regular test suite,
 but they do run in CI.
@@ -430,3 +450,4 @@ fi
 ```
 
 Also note that if the line number of a previously whitelisted secret changes, the whitelist file, `.secrets.baseline`, will be updated and needs to be committed.
+

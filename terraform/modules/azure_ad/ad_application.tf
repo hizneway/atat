@@ -9,7 +9,7 @@ resource "azuread_application" "app" {
 
 
 resource "azuread_service_principal" "principal" {
-  application_id               = "${azuread_application.app.application_id}"
+  application_id               = azuread_application.app.application_id
   app_role_assignment_required = false
 
 

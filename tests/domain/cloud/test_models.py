@@ -71,7 +71,7 @@ def test_ManagementGroupCSPPayload_parent_id():
 def test_ManagementGroupCSPResponse_id():
     full_id = "/path/to/naboo-123"
     response = ManagementGroupCSPResponse(
-        **{"id": "/path/to/naboo-123", "other": "stuff"}
+        **{"id": "/path/to/naboo-123", "other": "stuff", "name": "foo"}
     )
     assert response.id == full_id
 

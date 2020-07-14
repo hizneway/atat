@@ -30,7 +30,8 @@ class AuditableMixin(object):
         }
 
         app.logger.info(
-            "Audit Event {}".format(action),
+            "Audit Event %s",
+            action,
             extra={
                 "audit_event": {key: str(value) for key, value in log_data.items()},
                 "tags": ["audit_event", action],

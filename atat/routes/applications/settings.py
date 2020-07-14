@@ -99,7 +99,7 @@ def filter_env_roles_form_data(member, environments):
 
         if len(env_roles_set) == 1:
             (env_role,) = env_roles_set
-            env_data["disabled"] = env_role.disabled
+            env_data["disabled"] = env_role.is_disabled
             if env_role.role:
                 env_data["role"] = env_role.role.name
 
