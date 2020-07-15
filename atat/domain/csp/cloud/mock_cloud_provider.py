@@ -46,8 +46,6 @@ from .models import (
     ProductPurchaseVerificationCSPResult,
     SubscriptionCreationCSPPayload,
     SubscriptionCreationCSPResult,
-    SubscriptionVerificationCSPPayload,
-    SuscriptionVerificationCSPResult,
     TaskOrderBillingCreationCSPPayload,
     TaskOrderBillingCreationCSPResult,
     TaskOrderBillingVerificationCSPPayload,
