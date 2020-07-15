@@ -746,21 +746,19 @@ class AzureCloudProvider(CloudProviderInterface):
         return BillingInstructionCSPResult(**result.json())
 
     @log_and_raise_exceptions
-    def create_subscription(self, payload: SubscriptionCreationCSPPayload):
-        sp_token = self._get_tenant_principal_token(payload.tenant_id)
+    def create_subscription(self, payload: SubscriptionCreationCSPPayload, token=None):
+        if token is None:
+            token = self._get_tenant_principal_token(payload.tenant_id)
 
         request_body = {
             "displayName": payload.display_name,
             "skuId": AZURE_SKU_ID,
             "managementGroupId": payload.parent_group_id,
         }
-
         url = f"{self.sdk.cloud.endpoints.resource_manager}providers/Microsoft.Billing/billingAccounts/{payload.billing_account_name}/billingProfiles/{payload.billing_profile_name}/invoiceSections/{payload.invoice_section_name}/providers/Microsoft.Subscription/createSubscription?api-version=2019-10-01-preview"
-
         auth_header = {
-            "Authorization": f"Bearer {sp_token}",
+            "Authorization": f"Bearer {token}",
         }
-
         result = self.sdk.requests.post(
             url, headers=auth_header, json=request_body, timeout=30
         )
