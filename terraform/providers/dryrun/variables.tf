@@ -85,3 +85,11 @@ variable "aks_ssh_pub_key_path" {}
 variable "private_aks_sp_secret" {}
 
 variable "private_aks_sp_id" {}
+
+variable "aks_max_node_count" {
+  default = 5
+}
+
+variable "aks_min_node_count" {
+  default = 3
+}

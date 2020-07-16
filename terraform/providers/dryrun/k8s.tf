@@ -23,8 +23,8 @@ module "k8s" {
   k8s_node_size       = "Standard_D2_v3"
   vnet_subnet_id      = module.vpc.subnet_list["aks"].id
   enable_auto_scaling = true
-  max_count           = 3
-  min_count           = 3
+  max_count           = var.aks_max_node_count
+  min_count           = var.aks_min_node_count
   client_id           = data.azurerm_key_vault_secret.k8s_client_id.value
   client_secret       = data.azurerm_key_vault_secret.k8s_client_secret.value
   client_object_id    = data.azurerm_key_vault_secret.k8s_object_id.value
