@@ -11,7 +11,7 @@ resource "azurerm_subnet" "azure_bastion_subnet" {
 # add mgmgt subnet
 
 resource "azurerm_subnet" "mgmt_subnet" {
-  name                 = "mgmt-subnet"
+  name                 = "mgr-subnet"
   resource_group_name  = var.mgmt_subnet_rg
   virtual_network_name = var.mgmt_subnet_vpc_name
   address_prefixes     = ["${var.mgmt_subnet_cidr}"]
