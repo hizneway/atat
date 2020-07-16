@@ -98,6 +98,10 @@ resource "azurerm_kubernetes_cluster" "k8s_bastion" {
     ]
   }
 
+  role_based_access_control {
+    enabled = true
+  }
+
   tags = {
     Name        = "bastion-aks"
     environment = var.environment
