@@ -4,13 +4,5 @@ bases:
 resources:
   - namespace.yml
 patchesStrategicMerge:
-  - ports.yml
   - envvars.yml
   - autoscaling.yml
-patchesJson6902:
-  - target:
-      group: extensions
-      version: v1beta1
-      kind: Deployment
-      name: atst
-    path: json_ports.yml
