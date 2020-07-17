@@ -296,6 +296,13 @@ All config settings must be declared in "config/base.ini", even if they are null
 - `PGUSER`: String specifying the username to use when connecting to the postgres database.
 - `PORT`: Integer specifying the port to bind to when running the flask server. Used only for local development.
 - `REDIS_URI`: URI for the redis server.
+- `SAML_ACS`: Fully qualified URI for the URL that the SAML Identity Provider will redirect to after successful authentication
+- `SAML_ENTITY_ID`: Fully qualified URI that ATAT will invoke SAML authentication from
+- `SAML_IDP_CERT`: Public certificate provided by SAML Idetity Provider encoded via base64
+- `SAML_IDP_ENTITY_ID`: Identifier endpoint of SAML Identity Provider.
+- `SAML_IDP_SLS`: URL that SAML logout requests will be sent to
+- `SAML_IDP_SSOS`: URL that SAML login requests will be sent to
+- `SAML_SLS`: Fully qualified URI that ATAT will invoke SAML logout from
 - `SECRET_KEY`: String key which will be used to sign the session cookie. Should be a long string of random bytes. https://flask.palletsprojects.com/en/1.1.x/config/#SECRET_KEY
 - `SERVER_NAME`: Hostname for ATAT. Only needs to be specified in contexts where the hostname cannot be inferred from the request, such as Celery workers. https://flask.palletsprojects.com/en/1.1.x/config/#SERVER_NAME
 - `SERVICE_DESK_URL`: The URL for the service desk.  This is the site that will be displayed when the Support button is pressed.
