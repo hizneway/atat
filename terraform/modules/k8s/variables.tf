@@ -41,14 +41,13 @@ variable "enable_auto_scaling" {
 }
 
 variable "max_count" {
-  default     = 1
+  default     = 5
   type        = string
   description = "Maximum number of nodes to use in autoscaling. This requires `enable_auto_scaling` to be set to true"
-
 }
 
 variable "min_count" {
-  default     = 1
+  default     = 3
   type        = string
   description = "Minimum number of nodes to use in autoscaling. This requires `enable_auto_scaling` to be set to true"
 }

@@ -4,7 +4,7 @@
 # not be able to access it when running TF without being on a VPN.
 module "tf_state" {
   source       = "../../modules/bucket"
-  service_name = "cloudzerodevtfstate"
+  service_name = "${var.name}${var.environment}tfstate"
   owner        = var.owner
   name         = var.name
   environment  = var.environment
