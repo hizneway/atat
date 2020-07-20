@@ -1,6 +1,6 @@
 # SAML IdP Setup and Info
 
-We are going to use SAML to authenticate users. Until we have an official Identity Provider, we will be using a self-hosted on in our Azure region. This document will talk about how to set that up.
+We are going to use SAML to authenticate users. Until we have an official Identity Provider, we will be using a self-hosted one in our Azure region. This document will talk about how to set that up.
 
 The official Azure guide for this process can be found here: https://docs.microsoft.com/en-us/azure/active-directory/manage-apps/application-saml-sso-configure-api
 
@@ -81,7 +81,7 @@ Below we will go through the steps in that flow and describe what needs to be do
     To add a certificate to your SAML provider, do the following:
 
     1. Navigate to [Enterprise Applications](https://portal.azure.com/#blade/Microsoft_AAD_IAM/StartboardApplicationsMenuBlade/AllApps)
-    2. Find the application you created in the list and click through to it's page. It should have the name you provided in the `displayName` you provided in the first step.
+    2. Find the application you created in the list and click through to its page. It should have the name you provided in the `displayName` you provided in the first step.
     3. If you've configured it correctly, there should be a `Singe sign-on` link in the left panel, click that.
     4. The third panel should be `SAML Signing Certificate`, click on the `Edit` link on the right side of that section.
     5. If you created a cert above do the following, otherwise skip to the next step:
