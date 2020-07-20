@@ -12,7 +12,6 @@ module "keyvault" {
   subnet_ids        = [module.vpc.subnet_list["aks"].id, module.bastion.mgmt_subnet_id]
   whitelist         = var.admin_user_whitelist
   workspace_id      = module.logs.workspace_id
-
 }
 
 module "tenant_keyvault" {
