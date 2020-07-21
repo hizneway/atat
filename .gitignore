@@ -46,6 +46,10 @@ crl_locations.json
 # test CA config
 ssl/client-certs/*.srl
 
+# local cert
+ssl/local.crt
+ssl/local.key
+
 # uploads
 /uploads
 

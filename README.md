@@ -126,6 +126,16 @@ To start the app locally in the foreground and watch for changes:
 After running `script/server`, the application is available at
 [`http://localhost:8000`](http://localhost:8000).
 
+In some cases, you may be required to run the localhost server via https. In order to do this, you can run:
+
+    script/secure_server
+
+The application will then be available  at
+[`https://localhost:8000`](https://localhost:8000). You will likely be presented with a warning about a non-secure connection at this point, most browsers have the option of bypassing this warning by checking the `advanced` or `more info` links on the error page.
+
+If starting the secure server fails, you may need to generate the local certificates first:
+
+    script/create_local_certs
 
 ### Users
 
@@ -255,6 +265,8 @@ All config settings must be declared in "config/base.ini", even if they are null
 #### General Config
 
 - `ASSETS_URL`: URL to host which serves static assets (such as a CDN).
+- `APP_SSL_CERT_PATH`: Path to the self-signed SSL certificate for running the app in secure mode.
+- `APP_SSL_KEY_PATH`: Path to the self-signed SSL certificate key for running the app in secure mode.
 - `AZURE_ACCOUNT_NAME`: The name for the Azure blob storage account
 - `AZURE_BILLING_ACCOUNT_NAME`: The name for the root Azure billing account
 - `AZURE_CALC_CLIENT_ID`: The client id used to generate a token for the Azure pricing calculator
