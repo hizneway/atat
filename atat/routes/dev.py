@@ -18,7 +18,7 @@ from atat.domain.permission_sets import PermissionSets
 from atat.forms.data import SERVICE_BRANCHES
 from atat.jobs import send_mail
 from atat.utils import pick
-from atat.routes.saml_helpers import do_login_saml
+from atat.routes.saml_helpers import saml_get, saml_post, init_saml_auth
 
 
 bp = Blueprint("dev", __name__)
@@ -120,8 +120,17 @@ class IncompleteInfoError(Exception):
         return "You must provide each of: first_name, last_name and dod_id"
 
 
-@bp.route("/login-dev")
+@bp.route("/login-dev", methods=["GET", "POST"])
 def login_dev():
+    saml_auth = init_saml_auth(request)
+    if (
+        "saml" in request.args or app.config.get("ENV") != "dev"
+    ) and request.method == "GET":
+        return redirect(saml_get(saml_auth, request))
+
+    if "acs" in request.args and request.method == "POST":
+        saml_post(saml_auth)
+
     qs_dict = session.get("qs_dict", {})
     dod_id = qs_dict.get("dod_id_param", None) or request.args.get("dod_id", None)
     if dod_id is not None:
@@ -191,8 +200,3 @@ def test_email():
 @bp.route("/messages")
 def messages():
     return render_template("dev/emails.html", messages=app.mailer.messages)
-
-
-@bp.route("/login-dev-saml", methods=["GET", "POST"])
-def login_dev_saml(login_method=login_dev):
-    return do_login_saml(login_method=login_dev)

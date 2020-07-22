@@ -4,18 +4,6 @@ from onelogin.saml2.auth import OneLogin_Saml2_Auth
 from atat.domain.exceptions import UnauthenticatedError
 
 
-def do_login_saml(login_method):
-
-    saml_auth = init_saml_auth(request)
-
-    if "acs" in request.args and request.method == "POST":
-        saml_post(saml_auth)
-        return login_method()
-
-    elif request.method == "GET":
-        return redirect(saml_get(saml_auth, request))
-
-
 def saml_get(saml_auth, request):
     if "qs_dict" in session:
         del session["qs_dict"]
