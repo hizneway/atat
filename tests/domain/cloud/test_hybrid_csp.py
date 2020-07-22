@@ -1,3 +1,4 @@
+import os
 from time import sleep
 from uuid import uuid4
 
@@ -5,11 +6,7 @@ import pendulum
 import pytest
 
 from atat.domain.csp import CSP
-from atat.domain.csp.cloud.models import (
-    CostManagementQueryCSPPayload,
-    SubscriptionCreationCSPPayload,
-    SubscriptionVerificationCSPPayload,
-)
+from atat.domain.csp.cloud.models import CostManagementQueryCSPPayload
 from atat.jobs import (
     do_create_application,
     do_create_environment,
@@ -240,17 +237,24 @@ def test_create_subscription_verification(csp):
 
 
 @pytest.mark.subscriptions
-@pytest.mark.skip(
-    reason="We are using the mock cloud provider's subscription method right now"
-)
-def test_create_subscription(self, csp, environment, tenant_id):
+def test_create_subscription(csp):
+    root_tenant_id = csp.azure.root_tenant_id
     payload = SubscriptionCreationCSPPayload(
-        display_name=f"{environment.name}",
-        tenant_id=tenant_id,
-        parent_group_id=environment.cloud_id,
+        display_name=f"{HYBRID_PREFIX} Subscription Creation Test",
+        tenant_id=root_tenant_id,
+        parent_group_id=f"/providers/Microsoft.Management/managementGroups/subscription-creation-test",
         billing_account_name=csp.azure.config["AZURE_BILLING_ACCOUNT_NAME"],
         billing_profile_name=csp.azure.config["AZURE_BILLING_PROFILE_ID"],
         invoice_section_name=csp.azure.config["AZURE_INVOICE_SECTION_ID"],
     )
 
-    subscription_creation_result = csp.azure.create_subscription(payload)
+    subscription_creation_token = csp.azure._get_service_principal_token(
+        root_tenant_id,
+        os.environ["AZURE_SUBSCRIPTION_CREATION_CLIENT_ID"],
+        os.environ["AZURE_SUBSCRIPTION_CREATION_SECRET"],
+    )
+    subscription_creation_result = csp.azure.create_subscription(
+        payload, token=subscription_creation_token
+    )
+    assert subscription_creation_result.subscription_verify_url
+    assert subscription_creation_result.subscription_retry_after
