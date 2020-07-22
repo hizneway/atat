@@ -232,52 +232,59 @@ def test_get_reporting_data(csp, app):
 
 
 @pytest.mark.hybrid
-@pytest.mark.skip(
-    reason="We are using the mock cloud provider's subscription method right now"
-)
-def test_create_subscription(csp):
-    environment = EnvironmentFactory.create()
-
-    payload = SubscriptionCreationCSPPayload(
-        display_name=environment.name,
-        tenant_id=csp.mock_tenant_id,
-        parent_group_id=csp.hybrid_tenant_id,
-        billing_account_name=csp.azure.config["AZURE_BILLING_ACCOUNT_NAME"],
-        billing_profile_name=csp.azure.config["AZURE_BILLING_PROFILE_ID"],
-        invoice_section_name=csp.azure.config["AZURE_INVOICE_SECTION_ID"],
-    )
-
-    csp.create_subscription_creation(payload)
-
-
-@pytest.mark.hybrid
-def test_create_subscription_mocked(csp):
-    # TODO: When we finally move over to azure, this mocked test should
-    # probably be removed in favor of the above "test_create_subscription"
-    # test.
-    payload = SubscriptionCreationCSPPayload(
-        tenant_id="tenant id",
-        displayName="display name",
-        parentGroupId="parent group id",
-        billingAccountName="billing account name",
-        billingProfileName="billing profile name",
-        invoiceSectionName="invoice section name",
-    )
-
-    sub = csp.create_subscription(payload)
-    sub_creation = csp.create_subscription_creation(payload)
-
-    assert (
-        sub.subscription_verify_url
-        == sub_creation.subscription_verify_url
-        == "https://zombo.com"
-    )
-    assert sub.subscription_retry_after == sub_creation.subscription_retry_after == 10
-
-
-@pytest.mark.hybrid
 def test_create_subscription_verification(csp):
     payload = SubscriptionVerificationCSPPayload(
         tenantId="tenant id", subscriptionVerifyUrl="subscription verify url"
     )
     assert csp.create_subscription_verification(payload).subscription_id
+
+
+@pytest.mark.subscriptions
+class TestSubscriptions:
+    @pytest.mark.skip(
+        reason="We are using the mock cloud provider's subscription method right now"
+    )
+    def test_create_subscription(self, csp):
+        environment = EnvironmentFactory.create()
+
+        payload = SubscriptionCreationCSPPayload(
+            display_name=environment.name,
+            tenant_id=csp.mock_tenant_id,
+            parent_group_id=csp.hybrid_tenant_id,
+            billing_account_name=csp.azure.config["AZURE_BILLING_ACCOUNT_NAME"],
+            billing_profile_name=csp.azure.config["AZURE_BILLING_PROFILE_ID"],
+            invoice_section_name=csp.azure.config["AZURE_INVOICE_SECTION_ID"],
+        )
+
+        csp.create_subscription_creation(payload)
+
+    def test_create_subscription_mocked(self, csp):
+        # TODO: When we finally move over to azure, this mocked test should
+        # probably be removed in favor of the above "test_create_subscription"
+        # test.
+        payload = SubscriptionCreationCSPPayload(
+            tenant_id="tenant id",
+            displayName="display name",
+            parentGroupId="parent group id",
+            billingAccountName="billing account name",
+            billingProfileName="billing profile name",
+            invoiceSectionName="invoice section name",
+        )
+
+        sub = csp.create_subscription(payload)
+        sub_creation = csp.create_subscription_creation(payload)
+
+        assert (
+            sub.subscription_verify_url
+            == sub_creation.subscription_verify_url
+            == "https://zombo.com"
+        )
+        assert (
+            sub.subscription_retry_after == sub_creation.subscription_retry_after == 10
+        )
+
+    def test_create_subscription_verification(self, csp):
+        payload = SubscriptionVerificationCSPPayload(
+            tenantId="tenant id", subscriptionVerifyUrl="subscription verify url"
+        )
+        assert csp.create_subscription_verification(payload).subscription_id
