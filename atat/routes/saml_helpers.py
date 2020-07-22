@@ -9,32 +9,8 @@ def do_login_saml(login_method):
     saml_auth = init_saml_auth(request)
 
     if "acs" in request.args and request.method == "POST":
-
-        request_id = None
-        if "AuthNRequestID" in session:
-            request_id = session["AuthNRequestID"]
-
-        saml_auth.process_response(request_id=request_id)
-        errors = saml_auth.get_errors()
-        if len(errors) == 0:
-            if "AuthNRequestID" in session:
-                del session["AuthNRequestID"]
-
-            # Assuming these are standard functions, do we inspect fields deeper for other info?
-            session["samlUserdata"] = saml_auth.get_attributes()
-            session["samlNameId"] = saml_auth.get_nameid()
-            session["samlNameIdFormat"] = saml_auth.get_nameid_format()
-            session["samlNameIdNameQualifier"] = saml_auth.get_nameid_nq()
-            session["samlNameIdSPNameQualifier"] = saml_auth.get_nameid_spnq()
-            session["samlSessionIndex"] = saml_auth.get_session_index()
-
-            return login_method()
-
-        else:
-            app.logger.error(
-                f"SAML response from IdP contained the following errors: {', '.join(errors)}"
-            )
-            raise UnauthenticatedError("SAML Authentication Failed")
+        saml_post(saml_auth)
+        return login_method()
 
     elif request.method == "GET":
         return redirect(saml_get(saml_auth, request))
@@ -62,6 +38,33 @@ def saml_get(saml_auth, request):
         session["qs_dict"] = qs_dict
 
     return sso_built_url
+
+
+def saml_post(saml_auth):
+    request_id = None
+    if "AuthNRequestID" in session:
+        request_id = session["AuthNRequestID"]
+
+    saml_auth.process_response(request_id=request_id)
+    errors = saml_auth.get_errors()
+    if len(errors) == 0:
+        if "AuthNRequestID" in session:
+            del session["AuthNRequestID"]
+
+        # Assuming these are standard functions, do we inspect fields deeper for other info?
+        session["samlUserdata"] = saml_auth.get_attributes()
+        session["samlNameId"] = saml_auth.get_nameid()
+        session["samlNameIdFormat"] = saml_auth.get_nameid_format()
+        session["samlNameIdNameQualifier"] = saml_auth.get_nameid_nq()
+        session["samlNameIdSPNameQualifier"] = saml_auth.get_nameid_spnq()
+        session["samlSessionIndex"] = saml_auth.get_session_index()
+
+
+    else:
+        app.logger.error(
+            f"SAML response from IdP contained the following errors: {', '.join(errors)}"
+        )
+        raise UnauthenticatedError("SAML Authentication Failed")
 
 
 def init_saml_auth(request):
