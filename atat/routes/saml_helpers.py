@@ -37,27 +37,31 @@ def do_login_saml(login_method):
             raise UnauthenticatedError("SAML Authentication Failed")
 
     elif request.method == "GET":
-        if "qs_dict" in session:
-            del session["qs_dict"]
-        sso_built_url = saml_auth.login()
-        session["AuthNRequestID"] = saml_auth.get_last_request_id()
-        parsed_url = urlparse(request.url)
-        parsed_qs = parse_qs(parsed_url.query)
-        next_param = next(iter(parsed_qs.get("next") or []), None)
-        username_param = next(iter(parsed_qs.get("username") or []), None)
-        dod_id_param = next(iter(parsed_qs.get("dod_id") or []), None)
-        qs_dict = {}
+        return redirect(saml_get(saml_auth, request))
 
-        if next_param:
-            qs_dict["next_param"] = next_param
-        if username_param:
-            qs_dict["username_param"] = username_param
-        if dod_id_param:
-            qs_dict["dod_id_param"] = dod_id_param
-        if qs_dict:
-            session["qs_dict"] = qs_dict
 
-        return redirect(sso_built_url)
+def saml_get(saml_auth, request):
+    if "qs_dict" in session:
+        del session["qs_dict"]
+    sso_built_url = saml_auth.login()
+    session["AuthNRequestID"] = saml_auth.get_last_request_id()
+    parsed_url = urlparse(request.url)
+    parsed_qs = parse_qs(parsed_url.query)
+    next_param = next(iter(parsed_qs.get("next") or []), None)
+    username_param = next(iter(parsed_qs.get("username") or []), None)
+    dod_id_param = next(iter(parsed_qs.get("dod_id") or []), None)
+    qs_dict = {}
+
+    if next_param:
+        qs_dict["next_param"] = next_param
+    if username_param:
+        qs_dict["username_param"] = username_param
+    if dod_id_param:
+        qs_dict["dod_id_param"] = dod_id_param
+    if qs_dict:
+        session["qs_dict"] = qs_dict
+
+    return sso_built_url
 
 
 def init_saml_auth(request):
