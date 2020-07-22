@@ -1,5 +1,4 @@
 import random
-from urllib.parse import urlparse
 
 from flask import (
     Blueprint,
@@ -10,7 +9,6 @@ from flask import (
     current_app as app,
     session,
 )
-from onelogin.saml2.auth import OneLogin_Saml2_Auth
 import pendulum
 
 from . import redirect_after_login_url, current_user_setup
