@@ -38,12 +38,7 @@ RUN dnf install yarn -y
 COPY . .
 
 # Install app dependencies
-RUN pip3 install uwsgi poetry \
-      # TODO: Remove this when this issue is resolved:
-      # https://github.com/sdispater/pendulum/issues/454#issuecomment-605519477
-      && pip3 install pendulum
-
-RUN poetry env use python3.7
+RUN pip3 install uwsgi poetry
 
 RUN poetry install --no-root --no-dev
 
