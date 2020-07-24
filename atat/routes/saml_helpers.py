@@ -1,7 +1,9 @@
 from urllib.parse import urlparse, parse_qs
-from flask import request, redirect, current_app as app, session, g
+from random import randint
+from flask import current_app as app, session, g
 from onelogin.saml2.auth import OneLogin_Saml2_Auth
-from atat.domain.exceptions import UnauthenticatedError
+from atat.domain.exceptions import UnauthenticatedError, NotFoundError
+from atat.domain.users import Users
 
 
 def saml_get(saml_auth, request):
@@ -39,20 +41,44 @@ def saml_post(saml_auth):
         if "AuthNRequestID" in session:
             del session["AuthNRequestID"]
 
-        # Assuming these are standard functions, do we inspect fields deeper for other info?
-        session["samlUserdata"] = saml_auth.get_attributes()
-        session["samlNameId"] = saml_auth.get_nameid()
-        session["samlNameIdFormat"] = saml_auth.get_nameid_format()
-        session["samlNameIdNameQualifier"] = saml_auth.get_nameid_nq()
-        session["samlNameIdSPNameQualifier"] = saml_auth.get_nameid_spnq()
-        session["samlSessionIndex"] = saml_auth.get_session_index()
+        qs_dict = session.get("qs_dict", {})
+        if "username_param" in qs_dict or "dod_id_param" in qs_dict:
+            return None
+        else:
+            # if username or dod_id param not passed in,
+            # we get or create user from SAML information
+            saml_user_details = {}
+            saml_user_details["first_name"] = saml_auth.get_attribute(
+                "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname"
+            )[0]
+            saml_user_details["last_name"] = saml_auth.get_attribute(
+                "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/surname"
+            )[0]
+            try:
+                user = Users.get_by_first_and_last_name(
+                    saml_user_details["first_name"], saml_user_details["last_name"]
+                )
+            except NotFoundError:
+                new_dod_id = unique_dod_id()
 
+                created_user = Users.create(new_dod_id, **saml_user_details)
+                return created_user
+            return user
 
     else:
         app.logger.error(
             f"SAML response from IdP contained the following errors: {', '.join(errors)}"
         )
         raise UnauthenticatedError("SAML Authentication Failed")
+
+
+def unique_dod_id():
+    new_dod_id = f"{randint(0,99999999):09}"
+    existing_dod_ids = Users.get_all_dod_ids()
+    if new_dod_id in existing_dod_ids:
+        unique_dod_id()
+    else:
+        return new_dod_id
 
 
 def init_saml_auth(request):
