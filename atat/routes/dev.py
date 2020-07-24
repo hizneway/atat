@@ -123,40 +123,43 @@ class IncompleteInfoError(Exception):
 @bp.route("/login-dev", methods=["GET", "POST"])
 def login_dev():
     saml_auth = init_saml_auth(request)
+    qs_dict = session.get("qs_dict", {})
+    user = None
+
     if (
         "saml" in request.args or app.config.get("ENV") != "dev"
     ) and request.method == "GET":
         return redirect(saml_get(saml_auth, request))
 
     if "acs" in request.args and request.method == "POST":
-        saml_post(saml_auth)
+        user = saml_post(saml_auth)
 
-    qs_dict = session.get("qs_dict", {})
-    dod_id = qs_dict.get("dod_id_param", None) or request.args.get("dod_id", None)
-    if dod_id is not None:
-        user = Users.get_by_dod_id(dod_id)
-    else:
-        role = qs_dict.get("username_param", None) or request.args.get(
-            "username", "amanda"
-        )
-        user_data = _DEV_USERS[role]
-        user = Users.get_or_create_by_dod_id(
-            user_data["dod_id"],
-            **pick(
-                [
-                    "permission_sets",
-                    "first_name",
-                    "last_name",
-                    "email",
-                    "service_branch",
-                    "phone_number",
-                    "citizenship",
-                    "designation",
-                    "date_latest_training",
-                ],
-                user_data,
-            ),
-        )
+    if not user:
+        dod_id = qs_dict.get("dod_id_param", None) or request.args.get("dod_id", None)
+        if dod_id is not None:
+            user = Users.get_by_dod_id(dod_id)
+        else:
+            role = qs_dict.get("username_param", None) or request.args.get(
+                "username", "amanda"
+            )
+            user_data = _DEV_USERS[role]
+            user = Users.get_or_create_by_dod_id(
+                user_data["dod_id"],
+                **pick(
+                    [
+                        "permission_sets",
+                        "first_name",
+                        "last_name",
+                        "email",
+                        "service_branch",
+                        "phone_number",
+                        "citizenship",
+                        "designation",
+                        "date_latest_training",
+                    ],
+                    user_data,
+                ),
+            )
 
     next_param = qs_dict.get("next_param", None)
     if "qs_dict" in session:
