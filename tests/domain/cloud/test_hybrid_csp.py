@@ -6,7 +6,12 @@ import pendulum
 import pytest
 
 from atat.domain.csp import CSP
-from atat.domain.csp.cloud.models import CostManagementQueryCSPPayload
+from atat.domain.csp.cloud.hybrid_cloud_provider import HYBRID_PREFIX
+
+from atat.domain.csp.cloud.models import (
+    CostManagementQueryCSPPayload,
+    SubscriptionCreationCSPPayload,
+)
 from atat.jobs import (
     do_create_application,
     do_create_environment,
@@ -226,14 +231,6 @@ def test_get_reporting_data(csp, app):
 
     result = csp.get_reporting_data(payload)
     assert result.name
-
-
-@pytest.mark.hybrid
-def test_create_subscription_verification(csp):
-    payload = SubscriptionVerificationCSPPayload(
-        tenantId="tenant id", subscriptionVerifyUrl="subscription verify url"
-    )
-    assert csp.create_subscription_verification(payload).subscription_id
 
 
 @pytest.mark.subscriptions
