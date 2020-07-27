@@ -7,7 +7,8 @@ sys.path.append(parent_dir)
 
 from atat.app import make_config
 from atat.domain.csp.cloud.hybrid_cloud_provider import HYBRID_PREFIX
-from atat.domain.csp.cloud.utils import get_user_principal_token_for_scope
+from atat.domain.csp.cloud.utils import get_principal_auth_token
+from atat.domain.csp.cloud.models import UserPrincipalTokenPayload
 from msrestazure.azure_cloud import AZURE_PUBLIC_CLOUD
 
 
@@ -118,16 +119,21 @@ if __name__ == "__main__":
     tenant_id, username, password, ps_client_id = [config[s] for s in required_config]
 
     # Delete App registations (which also deletes connected service principals)
-    graph_token = get_user_principal_token_for_scope(
-        username, password, tenant_id, GRAPH_API + "/.default"
+    payload = UserPrincipalTokenPayload(
+        client_id=ps_client_id,
+        username=username,
+        password=password,
+        scope=GRAPH_API + "/.default",
     )
+    graph_token = get_principal_auth_token(tenant_id, payload)
     delete_app_registrations(graph_token)
 
     # Delete management_groups
-    resource_token = get_user_principal_token_for_scope(
-        username,
-        password,
-        tenant_id,
-        AZURE_PUBLIC_CLOUD.endpoints.resource_manager + "/.default",
+    payload = UserPrincipalTokenPayload(
+        client_id=ps_client_id,
+        username=username,
+        password=password,
+        scope=AZURE_PUBLIC_CLOUD.endpoints.resource_manager + "/.default",
     )
+    resource_token = get_principal_auth_token(tenant_id, payload)
     delete_management_groups(resource_token)

@@ -4,6 +4,7 @@ from unittest.mock import Mock
 import pytest
 
 from atat.domain.csp.cloud import AzureCloudProvider
+import atat.domain.csp.cloud.azure_cloud_provider
 
 AZURE_CONFIG = {
     "AZURE_CALC_CLIENT_ID": "MOCK",
@@ -22,17 +23,15 @@ AZURE_CONFIG = {
     "AZURE_AADP_QTY": 5,
 }
 
-AUTH_CREDENTIALS = {
-    "client_id": AZURE_CONFIG["AZURE_CLIENT_ID"],
-    "secret_key": AZURE_CONFIG["AZURE_SECRET_KEY"],
-    "tenant_id": AZURE_CONFIG["AZURE_TENANT_ID"],
-}
-
 KEYVAULT_SECRET = {
-    **AUTH_CREDENTIALS,
+    "root_sp_client_id": AZURE_CONFIG["AZURE_CLIENT_ID"],
+    "root_sp_key": AZURE_CONFIG["AZURE_SECRET_KEY"],
+    "root_tenant_id": AZURE_CONFIG["AZURE_TENANT_ID"],
     "tenant_id": "mock_tenant_id",
     "tenant_admin_username": "mock_tenant_admin_username",
     "tenant_admin_password": "mock_tenant_admin_password",  # pragma: allowlist secret
+    "tenant_sp_client_id": AZURE_CONFIG["AZURE_CLIENT_ID"],
+    "tenant_sp_key": AZURE_CONFIG["AZURE_SECRET_KEY"],
 }
 
 MOCK_ACCESS_TOKEN = "TOKEN"
@@ -61,6 +60,11 @@ class MockAzureSDK(object):
 @pytest.fixture(scope="function")
 def mock_azure(monkeypatch):
     monkeypatch.setattr(
+        atat.domain.csp.cloud.azure_cloud_provider,
+        "get_principal_auth_token",
+        Mock(return_value=MOCK_ACCESS_TOKEN),
+    )
+    monkeypatch.setattr(
         AzureCloudProvider, "validate_domain_name", Mock(return_value=True),
     )
     azure_cloud_provider = AzureCloudProvider(
@@ -80,11 +84,6 @@ def mock_azure(monkeypatch):
     monkeypatch.setattr(
         azure_cloud_provider,
         "_get_keyvault_token",
-        Mock(return_value=MOCK_ACCESS_TOKEN),
-    )
-    monkeypatch.setattr(
-        azure_cloud_provider,
-        "_get_service_principal_token",
         Mock(return_value=MOCK_ACCESS_TOKEN),
     )
     return azure_cloud_provider

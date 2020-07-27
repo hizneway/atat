@@ -9,7 +9,6 @@ from uuid import uuid4
 from flask import current_app as app
 
 from atat.utils import sha256_hex
-from atat.domain.csp.cloud.utils import get_user_principal_token_for_scope
 
 from .cloud_provider_interface import CloudProviderInterface
 from .exceptions import (
@@ -55,6 +54,7 @@ from .models import (
     ProductPurchaseVerificationCSPPayload,
     ProductPurchaseVerificationCSPResult,
     RoleAssignmentPayload,
+    ServicePrincipalTokenPayload,
     SubscriptionCreationCSPPayload,
     SubscriptionCreationCSPResult,
     TaskOrderBillingCreationCSPPayload,
@@ -77,10 +77,12 @@ from .models import (
     TenantPrincipalOwnershipCSPResult,
     UserCSPPayload,
     UserCSPResult,
+    UserPrincipalTokenPayload,
     UserRoleCSPPayload,
     UserRoleCSPResult,
 )
 from .policy import AzurePolicyManager
+from .utils import get_principal_auth_token
 
 # This needs to be a fully pathed role definition identifier, not just a UUID
 # TODO: Extract these from sdk msrestazure.azure_cloud import AZURE_PUBLIC_CLOUD
@@ -170,7 +172,7 @@ class AzureCloudProvider(CloudProviderInterface):
         self.secret_key = config["AZURE_SECRET_KEY"]
         self.root_tenant_id = config["AZURE_TENANT_ID"]
         self.vault_url = config["AZURE_VAULT_URL"]
-        self.ps_client_id = config["AZURE_POWERSHELL_CLIENT_ID"]
+        self.powershell_client_id = config["AZURE_POWERSHELL_CLIENT_ID"]
         self.graph_resource = config["AZURE_GRAPH_RESOURCE"]
         self.graph_scope = config["AZURE_GRAPH_RESOURCE"] + DEFAULT_SCOPE_SUFFIX
         self.default_aadp_qty = config["AZURE_AADP_QTY"]
@@ -1447,19 +1449,13 @@ class AzureCloudProvider(CloudProviderInterface):
     def _get_service_principal_token(
         self, tenant_id, client_id, secret_key, scope=None
     ):
-        url = (
-            f"{self.sdk.cloud.endpoints.active_directory}/{tenant_id}/oauth2/v2.0/token"
-        )
         payload_scope = scope or self.sdk.cloud.endpoints.resource_manager + ".default"
-        payload = {
-            "grant_type": "client_credentials",
-            "client_id": client_id,
-            "client_secret": secret_key,
-            "scope": payload_scope,
-        }
-        token_response = self.sdk.requests.post(url, data=payload, timeout=30)
-        token_response.raise_for_status()
-        token = token_response.json().get("access_token")
+        payload = ServicePrincipalTokenPayload(
+            scope=payload_scope,
+            client_id=self.powershell_client_id,
+            client_secret=secret_key,
+        )
+        token = get_principal_auth_token(tenant_id, payload)
         if token is None:
             message = f"Failed to get service principal token for scope '{payload_scope}' in tenant '{tenant_id}'"
             app.logger.error(message, exc_info=1)
@@ -1469,7 +1465,19 @@ class AzureCloudProvider(CloudProviderInterface):
 
     @log_and_raise_exceptions
     def _get_user_principal_token_for_scope(self, username, password, tenant_id, scope):
-        return get_user_principal_token_for_scope(username, password, tenant_id, scope)
+        payload = UserPrincipalTokenPayload(
+            client_id=self.config["AZURE_POWERSHELL_CLIENT_ID"],
+            username=username,
+            password=password,
+            scope=scope,
+        )
+        token = get_principal_auth_token(tenant_id, payload)
+        if token is None:
+            message = f"Failed to get user principal token for scope '{scope}' in tenant '{tenant_id}'"
+            app.logger.error(message, exc_info=1)
+            raise AuthenticationException(message)
+        else:
+            return token
 
     @property
     def _root_creds(self):

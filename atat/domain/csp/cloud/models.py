@@ -59,6 +59,22 @@ class TenantCSPPayload(AliasModel):
     password_recovery_email_address: str
 
 
+class PrincipalTokenPayload(BaseModel):
+    scope: str
+    client_id: str
+
+
+class UserPrincipalTokenPayload(PrincipalTokenPayload):
+    grant_type = "password"
+    username: str
+    password: str
+
+
+class ServicePrincipalTokenPayload(PrincipalTokenPayload):
+    grant_type = "client_credentials"
+    client_secret: str
+
+
 class TenantCSPResult(AliasModel):
     user_id: str
     tenant_id: str
