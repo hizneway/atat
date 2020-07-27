@@ -924,7 +924,7 @@ description = "Python datetimes made easy"
 name = "pendulum"
 optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
-version = "2.1.1"
+version = "2.1.2"
 
 [package.dependencies]
 python-dateutil = ">=2.6,<3.0"
@@ -1947,27 +1947,27 @@ pbr = [
     {file = "pbr-5.4.5.tar.gz", hash = "sha256:07f558fece33b05caf857474a366dfcc00562bca13dd8b47b2b3e22d9f9bf55c"},
 ]
 pendulum = [
-    {file = "pendulum-2.1.1-cp27-cp27m-macosx_10_15_x86_64.whl", hash = "sha256:96e505bc691ae3e7c268b803f21e5f8df60ee232bf02bad4f7c9a03dfaad6497"},
-    {file = "pendulum-2.1.1-cp27-cp27m-win_amd64.whl", hash = "sha256:78796e50be4ee8e70dfcceb3de41c50d345c8f44a90d1aca071643dd56f6ede0"},
-    {file = "pendulum-2.1.1-cp35-cp35m-macosx_10_15_x86_64.whl", hash = "sha256:6885bba9b69a832227d05dd8efccce57a0945e64369a656a4def7a77e3e6bac1"},
-    {file = "pendulum-2.1.1-cp35-cp35m-manylinux1_i686.whl", hash = "sha256:777bc1ad267e6976ac023c051f00ea88b9f270e7cc407f4b1e9c4e4d42a766d2"},
-    {file = "pendulum-2.1.1-cp35-cp35m-manylinux1_x86_64.whl", hash = "sha256:63f19df4af2b8d2d806c2cab8f327f78eef4ced688e911bd529b88bca92342b1"},
-    {file = "pendulum-2.1.1-cp35-cp35m-win_amd64.whl", hash = "sha256:3952247f6110fed884edc219be51d0c40a339e892bb4aa24631413e0fd5704eb"},
-    {file = "pendulum-2.1.1-cp36-cp36m-macosx_10_15_x86_64.whl", hash = "sha256:f69a4ff9b57f934f077c6a19cc6612b2a3ad07190f47a1ffe2f143860dcef945"},
-    {file = "pendulum-2.1.1-cp36-cp36m-manylinux1_i686.whl", hash = "sha256:0f5ede5e36d781e88346e9ac77f2e23459f1eb6a428545d944206517cd97202c"},
-    {file = "pendulum-2.1.1-cp36-cp36m-manylinux1_x86_64.whl", hash = "sha256:ac74cfdd510a7b60dde5f784be3dc11bc2a51910d78aebbe48fd7ebb1cbc91af"},
-    {file = "pendulum-2.1.1-cp36-cp36m-win_amd64.whl", hash = "sha256:5e1e3b419198028de731d41bb2e2fe3be50c3562f384781d87c30a2127c0fb97"},
-    {file = "pendulum-2.1.1-cp37-cp37m-macosx_10_15_x86_64.whl", hash = "sha256:d45342d158a736abc4c52e2de0b95971ed42588b330f18549c13750029ec9875"},
-    {file = "pendulum-2.1.1-cp37-cp37m-manylinux1_i686.whl", hash = "sha256:0ac7c282f5416988cd5f1176cde4d5abb3aae2f0059256ddbab4424958c993aa"},
-    {file = "pendulum-2.1.1-cp37-cp37m-manylinux1_x86_64.whl", hash = "sha256:33b9ae514a0f0d6b1aa01a9f00248a208b9d1af9a591f8945b0eda54c00153f0"},
-    {file = "pendulum-2.1.1-cp37-cp37m-win_amd64.whl", hash = "sha256:1e7fbed644a94c00d6488f50dfe9a254e5a2be6424fe87e7462ce9c5b62afee7"},
-    {file = "pendulum-2.1.1-cp38-cp38-macosx_10_15_x86_64.whl", hash = "sha256:dfe73a2c3a77f1a5d505288c1fe022032bf5e7cee539a52e8092d59dd01093ed"},
-    {file = "pendulum-2.1.1-cp38-cp38-manylinux1_i686.whl", hash = "sha256:bd211bf6ea8830955723305cca5b6bb54631af4466d0e2fb3ae108f67d847aed"},
-    {file = "pendulum-2.1.1-cp38-cp38-manylinux1_x86_64.whl", hash = "sha256:c922ed6b1568503b0db53ae0e3d96fc0c604579f7c1e9e6244d9f520e06dd9d4"},
-    {file = "pendulum-2.1.1-cp38-cp38-win_amd64.whl", hash = "sha256:150b19321ab9c277cc9fceddb985ed8f328ad533cef937c91ad0dfaee36d21e8"},
-    {file = "pendulum-2.1.1-cp39-cp39-manylinux1_i686.whl", hash = "sha256:951427c477501cc413b80a457ff05e5e4fe21ee55ca46e54ac1fab6e83e18c9c"},
-    {file = "pendulum-2.1.1-cp39-cp39-manylinux1_x86_64.whl", hash = "sha256:14804e3f61f934cacc8d5a925f99836a4084221cfaf237b26067199a78f117a9"},
-    {file = "pendulum-2.1.1.tar.gz", hash = "sha256:d97739a7a5d5fc64e98bab46b292ac9f15aee88b5d3851cd6037d011a7b18af0"},
+    {file = "pendulum-2.1.2-cp27-cp27m-macosx_10_15_x86_64.whl", hash = "sha256:b6c352f4bd32dff1ea7066bd31ad0f71f8d8100b9ff709fb343f3b86cee43efe"},
+    {file = "pendulum-2.1.2-cp27-cp27m-win_amd64.whl", hash = "sha256:318f72f62e8e23cd6660dbafe1e346950281a9aed144b5c596b2ddabc1d19739"},
+    {file = "pendulum-2.1.2-cp35-cp35m-macosx_10_15_x86_64.whl", hash = "sha256:0731f0c661a3cb779d398803655494893c9f581f6488048b3fb629c2342b5394"},
+    {file = "pendulum-2.1.2-cp35-cp35m-manylinux1_i686.whl", hash = "sha256:3481fad1dc3f6f6738bd575a951d3c15d4b4ce7c82dce37cf8ac1483fde6e8b0"},
+    {file = "pendulum-2.1.2-cp35-cp35m-manylinux1_x86_64.whl", hash = "sha256:9702069c694306297ed362ce7e3c1ef8404ac8ede39f9b28b7c1a7ad8c3959e3"},
+    {file = "pendulum-2.1.2-cp35-cp35m-win_amd64.whl", hash = "sha256:fb53ffa0085002ddd43b6ca61a7b34f2d4d7c3ed66f931fe599e1a531b42af9b"},
+    {file = "pendulum-2.1.2-cp36-cp36m-macosx_10_15_x86_64.whl", hash = "sha256:c501749fdd3d6f9e726086bf0cd4437281ed47e7bca132ddb522f86a1645d360"},
+    {file = "pendulum-2.1.2-cp36-cp36m-manylinux1_i686.whl", hash = "sha256:c807a578a532eeb226150d5006f156632df2cc8c5693d778324b43ff8c515dd0"},
+    {file = "pendulum-2.1.2-cp36-cp36m-manylinux1_x86_64.whl", hash = "sha256:2d1619a721df661e506eff8db8614016f0720ac171fe80dda1333ee44e684087"},
+    {file = "pendulum-2.1.2-cp36-cp36m-win_amd64.whl", hash = "sha256:f888f2d2909a414680a29ae74d0592758f2b9fcdee3549887779cd4055e975db"},
+    {file = "pendulum-2.1.2-cp37-cp37m-macosx_10_15_x86_64.whl", hash = "sha256:e95d329384717c7bf627bf27e204bc3b15c8238fa8d9d9781d93712776c14002"},
+    {file = "pendulum-2.1.2-cp37-cp37m-manylinux1_i686.whl", hash = "sha256:4c9c689747f39d0d02a9f94fcee737b34a5773803a64a5fdb046ee9cac7442c5"},
+    {file = "pendulum-2.1.2-cp37-cp37m-manylinux1_x86_64.whl", hash = "sha256:1245cd0075a3c6d889f581f6325dd8404aca5884dea7223a5566c38aab94642b"},
+    {file = "pendulum-2.1.2-cp37-cp37m-win_amd64.whl", hash = "sha256:db0a40d8bcd27b4fb46676e8eb3c732c67a5a5e6bfab8927028224fbced0b40b"},
+    {file = "pendulum-2.1.2-cp38-cp38-macosx_10_15_x86_64.whl", hash = "sha256:f5e236e7730cab1644e1b87aca3d2ff3e375a608542e90fe25685dae46310116"},
+    {file = "pendulum-2.1.2-cp38-cp38-manylinux1_i686.whl", hash = "sha256:de42ea3e2943171a9e95141f2eecf972480636e8e484ccffaf1e833929e9e052"},
+    {file = "pendulum-2.1.2-cp38-cp38-manylinux1_x86_64.whl", hash = "sha256:7c5ec650cb4bec4c63a89a0242cc8c3cebcec92fcfe937c417ba18277d8560be"},
+    {file = "pendulum-2.1.2-cp38-cp38-win_amd64.whl", hash = "sha256:33fb61601083f3eb1d15edeb45274f73c63b3c44a8524703dc143f4212bf3269"},
+    {file = "pendulum-2.1.2-cp39-cp39-manylinux1_i686.whl", hash = "sha256:29c40a6f2942376185728c9a0347d7c0f07905638c83007e1d262781f1e6953a"},
+    {file = "pendulum-2.1.2-cp39-cp39-manylinux1_x86_64.whl", hash = "sha256:94b1fc947bfe38579b28e1cccb36f7e28a15e841f30384b5ad6c5e31055c85d7"},
+    {file = "pendulum-2.1.2.tar.gz", hash = "sha256:b06a0ca1bfe41c990bbf0c029f0b6501a7f2ec4e38bfec730712015e8860f207"},
 ]
 pexpect = [
     {file = "pexpect-4.8.0-py2.py3-none-any.whl", hash = "sha256:0b48a55dcb3c05f3329815901ea4fc1537514d6ba867a152b581d69ae3710937"},
