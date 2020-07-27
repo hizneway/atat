@@ -165,6 +165,12 @@ And it will create the new user, sign in as them, and load their profile page to
 
 Once this user is created, you can log in as them again the future using the DoD ID dev login endpoint documented above.
 
+**Federated Authentication with Azure**
+
+Note that when `FLASK_ENV` is set to `master`, that the `/login-dev` routes will all require you to have a valid account in the Azure tenant and authenticate against it. 
+Alternatively, you can include `saml` in your query string to force federate authentication, which may be useful when debugging.
+Example: `/login-dev?saml`
+
 ### Seeding the database
 
 We have a helper script that will seed the database with requests, portfolios and
