@@ -54,6 +54,12 @@ Then you can run the integration tests script. You will need four environment va
 NGROK_TOKEN=<token> GI_API_KEY=<api key> GI_SUITE=<suite> CONTAINER_IMAGE=atat:builder ./script/integration_tests
 ```
 
+Alternatively, if you need to run the tests against a secured server with a static url, you can use this command. NOTE: this **requires** you to use an ngrok token associated with a paid ngrok account, since reserved domains are only available there.
+
+```
+NGROK_TOKEN=<token> GI_API_KEY=<api key> GI_SUITE=<suite> NGROK_DOMAIN=<reserved_domain> CONTAINER_IMAGE=atat:builder ./script/integration_tests_secure
+```
+
 ### Troubleshooting
 
 - If you get errors regarding ports being in use, make sure you don't have instances of the Flask app, Postgres, or Redis running locally using those ports.
