@@ -73,12 +73,12 @@ def saml_post(saml_auth):
 
 
 def unique_dod_id():
-    new_dod_id = f"{randint(0,99999999):09}"
-    existing_dod_ids = Users.get_all_dod_ids()
-    if new_dod_id in existing_dod_ids:
-        unique_dod_id()
-    else:
+    new_dod_id = f"{randint(0,99999999):09}"  # nosec
+    try:
+        Users.get_by_dod_id(new_dod_id)
+    except NotFoundError:
         return new_dod_id
+    unique_dod_id()
 
 
 def init_saml_auth(request):

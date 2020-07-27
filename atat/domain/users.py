@@ -133,7 +133,3 @@ class Users(object):
             raise NotFoundError("user")
 
         return user
-
-    @classmethod
-    def get_all_dod_ids(cls):
-        return [dod_id[0] for dod_id in db.session.query(User.dod_id)]
