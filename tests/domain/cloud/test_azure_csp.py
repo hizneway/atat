@@ -1905,3 +1905,32 @@ class Test_remove_role_assignment:
         assert {"some": "data"} == mock_azure._remove_role_assignment(
             "token", "role-assignment-id"
         )
+
+
+class Test_get_role_definition_id:
+    def test_interpolates_definition_name(self, mock_azure, monkeypatch):
+        monkeypatch.setattr(
+            mock_azure,
+            "_list_role_definitions",
+            Mock(return_value=[{"name": "definition_UUID"}]),
+        )
+        mock_azure._get_role_definition_id("token", "A definition")
+        mock_azure._list_role_definitions.assert_called_with(
+            "token", params={"$filter": "roleName eq 'A definition'"}
+        )
+
+    def test_returns_name(self, mock_azure, monkeypatch):
+        monkeypatch.setattr(
+            mock_azure,
+            "_list_role_definitions",
+            Mock(return_value=[{"name": "definition_UUID"}]),
+        )
+        assert (
+            mock_azure._get_role_definition_id("token", "A definition")
+            == "definition_UUID"
+        )
+
+    def test_returns_none_for_empty_list(self, mock_azure, monkeypatch):
+        monkeypatch.setattr(mock_azure, "_list_role_definitions", Mock(return_value=[]))
+
+        assert mock_azure._get_role_definition_id("token", "A definition") is None

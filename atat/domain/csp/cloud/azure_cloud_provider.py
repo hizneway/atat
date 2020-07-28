@@ -1614,3 +1614,9 @@ class AzureCloudProvider(CloudProviderInterface):
         )
         response.raise_for_status()
         return response.json()
+
+    def _get_role_definition_id(self, token, role_definition_name):
+        definitions = self._list_role_definitions(
+            token, params={"$filter": f"roleName eq '{role_definition_name}'"}
+        )
+        return next((d["name"] for d in definitions), None)
