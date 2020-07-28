@@ -513,17 +513,16 @@ class AzureCloudProvider(CloudProviderInterface):
     @log_and_raise_exceptions
     def disable_user(self, tenant_id, role_assignment_cloud_id):
         sp_token = self._get_tenant_principal_token(tenant_id)
-        headers = {
-            "Authorization": f"Bearer {sp_token}",
-        }
 
-        result = self.sdk.requests.delete(
-            f"{self.sdk.cloud.endpoints.resource_manager}{role_assignment_cloud_id}?api-version=2015-07-01",
-            headers=headers,
-            timeout=30,
-        )
-        result.raise_for_status()
-        return result.json()
+        # TODO: Normalize this elsewhere in the app so that we can always
+        # expect role_assignment_cloud_id to be a UUID
+        prefix = "providers/Microsoft.Authorization/roleAssignments/"
+        (scope, prefix, assignment_uuid) = role_assignment_cloud_id.rpartition(prefix)
+        if not scope:
+            scope = f"providers/Microsoft.Management/managementGroups/{tenant_id}/"
+        role_assignment_id = scope + prefix + assignment_uuid
+
+        return self._remove_role_assignment(sp_token, role_assignment_id)
 
     @log_and_raise_exceptions
     def validate_domain_name(self, name):
@@ -1599,3 +1598,19 @@ class AzureCloudProvider(CloudProviderInterface):
         )
         response.raise_for_status()
         return response.json()["value"]
+
+    @log_and_raise_exceptions
+    def _remove_role_assignment(self, token, role_assignment_id):
+        """Removes role assignment in a given tenant
+        
+        https://docs.microsoft.com/en-us/rest/api/authorization/roleassignments/delete
+        """
+        auth_header = {"Authorization": f"Bearer {token}"}
+
+        response = self.sdk.requests.delete(
+            url=f"{self.sdk.cloud.endpoints.resource_manager}{role_assignment_id}",
+            params={"api-version": "2015-07-01"},
+            headers=auth_header,
+        )
+        response.raise_for_status()
+        return response.json()

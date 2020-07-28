@@ -246,40 +246,10 @@ def test_create_initial_mgmt_group_verification(
 
 
 def test_disable_user(mock_azure: AzureCloudProvider, mock_http_error_response):
-
-    assignment_guid = str(uuid4())
-    management_group_id = str(uuid4())
-    assignment_id = f"/providers/Microsoft.Management/managementGroups/{management_group_id}/providers/Microsoft.Authorization/roleAssignments/{assignment_guid}"
-    mock_result = mock_requests_response(
-        json_data={
-            "properties": {
-                "roleDefinitionId": "/subscriptions/subId/providers/Microsoft.Authorization/roleDefinitions/roledefinitionId",
-                "principalId": "Pid",
-                "scope": "/subscriptions/subId/resourcegroups/rgname",
-            },
-            "id": assignment_id,
-            "type": "Microsoft.Authorization/roleAssignments",
-            "name": assignment_guid,
-        }
-    )
-
-    mock_azure.sdk.requests.delete.side_effect = [
-        mock_azure.sdk.requests.exceptions.ConnectionError,
-        mock_azure.sdk.requests.exceptions.Timeout,
-        mock_http_error_response,
-        mock_result,
-    ]
-
-    tenant_id = "60ff9d34-82bf-4f21-b565-308ef0533435"
-    with pytest.raises(ConnectionException):
-        mock_azure.disable_user(tenant_id, assignment_guid)
-    with pytest.raises(ConnectionException):
-        mock_azure.disable_user(tenant_id, assignment_guid)
-    with pytest.raises(UnknownServerException, match=r".*500 Server Error.*"):
-        mock_azure.disable_user(tenant_id, assignment_guid)
-
-    result = mock_azure.disable_user(tenant_id, assignment_guid)
-    assert result.get("name") == assignment_guid
+    mock_azure._remove_role_assignment = Mock(return_value={"some": "data"})
+    assert mock_azure.disable_user("a tenant id", "a role_assignment id") == {
+        "some": "data"
+    }
 
 
 def test_create_tenant(mock_azure: AzureCloudProvider, mock_http_error_response):
@@ -1911,5 +1881,27 @@ def test_list_role_definitions(mock_azure, mock_http_error_response):
     with pytest.raises(UnknownServerException, match=r".*500 Server Error.*"):
         mock_azure._list_role_definitions("token")
 
-
     assert [] == mock_azure._list_role_definitions("token")
+
+
+class Test_remove_role_assignment:
+    def test_errors(self, mock_azure, mock_http_error_response):
+        mock_azure.sdk.requests.delete.side_effect = [
+            mock_azure.sdk.requests.exceptions.ConnectionError,
+            mock_azure.sdk.requests.exceptions.Timeout,
+            mock_http_error_response,
+        ]
+        with pytest.raises(ConnectionException):
+            mock_azure._remove_role_assignment("token", "assignment-id")
+        with pytest.raises(ConnectionException):
+            mock_azure._remove_role_assignment("token", "assignment-id")
+        with pytest.raises(UnknownServerException, match=r".*500 Server Error.*"):
+            mock_azure._remove_role_assignment("token", "assignment-id")
+
+    def test_success(self, mock_azure, mock_http_error_response):
+        mock_azure.sdk.requests.delete.side_effect = [
+            mock_requests_response(json_data={"some": "data"})
+        ]
+        assert {"some": "data"} == mock_azure._remove_role_assignment(
+            "token", "role-assignment-id"
+        )
