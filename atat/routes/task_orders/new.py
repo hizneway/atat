@@ -110,17 +110,23 @@ def upload_config(csp, config):
         return {}
 
 
+def upload_cloud_provider(csp):
+    if csp == "hybrid":
+        return "azure"
+    else:
+        return csp
+
+
 @task_orders_bp.route("/task_orders/<portfolio_id>/upload_token")
 @user_can(Permissions.CREATE_TASK_ORDER, message="edit task order form")
 def upload_token(portfolio_id):
     (token, object_name) = app.csp.files.get_token()
     csp = app.config["CSP"]
-    config = upload_config(csp, app.config)
     render_args = {
-        "cloudProvider": csp,
+        "cloudProvider": upload_cloud_provider(csp),
         "token": token,
         "objectName": object_name,
-        "config": config,
+        "config": upload_config(csp, app.config),
     }
 
     return jsonify(render_args)
