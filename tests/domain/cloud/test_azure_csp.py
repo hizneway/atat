@@ -1894,3 +1894,22 @@ def test_list_role_assignments(mock_azure, mock_http_error_response):
         mock_azure._list_role_assignments("token")
 
     assert [] == mock_azure._list_role_assignments("token")
+
+
+def test_list_role_definitions(mock_azure, mock_http_error_response):
+    mock_result = mock_requests_response(json_data={"value": []})
+    mock_azure.sdk.requests.get.side_effect = [
+        mock_azure.sdk.requests.exceptions.ConnectionError,
+        mock_azure.sdk.requests.exceptions.Timeout,
+        mock_http_error_response,
+        mock_result,
+    ]
+    with pytest.raises(ConnectionException):
+        mock_azure._list_role_definitions("token")
+    with pytest.raises(ConnectionException):
+        mock_azure._list_role_definitions("token")
+    with pytest.raises(UnknownServerException, match=r".*500 Server Error.*"):
+        mock_azure._list_role_definitions("token")
+
+
+    assert [] == mock_azure._list_role_definitions("token")
