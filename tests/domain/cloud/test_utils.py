@@ -3,7 +3,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 import requests
 
-from atat.domain.csp.cloud.utils import get_principal_auth_token
+from atat.domain.csp.cloud.utils import get_principal_auth_token, make_auth_header
 from tests.domain.cloud.test_azure_csp import mock_requests_response
 from tests.mock_azure import mock_requests
 
@@ -25,3 +25,8 @@ def test_get_principal_auth_token(mock_requests):
 
     assert get_principal_auth_token("a_tenant_id", payload) == "token"
     assert get_principal_auth_token("a_tenant_id", payload) is None
+
+
+def test_make_auth_header():
+    header = make_auth_header("foo")
+    assert header["Authorization"] == "Bearer foo"
