@@ -55,6 +55,11 @@ def saml_post(saml_auth):
                 "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/surname"
             )[0]
             try:
+                # We check for an existing user by searching for any user with the
+                # same first and last name. This could possibly cause collisions
+                # of two users with the exact same first and last name.
+                # However, the Azure SAML token doesn't seem to currently provide
+                # more distinquishing detail than that that
                 user = Users.get_by_first_and_last_name(
                     saml_user_details["first_name"], saml_user_details["last_name"]
                 )
