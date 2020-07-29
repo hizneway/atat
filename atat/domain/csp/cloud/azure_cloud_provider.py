@@ -98,6 +98,8 @@ USER_ACCESS_ADMIN_ROLE_DEFINITION_ID = "18d7d88d-d35e-4fb5-a5c3-7773c20a72d9"
 
 DEFAULT_POLICY_SET_DEFINITION_NAME = "Default JEDI Policy Set"
 
+DEFAULT_SCOPE_SUFFIX = "/.default"
+
 
 def log_and_raise_exceptions(func):
     """Wraps Azure cloud provider API calls to catch `requests` exceptions,
@@ -170,7 +172,7 @@ class AzureCloudProvider(CloudProviderInterface):
         self.vault_url = config["AZURE_VAULT_URL"]
         self.ps_client_id = config["AZURE_POWERSHELL_CLIENT_ID"]
         self.graph_resource = config["AZURE_GRAPH_RESOURCE"]
-        self.graph_scope = config["AZURE_GRAPH_RESOURCE"] + "/.default"
+        self.graph_scope = config["AZURE_GRAPH_RESOURCE"] + DEFAULT_SCOPE_SUFFIX
         self.default_aadp_qty = config["AZURE_AADP_QTY"]
         self.roles = {
             "owner": config["AZURE_ROLE_DEF_ID_OWNER"],
@@ -1230,7 +1232,7 @@ class AzureCloudProvider(CloudProviderInterface):
         """
         if graph_token is None:
             graph_token = self._get_tenant_principal_token(
-                payload.tenant_id, scope=self.graph_resource + "/.default"
+                payload.tenant_id, scope=self.graph_resource + DEFAULT_SCOPE_SUFFIX
             )
 
         # Step 1: Retrieve or create an AAD identity for the user
@@ -1307,7 +1309,7 @@ class AzureCloudProvider(CloudProviderInterface):
         # Request a graph api authorization token
 
         graph_token = self._get_tenant_principal_token(
-            payload.tenant_id, scope=self.graph_resource + "/.default"
+            payload.tenant_id, scope=self.graph_resource + DEFAULT_SCOPE_SUFFIX
         )
 
         # Use the graph api to invite a user
