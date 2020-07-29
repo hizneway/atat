@@ -1567,3 +1567,19 @@ class AzureCloudProvider(CloudProviderInterface):
             scope=self.config.get("AZURE_CALC_RESOURCE"),
         )
         return f"{self.config.get('AZURE_CALC_URL')}?access_token={calc_access_token}"
+
+    @log_and_raise_exceptions
+    def _list_role_assignments(self, token, params=None):
+        api_version_param = {"api-version": "2015-07-01"}
+        if params is None:
+            params = api_version_param
+        else:
+            params.update(api_version_param)
+        auth_header = {"Authorization": f"Bearer {token}"}
+        response = self.sdk.requests.get(
+            url=f"{self.sdk.cloud.endpoints.resource_manager}providers/Microsoft.Authorization/roleAssignments",
+            headers=auth_header,
+            params=params,
+        )
+        response.raise_for_status()
+        return response.json()["value"]
