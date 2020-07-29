@@ -1154,7 +1154,7 @@ class AzureCloudProvider(CloudProviderInterface):
         request_body = {
             "principalId": payload.principal_id,
             "roleDefinitionId": payload.admin_role_def_id,
-            "resourceScope": "/",
+            "directoryScopeId": "/",
         }
 
         auth_header = {
@@ -1261,7 +1261,7 @@ class AzureCloudProvider(CloudProviderInterface):
         request_body = {
             "roleDefinitionId": billing_admin_role_id,
             "principalId": user_id,
-            "resourceScope": "/",
+            "directoryScopeId": "/",
         }
 
         auth_header = {
