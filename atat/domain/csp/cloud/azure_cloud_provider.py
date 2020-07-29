@@ -213,7 +213,8 @@ class AzureCloudProvider(CloudProviderInterface):
     def set_secret(self, secret_key, secret_value):
         kv_token = self._get_keyvault_token()
         result = self.sdk.requests.put(
-            f"{self.vault_url}secrets/{secret_key}?api-version=7.0",
+            f"{self.vault_url}secrets/{secret_key}",
+            params={"api-version": "7.0"},
             headers=make_auth_header(kv_token),
             timeout=30,
             json={"value": secret_value},
@@ -226,7 +227,8 @@ class AzureCloudProvider(CloudProviderInterface):
     def get_secret(self, secret_key):
         kv_token = self._get_keyvault_token()
         result = self.sdk.requests.get(
-            f"{self.vault_url}secrets/{secret_key}?api-version=7.0",
+            f"{self.vault_url}secrets/{secret_key}",
+            params={"api-version": "7.0"},
             headers=make_auth_header(kv_token),
             timeout=30,
         )
@@ -294,8 +296,9 @@ class AzureCloudProvider(CloudProviderInterface):
             payload.tenant_id, payload.user_object_id
         ) as elevated_token:
             response = self.sdk.requests.get(
-                f"{self.sdk.cloud.endpoints.resource_manager}providers/Microsoft.Management/managementGroups/{payload.management_group_name}?api-version=2020-02-01",
+                f"{self.sdk.cloud.endpoints.resource_manager}providers/Microsoft.Management/managementGroups/{payload.management_group_name}",
                 headers=make_auth_header(elevated_token),
+                params={"api-version": "2020-02-01"},
             )
             response.raise_for_status()
             return InitialMgmtGroupVerificationCSPResult(**response.json())
@@ -327,7 +330,8 @@ class AzureCloudProvider(CloudProviderInterface):
             request_body["properties"]["parent"] = {"id": parent_id}
 
         response = session.put(
-            f"{self.sdk.cloud.endpoints.resource_manager}providers/Microsoft.Management/managementGroups/{management_group_id}?api-version=2020-02-01",
+            f"{self.sdk.cloud.endpoints.resource_manager}providers/Microsoft.Management/managementGroups/{management_group_id}",
+            params={"api-version": "2020-02-01"},
             json=request_body,
         )
         response.raise_for_status()
@@ -364,7 +368,8 @@ class AzureCloudProvider(CloudProviderInterface):
         """
         request_body = {"parentId": parent_id}
         response = session.patch(
-            f"{self.sdk.cloud.endpoints.resource_manager}providers/Microsoft.Management/managementGroups/{management_group_id}?api-version=2020-02-01",
+            f"{self.sdk.cloud.endpoints.resource_manager}providers/Microsoft.Management/managementGroups/{management_group_id}",
+            params={"api-version": "2020-02-01"},
             json=request_body,
         )
         response.raise_for_status()
@@ -415,10 +420,15 @@ class AzureCloudProvider(CloudProviderInterface):
 
     @log_and_raise_exceptions
     def _create_policy_definition(self, session, root_management_group_name, policy):
-        create_policy_definition_uri = f"{self.sdk.cloud.endpoints.resource_manager}providers/Microsoft.Management/managementGroups/{root_management_group_name}/providers/Microsoft.Authorization/policyDefinitions/{policy.definition['properties']['displayName']}?api-version=2019-09-01"
+        create_policy_definition_uri = f"{self.sdk.cloud.endpoints.resource_manager}providers/Microsoft.Management/managementGroups/{root_management_group_name}/providers/Microsoft.Authorization/policyDefinitions/{policy.definition['properties']['displayName']}"
         body = policy.definition
 
-        result = session.put(create_policy_definition_uri, json=body, timeout=30,)
+        result = session.put(
+            create_policy_definition_uri,
+            params={"api-version": "2019-09-01"},
+            json=body,
+            timeout=30,
+        )
         result.raise_for_status()
         if result.status_code == 201:
             return result.json()
@@ -431,7 +441,7 @@ class AzureCloudProvider(CloudProviderInterface):
         policy_set_definition_name,
         definition_references,
     ):
-        create_policy_set_uri = f"{self.sdk.cloud.endpoints.resource_manager}providers/Microsoft.Management/managementGroups/{root_management_group_name}/providers/Microsoft.Authorization/policySetDefinitions/{policy_set_definition_name}?api-version=2019-09-01"
+        create_policy_set_uri = f"{self.sdk.cloud.endpoints.resource_manager}providers/Microsoft.Management/managementGroups/{root_management_group_name}/providers/Microsoft.Authorization/policySetDefinitions/{policy_set_definition_name}"
         body = {
             "properties": {
                 "displayName": policy_set_definition_name,
@@ -440,7 +450,12 @@ class AzureCloudProvider(CloudProviderInterface):
             }
         }
 
-        result = session.put(create_policy_set_uri, json=body, timeout=30,)
+        result = session.put(
+            create_policy_set_uri,
+            params={"api-version": "2019-09-01"},
+            json=body,
+            timeout=30,
+        )
         result.raise_for_status()
         if result.status_code in [200, 201]:
             return result.json()
@@ -449,7 +464,7 @@ class AzureCloudProvider(CloudProviderInterface):
     def _create_policy_set_assignment(
         self, session, root_management_group_name, policy_set_definition
     ):
-        create_policy_assignment_uri = f"{self.sdk.cloud.endpoints.resource_manager}providers/Microsoft.Management/managementGroups/{root_management_group_name}/providers/Microsoft.Authorization/policyAssignments/{policy_set_definition['properties']['displayName']}?api-version=2019-09-01"
+        create_policy_assignment_uri = f"{self.sdk.cloud.endpoints.resource_manager}providers/Microsoft.Management/managementGroups/{root_management_group_name}/providers/Microsoft.Authorization/policyAssignments/{policy_set_definition['properties']['displayName']}"
         body = {
             "properties": {
                 "displayName": policy_set_definition["properties"]["displayName"],
@@ -457,7 +472,12 @@ class AzureCloudProvider(CloudProviderInterface):
             }
         }
 
-        result = session.put(create_policy_assignment_uri, json=body, timeout=30,)
+        result = session.put(
+            create_policy_assignment_uri,
+            params={"api-version": "2019-09-01"},
+            json=body,
+            timeout=30,
+        )
         result.raise_for_status()
         if result.status_code == 201:
             return result.json()
@@ -545,7 +565,8 @@ class AzureCloudProvider(CloudProviderInterface):
         create_tenant_body = payload.dict(by_alias=True)
 
         result = self.sdk.requests.post(
-            f"{self.sdk.cloud.endpoints.resource_manager}providers/Microsoft.SignUp/createTenant?api-version=2020-01-01-preview",
+            f"{self.sdk.cloud.endpoints.resource_manager}providers/Microsoft.SignUp/createTenant",
+            params={"api-version": "2020-01-01-preview"},
             json=create_tenant_body,
             headers=make_auth_header(sp_token),
             timeout=30,
@@ -587,11 +608,10 @@ class AzureCloudProvider(CloudProviderInterface):
         sp_token = self._get_root_provisioning_token()
 
         create_billing_account_body = payload.dict(by_alias=True)
-
-        billing_account_create_url = f"{self.sdk.cloud.endpoints.resource_manager}/providers/Microsoft.Billing/billingAccounts/{payload.billing_account_name}/billingProfiles?api-version=2019-10-01-preview"
-
+        billing_account_create_url = f"{self.sdk.cloud.endpoints.resource_manager}/providers/Microsoft.Billing/billingAccounts/{payload.billing_account_name}/billingProfiles"
         result = self.sdk.requests.post(
             billing_account_create_url,
+            params={"api-version": "2019-10-01-preview"},
             json=create_billing_account_body,
             headers=make_auth_header(sp_token),
             timeout=30,
@@ -646,9 +666,13 @@ class AzureCloudProvider(CloudProviderInterface):
             }
         }
 
-        url = f"{self.sdk.cloud.endpoints.resource_manager}/providers/Microsoft.Billing/billingAccounts/{payload.billing_account_name}/billingProfiles/{payload.billing_profile_name}/createBillingRoleAssignment?api-version=2019-10-01-preview"
+        url = f"{self.sdk.cloud.endpoints.resource_manager}/providers/Microsoft.Billing/billingAccounts/{payload.billing_account_name}/billingProfiles/{payload.billing_profile_name}/createBillingRoleAssignment"
         result = self.sdk.requests.post(
-            url, headers=make_auth_header(sp_token), json=request_body, timeout=30,
+            url,
+            headers=make_auth_header(sp_token),
+            params={"api-version": "2019-10-01-preview"},
+            json=request_body,
+            timeout=30,
         )
         result.raise_for_status()
         if result.status_code == 201:
@@ -667,10 +691,14 @@ class AzureCloudProvider(CloudProviderInterface):
             }
         ]
 
-        url = f"{self.sdk.cloud.endpoints.resource_manager}/providers/Microsoft.Billing/billingAccounts/{payload.billing_account_name}/billingProfiles/{payload.billing_profile_name}?api-version=2019-10-01-preview"
+        url = f"{self.sdk.cloud.endpoints.resource_manager}/providers/Microsoft.Billing/billingAccounts/{payload.billing_account_name}/billingProfiles/{payload.billing_profile_name}"
 
         result = self.sdk.requests.patch(
-            url, headers=make_auth_header(sp_token), json=request_body, timeout=30,
+            url,
+            headers=make_auth_header(sp_token),
+            params={"api-version": "2019-10-01-preview"},
+            json=request_body,
+            timeout=30,
         )
         result.raise_for_status()
 
@@ -711,10 +739,14 @@ class AzureCloudProvider(CloudProviderInterface):
             }
         }
 
-        url = f"{self.sdk.cloud.endpoints.resource_manager}/providers/Microsoft.Billing/billingAccounts/{payload.billing_account_name}/billingProfiles/{payload.billing_profile_name}/instructions/{payload.initial_task_order_id}:CLIN00{payload.initial_clin_type}?api-version=2019-10-01-preview"
+        url = f"{self.sdk.cloud.endpoints.resource_manager}/providers/Microsoft.Billing/billingAccounts/{payload.billing_account_name}/billingProfiles/{payload.billing_profile_name}/instructions/{payload.initial_task_order_id}:CLIN00{payload.initial_clin_type}"
 
         result = self.sdk.requests.put(
-            url, headers=make_auth_header(sp_token), json=request_body, timeout=30
+            url,
+            headers=make_auth_header(sp_token),
+            params={"api-version": "2019-10-01-preview"},
+            json=request_body,
+            timeout=30,
         )
         result.raise_for_status()
         return BillingInstructionCSPResult(**result.json())
@@ -730,9 +762,13 @@ class AzureCloudProvider(CloudProviderInterface):
             "managementGroupId": payload.parent_group_id,
         }
 
-        url = f"{self.sdk.cloud.endpoints.resource_manager}providers/Microsoft.Billing/billingAccounts/{payload.billing_account_name}/billingProfiles/{payload.billing_profile_name}/invoiceSections/{payload.invoice_section_name}/providers/Microsoft.Subscription/createSubscription?api-version=2019-10-01-preview"
+        url = f"{self.sdk.cloud.endpoints.resource_manager}providers/Microsoft.Billing/billingAccounts/{payload.billing_account_name}/billingProfiles/{payload.billing_profile_name}/invoiceSections/{payload.invoice_section_name}/providers/Microsoft.Subscription/createSubscription"
         result = self.sdk.requests.post(
-            url, headers=make_auth_header(token), json=request_body, timeout=30
+            url,
+            headers=make_auth_header(token),
+            params={"api-version": "2019-10-01-preview"},
+            json=request_body,
+            timeout=30,
         )
         result.raise_for_status()
         if result.status_code in [200, 202]:
@@ -750,10 +786,11 @@ class AzureCloudProvider(CloudProviderInterface):
             "quantity": self.default_aadp_qty,
         }
 
-        product_purchase_url = f"https://management.azure.com/providers/Microsoft.Billing/billingAccounts/{payload.billing_account_name}/billingProfiles/{payload.billing_profile_name}/purchaseProduct?api-version=2019-10-01-preview"
+        product_purchase_url = f"https://management.azure.com/providers/Microsoft.Billing/billingAccounts/{payload.billing_account_name}/billingProfiles/{payload.billing_profile_name}/purchaseProduct"
 
         result = self.sdk.requests.post(
             product_purchase_url,
+            params={"api-version": "2019-10-01-preview"},
             json=create_product_purchase_body,
             headers=make_auth_header(sp_token),
             timeout=30,
@@ -1051,7 +1088,10 @@ class AzureCloudProvider(CloudProviderInterface):
             registration and the app role id for "Directory.ReadWrite.All"
         """
         response = self.sdk.requests.get(
-            f"{self.graph_resource}/v1.0/servicePrincipals?$filter=servicePrincipalNames/any(name:name+eq+'{GRAPH_API_APPLICATION_ID}')",
+            f"{self.graph_resource}/v1.0/servicePrincipals",
+            params={
+                "$filter": f"servicePrincipalNames/any(name:name eq '{GRAPH_API_APPLICATION_ID}')"
+            },
             headers=make_auth_header(graph_token),
         )
         response.raise_for_status()
@@ -1332,10 +1372,13 @@ class AzureCloudProvider(CloudProviderInterface):
 
         assignment_guid = str(uuid4())
 
-        url = f"{self.sdk.cloud.endpoints.resource_manager}{payload.management_group_id}/providers/Microsoft.Authorization/roleAssignments/{assignment_guid}?api-version=2015-07-01"
+        url = f"{self.sdk.cloud.endpoints.resource_manager}{payload.management_group_id}/providers/Microsoft.Authorization/roleAssignments/{assignment_guid}"
 
         response = self.sdk.requests.put(
-            url, headers=make_auth_header(graph_token), json=request_body
+            url,
+            headers=make_auth_header(graph_token),
+            params={"api-version": "2015-07-01"},
+            json=request_body,
         )
 
         if response.ok:
@@ -1366,9 +1409,7 @@ class AzureCloudProvider(CloudProviderInterface):
     ):
         payload_scope = scope or self.sdk.cloud.endpoints.resource_manager + ".default"
         payload = ServicePrincipalTokenPayload(
-            scope=payload_scope,
-            client_id=self.powershell_client_id,
-            client_secret=secret_key,
+            scope=payload_scope, client_id=client_id, client_secret=secret_key,
         )
         token = get_principal_auth_token(tenant_id, payload)
         if token is None:
@@ -1381,7 +1422,7 @@ class AzureCloudProvider(CloudProviderInterface):
     @log_and_raise_exceptions
     def _get_user_principal_token_for_scope(self, username, password, tenant_id, scope):
         payload = UserPrincipalTokenPayload(
-            client_id=self.config["AZURE_POWERSHELL_CLIENT_ID"],
+            client_id=self.powershell_client_id,
             username=username,
             password=password,
             scope=scope,
@@ -1471,11 +1512,10 @@ class AzureCloudProvider(CloudProviderInterface):
                 "grouping": [{"type": "Dimension", "name": "InvoiceId"}],
             },
         }
-        cost_mgmt_url = (
-            f"/providers/Microsoft.CostManagement/query?api-version=2019-11-01"
-        )
+        cost_mgmt_url = f"/providers/Microsoft.CostManagement/query"
         result = self.sdk.requests.post(
             f"{self.sdk.cloud.endpoints.resource_manager}{payload.invoice_section_id}{cost_mgmt_url}",
+            params={"api-version": "2019-11-01"},
             json=request_body,
             headers=make_auth_header(token),
             timeout=30,
