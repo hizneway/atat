@@ -425,7 +425,6 @@ class AzureCloudProvider(CloudProviderInterface):
                 raise ResourceProvisioningError("management group", f"{error_message}")
             else:
                 time.sleep(int(response.headers.get("Retry-After", 10)))
-                continue
 
     @log_and_raise_exceptions
     def _create_policy_definition(self, session, root_management_group_name, policy):
