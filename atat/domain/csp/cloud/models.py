@@ -280,6 +280,7 @@ class TenantAdminCredentialResetCSPResult(AliasModel):
 
 
 class TenantPrincipalOwnershipCSPPayload(BaseCSPPayload):
+    user_object_id: str
     principal_id: str
 
 
@@ -417,6 +418,8 @@ class InitialMgmtGroupCSPResult(AliasModel):
 
 
 class InitialMgmtGroupVerificationCSPPayload(ManagementGroupGetCSPPayload):
+    user_object_id: str
+
     class Config:
         fields = {"management_group_name": "root_management_group_name"}
 

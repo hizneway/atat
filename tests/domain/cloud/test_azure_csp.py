@@ -228,7 +228,9 @@ def test_create_initial_mgmt_group_verification(
     ]
 
     payload = InitialMgmtGroupVerificationCSPPayload(
-        tenant_id="1234", management_group_name="TestName"
+        tenant_id="1234",
+        management_group_name="TestName",
+        user_object_id="test_user_object_id",
     )
 
     with pytest.raises(ConnectionException):
@@ -875,20 +877,16 @@ def test_create_tenant_admin_ownership(
 def test_create_tenant_principal_ownership(
     mock_azure: AzureCloudProvider, mock_http_error_response
 ):
-    mock_result = mock_requests_response(json_data={"id": "id"})
-
     mock_azure.sdk.requests.put.side_effect = [
         mock_azure.sdk.requests.exceptions.ConnectionError,
         mock_azure.sdk.requests.exceptions.Timeout,
         mock_http_error_response,
-        mock_result,
+        mock_requests_response(json_data={"id": "id"}),
     ]
-
     payload = TenantPrincipalOwnershipCSPPayload(
-        **{
-            "tenant_id": "6d2d2d6c-a6d6-41e1-8bb1-73d11475f8f4",
-            "principal_id": "971efe4d-1e80-4e39-b3b9-4e5c63ad446d",
-        }
+        tenant_id="6d2d2d6c-a6d6-41e1-8bb1-73d11475f8f4",
+        principal_id="971efe4d-1e80-4e39-b3b9-4e5c63ad446d",
+        user_object_id="test_user_object_id",
     )
     with pytest.raises(ConnectionException):
         mock_azure.create_tenant_principal_ownership(payload)
@@ -1955,4 +1953,95 @@ def test_filter_role_assignments(mock_azure):
         )
         is None
     )
+
     assert mock_azure._filter_role_assignments([], "role_definition_id") is None
+
+
+class Test_remove_tenant_admin_elevated_access:
+    def test_role_assignment_found(self, mock_azure, monkeypatch):
+        mock_azure._get_user_principal_token_for_scope = Mock()
+        mock_azure._get_user_principal_token_for_scope.return_value = MOCK_ACCESS_TOKEN
+        monkeypatch.setattr(
+            mock_azure,
+            "_get_role_definition_id",
+            Mock(return_value="role_definition_id"),
+        )
+        monkeypatch.setattr(
+            mock_azure,
+            "_list_role_assignments",
+            Mock(
+                return_value=[
+                    {
+                        "id": "assignment_id",
+                        "properties": {
+                            "roleDefinitionId": "fully/pathed/role_definition_id",
+                            "more": "data",
+                        },
+                    }
+                ]
+            ),
+        )
+        monkeypatch.setattr(
+            mock_azure, "_remove_role_assignment", Mock(return_value={"some": "data"})
+        )
+
+        assert mock_azure.remove_tenant_admin_elevated_access(
+            "mock_tenant_id", "mock_object_id"
+        )
+
+    def test_role_assignment_not_found(self, mock_azure, monkeypatch, mock_logger):
+        mock_azure._get_user_principal_token_for_scope = Mock()
+        mock_azure._get_user_principal_token_for_scope.return_value = MOCK_ACCESS_TOKEN
+        monkeypatch.setattr(mock_azure, "_get_role_definition_id", Mock())
+        monkeypatch.setattr(mock_azure, "_list_role_assignments", Mock())
+        monkeypatch.setattr(
+            mock_azure, "_filter_role_assignments", Mock(return_value=None)
+        )
+        assert mock_azure.remove_tenant_admin_elevated_access(
+            "mock_tenant_id", "mock_object_id"
+        )
+        log_msg = mock_logger.messages[0]
+        assert "mock_tenant_id" in log_msg
+        assert "mock_object_id" in log_msg
+
+    def test_list_role_assignments_raises_authz_error(
+        self, mock_azure, monkeypatch, mock_logger
+    ):
+        mock_azure._get_user_principal_token_for_scope = Mock()
+        mock_azure._get_user_principal_token_for_scope.return_value = MOCK_ACCESS_TOKEN
+        monkeypatch.setattr(
+            mock_azure, "_get_role_definition_id", Mock(return_value="definition_id")
+        )
+        mock_azure.sdk.requests.get.side_effect = [
+            mock_requests_response(
+                raise_for_status=mock_azure.sdk.requests.exceptions.HTTPError(
+                    "403 Authorization Error",
+                    response=mock_requests_response(status=403),
+                ),
+            )
+        ]
+        assert mock_azure.remove_tenant_admin_elevated_access(
+            "mock_tenant_id", "mock_object_id"
+        )
+        _remove_tenant_admin_elevated_access_warning = mock_logger.messages[1]
+        assert "mock_tenant_id" in _remove_tenant_admin_elevated_access_warning
+
+    def test_list_role_assignments_raises_other_error(
+        self, mock_azure, monkeypatch, mock_logger
+    ):
+        mock_azure._get_user_principal_token_for_scope = Mock()
+        mock_azure._get_user_principal_token_for_scope.return_value = MOCK_ACCESS_TOKEN
+        monkeypatch.setattr(
+            mock_azure, "_get_role_definition_id", Mock(return_value="definition_id")
+        )
+        mock_azure.sdk.requests.get.side_effect = [
+            mock_requests_response(
+                raise_for_status=mock_azure.sdk.requests.exceptions.HTTPError(
+                    "500 Server Error", response=mock_requests_response(status=500),
+                ),
+            )
+        ]
+        with pytest.raises(UnknownServerException):
+            mock_azure.remove_tenant_admin_elevated_access(
+                "mock_tenant_id", "mock_object_id"
+            )

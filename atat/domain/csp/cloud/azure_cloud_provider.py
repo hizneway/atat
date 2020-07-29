@@ -91,6 +91,9 @@ REMOTE_ROOT_ROLE_DEF_ID = "/providers/Microsoft.Authorization/roleDefinitions/00
 # setting the "Application Type" to "all" and searching for "Microsoft Graph".
 GRAPH_API_APPLICATION_ID = "00000003-0000-0000-c000-000000000000"
 
+# https://docs.microsoft.com/en-us/azure/role-based-access-control/built-in-roles#user-access-administrator
+USER_ACCESS_ADMIN_ROLE_DEFINITION_ID = "18d7d88d-d35e-4fb5-a5c3-7773c20a72d9"
+
 DEFAULT_POLICY_SET_DEFINITION_NAME = "Default JEDI Policy Set"
 
 
@@ -1630,3 +1633,55 @@ class AzureCloudProvider(CloudProviderInterface):
             ):
                 return assignment
         return None
+
+    def remove_tenant_admin_elevated_access(
+        self, tenant_id, tenant_admin_user_object_id
+    ) -> bool:
+        """Remove the User Access Administrator role assignment from the tenant admin"""
+
+        token = self._get_tenant_admin_token(
+            tenant_id, self.sdk.cloud.endpoints.resource_manager + "/.default",
+        )
+
+        # The User Access Administrator definition id may be a constant, but
+        # other documentation describing this process includes listing
+        # definitions to find the ID:
+        # https://docs.microsoft.com/en-us/azure/role-based-access-control/elevate-access-global-admin#remove-elevated-access-3
+        # Here, we try to get the id by listing first, but use the default in
+        # case we can't find it
+        definition_id = (
+            self._get_role_definition_id(
+                token, role_definition_name="User Access Administrator"
+            )
+            or USER_ACCESS_ADMIN_ROLE_DEFINITION_ID
+        )
+
+        try:
+            role_assignments = self._list_role_assignments(
+                token,
+                params={"$filter": f"principalId eq '{tenant_admin_user_object_id}'"},
+            )
+        except UnknownServerException as exc:
+            if exc.status_code == "403":
+                app.logger.warning(
+                    (
+                        "Tenant admin of tenant %s unable to list role assignments."
+                        "This could indicate that the tenant admin does not have a User"
+                        "Access Administrator role assignment."
+                    ),
+                    tenant_id,
+                )
+                return True
+            else:
+                raise exc
+
+        assignment = self._filter_role_assignments(role_assignments, definition_id)
+        if not assignment:
+            app.logger.warning(
+                "User Access Administrator role assignment not found for user %s in tenant %s",
+                tenant_admin_user_object_id,
+                tenant_id,
+            )
+            return True
+
+        return bool(self._remove_role_assignment(token, assignment["id"]))
