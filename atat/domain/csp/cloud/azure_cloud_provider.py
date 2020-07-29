@@ -1431,12 +1431,6 @@ class AzureCloudProvider(CloudProviderInterface):
                 f"Failed to create user role assignment: {response.json()}"
             )
 
-    def _extract_subscription_id(self, subscription_url):
-        sub_id_match = SUBSCRIPTION_ID_REGEX.match(subscription_url)
-
-        if sub_id_match:
-            return sub_id_match.group(1)
-
     def _get_tenant_admin_token(self, tenant_id, scope):
         creds = self._source_tenant_creds(tenant_id)
         return self._get_user_principal_token_for_scope(
