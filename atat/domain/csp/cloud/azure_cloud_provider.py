@@ -1,5 +1,6 @@
 import json
 import time
+from contextlib import contextmanager
 from functools import wraps
 from secrets import token_hex, token_urlsafe
 from typing import Dict, Optional, Tuple
@@ -297,16 +298,18 @@ class AzureCloudProvider(CloudProviderInterface):
         https://docs.microsoft.com/en-us/azure/governance/management-groups/overview
         """
 
-        mgmt_token = self._get_elevated_management_token(payload.tenant_id)
-        headers = {
-            "Authorization": f"Bearer {mgmt_token}",
-        }
-        response = self.sdk.requests.get(
-            f"{self.sdk.cloud.endpoints.resource_manager}providers/Microsoft.Management/managementGroups/{payload.management_group_name}?api-version=2020-02-01",
-            headers=headers,
-        )
-        response.raise_for_status()
-        return InitialMgmtGroupVerificationCSPResult(**response.json())
+        with self._get_elevated_access_token(
+            payload.tenant_id, payload.user_object_id
+        ) as elevated_token:
+            auth_header = {
+                "Authorization": f"Bearer {elevated_token}",
+            }
+            response = self.sdk.requests.get(
+                f"{self.sdk.cloud.endpoints.resource_manager}providers/Microsoft.Management/managementGroups/{payload.management_group_name}?api-version=2020-02-01",
+                headers=auth_header,
+            )
+            response.raise_for_status()
+            return InitialMgmtGroupVerificationCSPResult(**response.json())
 
     @log_and_raise_exceptions
     def _create_management_group(
@@ -851,31 +854,26 @@ class AzureCloudProvider(CloudProviderInterface):
     def create_tenant_admin_ownership(self, payload: TenantAdminOwnershipCSPPayload):
         """Gives the tenant admin (human user) the Owner role on the root management group."""
 
-        mgmt_token = self._get_elevated_management_token(payload.tenant_id)
-
-        role_definition_id = f"/providers/Microsoft.Management/managementGroups/{payload.tenant_id}/providers/Microsoft.Authorization/roleDefinitions/{self.roles['owner']}"
-
-        request_body = {
-            "properties": {
-                "roleDefinitionId": role_definition_id,
-                "principalId": payload.user_object_id,
+        with self._get_elevated_access_token(
+            payload.tenant_id, payload.user_object_id
+        ) as elevated_token:
+            role_definition_id = f"/providers/Microsoft.Management/managementGroups/{payload.tenant_id}/providers/Microsoft.Authorization/roleDefinitions/{self.roles['owner']}"
+            request_body = {
+                "properties": {
+                    "roleDefinitionId": role_definition_id,
+                    "principalId": payload.user_object_id,
+                }
             }
-        }
-
-        auth_header = {
-            "Authorization": f"Bearer {mgmt_token}",
-        }
-
-        assignment_guid = str(uuid4())
-
-        url = f"{self.sdk.cloud.endpoints.resource_manager}providers/Microsoft.Management/managementGroups/{payload.tenant_id}/providers/Microsoft.Authorization/roleAssignments/{assignment_guid}?api-version=2015-07-01"
-
-        result = self.sdk.requests.put(
-            url, headers=auth_header, json=request_body, timeout=30
-        )
-        result.raise_for_status()
-
-        return TenantAdminOwnershipCSPResult(**result.json())
+            auth_header = {
+                "Authorization": f"Bearer {elevated_token}",
+            }
+            assignment_guid = str(uuid4())
+            url = f"{self.sdk.cloud.endpoints.resource_manager}providers/Microsoft.Management/managementGroups/{payload.tenant_id}/providers/Microsoft.Authorization/roleAssignments/{assignment_guid}?api-version=2015-07-01"
+            result = self.sdk.requests.put(
+                url, headers=auth_header, json=request_body, timeout=30,
+            )
+            result.raise_for_status()
+            return TenantAdminOwnershipCSPResult(**result.json())
 
     @log_and_raise_exceptions
     def create_tenant_principal_ownership(
@@ -889,31 +887,28 @@ class AzureCloudProvider(CloudProviderInterface):
         https://docs.microsoft.com/en-us/azure/active-directory/develop/app-objects-and-service-principals
         """
 
-        mgmt_token = self._get_elevated_management_token(payload.tenant_id)
+        with self._get_elevated_access_token(
+            payload.tenant_id, payload.user_object_id
+        ) as elevated_token:
 
-        # NOTE: the tenant_id is also the id of the root management group, once it is created
-        role_definition_id = f"/providers/Microsoft.Management/managementGroups/{payload.tenant_id}/providers/Microsoft.Authorization/roleDefinitions/{self.roles['owner']}"
-
-        request_body = {
-            "properties": {
-                "roleDefinitionId": role_definition_id,
-                "principalId": payload.principal_id,
+            # NOTE: the tenant_id is also the id of the root management group, once it is created
+            role_definition_id = f"/providers/Microsoft.Management/managementGroups/{payload.tenant_id}/providers/Microsoft.Authorization/roleDefinitions/{self.roles['owner']}"
+            request_body = {
+                "properties": {
+                    "roleDefinitionId": role_definition_id,
+                    "principalId": payload.principal_id,
+                }
             }
-        }
-
-        auth_header = {
-            "Authorization": f"Bearer {mgmt_token}",
-        }
-
-        assignment_guid = str(uuid4())
-
-        url = f"{self.sdk.cloud.endpoints.resource_manager}providers/Microsoft.Management/managementGroups/{payload.tenant_id}/providers/Microsoft.Authorization/roleAssignments/{assignment_guid}?api-version=2015-07-01"
-
-        result = self.sdk.requests.put(
-            url, headers=auth_header, json=request_body, timeout=30,
-        )
-        result.raise_for_status()
-        return TenantPrincipalOwnershipCSPResult(**result.json())
+            auth_header = {
+                "Authorization": f"Bearer {elevated_token}",
+            }
+            assignment_guid = str(uuid4())
+            url = f"{self.sdk.cloud.endpoints.resource_manager}providers/Microsoft.Management/managementGroups/{payload.tenant_id}/providers/Microsoft.Authorization/roleAssignments/{assignment_guid}?api-version=2015-07-01"
+            result = self.sdk.requests.put(
+                url, headers=auth_header, json=request_body, timeout=30,
+            )
+            result.raise_for_status()
+            return TenantPrincipalOwnershipCSPResult(**result.json())
 
     @log_and_raise_exceptions
     def create_tenant_principal_app(self, payload: TenantPrincipalAppCSPPayload):
@@ -1483,20 +1478,15 @@ class AzureCloudProvider(CloudProviderInterface):
         )
 
     @log_and_raise_exceptions
-    def _get_elevated_management_token(self, tenant_id):
-        mgmt_token = self._get_tenant_admin_token(
-            tenant_id, self.sdk.cloud.endpoints.resource_manager + "/.default"
+    def _elevate_tenant_admin_access(self, token):
+        result = self.sdk.requests.post(
+            f"{self.sdk.cloud.endpoints.resource_manager}/providers/Microsoft.Authorization/elevateAccess",
+            headers={"Authorization": f"Bearer {token}"},
+            params={"api-version": "2016-07-01"},
+            timeout=30,
         )
-
-        auth_header = {
-            "Authorization": f"Bearer {mgmt_token}",
-        }
-        url = f"{self.sdk.cloud.endpoints.resource_manager}/providers/Microsoft.Authorization/elevateAccess?api-version=2016-07-01"
-
-        result = self.sdk.requests.post(url, headers=auth_header, timeout=30)
         result.raise_for_status()
-
-        return mgmt_token
+        return token
 
     def _source_root_creds(self):
         return KeyVaultCredentials(
@@ -1634,14 +1624,15 @@ class AzureCloudProvider(CloudProviderInterface):
                 return assignment
         return None
 
-    def remove_tenant_admin_elevated_access(
-        self, tenant_id, tenant_admin_user_object_id
+    def _remove_tenant_admin_elevated_access(
+        self, tenant_id, tenant_admin_user_object_id, token=None
     ) -> bool:
         """Remove the User Access Administrator role assignment from the tenant admin"""
 
-        token = self._get_tenant_admin_token(
-            tenant_id, self.sdk.cloud.endpoints.resource_manager + "/.default",
-        )
+        if token is None:
+            token = self._get_tenant_admin_token(
+                tenant_id, self.sdk.cloud.endpoints.resource_manager + "/.default",
+            )
 
         # The User Access Administrator definition id may be a constant, but
         # other documentation describing this process includes listing
@@ -1685,3 +1676,27 @@ class AzureCloudProvider(CloudProviderInterface):
             return True
 
         return bool(self._remove_role_assignment(token, assignment["id"]))
+
+    @contextmanager
+    def _get_elevated_access_token(self, tenant_id, user_object_id):
+
+        tenant_admin_token = self._get_tenant_admin_token(
+            tenant_id, self.sdk.cloud.endpoints.resource_manager + "/.default"
+        )
+        elevated_token = self._elevate_tenant_admin_access(tenant_admin_token)
+        try:
+            yield elevated_token
+        finally:
+            try:
+
+                self._remove_tenant_admin_elevated_access(
+                    tenant_id, user_object_id, token=elevated_token
+                )
+
+            except self.sdk.requests.exceptions.RequestException:
+                app.logger.error(
+                    "Could not remove User Access Administrator for user %s in tenant %s",
+                    user_object_id,
+                    tenant_id,
+                )
+                raise Exception("Error removing elevated access")

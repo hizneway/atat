@@ -189,12 +189,10 @@ class HybridCloudProvider(object):
         request with the root credentials.
         """
 
-        token = self.azure._get_elevated_management_token(payload.tenant_id)
+        token = self.azure._elevate_tenant_admin_access(payload.tenant_id)
         payload.tenant_id = self.hybrid_tenant_id
 
-        with monkeypatched(
-            self.azure, "_get_elevated_management_token", lambda _: token
-        ):
+        with monkeypatched(self.azure, "_elevate_tenant_admin_access", lambda _: token):
             try:
                 return self.azure.create_tenant_admin_ownership(payload)
             except UnknownServerException:
@@ -211,11 +209,9 @@ class HybridCloudProvider(object):
         the tenant principal ownership request with the root credentials.
         """
 
-        token = self.azure._get_elevated_management_token(payload.tenant_id)
+        token = self.azure._elevate_tenant_admin_access(payload.tenant_id)
         payload.tenant_id = self.hybrid_tenant_id
-        with monkeypatched(
-            self.azure, "_get_elevated_management_token", lambda _: token
-        ):
+        with monkeypatched(self.azure, "_elevate_tenant_admin_access", lambda _: token):
             return self.azure.create_tenant_principal_ownership(payload)
 
     def create_billing_owner(
