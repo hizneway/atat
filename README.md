@@ -318,6 +318,8 @@ Values where "[Testing only]" is mentioned are only required for running the Hyb
 Configuration variables that are needed solely to run Hybrid tests are in the `[hybrid]` section of the base configuration file.
 - `AZURE_ADMIN_ROLE_ASSIGNMENT_ID`: The fully pathed role assignment ID that associates a user with admin privileges to the root tenant of the Hybrid Cloud
 - `AZURE_BILLING_PROFILE_ID`: ID of the billing profile used for Cost Management queries with the Hybrid interface.
+- `AZURE_SUBSCRIPTION_CREATION_CLIENT_ID`: [Testing only] Client ID of an app registration in the root tenant used for subscription integration tests
+- `AZURE_SUBSCRIPTION_CREATION_SECRET`: [Testing only] Secret key for the app registration associated with the `AZURE_SUBSCRIPTION_CREATION_CLIENT_ID`
 - `AZURE_HYBRID_REPORTING_CLIENT_ID`: Client ID of an app registration with an "Invoice Section Reader" role for the invoice section defined by AZURE_INVOICE_SECTION_ID
 - `AZURE_HYBRID_REPORTING_SECRET`: Secret key for the app registration associated with the `AZURE_HYBRID_REPORTING_CLIENT_ID`
 - `AZURE_HYBRID_TENANT_DOMAIN`: The domain of the hybrid tenant

@@ -27,6 +27,7 @@ dictConfig({"version": 1, "handlers": {"wsgi": {"class": "logging.NullHandler"}}
 
 def pytest_addoption(parser):
     parser.addoption("--hybrid", action="store_true", default=False)
+    parser.addoption("--subscriptions", action="store_true", default=False)
     parser.addoption(
         "--repeat", action="store", help="Number of times to repeat each test"
     )
@@ -41,13 +42,18 @@ def pytest_generate_tests(metafunc):
         metafunc.parametrize("tmp_ct", range(count))
 
 
-def pytest_collection_modifyitems(config, items):
-    if config.getoption("--hybrid"):
+def set_skip_mark_for_option(option, config, items):
+    if config.getoption(f"--{option}"):
         return
-    skip_hybrid = pytest.mark.skip(reason="need --hybrid option to run")
+    skip_option_mark = pytest.mark.skip(reason=f"need --{option} option to run")
     for item in items:
-        if "hybrid" in item.keywords:
-            item.add_marker(skip_hybrid)
+        if option in item.keywords:
+            item.add_marker(skip_option_mark)
+
+
+def pytest_collection_modifyitems(config, items):
+    set_skip_mark_for_option("hybrid", config, items)
+    set_skip_mark_for_option("subscriptions", config, items)
 
 
 @pytest.fixture(scope="session")

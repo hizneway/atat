@@ -970,15 +970,13 @@ def test_create_principal_admin_role(
     assert result.principal_assignment_id == "id"
 
 
-def test_create_subscription_creation(
-    mock_azure: AzureCloudProvider, mock_http_error_response
-):
+def test_create_subscription(mock_azure: AzureCloudProvider, mock_http_error_response):
 
     mock_result = mock_requests_response(
         status=202, headers={"Location": "https://verify.me", "Retry-After": 10}
     )
 
-    mock_azure.sdk.requests.put.side_effect = [
+    mock_azure.sdk.requests.post.side_effect = [
         mock_azure.sdk.requests.exceptions.ConnectionError,
         mock_azure.sdk.requests.exceptions.Timeout,
         mock_http_error_response,
@@ -997,53 +995,15 @@ def test_create_subscription_creation(
         )
     )
     with pytest.raises(ConnectionException):
-        mock_azure.create_subscription_creation(payload)
+        mock_azure.create_subscription(payload)
     with pytest.raises(ConnectionException):
-        mock_azure.create_subscription_creation(payload)
+        mock_azure.create_subscription(payload)
     with pytest.raises(UnknownServerException, match=r".*500 Server Error.*"):
-        mock_azure.create_subscription_creation(payload)
+        mock_azure.create_subscription(payload)
 
-    result: SubscriptionCreationCSPResult = mock_azure.create_subscription_creation(
-        payload
-    )
+    result: SubscriptionCreationCSPResult = mock_azure.create_subscription(payload)
 
     assert result.subscription_verify_url == "https://verify.me"
-
-
-def test_create_subscription_verification(
-    mock_azure: AzureCloudProvider, mock_http_error_response
-):
-
-    mock_result = mock_requests_response(
-        json_data={
-            "subscriptionLink": "/subscriptions/60fbbb72-0516-4253-ab18-c92432ba3230"
-        }
-    )
-
-    mock_azure.sdk.requests.get.side_effect = [
-        mock_azure.sdk.requests.exceptions.ConnectionError,
-        mock_azure.sdk.requests.exceptions.Timeout,
-        mock_http_error_response,
-        mock_result,
-    ]
-
-    payload = SubscriptionVerificationCSPPayload(
-        **dict(
-            tenant_id="60ff9d34-82bf-4f21-b565-308ef0533435",
-            subscription_verify_url="https://verify.me",
-        )
-    )
-    with pytest.raises(ConnectionException):
-        mock_azure.create_subscription_verification(payload)
-    with pytest.raises(ConnectionException):
-        mock_azure.create_subscription_verification(payload)
-    with pytest.raises(UnknownServerException, match=r".*500 Server Error.*"):
-        mock_azure.create_subscription_verification(payload)
-
-    result: SuscriptionVerificationCSPResult = mock_azure.create_subscription_verification(
-        payload
-    )
-    assert result.subscription_id == "60fbbb72-0516-4253-ab18-c92432ba3230"
 
 
 def test_get_reporting_data(mock_azure: AzureCloudProvider, mock_http_error_response):
