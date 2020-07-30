@@ -184,10 +184,15 @@ def do_create_environment(csp: CloudProviderInterface, environment_id=None):
             tenant_id=tenant_id, display_name=environment.name, parent_id=parent_id
         )
         env_result = csp.create_environment(payload)
-        cloud_id = f"/providers/Microsoft.Management/managementGroups/{env_result.name}"
-        Environments.update(environment, new_data={"cloud_id": cloud_id})
+        Environments.update(environment, new_data={"cloud_id": env_result.id})
 
-        create_subscription.delay(environment_id=environment.id)
+        app.logger.info("Created environment %s", env_result.name)
+        async_result = create_subscription.delay(environment_id=environment.id)
+        app.logger.info(
+            "Attempting to create subscription for environment %s [Task ID: %s])",
+            env_result.name,
+            async_result.task_id,
+        )
 
 
 @celery.task(bind=True, base=RecordFailure, autoretry_for=(GeneralCSPException,))
