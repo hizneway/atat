@@ -6,7 +6,6 @@ from atat.domain.applications import Applications
 from atat.domain.environment_roles import EnvironmentRoles
 
 from tests.factories import *
-from atat.domain.csp.cloud.models import SubscriptionCreationCSPPayload
 
 
 def test_add_user_to_environment():
