@@ -114,7 +114,7 @@ def test_environment_role_job_failure(session, celery_app, celery_worker):
     assert job_failure.task == task
 
 
-NOW = pendulum.now()
+NOW = pendulum.now(tz="UTC")
 YESTERDAY = NOW.subtract(days=1)
 TOMORROW = NOW.add(days=1)
 

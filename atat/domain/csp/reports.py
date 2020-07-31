@@ -24,7 +24,7 @@ def prepare_azure_reporting_data(rows: list):
 
     estimated = []
     while rows:
-        if pendulum.parse(rows[-1][1]) >= pendulum.now(tz="utc").start_of("month"):
+        if pendulum.parse(rows[-1][1]) >= pendulum.now(tz="UTC").start_of("month"):
             estimated.append(rows.pop())
         else:
             break

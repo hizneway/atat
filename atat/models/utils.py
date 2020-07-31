@@ -19,7 +19,7 @@ def claim_for_update(resource, minutes=30):
     """
     Model = resource.__class__
 
-    claim_until = func.now() + func.cast(
+    claim_until = func.now(tz="UTC") + func.cast(
         sql.functions.concat(minutes, " MINUTES"), Interval
     )
 
@@ -30,7 +30,10 @@ def claim_for_update(resource, minutes=30):
         .filter(
             and_(
                 Model.id == resource.id,
-                or_(Model.claimed_until.is_(None), Model.claimed_until <= func.now()),
+                or_(
+                    Model.claimed_until.is_(None),
+                    Model.claimed_until <= func.now(tz="UTC"),
+                ),
             )
         )
         .update({"claimed_until": claim_until}, synchronize_session="fetch")
@@ -64,7 +67,7 @@ def claim_many_for_update(resources: List, minutes=30):
     """
     Model = resources[0].__class__
 
-    claim_until = func.now() + func.cast(
+    claim_until = func.now(tz="UTC") + func.cast(
         sql.functions.concat(minutes, " MINUTES"), Interval
     )
 
@@ -77,7 +80,10 @@ def claim_many_for_update(resources: List, minutes=30):
         .filter(
             and_(
                 Model.id.in_(ids),
-                or_(Model.claimed_until.is_(None), Model.claimed_until <= func.now()),
+                or_(
+                    Model.claimed_until.is_(None),
+                    Model.claimed_until <= func.now(tz="UTC"),
+                ),
             )
         )
         .update({"claimed_until": claim_until}, synchronize_session="fetch")

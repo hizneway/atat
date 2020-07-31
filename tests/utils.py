@@ -73,7 +73,7 @@ def make_crl_list(x509_obj, x509_path):
 class EnvQueryTest:
     @property
     def NOW(self):
-        return pendulum.now()
+        return pendulum.now(tz="UTC")
 
     @property
     def YESTERDAY(self):
@@ -89,7 +89,7 @@ class EnvQueryTest:
         env_data=None,
         app_data=None,
         state_machine_status=None,
-        task_order_signed_at=pendulum.now(),
+        task_order_signed_at=pendulum.now(tz="UTC"),
     ):
         env_data = env_data or {}
         app_data = app_data or {}

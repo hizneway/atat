@@ -1036,8 +1036,11 @@ def test_get_reporting_data(mock_azure: AzureCloudProvider, mock_http_error_resp
         },
     }
     payload = CostManagementQueryCSPPayload(
-        from_date=pendulum.now().subtract(years=1).add(days=1).format("YYYY-MM-DD"),
-        to_date=pendulum.now().format("YYYY-MM-DD"),
+        from_date=pendulum.now(tz="UTC")
+        .subtract(years=1)
+        .add(days=1)
+        .format("YYYY-MM-DD"),
+        to_date=pendulum.now(tz="UTC").format("YYYY-MM-DD"),
         **csp_data,
     )
     with pytest.raises(ConnectionException):

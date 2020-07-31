@@ -54,7 +54,7 @@ def _create_active_taskorder(factory: TaskOrderFactory, portfolio):
     whether the SQLAlchemy session fixture underlying the factory is session
     or function-scoped.
     """
-    today = pendulum.today()
+    today = pendulum.today(tz="UTC")
     yesterday = today.subtract(days=1)
     future = today.add(days=100)
 
@@ -219,8 +219,10 @@ def test_get_reporting_data(csp, app):
     "Invoice Section Reader" role for the invoice section scope being queried.
     """
 
-    from_date = pendulum.now().subtract(years=1).add(days=1).format("YYYY-MM-DD")
-    to_date = pendulum.now().format("YYYY-MM-DD")
+    from_date = (
+        pendulum.now(tz="UTC").subtract(years=1).add(days=1).format("YYYY-MM-DD")
+    )
+    to_date = pendulum.now(tz="UTC").format("YYYY-MM-DD")
 
     payload = CostManagementQueryCSPPayload(
         tenant_id=csp.azure.root_tenant_id,

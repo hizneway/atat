@@ -367,7 +367,9 @@ def dispatch_provision_portfolio(self: Task):
     """
     Iterate over portfolios with a corresponding State Machine that have not completed.
     """
-    portfolio_ids = Portfolios.get_portfolios_pending_provisioning(pendulum.now())
+    portfolio_ids = Portfolios.get_portfolios_pending_provisioning(
+        pendulum.now(tz="UTC")
+    )
     for portfolio_id in portfolio_ids:
         provision_portfolio.delay(portfolio_id=portfolio_id)
     return [str(portfolio_id) for portfolio_id in portfolio_ids]
@@ -399,7 +401,9 @@ def dispatch_create_environment_role(self: Task):
 
 @celery.task(bind=True)
 def dispatch_create_environment(self: Task):
-    environment_ids = Environments.get_environments_pending_creation(pendulum.now())
+    environment_ids = Environments.get_environments_pending_creation(
+        pendulum.now(tz="UTC")
+    )
     for environment_id in environment_ids:
         create_environment.delay(environment_id=environment_id)
     return [str(environment_id) for environment_id in environment_ids]

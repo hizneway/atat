@@ -47,7 +47,7 @@ class TaskOrders(BaseDomainClass):
     @classmethod
     def sign(cls, task_order, signer_dod_id):
         task_order.signer_dod_id = signer_dod_id
-        task_order.signed_at = pendulum.now(tz="utc")
+        task_order.signed_at = pendulum.now(tz="UTC")
         db.session.add(task_order)
         db.session.commit()
 

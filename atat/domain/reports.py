@@ -18,8 +18,10 @@ class Reports:
     @classmethod
     def get_portfolio_spending(cls, portfolio):
         # TODO: Extend this function to make from_date and to_date configurable
-        from_date = pendulum.now().subtract(years=1).add(days=1).format("YYYY-MM-DD")
-        to_date = pendulum.now().format("YYYY-MM-DD")
+        from_date = (
+            pendulum.now(tz="UTC").subtract(years=1).add(days=1).format("YYYY-MM-DD")
+        )
+        to_date = pendulum.now(tz="UTC").format("YYYY-MM-DD")
         rows = []
         if portfolio.is_provisioned:
             payload = CostManagementQueryCSPPayload(

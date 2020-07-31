@@ -132,7 +132,7 @@ class ApplicationRoles(object):
                     ApplicationRole.status == ApplicationRoleStatus.ACTIVE,
                     or_(
                         ApplicationRole.claimed_until.is_(None),
-                        ApplicationRole.claimed_until <= func.now(),
+                        ApplicationRole.claimed_until <= func.now(tz="UTC"),
                     ),
                 )
             )

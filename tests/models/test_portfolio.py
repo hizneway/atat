@@ -14,11 +14,11 @@ import pytest
 @pytest.fixture(scope="function")
 def upcoming_task_order():
     return dict(
-        signed_at=pendulum.today().subtract(days=3),
+        signed_at=pendulum.today(tz="UTC").subtract(days=3),
         create_clins=[
             dict(
-                start_date=pendulum.today().add(days=2),
-                end_date=pendulum.today().add(days=3),
+                start_date=pendulum.today(tz="UTC").add(days=2),
+                end_date=pendulum.today(tz="UTC").add(days=3),
                 obligated_amount=Decimal(700.0),
             )
         ],
@@ -28,11 +28,11 @@ def upcoming_task_order():
 @pytest.fixture(scope="function")
 def current_task_order():
     return dict(
-        signed_at=pendulum.today().subtract(days=3),
+        signed_at=pendulum.today(tz="UTC").subtract(days=3),
         create_clins=[
             dict(
-                start_date=pendulum.today().subtract(days=1),
-                end_date=pendulum.today().add(days=1),
+                start_date=pendulum.today(tz="UTC").subtract(days=1),
+                end_date=pendulum.today(tz="UTC").add(days=1),
                 obligated_amount=Decimal(1000.0),
             )
         ],
@@ -42,11 +42,11 @@ def current_task_order():
 @pytest.fixture(scope="function")
 def past_task_order():
     return dict(
-        signed_at=pendulum.today().subtract(days=3),
+        signed_at=pendulum.today(tz="UTC").subtract(days=3),
         create_clins=[
             dict(
-                start_date=pendulum.today().subtract(days=3),
-                end_date=pendulum.today().subtract(days=2),
+                start_date=pendulum.today(tz="UTC").subtract(days=3),
+                end_date=pendulum.today(tz="UTC").subtract(days=2),
                 obligated_amount=Decimal(500.0),
             )
         ],
@@ -82,7 +82,7 @@ def test_funding_duration(session):
         portfolio=portfolio,
         signed_at=random_past_date(),
         create_clins=[
-            {"start_date": pendulum.now(tz="utc"), "end_date": funding_end_date,}
+            {"start_date": pendulum.now(tz="UTC"), "end_date": funding_end_date,}
         ],
     )
 
@@ -105,7 +105,7 @@ def test_days_remaining(session):
 
     assert (
         portfolio.days_to_funding_expiration
-        == (funding_end_date - pendulum.today()).days
+        == (funding_end_date - pendulum.today(tz="UTC")).days
     )
 
     # empty portfolio
@@ -185,7 +185,9 @@ class TestInitialClinDict:
     def test_formats_dict_correctly(self):
         portfolio = PortfolioFactory()
         task_order = TaskOrderFactory(
-            portfolio=portfolio, number="1234567890123", signed_at=pendulum.now()
+            portfolio=portfolio,
+            number="1234567890123",
+            signed_at=pendulum.now(tz="UTC"),
         )
         clin = CLINFactory(task_order=task_order)
         initial_clin = portfolio.initial_clin_dict
@@ -206,12 +208,12 @@ class TestInitialClinDict:
         assert portfolio.initial_clin_dict == {}
 
     def test_picks_the_initial_clin(self):
-        yesterday = pendulum.now().subtract(days=1).date()
-        tomorrow = pendulum.now().add(days=1).date()
+        yesterday = pendulum.now(tz="UTC").subtract(days=1).date()
+        tomorrow = pendulum.now(tz="UTC").add(days=1).date()
         portfolio = PortfolioFactory(
             task_orders=[
                 {
-                    "signed_at": pendulum.now(),
+                    "signed_at": pendulum.now(tz="UTC"),
                     "create_clins": [
                         {
                             "number": "0001",
