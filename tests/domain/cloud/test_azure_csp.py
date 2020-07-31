@@ -874,6 +874,7 @@ def test_create_tenant_admin_ownership(
         **{
             "tenant_id": "6d2d2d6c-a6d6-41e1-8bb1-73d11475f8f4",
             "user_object_id": "971efe4d-1e80-4e39-b3b9-4e5c63ad446d",
+            "root_management_group_name": "6d2d2d6c-a6d6-41e1-8bb1-73d11475f8f4",
         }
     )
     with pytest.raises(ConnectionException):
@@ -903,6 +904,7 @@ def test_create_tenant_principal_ownership(
     ]
     payload = TenantPrincipalOwnershipCSPPayload(
         tenant_id="6d2d2d6c-a6d6-41e1-8bb1-73d11475f8f4",
+        root_management_group_name="6d2d2d6c-a6d6-41e1-8bb1-73d11475f8f4",
         principal_id="971efe4d-1e80-4e39-b3b9-4e5c63ad446d",
         user_object_id="test_user_object_id",
     )

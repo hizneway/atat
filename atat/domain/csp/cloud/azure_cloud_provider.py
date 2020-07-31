@@ -54,6 +54,7 @@ from .models import (
     ProductPurchaseCSPResult,
     ProductPurchaseVerificationCSPPayload,
     ProductPurchaseVerificationCSPResult,
+    RoleAssignmentPayload,
     SubscriptionCreationCSPPayload,
     SubscriptionCreationCSPResult,
     TaskOrderBillingCreationCSPPayload,
@@ -851,64 +852,81 @@ class AzureCloudProvider(CloudProviderInterface):
         return TenantAdminCredentialResetCSPResult()
 
     @log_and_raise_exceptions
-    def create_tenant_admin_ownership(self, payload: TenantAdminOwnershipCSPPayload):
-        """Gives the tenant admin (human user) the Owner role on the root management group."""
+    def _create_role_assignment(self, payload: RoleAssignmentPayload, token):
+        """
+        https://docs.microsoft.com/en-us/rest/api/authorization/roleassignments/create
+        
+        Role assignment definition IDs are assigned at a particular scope
+        https://docs.microsoft.com/en-us/azure/role-based-access-control/role-assignments-rest#add-a-role-assignment
 
+        Args:
+            payload: a RoleAssignmentPayload model
+            token: a token from a user who has elevated access
+        Returns:
+            Azure RoleAssignment object: https://docs.microsoft.com/en-us/rest/api/authorization/roleassignments/create#roleassignment
+        """
+        request_body = {
+            "properties": {
+                "roleDefinitionId": payload.role_definition_id,
+                "principalId": payload.principal_id,
+            }
+        }
+        url = f"{self.sdk.cloud.endpoints.resource_manager}{payload.role_assignment_scope}/providers/Microsoft.Authorization/roleAssignments/{payload.role_assignment_name}"
+        response = self.sdk.requests.put(
+            url,
+            headers={"Authorization": f"Bearer {token}"},
+            params={"api-version": "2015-07-01"},
+            json=request_body,
+            timeout=30,
+        )
+        response.raise_for_status()
+        return response
+
+    def create_tenant_admin_ownership(self, payload: TenantAdminOwnershipCSPPayload):
+        """Assigns the tenant admin (human user) the Owner role on the root 
+        management group."""
+
+        role_assignment_payload = RoleAssignmentPayload(
+            role_definition_scope=f"/providers/Microsoft.Management/managementGroups/{payload.root_management_group_name}",
+            role_definition_name=self.roles["owner"],
+            role_assignment_scope=f"/providers/Microsoft.Management/managementGroups/{payload.root_management_group_name}",
+            role_assignment_name=str(uuid4()),
+            principal_id=payload.user_object_id,
+        )
         with self._get_elevated_access_token(
             payload.tenant_id, payload.user_object_id
         ) as elevated_token:
-            role_definition_id = f"/providers/Microsoft.Management/managementGroups/{payload.tenant_id}/providers/Microsoft.Authorization/roleDefinitions/{self.roles['owner']}"
-            request_body = {
-                "properties": {
-                    "roleDefinitionId": role_definition_id,
-                    "principalId": payload.user_object_id,
-                }
-            }
-            auth_header = {
-                "Authorization": f"Bearer {elevated_token}",
-            }
-            assignment_guid = str(uuid4())
-            url = f"{self.sdk.cloud.endpoints.resource_manager}providers/Microsoft.Management/managementGroups/{payload.tenant_id}/providers/Microsoft.Authorization/roleAssignments/{assignment_guid}?api-version=2015-07-01"
-            result = self.sdk.requests.put(
-                url, headers=auth_header, json=request_body, timeout=30,
+            response = self._create_role_assignment(
+                role_assignment_payload, elevated_token
             )
-            result.raise_for_status()
-            return TenantAdminOwnershipCSPResult(**result.json())
+            return TenantAdminOwnershipCSPResult(**response.json())
 
     @log_and_raise_exceptions
     def create_tenant_principal_ownership(
         self, payload: TenantPrincipalOwnershipCSPPayload
     ):
-        """Gives the service principal the owner role over the root management group.
+        """Assigns the the owner role for the service principal over the root management group.
 
-        The security principal object defines the access policy and permissions
-        for the user/application in the Azure AD tenant.
-
-        https://docs.microsoft.com/en-us/azure/active-directory/develop/app-objects-and-service-principals
+        https://docs.microsoft.com/en-us/rest/api/authorization/roleassignments/create
+        
+        Role assignment definition IDs are assigned at a particular scope
+        https://docs.microsoft.com/en-us/azure/role-based-access-control/role-assignments-rest#add-a-role-assignment
         """
 
+        role_assignment_payload = RoleAssignmentPayload(
+            role_definition_scope=f"/providers/Microsoft.Management/managementGroups/{payload.root_management_group_name}",
+            role_definition_name=self.roles["owner"],
+            role_assignment_scope=f"/providers/Microsoft.Management/managementGroups/{payload.root_management_group_name}",
+            role_assignment_name=str(uuid4()),
+            principal_id=payload.principal_id,
+        )
         with self._get_elevated_access_token(
             payload.tenant_id, payload.user_object_id
         ) as elevated_token:
-
-            # NOTE: the tenant_id is also the id of the root management group, once it is created
-            role_definition_id = f"/providers/Microsoft.Management/managementGroups/{payload.tenant_id}/providers/Microsoft.Authorization/roleDefinitions/{self.roles['owner']}"
-            request_body = {
-                "properties": {
-                    "roleDefinitionId": role_definition_id,
-                    "principalId": payload.principal_id,
-                }
-            }
-            auth_header = {
-                "Authorization": f"Bearer {elevated_token}",
-            }
-            assignment_guid = str(uuid4())
-            url = f"{self.sdk.cloud.endpoints.resource_manager}providers/Microsoft.Management/managementGroups/{payload.tenant_id}/providers/Microsoft.Authorization/roleAssignments/{assignment_guid}?api-version=2015-07-01"
-            result = self.sdk.requests.put(
-                url, headers=auth_header, json=request_body, timeout=30,
+            response = self._create_role_assignment(
+                role_assignment_payload, elevated_token
             )
-            result.raise_for_status()
-            return TenantPrincipalOwnershipCSPResult(**result.json())
+            return TenantPrincipalOwnershipCSPResult(**response.json())
 
     @log_and_raise_exceptions
     def create_tenant_principal_app(self, payload: TenantPrincipalAppCSPPayload):
