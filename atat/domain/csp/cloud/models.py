@@ -311,6 +311,7 @@ class TenantPrincipalOwnershipCSPResult(AliasModel):
 
 class TenantPrincipalAppCSPPayload(BaseCSPPayload):
     display_name: str
+    tenant_principal_app_display_name = "ATAT Remote Admin"
 
 
 class TenantPrincipalAppCSPResult(AliasModel):

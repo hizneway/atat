@@ -873,6 +873,7 @@ def test_create_tenant_admin_ownership(
     payload = TenantAdminOwnershipCSPPayload(
         **{
             "tenant_id": "6d2d2d6c-a6d6-41e1-8bb1-73d11475f8f4",
+            "root_management_group_name": "6d2d2d6c-a6d6-41e1-8bb1-73d11475f8f4",
             "user_object_id": "971efe4d-1e80-4e39-b3b9-4e5c63ad446d",
             "root_management_group_name": "6d2d2d6c-a6d6-41e1-8bb1-73d11475f8f4",
         }

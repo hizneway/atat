@@ -177,7 +177,6 @@ class AzureCloudProvider(CloudProviderInterface):
             "contributor": config["AZURE_ROLE_DEF_ID_CONTRIBUTOR"],
             "billing": config["AZURE_ROLE_DEF_ID_BILLING_READER"],
         }
-        self.tenant_principal_app_display_name = "ATAT Remote Admin"
 
         if azure_sdk_provider is None:
             self.sdk = AzureSDKProvider()
@@ -936,16 +935,17 @@ class AzureCloudProvider(CloudProviderInterface):
         """
 
         graph_token = self._get_tenant_admin_token(payload.tenant_id, self.graph_scope)
-        request_body = {"displayName": self.tenant_principal_app_display_name}
+        request_body = {"displayName": payload.tenant_principal_app_display_name}
 
         auth_header = {
             "Authorization": f"Bearer {graph_token}",
         }
 
-        url = f"{self.graph_resource}/v1.0/applications"
-
         result = self.sdk.requests.post(
-            url, json=request_body, headers=auth_header, timeout=30
+            f"{self.graph_resource}/v1.0/applications",
+            json=request_body,
+            headers=auth_header,
+            timeout=30,
         )
         result.raise_for_status()
         return TenantPrincipalAppCSPResult(**result.json())
@@ -975,29 +975,31 @@ class AzureCloudProvider(CloudProviderInterface):
 
     @log_and_raise_exceptions
     def create_tenant_principal_credential(
-        self, payload: TenantPrincipalCredentialCSPPayload
+        self, payload: TenantPrincipalCredentialCSPPayload, graph_token=None
     ):
-        graph_token = self._get_tenant_admin_token(payload.tenant_id, self.graph_scope)
+        if graph_token is None:
+            graph_token = self._get_tenant_admin_token(
+                payload.tenant_id, self.graph_scope
+            )
+
         request_body = {
             "passwordCredentials": [{"displayName": "ATAT Generated Password"}]
         }
-
         auth_header = {
             "Authorization": f"Bearer {graph_token}",
         }
-
-        url = f"{self.graph_resource}/v1.0/applications/{payload.principal_app_object_id}/addPassword"
-
-        result = self.sdk.requests.post(
-            url, json=request_body, headers=auth_header, timeout=30
+        response = self.sdk.requests.post(
+            f"{self.graph_resource}/v1.0/applications/{payload.principal_app_object_id}/addPassword",
+            json=request_body,
+            headers=auth_header,
+            timeout=30,
         )
-        result.raise_for_status()
-        result_json = result.json()
+        response.raise_for_status()
         self.update_tenant_creds(
             payload.tenant_id,
             KeyVaultCredentials(
                 tenant_id=payload.tenant_id,
-                tenant_sp_key=result_json.get("secretText"),
+                tenant_sp_key=response.json().get("secretText"),
                 tenant_sp_client_id=payload.principal_app_id,
             ),
         )
@@ -1222,16 +1224,16 @@ class AzureCloudProvider(CloudProviderInterface):
             return UserCSPResult(**result.json())
         return None
 
-    def create_billing_owner(self, payload: BillingOwnerCSPPayload):
+    def create_billing_owner(self, payload: BillingOwnerCSPPayload, graph_token=None):
         """Create a billing account owner, which is a billing role that can
         manage everything for a billing account.
 
         https://docs.microsoft.com/en-us/azure/cost-management-billing/manage/understand-mca-roles
         """
-
-        graph_token = self._get_tenant_principal_token(
-            payload.tenant_id, scope=self.graph_resource + "/.default"
-        )
+        if graph_token is None:
+            graph_token = self._get_tenant_principal_token(
+                payload.tenant_id, scope=self.graph_resource + "/.default"
+            )
 
         # Step 1: Retrieve or create an AAD identity for the user
         user_result = self._get_existing_billing_owner(graph_token, payload)
