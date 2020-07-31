@@ -341,7 +341,10 @@ class AzureCloudProvider(CloudProviderInterface):
 
         if response.status_code == 202:
             status_url = response.headers["Azure-AsyncOperation"]
-            resp = self._poll_management_group_creation_job(status_url, session)
+            result_url = response.headers["Location"]
+            resp = self._poll_management_group_creation_job(
+                status_url, result_url, session
+            )
         else:
             resp = response.json()
 
@@ -376,15 +379,20 @@ class AzureCloudProvider(CloudProviderInterface):
         return True
 
     @log_and_raise_exceptions
-    def _poll_management_group_creation_job(self, url: str, session) -> Dict:
+    def _poll_management_group_creation_job(
+        self, status_url: str, result_url: str, session
+    ) -> Dict:
         """Polls the management group creation job until it is resolved and
         returns the result.
 
         https://docs.microsoft.com/en-us/azure/azure-resource-manager/management/async-operations
 
         Args:
-            url: The url to check for job completion, provided by the
+            status_url: The url to check for job status, provided by the
                 Azure-AsyncOperation response header after creating the
+                management group.
+            result_url: The url to check for job completion, provided by the
+                Locataion response header after creating the
                 management group.
             session: a requests session populated with a service principal
                 bearer token.
@@ -398,12 +406,14 @@ class AzureCloudProvider(CloudProviderInterface):
         """
 
         while True:
-            response = session.get(url)
+            response = session.get(status_url)
             response.raise_for_status()
             response_json = response.json()
             status = response_json["status"]
             if status == "Succeeded":
-                return response_json
+                resp = session.get(result_url)
+                resp.raise_for_status()
+                return resp.json()
             elif status in ("Failed", "Canceled"):
                 error_message = f"{response_json['error']['message']}\nError code: {response_json['error']['code']}"
                 raise ResourceProvisioningError("management group", f"{error_message}")

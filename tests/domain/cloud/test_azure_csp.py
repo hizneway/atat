@@ -1544,7 +1544,11 @@ class TestCreateManagementGroup:
         mock_session_object = Mock()
         mock_session_object.put = Mock(
             return_value=mock_requests_response(
-                status=202, headers={"Azure-AsyncOperation": "http://url.com"}
+                status=202,
+                headers={
+                    "Azure-AsyncOperation": "http://status_url.com",
+                    "Location": "http://result_url.com",
+                },
             )
         )
         mock_azure.sdk.requests.Session.return_value = mock_session_object
@@ -1561,7 +1565,7 @@ class TestCreateManagementGroup:
             "management_group_id", "display_name", "tenant_id"
         )
         mock_poll_management_group_creation_job.assert_called_once_with(
-            "http://url.com", mock_session_object
+            "http://status_url.com", "http://result_url.com", mock_session_object
         )
 
     def test_raises_exceptions(
@@ -1604,15 +1608,23 @@ class TestPollManagementGroupCreationJob:
                 mock_requests_response(
                     headers={"Retry-After": 0}, json_data={"status": "Succeeded"}
                 ),
+                mock_requests_response(
+                    headers={"Retry-After": 0}, json_data={"status": "Succeeded"}
+                ),
             ]
         )
         mock_azure.sdk.requests.Session.return_value = mock_session_object
 
         result = mock_azure._poll_management_group_creation_job(
-            "url", mock_session_object
+            "status_url", "result_url", mock_session_object
         )
 
-        calls = [call("url"), call("url"), call("url")]
+        calls = [
+            call("status_url"),
+            call("status_url"),
+            call("status_url"),
+            call("result_url"),
+        ]
         mock_session_object.get.assert_has_calls(calls)
         assert result["status"] == "Succeeded"
 
@@ -1633,9 +1645,13 @@ class TestPollManagementGroupCreationJob:
         mock_azure.sdk.requests.Session.return_value = mock_session_object
 
         with pytest.raises(ResourceProvisioningError):
-            mock_azure._poll_management_group_creation_job("url", mock_session_object)
+            mock_azure._poll_management_group_creation_job(
+                "status", "result", mock_session_object
+            )
         with pytest.raises(ResourceProvisioningError):
-            mock_azure._poll_management_group_creation_job("url", mock_session_object)
+            mock_azure._poll_management_group_creation_job(
+                "status", "result", mock_session_object
+            )
 
     def test_http_error(self, mock_azure, mock_http_error_response):
         mock_session_object = Mock()
@@ -1649,11 +1665,17 @@ class TestPollManagementGroupCreationJob:
         mock_azure.sdk.requests.Session.return_value = mock_session_object
 
         with pytest.raises(ConnectionException):
-            mock_azure._poll_management_group_creation_job("url", mock_session_object)
+            mock_azure._poll_management_group_creation_job(
+                "status_url", "result_url", mock_session_object
+            )
         with pytest.raises(ConnectionException):
-            mock_azure._poll_management_group_creation_job("url", mock_session_object)
+            mock_azure._poll_management_group_creation_job(
+                "status_url", "result_url", mock_session_object
+            )
         with pytest.raises(UnknownServerException, match=r".*500 Server Error.*"):
-            mock_azure._poll_management_group_creation_job("url", mock_session_object)
+            mock_azure._poll_management_group_creation_job(
+                "status_url", "result_url", mock_session_object
+            )
 
 
 class TestGetBillingAdminRoleTemplateId:
