@@ -122,16 +122,17 @@ class IncompleteInfoError(Exception):
 
 @bp.route("/login-dev", methods=["GET", "POST"])
 def login_dev():
-    saml_auth = init_saml_auth(request)
     qs_dict = session.get("qs_dict", {})
     user = None
 
     if (
         "saml" in request.args or app.config.get("ENV") == "master"
     ) and request.method == "GET":
+        saml_auth = init_saml_auth(request)
         return redirect(saml_get(saml_auth, request))
 
     if "acs" in request.args and request.method == "POST":
+        saml_auth = init_saml_auth(request)
         user = saml_post(saml_auth)
 
     if not user:
