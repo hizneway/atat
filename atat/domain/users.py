@@ -127,7 +127,7 @@ class Users(object):
             user = (
                 db.session.query(User)
                 .filter_by(first_name=first_name, last_name=last_name)
-                .one()
+                .first()
             )
         except NoResultFound:
             raise NotFoundError("user")
