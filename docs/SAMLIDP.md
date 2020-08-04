@@ -63,7 +63,7 @@ Below we will go through the steps in that flow and describe what needs to be do
     }
     ```
 
-4. Now we need to add a certificate to the SAML provider. In the guide, this is prescribed as being done via the API. Unfortunately, there are some issues with the API that do not appear to be resolved, so this step needs to be done manually. There are 2 options for cert generation, you can either generate a self-signed cert and upload it to the UI, or have azure create a certificate for you and grab the details.
+4. Now we need to add a certificate to the SAML provider. In the guide, this is prescribed as being done via the API. Unfortunately, due to [API issues](https://github.com/MicrosoftDocs/azure-docs/issues/58484) that were unresovled at the time of this work, this step needs to be done manually. There are 2 options for cert generation, you can either generate a self-signed cert and upload it to the UI, or have azure create a certificate for you and grab the details.
 
     To generate your own certificate follow the instructions, otherwise skip to the next section.
 
