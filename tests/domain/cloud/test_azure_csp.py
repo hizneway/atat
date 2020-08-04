@@ -970,15 +970,13 @@ def test_create_principal_admin_role(
     assert result.principal_assignment_id == "id"
 
 
-def test_create_subscription_creation(
-    mock_azure: AzureCloudProvider, mock_http_error_response
-):
+def test_create_subscription(mock_azure: AzureCloudProvider, mock_http_error_response):
 
     mock_result = mock_requests_response(
         status=202, headers={"Location": "https://verify.me", "Retry-After": 10}
     )
 
-    mock_azure.sdk.requests.put.side_effect = [
+    mock_azure.sdk.requests.post.side_effect = [
         mock_azure.sdk.requests.exceptions.ConnectionError,
         mock_azure.sdk.requests.exceptions.Timeout,
         mock_http_error_response,
@@ -997,53 +995,15 @@ def test_create_subscription_creation(
         )
     )
     with pytest.raises(ConnectionException):
-        mock_azure.create_subscription_creation(payload)
+        mock_azure.create_subscription(payload)
     with pytest.raises(ConnectionException):
-        mock_azure.create_subscription_creation(payload)
+        mock_azure.create_subscription(payload)
     with pytest.raises(UnknownServerException, match=r".*500 Server Error.*"):
-        mock_azure.create_subscription_creation(payload)
+        mock_azure.create_subscription(payload)
 
-    result: SubscriptionCreationCSPResult = mock_azure.create_subscription_creation(
-        payload
-    )
+    result: SubscriptionCreationCSPResult = mock_azure.create_subscription(payload)
 
     assert result.subscription_verify_url == "https://verify.me"
-
-
-def test_create_subscription_verification(
-    mock_azure: AzureCloudProvider, mock_http_error_response
-):
-
-    mock_result = mock_requests_response(
-        json_data={
-            "subscriptionLink": "/subscriptions/60fbbb72-0516-4253-ab18-c92432ba3230"
-        }
-    )
-
-    mock_azure.sdk.requests.get.side_effect = [
-        mock_azure.sdk.requests.exceptions.ConnectionError,
-        mock_azure.sdk.requests.exceptions.Timeout,
-        mock_http_error_response,
-        mock_result,
-    ]
-
-    payload = SubscriptionVerificationCSPPayload(
-        **dict(
-            tenant_id="60ff9d34-82bf-4f21-b565-308ef0533435",
-            subscription_verify_url="https://verify.me",
-        )
-    )
-    with pytest.raises(ConnectionException):
-        mock_azure.create_subscription_verification(payload)
-    with pytest.raises(ConnectionException):
-        mock_azure.create_subscription_verification(payload)
-    with pytest.raises(UnknownServerException, match=r".*500 Server Error.*"):
-        mock_azure.create_subscription_verification(payload)
-
-    result: SuscriptionVerificationCSPResult = mock_azure.create_subscription_verification(
-        payload
-    )
-    assert result.subscription_id == "60fbbb72-0516-4253-ab18-c92432ba3230"
 
 
 def test_get_reporting_data(mock_azure: AzureCloudProvider, mock_http_error_response):
@@ -1584,7 +1544,11 @@ class TestCreateManagementGroup:
         mock_session_object = Mock()
         mock_session_object.put = Mock(
             return_value=mock_requests_response(
-                status=202, headers={"Azure-AsyncOperation": "http://url.com"}
+                status=202,
+                headers={
+                    "Azure-AsyncOperation": "http://status_url.com",
+                    "Location": "http://result_url.com",
+                },
             )
         )
         mock_azure.sdk.requests.Session.return_value = mock_session_object
@@ -1601,7 +1565,7 @@ class TestCreateManagementGroup:
             "management_group_id", "display_name", "tenant_id"
         )
         mock_poll_management_group_creation_job.assert_called_once_with(
-            "http://url.com", mock_session_object
+            "http://status_url.com", "http://result_url.com", mock_session_object
         )
 
     def test_raises_exceptions(
@@ -1644,15 +1608,23 @@ class TestPollManagementGroupCreationJob:
                 mock_requests_response(
                     headers={"Retry-After": 0}, json_data={"status": "Succeeded"}
                 ),
+                mock_requests_response(
+                    headers={"Retry-After": 0}, json_data={"status": "Succeeded"}
+                ),
             ]
         )
         mock_azure.sdk.requests.Session.return_value = mock_session_object
 
         result = mock_azure._poll_management_group_creation_job(
-            "url", mock_session_object
+            "status_url", "result_url", mock_session_object
         )
 
-        calls = [call("url"), call("url"), call("url")]
+        calls = [
+            call("status_url"),
+            call("status_url"),
+            call("status_url"),
+            call("result_url"),
+        ]
         mock_session_object.get.assert_has_calls(calls)
         assert result["status"] == "Succeeded"
 
@@ -1673,9 +1645,13 @@ class TestPollManagementGroupCreationJob:
         mock_azure.sdk.requests.Session.return_value = mock_session_object
 
         with pytest.raises(ResourceProvisioningError):
-            mock_azure._poll_management_group_creation_job("url", mock_session_object)
+            mock_azure._poll_management_group_creation_job(
+                "status", "result", mock_session_object
+            )
         with pytest.raises(ResourceProvisioningError):
-            mock_azure._poll_management_group_creation_job("url", mock_session_object)
+            mock_azure._poll_management_group_creation_job(
+                "status", "result", mock_session_object
+            )
 
     def test_http_error(self, mock_azure, mock_http_error_response):
         mock_session_object = Mock()
@@ -1689,11 +1665,17 @@ class TestPollManagementGroupCreationJob:
         mock_azure.sdk.requests.Session.return_value = mock_session_object
 
         with pytest.raises(ConnectionException):
-            mock_azure._poll_management_group_creation_job("url", mock_session_object)
+            mock_azure._poll_management_group_creation_job(
+                "status_url", "result_url", mock_session_object
+            )
         with pytest.raises(ConnectionException):
-            mock_azure._poll_management_group_creation_job("url", mock_session_object)
+            mock_azure._poll_management_group_creation_job(
+                "status_url", "result_url", mock_session_object
+            )
         with pytest.raises(UnknownServerException, match=r".*500 Server Error.*"):
-            mock_azure._poll_management_group_creation_job("url", mock_session_object)
+            mock_azure._poll_management_group_creation_job(
+                "status_url", "result_url", mock_session_object
+            )
 
 
 class TestGetBillingAdminRoleTemplateId:

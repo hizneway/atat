@@ -55,8 +55,6 @@ from .models import (
     ProductPurchaseVerificationCSPResult,
     SubscriptionCreationCSPPayload,
     SubscriptionCreationCSPResult,
-    SubscriptionVerificationCSPPayload,
-    SuscriptionVerificationCSPResult,
     TaskOrderBillingCreationCSPPayload,
     TaskOrderBillingCreationCSPResult,
     TaskOrderBillingVerificationCSPPayload,
@@ -343,7 +341,10 @@ class AzureCloudProvider(CloudProviderInterface):
 
         if response.status_code == 202:
             status_url = response.headers["Azure-AsyncOperation"]
-            resp = self._poll_management_group_creation_job(status_url, session)
+            result_url = response.headers["Location"]
+            resp = self._poll_management_group_creation_job(
+                status_url, result_url, session
+            )
         else:
             resp = response.json()
 
@@ -378,15 +379,20 @@ class AzureCloudProvider(CloudProviderInterface):
         return True
 
     @log_and_raise_exceptions
-    def _poll_management_group_creation_job(self, url: str, session) -> Dict:
+    def _poll_management_group_creation_job(
+        self, status_url: str, result_url: str, session
+    ) -> Dict:
         """Polls the management group creation job until it is resolved and
         returns the result.
 
         https://docs.microsoft.com/en-us/azure/azure-resource-manager/management/async-operations
 
         Args:
-            url: The url to check for job completion, provided by the
+            status_url: The url to check for job status, provided by the
                 Azure-AsyncOperation response header after creating the
+                management group.
+            result_url: The url to check for job completion, provided by the
+                Locataion response header after creating the
                 management group.
             session: a requests session populated with a service principal
                 bearer token.
@@ -400,12 +406,14 @@ class AzureCloudProvider(CloudProviderInterface):
         """
 
         while True:
-            response = session.get(url)
+            response = session.get(status_url)
             response.raise_for_status()
             response_json = response.json()
             status = response_json["status"]
             if status == "Succeeded":
-                return response_json
+                resp = session.get(result_url)
+                resp.raise_for_status()
+                return resp.json()
             elif status in ("Failed", "Canceled"):
                 error_message = f"{response_json['error']['message']}\nError code: {response_json['error']['code']}"
                 raise ResourceProvisioningError("management group", f"{error_message}")
@@ -746,49 +754,26 @@ class AzureCloudProvider(CloudProviderInterface):
         return BillingInstructionCSPResult(**result.json())
 
     @log_and_raise_exceptions
-    def create_subscription(self, payload: SubscriptionCreationCSPPayload):
-        sp_token = self._get_tenant_principal_token(payload.tenant_id)
+    def create_subscription(self, payload: SubscriptionCreationCSPPayload, token=None):
+        if token is None:
+            token = self._get_tenant_principal_token(payload.tenant_id)
 
         request_body = {
             "displayName": payload.display_name,
             "skuId": AZURE_SKU_ID,
             "managementGroupId": payload.parent_group_id,
         }
-
-        url = f"{self.sdk.cloud.endpoints.resource_manager}providers/Microsoft.Billing/billingAccounts/{payload.billing_account_name}/billingProfiles/{payload.billing_profile_name}/invoiceSections/{payload.invoice_section_name}/providers/Microsoft.Subscription/createSubscription?api-version=2018-11-01-preview"
-
+        url = f"{self.sdk.cloud.endpoints.resource_manager}providers/Microsoft.Billing/billingAccounts/{payload.billing_account_name}/billingProfiles/{payload.billing_profile_name}/invoiceSections/{payload.invoice_section_name}/providers/Microsoft.Subscription/createSubscription?api-version=2019-10-01-preview"
         auth_header = {
-            "Authorization": f"Bearer {sp_token}",
+            "Authorization": f"Bearer {token}",
         }
-
-        result = self.sdk.requests.put(
+        result = self.sdk.requests.post(
             url, headers=auth_header, json=request_body, timeout=30
         )
         result.raise_for_status()
         if result.status_code in [200, 202]:
             # 202 has location/retry after headers
             return SubscriptionCreationCSPResult(**result.headers, **result.json())
-
-    def create_subscription_creation(self, payload: SubscriptionCreationCSPPayload):
-        return self.create_subscription(payload)
-
-    @log_and_raise_exceptions
-    def create_subscription_verification(
-        self, payload: SubscriptionVerificationCSPPayload
-    ):
-        sp_token = self._get_tenant_principal_token(payload.tenant_id)
-
-        auth_header = {
-            "Authorization": f"Bearer {sp_token}",
-        }
-
-        result = self.sdk.requests.get(
-            payload.subscription_verify_url, headers=auth_header, timeout=30
-        )
-        result.raise_for_status()
-
-        # 202 has location/retry after headers
-        return SuscriptionVerificationCSPResult(**result.json())
 
     @log_and_raise_exceptions
     def create_product_purchase(self, payload: ProductPurchaseCSPPayload):

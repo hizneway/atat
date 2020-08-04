@@ -289,19 +289,10 @@ class HybridCloudProvider(object):
         return self.azure.get_reporting_data(payload, token=hybrid_reporting_token)
 
     def create_subscription(self, payload: SubscriptionCreationCSPPayload):
-        # TODO: This will need to be updated to use the azure function.  The same with
-        # "create_subscription_creation" and "create_subscription_verification".  Additionally,
+        # TODO: This will need to be updated to use the azure function. Additionally,
         # the payload display_name will have to be prepended with the hybrid prefix.
         #
         # Example code:
         # payload.display_name = f"{HYBRID_PREFIX} {payload.display_name}"
         # return self.azure.create_subscription(payload)
         return self.mock.create_subscription(payload)
-
-    def create_subscription_creation(self, payload: SubscriptionCreationCSPPayload):
-        return self.mock.create_subscription_creation(payload)
-
-    def create_subscription_verification(
-        self, payload: SubscriptionVerificationCSPPayload
-    ):
-        return self.mock.create_subscription_verification(payload)

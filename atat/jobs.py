@@ -1,3 +1,4 @@
+from secrets import token_urlsafe
 from smtplib import SMTPException
 
 import pendulum
@@ -8,17 +9,18 @@ from flask import current_app as app
 from atat.database import db
 from atat.domain.application_roles import ApplicationRoles
 from atat.domain.applications import Applications
-from atat.domain.environment_roles import EnvironmentRoles
 from atat.domain.csp.cloud import CloudProviderInterface
 from atat.domain.csp.cloud.exceptions import GeneralCSPException
 from atat.domain.csp.cloud.models import (
     ApplicationCSPPayload,
     BillingInstructionCSPPayload,
     EnvironmentCSPPayload,
+    SubscriptionCreationCSPPayload,
     UserCSPPayload,
     UserRoleCSPPayload,
 )
 from atat.domain.csp.cloud.utils import generate_user_principal_name
+from atat.domain.environment_roles import EnvironmentRoles
 from atat.domain.environments import Environments
 from atat.domain.portfolios import Portfolios
 from atat.domain.task_orders import TaskOrders
@@ -152,7 +154,17 @@ def do_create_user(csp: CloudProviderInterface, application_role_ids=None):
         )
 
 
+def log_do_create_environment(portfolio_id, parent_id, tenant_id):
+    app.logger.debug("environment.portfolio.id = %s", portfolio_id)
+    app.logger.debug("parent_id = %s", parent_id)
+    app.logger.debug("tenant_id = %s", tenant_id)
+
+
 def do_create_environment(csp: CloudProviderInterface, environment_id=None):
+    """Creates an environment and spawns a task to create a subscription 
+    for that environment in the CSP.
+    """
+
     environment = Environments.get(environment_id)
 
     with claim_for_update(environment) as environment:
@@ -163,23 +175,69 @@ def do_create_environment(csp: CloudProviderInterface, environment_id=None):
             )
             return
 
-        csp_details = environment.portfolio.csp_data
         parent_id = environment.application.cloud_id
-        tenant_id = csp_details.get("tenant_id")
+        tenant_id = environment.portfolio.csp_data["tenant_id"]
 
-        app.logger.debug("environment.portfolio.id = %s", environment.portfolio.id)
-        app.logger.debug("parent_id = %s", parent_id)
-        app.logger.debug("tenant_id = %s", tenant_id)
+        log_do_create_environment(environment.portfolio.id, parent_id, tenant_id)
 
         payload = EnvironmentCSPPayload(
             tenant_id=tenant_id, display_name=environment.name, parent_id=parent_id
         )
         env_result = csp.create_environment(payload)
-        environment.cloud_id = (
-            f"/providers/Microsoft.Management/managementGroups/{env_result.name}"
+        Environments.update(environment, new_data={"cloud_id": env_result.id})
+
+        app.logger.info("Created environment %s", env_result.name)
+        async_result = create_subscription.delay(environment_id=environment.id)
+        app.logger.info(
+            "Attempting to create subscription for environment %s [Task ID: %s])",
+            env_result.name,
+            async_result.task_id,
         )
-        db.session.add(environment)
-        db.session.commit()
+
+
+@celery.task(bind=True, base=RecordFailure, autoretry_for=(GeneralCSPException,))
+def create_subscription(self, environment_id=None):
+    do_create_subscription(app.csp.cloud, environment_id=environment_id)
+    return environment_id
+
+
+def build_subscription_payload(environment) -> SubscriptionCreationCSPPayload:
+    csp_data = environment.portfolio.csp_data
+    parent_group_id = environment.cloud_id
+    invoice_section_name = csp_data["billing_profile_properties"]["invoice_sections"][
+        0
+    ]["invoice_section_name"]
+
+    display_name = (
+        f"{environment.application.name}-{environment.name}-{token_urlsafe(6)}"
+    )
+
+    return SubscriptionCreationCSPPayload(
+        tenant_id=csp_data.get("tenant_id"),
+        display_name=display_name,
+        parent_group_id=parent_group_id,
+        billing_account_name=app.config["AZURE_BILLING_ACCOUNT_NAME"],
+        billing_profile_name=csp_data.get("billing_profile_name"),
+        invoice_section_name=invoice_section_name,
+    )
+
+
+def do_create_subscription(csp: CloudProviderInterface, environment_id=None):
+    """Creates a subscription under a management group for an environment
+    
+    Creating a subscription is a long-running async job in Azure. For our 
+    purposes, we don't track the success or failure of that job. We only ensure 
+    that a request to kick off this async job is accepted.
+    """
+    environment = Environments.get(environment_id)
+    payload = build_subscription_payload(environment)
+    try:
+        csp.create_subscription(payload)
+    except GeneralCSPException as e:
+        app.logger.warning(
+            "Unable to create subscription for environment %s.", environment.id,
+        )
+        raise e
 
 
 def do_create_environment_role(csp: CloudProviderInterface, environment_role_id=None):
