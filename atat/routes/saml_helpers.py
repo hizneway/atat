@@ -83,7 +83,7 @@ def unique_dod_id():
         Users.get_by_dod_id(new_dod_id)
     except NotFoundError:
         return new_dod_id
-    unique_dod_id()
+    return unique_dod_id()
 
 
 def init_saml_auth(request):
