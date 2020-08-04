@@ -136,13 +136,15 @@ def login_dev():
         user = saml_post(saml_auth)
 
     if not user:
-        dod_id = query_string_parameters.get("dod_id_param", None) or request.args.get("dod_id", None)
+        dod_id = query_string_parameters.get("dod_id_param", None) or request.args.get(
+            "dod_id", None
+        )
         if dod_id is not None:
             user = Users.get_by_dod_id(dod_id)
         else:
-            role = query_string_parameters.get("username_param", None) or request.args.get(
-                "username", "amanda"
-            )
+            role = query_string_parameters.get(
+                "username_param", None
+            ) or request.args.get("username", "amanda")
             user_data = _DEV_USERS[role]
             user = Users.get_or_create_by_dod_id(
                 user_data["dod_id"],

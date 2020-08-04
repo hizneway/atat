@@ -4,6 +4,7 @@ from flask import current_app as app, session, g
 from onelogin.saml2.auth import OneLogin_Saml2_Auth
 from atat.domain.exceptions import UnauthenticatedError, NotFoundError
 from atat.domain.users import Users
+from atat.utils import first_or_none
 
 
 def saml_get(saml_auth, request):
@@ -12,10 +13,14 @@ def saml_get(saml_auth, request):
     sso_built_url = saml_auth.login()
     session["AuthNRequestID"] = saml_auth.get_last_request_id()
     parsed_url = urlparse(request.url)
-    parsed_qs = parse_qs(parsed_url.query)
-    next_param = next(iter(parsed_qs.get("next") or []), None)
-    username_param = next(iter(parsed_qs.get("username") or []), None)
-    dod_id_param = next(iter(parsed_qs.get("dod_id") or []), None)
+    parsed_query_string = parse_qs(parsed_url.query)
+    next_param = first_or_none(lambda no_op: True, parsed_query_string.get("next", []))
+    username_param = first_or_none(
+        lambda no_op: True, parsed_query_string.get("username", [])
+    )
+    dod_id_param = first_or_none(
+        lambda no_op: True, parsed_query_string.get("dod_id", [])
+    )
     query_string_parameters = {}
 
     if next_param:
@@ -42,7 +47,10 @@ def saml_post(saml_auth):
             del session["AuthNRequestID"]
 
         query_string_parameters = session.get("query_string_parameters", {})
-        if "username_param" in query_string_parameters or "dod_id_param" in query_string_parameters:
+        if (
+            "username_param" in query_string_parameters
+            or "dod_id_param" in query_string_parameters
+        ):
             return None
         else:
             # if username or dod_id param not passed in,
