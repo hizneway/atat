@@ -63,6 +63,12 @@ locally:
   echo 'export PATH="/usr/local/opt/node@10/bin:$PATH"' >> ~/.zshrc
   ```
 
+* `xmlsec1`
+  This is a downstream requirement of [python3-saml](https://github.com/onelogin/python3-saml). For macOS, use brew to install:
+  ```
+  brew install libxmlsec1
+  ```
+
 ### Cloning
 This project contains git submodules. Here is an example clone command that will
 automatically initialize and update those modules:
@@ -167,7 +173,7 @@ Once this user is created, you can log in as them again the future using the DoD
 
 **Federated Authentication with Azure**
 
-Note that when `FLASK_ENV` is set to `master`, that the `/login-dev` routes will all require you to have a valid account in the Azure tenant and authenticate against it. 
+Note that when `FLASK_ENV` is set to `master`, that the `/login-dev` routes will all require you to have a valid account in the Azure tenant and authenticate against it.
 Alternatively, you can include `saml` in your query string to force federate authentication, which may be useful when debugging.
 Example: `/login-dev?saml`
 
