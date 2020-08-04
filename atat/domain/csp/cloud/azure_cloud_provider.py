@@ -1620,3 +1620,13 @@ class AzureCloudProvider(CloudProviderInterface):
             token, params={"$filter": f"roleName eq '{role_definition_name}'"}
         )
         return next((d["name"] for d in definitions), None)
+
+    def _filter_role_assignments(self, assignments, role_definition_id):
+        """Find a role assignment in a list of role assignments with a given role definition id"""
+
+        for assignment in assignments:
+            if assignment["properties"]["roleDefinitionId"].endswith(
+                role_definition_id
+            ):
+                return assignment
+        return None

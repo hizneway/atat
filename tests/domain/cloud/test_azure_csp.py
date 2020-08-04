@@ -1934,3 +1934,25 @@ class Test_get_role_definition_id:
         monkeypatch.setattr(mock_azure, "_list_role_definitions", Mock(return_value=[]))
 
         assert mock_azure._get_role_definition_id("token", "A definition") is None
+
+
+def test_filter_role_assignments(mock_azure):
+    target_role_assignment = {
+        "properties": {"roleDefinitionId": "fully/pathed/role_definition_id"}
+    }
+    wrong_role_assignment = {
+        "properties": {"roleDefinitionId": "full/path/wrong_definition_id"}
+    }
+    assert (
+        mock_azure._filter_role_assignments(
+            [target_role_assignment], "role_definition_id"
+        )
+        == target_role_assignment
+    )
+    assert (
+        mock_azure._filter_role_assignments(
+            [wrong_role_assignment], "role_definition_id"
+        )
+        is None
+    )
+    assert mock_azure._filter_role_assignments([], "role_definition_id") is None
