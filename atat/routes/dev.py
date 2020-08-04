@@ -126,7 +126,7 @@ def login_dev():
     user = None
 
     if (
-        "saml" in request.args or app.config.get("ENV") == "master"
+        "saml" in request.args or app.config.get("SAML_LOGIN_DEV", False)
     ) and request.method == "GET":
         saml_auth = init_saml_auth(request)
         return redirect(saml_get(saml_auth, request))
