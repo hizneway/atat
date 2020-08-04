@@ -37,7 +37,7 @@ Below we will go through the steps in that flow and describe what needs to be do
 
     The Redirect URI is the URI that SAML will post back to after authentication is complete.
 
-    Note: Azure expects these are secure, so for local testig, you'll need to create self-signed certificates and run localhost securely.
+    Note: Azure expects these are secure, so for local testing, you'll need to create self-signed certificates and run localhost securely.
 
     Some examples of Identifier URIs:
 
@@ -134,4 +134,3 @@ Below we will go through the steps in that flow and describe what needs to be do
     ```
 
     At this point, the Identity provider is ready to be consumed!
-

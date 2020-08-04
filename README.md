@@ -322,7 +322,7 @@ All config settings must be declared in "config/base.ini", even if they are null
 - `REDIS_URI`: URI for the redis server.
 - `SAML_ACS`: Fully qualified URI for the URL that the SAML Identity Provider will redirect to after successful authentication
 - `SAML_ENTITY_ID`: Fully qualified URI that ATAT will invoke SAML authentication from
-- `SAML_IDP_CERT`: Public certificate provided by SAML Idetity Provider encoded via base64
+- `SAML_IDP_CERT`: Public certificate provided by SAML Identity Provider encoded via base64
 - `SAML_IDP_ENTITY_ID`: Identifier endpoint of SAML Identity Provider.
 - `SAML_IDP_SLS`: URL that SAML logout requests will be sent to
 - `SAML_IDP_SSOS`: URL that SAML login requests will be sent to
@@ -481,4 +481,3 @@ fi
 ```
 
 Also note that if the line number of a previously whitelisted secret changes, the whitelist file, `.secrets.baseline`, will be updated and needs to be committed.
-
