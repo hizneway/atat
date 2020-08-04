@@ -63,6 +63,12 @@ locally:
   echo 'export PATH="/usr/local/opt/node@10/bin:$PATH"' >> ~/.zshrc
   ```
 
+* `xmlsec1`
+  This is a downstream requirement of [python3-saml](https://github.com/onelogin/python3-saml). For macOS, use brew to install:
+  ```
+  brew install libxmlsec1
+  ```
+
 ### Cloning
 This project contains git submodules. Here is an example clone command that will
 automatically initialize and update those modules:
@@ -126,6 +132,16 @@ To start the app locally in the foreground and watch for changes:
 After running `script/server`, the application is available at
 [`http://localhost:8000`](http://localhost:8000).
 
+In some cases, you may be required to run the localhost server via https. In order to do this, you can run:
+
+    script/secure_server
+
+The application will then be available  at
+[`https://localhost:8000`](https://localhost:8000). You will likely be presented with a warning about a non-secure connection at this point, most browsers have the option of bypassing this warning by checking the `advanced` or `more info` links on the error page.
+
+If starting the secure server fails, you may need to generate the local certificates first:
+
+    script/create_local_certs
 
 ### Users
 
@@ -154,6 +170,12 @@ When in development mode, you can create new users by passing first name, last n
 And it will create the new user, sign in as them, and load their profile page to fill out the rest of the details.
 
 Once this user is created, you can log in as them again the future using the DoD ID dev login endpoint documented above.
+
+**Federated Authentication with Azure**
+
+Note that when `FLASK_ENV` is set to `master`, that the `/login-dev` routes will all require you to have a valid account in the Azure tenant and authenticate against it.
+Alternatively, you can include `saml` in your query string to force federate authentication, which may be useful when debugging.
+Example: `/login-dev?saml`
 
 ### Seeding the database
 
@@ -255,6 +277,8 @@ All config settings must be declared in "config/base.ini", even if they are null
 #### General Config
 
 - `ASSETS_URL`: URL to host which serves static assets (such as a CDN).
+- `APP_SSL_CERT_PATH`: Path to the self-signed SSL certificate for running the app in secure mode.
+- `APP_SSL_KEY_PATH`: Path to the self-signed SSL certificate key for running the app in secure mode.
 - `AZURE_ACCOUNT_NAME`: The name for the Azure blob storage account
 - `AZURE_BILLING_ACCOUNT_NAME`: The name for the root Azure billing account
 - `AZURE_CALC_CLIENT_ID`: The client id used to generate a token for the Azure pricing calculator
@@ -296,6 +320,14 @@ All config settings must be declared in "config/base.ini", even if they are null
 - `PGUSER`: String specifying the username to use when connecting to the postgres database.
 - `PORT`: Integer specifying the port to bind to when running the flask server. Used only for local development.
 - `REDIS_URI`: URI for the redis server.
+- `SAML_ACS`: Fully qualified URI for the URL that the SAML Identity Provider will redirect to after successful authentication
+- `SAML_ENTITY_ID`: Fully qualified URI that ATAT will invoke SAML authentication from
+- `SAML_IDP_CERT`: Public certificate provided by SAML Identity Provider encoded via base64
+- `SAML_IDP_ENTITY_ID`: Identifier endpoint of SAML Identity Provider.
+- `SAML_IDP_SLS`: URL that SAML logout requests will be sent to
+- `SAML_IDP_SSOS`: URL that SAML login requests will be sent to
+- `SAML_SLS`: Fully qualified URI that ATAT will invoke SAML logout from
+- `SAMl_LOGIN_DEV`: Boolean that defines if Azure Fed Auth will be require to log in using the developer login route. Defaults to `False` 
 - `SECRET_KEY`: String key which will be used to sign the session cookie. Should be a long string of random bytes. https://flask.palletsprojects.com/en/1.1.x/config/#SECRET_KEY
 - `SERVER_NAME`: Hostname for ATAT. Only needs to be specified in contexts where the hostname cannot be inferred from the request, such as Celery workers. https://flask.palletsprojects.com/en/1.1.x/config/#SERVER_NAME
 - `SERVICE_DESK_URL`: The URL for the service desk.  This is the site that will be displayed when the Support button is pressed.
@@ -450,4 +482,3 @@ fi
 ```
 
 Also note that if the line number of a previously whitelisted secret changes, the whitelist file, `.secrets.baseline`, will be updated and needs to be committed.
-

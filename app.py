@@ -7,5 +7,15 @@ app = make_app(config)
 
 if __name__ == "__main__":
     port = int(config["PORT"])
-    app.run(port=port, extra_files=["translations.yaml"])
+    cert_path = config["APP_SSL_CERT_PATH"]
+    key_path = config["APP_SSL_KEY_PATH"]
+
+    ssl_context = None
+
+    if cert_path is not None and key_path is not None:
+        ssl_context = (cert_path, key_path)
+
+    app.run(
+        port=port, extra_files=["translations.yaml"], ssl_context=ssl_context,
+    )
     print("Listening on http://localhost:%i" % port)

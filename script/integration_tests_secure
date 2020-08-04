@@ -1,0 +1,100 @@
+#!/bin/bash
+
+# script/integration_tests: Run the integration tests via docker.
+set -e
+
+if [ -z "${CONTAINER_TIMEOUT+is_set}" ]; then
+  CONTAINER_TIMEOUT=200
+fi
+
+# Expected settings. Script will error if these are not provided.
+SETTINGS=(
+  CONTAINER_IMAGE
+  NGROK_TOKEN
+  NGROK_DOMAIN
+  GI_API_KEY
+  GI_SUITE
+)
+
+
+# Loop all expected settings. Track ones that are missing. If any
+# are missing, exit.
+MISSING_SETTINGS=()
+for envvar in "${SETTINGS[@]}"; do
+  if [ -z "${!envvar}" ]; then
+    MISSING_SETTINGS+=(${envvar})
+  fi
+done
+
+if [[ ${#MISSING_SETTINGS[@]} > 0 ]]; then
+  >&2 echo "The following variables need to be set:"
+  for missing in "${MISSING_SETTINGS[@]}"; do
+    >&2 echo $missing
+  done
+  exit 1
+fi
+
+# Remove any existing container and network instances
+docker container stop redis postgres test-atat || true && docker container rm redis postgres test-atat || true
+docker network rm atat || true
+
+# Create network
+docker network create atat
+
+# Start Redis and Postgres
+docker run -d --network atat --link redis:redis -p 6379:6379 --name redis circleci/redis:4-alpine3.8
+docker run -d --network atat --link postgres:postgres -p 5432:5432 --name postgres circleci/postgres:10-alpine-ram
+# Wait for datastores to be available
+sleep 3
+
+# Create database and run migrations
+docker exec postgres createdb -U postgres atat
+docker run --network atat -e PGDATABASE=atat -e PGHOST=postgres -e REDIS_HOST=redis:6379 $CONTAINER_IMAGE .venv/bin/python .venv/bin/alembic upgrade head
+docker run --network atat -e PGDATABASE=atat -e PGHOST=postgres -e REDIS_HOST=redis:6379 $CONTAINER_IMAGE .venv/bin/python script/seed_roles.py
+
+# Start application container
+docker run -d \
+-e DISABLE_CRL_CHECK=true \
+-e PGHOST=postgres \
+-e REDIS_HOST=redis:6379 \
+-p 8000:8000 \
+--network atat \
+--name test-atat \
+$CONTAINER_IMAGE \
+/bin/sh -c "
+  echo CLOUD_PROVIDER=mock > .env &&\
+  yarn build &&\
+  ./script/create_local_certs &&\
+  uwsgi \
+  --callable app \
+  --module app \
+  --plugin python3 \
+  --virtualenv /install/.venv \
+  --https :8000,/install/ssl/local.crt,/install/ssl/local.key
+"
+
+# Use curl to wait for application container to become available
+docker pull curlimages/curl:latest
+echo "Waiting for application container to become available"
+docker run --network atat \
+  curlimages/curl:latest \
+  curl \
+  --insecure \
+  --connect-timeout 3 \
+  --max-time 5 \
+  --retry $CONTAINER_TIMEOUT \
+  --retry-connrefused \
+  --retry-delay 1 \
+  --retry-max-time $CONTAINER_TIMEOUT \
+  https://test-atat:8000 >/dev/null
+
+# Run Ghost Inspector tests
+docker pull ghostinspector/test-runner-standalone:latest
+docker run \
+  -e NGROK_TOKEN=$NGROK_TOKEN \
+  -e GI_API_KEY=$GI_API_KEY \
+  -e GI_SUITE=$GI_SUITE \
+  -e GI_PARAMS_JSON='{}' \
+  -e APP_PORT="-subdomain=$NGROK_DOMAIN https://test-atat:8000" \
+  --network atat \
+  ghostinspector/test-runner-standalone:latest

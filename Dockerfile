@@ -28,6 +28,17 @@ RUN yum updateinfo && \
 # Install the `Python.h` file for compiling certain libraries.
 RUN dnf install python3-devel -y
 
+# Install dependencies for python3-saml
+RUN yum install -y \
+      libxml2-devel \
+      xmlsec1 \
+      xmlsec1-openssl
+
+# Install dev dependencies required to build the xmlsec dependency of python3-saml
+# TODO(tomdds): Find proper gpg secured sources for both of these
+RUN yum install -y ftp://ftp.redhat.com/pub/redhat/rhel/rhel-8-beta/appstream/x86_64/Packages/libtool-ltdl-devel-2.4.6-25.el8.x86_64.rpm --nogpgcheck
+RUN yum install -y ftp://ftp.ntua.gr/pub/linux/centos/8.2.2004/PowerTools/x86_64/os/Packages/xmlsec1-devel-1.2.25-4.el8.x86_64.rpm --nogpgcheck
+
 # Install yarn.
 # https://linuxize.com/post/how-to-install-yarn-on-centos-8/
 RUN dnf install @nodejs -y

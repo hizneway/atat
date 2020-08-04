@@ -120,3 +120,16 @@ class Users(object):
         user.last_session_id = session_id
         db.session.add(user)
         db.session.commit()
+
+    @classmethod
+    def get_by_first_and_last_name(cls, first_name, last_name):
+        try:
+            user = (
+                db.session.query(User)
+                .filter_by(first_name=first_name, last_name=last_name)
+                .first()
+            )
+        except NoResultFound:
+            raise NotFoundError("user")
+
+        return user

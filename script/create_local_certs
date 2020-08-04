@@ -1,0 +1,7 @@
+#!/bin/bash
+
+# This will create some self-signed certificates in the ssl folder
+
+cd ssl
+openssl req -x509 -out local.crt -keyout local.key -newkey rsa:2048 -nodes -sha256 -subj '/CN=localhost'
+cd ..
