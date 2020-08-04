@@ -86,3 +86,6 @@ js/test_templates
 
 # mac indexing
 **/*.DS_Store
+
+# sonar cube files
+.scannerwork
