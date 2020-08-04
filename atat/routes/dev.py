@@ -122,7 +122,7 @@ class IncompleteInfoError(Exception):
 
 @bp.route("/login-dev", methods=["GET", "POST"])
 def login_dev():
-    qs_dict = session.get("qs_dict", {})
+    query_string_parameters = session.get("query_string_parameters", {})
     user = None
 
     if (
@@ -136,11 +136,11 @@ def login_dev():
         user = saml_post(saml_auth)
 
     if not user:
-        dod_id = qs_dict.get("dod_id_param", None) or request.args.get("dod_id", None)
+        dod_id = query_string_parameters.get("dod_id_param", None) or request.args.get("dod_id", None)
         if dod_id is not None:
             user = Users.get_by_dod_id(dod_id)
         else:
-            role = qs_dict.get("username_param", None) or request.args.get(
+            role = query_string_parameters.get("username_param", None) or request.args.get(
                 "username", "amanda"
             )
             user_data = _DEV_USERS[role]
@@ -162,9 +162,9 @@ def login_dev():
                 ),
             )
 
-    next_param = qs_dict.get("next_param", None)
-    if "qs_dict" in session:
-        del session["qs_dict"]
+    next_param = query_string_parameters.get("next_param", None)
+    if "query_string_parameters" in session:
+        del session["query_string_parameters"]
     current_user_setup(user)
     return redirect(redirect_after_login_url(next_param))
 

@@ -7,8 +7,8 @@ from atat.domain.users import Users
 
 
 def saml_get(saml_auth, request):
-    if "qs_dict" in session:
-        del session["qs_dict"]
+    if "query_string_parameters" in session:
+        del session["query_string_parameters"]
     sso_built_url = saml_auth.login()
     session["AuthNRequestID"] = saml_auth.get_last_request_id()
     parsed_url = urlparse(request.url)
@@ -16,16 +16,16 @@ def saml_get(saml_auth, request):
     next_param = next(iter(parsed_qs.get("next") or []), None)
     username_param = next(iter(parsed_qs.get("username") or []), None)
     dod_id_param = next(iter(parsed_qs.get("dod_id") or []), None)
-    qs_dict = {}
+    query_string_parameters = {}
 
     if next_param:
-        qs_dict["next_param"] = next_param
+        query_string_parameters["next_param"] = next_param
     if username_param:
-        qs_dict["username_param"] = username_param
+        query_string_parameters["username_param"] = username_param
     if dod_id_param:
-        qs_dict["dod_id_param"] = dod_id_param
-    if qs_dict:
-        session["qs_dict"] = qs_dict
+        query_string_parameters["dod_id_param"] = dod_id_param
+    if query_string_parameters:
+        session["query_string_parameters"] = query_string_parameters
 
     return sso_built_url
 
@@ -41,8 +41,8 @@ def saml_post(saml_auth):
         if "AuthNRequestID" in session:
             del session["AuthNRequestID"]
 
-        qs_dict = session.get("qs_dict", {})
-        if "username_param" in qs_dict or "dod_id_param" in qs_dict:
+        query_string_parameters = session.get("query_string_parameters", {})
+        if "username_param" in query_string_parameters or "dod_id_param" in query_string_parameters:
             return None
         else:
             # if username or dod_id param not passed in,
