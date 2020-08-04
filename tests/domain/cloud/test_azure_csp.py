@@ -225,9 +225,8 @@ def test_create_initial_mgmt_group_succeeds(
     )
     result: InitialMgmtGroupCSPResult = mock_azure.create_initial_mgmt_group(payload)
 
-    # TODO: The initial mgmt group != the root management group
-    assert result.root_management_group_id == management_group_id
-    assert result.root_management_group_name == payload.management_group_name
+    assert result.initial_management_group_id == management_group_id
+    assert result.initial_management_group_name == payload.management_group_name
 
 
 def test_create_initial_mgmt_group_verification(
