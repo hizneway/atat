@@ -41,3 +41,9 @@ data:
   REDIS_HOST: cloudzero-dryrun-redis.redis.cache.windows.net:6380
   SESSION_COOKIE_DOMAIN: atat.dev
   STATIC_URL: "https://staging.atat.dev/static/"
+  SAML_ENTITY_ID: https://staging.atat.dev/login-dev?saml
+  SAML_ACS: https://staging.atat.dev/login-dev?acs
+  SAML_SLS: https://staging.atat.dev/login-dev?sls
+  SAML_IDP_ENTITY_ID: https://sts.windows.net/b5ab0e1e-09f8-4258-afb7-fb17654bc5b3/
+  SAML_IDP_SSOS: https://login.microsoftonline.com/b5ab0e1e-09f8-4258-afb7-fb17654bc5b3/saml2
+  SAML_IDP_SLS: https://login.microsoftonline.com/common/wsfederation?wa=wsignout1.0
