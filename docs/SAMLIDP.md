@@ -4,16 +4,26 @@ We are going to use SAML to authenticate users. Until we have an official Identi
 
 The official Azure guide for this process can be found here: https://docs.microsoft.com/en-us/azure/active-directory/manage-apps/application-saml-sso-configure-api
 
-Below we will go through the steps in that flow and describe what needs to be done for our purposes.
+Below we will go through the steps in that flow and describe what needs to be done for our purposes. All of these steps require an authenticated identity (service principal) that has been granted admin consent for: `Application.Read.All`, `Application.ReadWrite.All`, `Application.ReadWrite.OwnedBy`, `Directory.Read.All`, `Directory.ReadWrite.All`. Once you have that, you'll need to authenticate as the identity:
 
-1. You first need to create the non-gallery application that will be the basis for our new identity provider. This is achieved by creating a new app registration from a template, in our case the template identifer is `8adf8e6e-67b2-4cf2-a259-e3dc5476c621`
+```
+curl --location --request POST 'https://login.microsoftonline.com/<TENANT_ID>/oauth2/v2.0/token' \
+--form 'grant_type=client_credentials' \
+--form 'client_id=CLIENT_ID_OF_APP' \
+--form 'client_secret=CLIENT_SECRET_OF_APP' \
+--form 'scope=https://graph.microsoft.com/.default'
+```
+
+This will return a json blob, you'll need to save the `access_token` for use in future calls.
+
+1. You first need to create the non-gallery application that will be the basis for our new identity provider. This is achieved by creating a new app registration from a template, in our case the template identifer is `8adf8e6e-67b2-4cf2-a259-e3dc5476c621` (Can be found in [this section of the guide](https://docs.microsoft.com/en-us/azure/active-directory/manage-apps/application-saml-sso-configure-api#create-the-gallery-application))
     ```
-        POST https://graph.microsoft.com/beta/applicationTemplates/8adf8e6e-67b2-4cf2-a259-e3dc5476c621/instantiate
-        Content-type: application/json
-
-        {
-            "displayName": "ATAT SAML Auth"
-        }
+        curl --location --request POST 'https://graph.microsoft.com/beta/applicationTemplates/8adf8e6e-67b2-4cf2-a259-e3dc5476c621/instantiate' \
+        --header 'Authorization: Bearer <access_token>' \
+        --header 'Content-Type: application/json' \
+        --data-raw '{
+        "displayName": "ATAT SAML Auth"
+        }'
     ```
 
     This will give you a response that contains identifiers that will be needed for subsequent steps. Below they'll be referenced by their path in the results json:
@@ -23,12 +33,13 @@ Below we will go through the steps in that flow and describe what needs to be do
 
 2. Next you'll need to configure the service principal to allow SAML sign-on
     ```
-    PATCH https://graph.microsoft.com/v1.0/servicePrincipals/servicePrincipal.objectId
-    Content-type: application/json
-
-    {
+    curl --location --request PATCH 'https://graph.microsoft.com/v1.0/servicePrincipals/<servicePrincipal.objectId>' \
+    --header 'Authorization: Bearer <access_token>' \
+    --header 'Content-Type: application/json' \
+    --data-raw '{
         "preferredSingleSignOnMode": "saml"
     }
+    '
     ```
 
 3. Now that the service principal is SAML enabled, we need to configure some basic SAML properties, namely the endpoints that our new SAML provider should expect to be called from and return to:
@@ -45,13 +56,15 @@ Below we will go through the steps in that flow and describe what needs to be do
 
     staging: https://staging.atat.dev/saml
 
+    staging dev login: https://staging.atat.dev/login-dev?saml
+
     We recommend settig up the Redirect URIs to be the same route as the Identifier URI, but with an `acs` query parameter. Using `acs` as a param is idomatic for Assertion Consumer Service URL, which is the SAML concept it maps to. Example below uses a secure localhost
 
     ```
-    PATCH https://graph.microsoft.com/v1.0/applications/application.objectId
-    Content-type: applications/json
-
-    {
+    curl --location --request PATCH 'https://graph.microsoft.com/v1.0/applications/<application.objectId>' \
+    --header 'Authorization: Bearer <access_token>' \
+    --header 'Content-Type: application/json' \
+    --data-raw '{
         "web": {
             "redirectUris": [
                 "https://localhost:8000/saml?acs"
@@ -60,7 +73,7 @@ Below we will go through the steps in that flow and describe what needs to be do
         "identifierUris": [
             "https://localhost:8000/saml"
         ]
-    }
+    }'
     ```
 
 4. Now we need to add a certificate to the SAML provider. In the guide, this is prescribed as being done via the API. Unfortunately, due to [API issues](https://github.com/MicrosoftDocs/azure-docs/issues/58484) that were unresovled at the time of this work, this step needs to be done manually. There are 2 options for cert generation, you can either generate a self-signed cert and upload it to the UI, or have azure create a certificate for you and grab the details.
@@ -103,7 +116,8 @@ Below we will go through the steps in that flow and describe what needs to be do
      * The ID of the user(s) you want to add to the application, listed as the "Object ID" on the user detail page in the portal
      * The Role ID of the "User" role on the service principal. You can find that by requesting the service principal info and looking for the app role with the `displayName` of `"User"`
         ```
-        GET https://graph.microsoft.com/v1.0/servicePrincipals/a5763210-40ed-4b01-b7f6-d516ca2e19f5
+        curl --location --request GET 'https://graph.microsoft.com/v1.0/servicePrincipals/<servicePrincipal.objectId>' \
+        --header 'Authorization: Bearer <access_token>'
 
         RESPONSE (truncated):
         "appRoles": [
@@ -124,13 +138,15 @@ Below we will go through the steps in that flow and describe what needs to be do
     Once you have those values, you can do the following call to add users (one at a time):
 
     ```
-    POST https://graph.microsoft.com/v1.0/servicePrincipals/servicePrincipal.objectId/appRoleAssignments
-    {
-        "principalId": "objectIdOfUser",
-        "principalType": "User",
-        "appRoleId":"servicePrincipal.userAppRoleId",
-        "resourceId":"servicePrincipal.objectId"
-    }
+    curl --location --request POST 'https://graph.microsoft.com/v1.0/servicePrincipals/servicePrincipal.objectId/appRoleAssignments' \
+    --header 'Authorization: Bearer <access_token>' \
+    --header 'Content-Type: application/json' \
+    --data-raw '{
+    "principalId": "objectIdOfUser",
+    "principalType": "User",
+    "appRoleId":"servicePrincipal.userAppRoleId",
+    "resourceId":"servicePrincipal.objectId"
+    }'
     ```
 
     At this point, the Identity provider is ready to be consumed!
