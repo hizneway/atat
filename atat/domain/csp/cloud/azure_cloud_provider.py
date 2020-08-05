@@ -5,6 +5,7 @@ from functools import wraps
 from secrets import token_hex, token_urlsafe
 from typing import Dict, Optional, Tuple
 from uuid import uuid4
+from urllib.parse import urljoin
 
 from flask import current_app as app
 
@@ -191,7 +192,10 @@ class AzureCloudProvider(CloudProviderInterface):
 
     @log_and_raise_exceptions
     def _get_keyvault_token(self):
-        url = f"{self.sdk.cloud.endpoints.active_directory}/{self.root_tenant_id}/oauth2/token"
+        url = urljoin(
+            self.sdk.cloud.endpoints.active_directory,
+            f"{self.root_tenant_id}/oauth2/token",
+        )
         resource = f"https://{self.sdk.cloud.suffixes.keyvault_dns[1:]}"
         payload = {
             "grant_type": "client_credentials",
@@ -295,8 +299,12 @@ class AzureCloudProvider(CloudProviderInterface):
         with self._get_elevated_access_token(
             payload.tenant_id, payload.user_object_id
         ) as elevated_token:
+            url = urljoin(
+                self.sdk.cloud.endpoints.resource_manager,
+                f"providers/Microsoft.Management/managementGroups/{payload.management_group_name}",
+            )
             response = self.sdk.requests.get(
-                f"{self.sdk.cloud.endpoints.resource_manager}providers/Microsoft.Management/managementGroups/{payload.management_group_name}",
+                url,
                 headers=make_auth_header(elevated_token),
                 params={"api-version": "2020-02-01"},
             )
@@ -328,11 +336,12 @@ class AzureCloudProvider(CloudProviderInterface):
 
         if parent_id:
             request_body["properties"]["parent"] = {"id": parent_id}
-
+        url = urljoin(
+            self.sdk.cloud.endpoints.resource_manager,
+            f"providers/Microsoft.Management/managementGroups/{management_group_id}",
+        )
         response = session.put(
-            f"{self.sdk.cloud.endpoints.resource_manager}providers/Microsoft.Management/managementGroups/{management_group_id}",
-            params={"api-version": "2020-02-01"},
-            json=request_body,
+            url, params={"api-version": "2020-02-01"}, json=request_body,
         )
         response.raise_for_status()
 
@@ -367,10 +376,12 @@ class AzureCloudProvider(CloudProviderInterface):
             True
         """
         request_body = {"parentId": parent_id}
+        url = urljoin(
+            self.sdk.cloud.endpoints.resource_manager,
+            f"providers/Microsoft.Management/managementGroups/{management_group_id}",
+        )
         response = session.patch(
-            f"{self.sdk.cloud.endpoints.resource_manager}providers/Microsoft.Management/managementGroups/{management_group_id}",
-            params={"api-version": "2020-02-01"},
-            json=request_body,
+            url, params={"api-version": "2020-02-01"}, json=request_body,
         )
         response.raise_for_status()
 
@@ -420,7 +431,10 @@ class AzureCloudProvider(CloudProviderInterface):
 
     @log_and_raise_exceptions
     def _create_policy_definition(self, session, root_management_group_name, policy):
-        create_policy_definition_uri = f"{self.sdk.cloud.endpoints.resource_manager}providers/Microsoft.Management/managementGroups/{root_management_group_name}/providers/Microsoft.Authorization/policyDefinitions/{policy.definition['properties']['displayName']}"
+        create_policy_definition_uri = urljoin(
+            self.sdk.cloud.endpoints.resource_manager,
+            f"providers/Microsoft.Management/managementGroups/{root_management_group_name}/providers/Microsoft.Authorization/policyDefinitions/{policy.definition['properties']['displayName']}",
+        )
         body = policy.definition
 
         result = session.put(
@@ -441,7 +455,10 @@ class AzureCloudProvider(CloudProviderInterface):
         policy_set_definition_name,
         definition_references,
     ):
-        create_policy_set_uri = f"{self.sdk.cloud.endpoints.resource_manager}providers/Microsoft.Management/managementGroups/{root_management_group_name}/providers/Microsoft.Authorization/policySetDefinitions/{policy_set_definition_name}"
+        create_policy_set_uri = urljoin(
+            self.sdk.cloud.endpoints.resource_manager,
+            f"providers/Microsoft.Management/managementGroups/{root_management_group_name}/providers/Microsoft.Authorization/policySetDefinitions/{policy_set_definition_name}",
+        )
         body = {
             "properties": {
                 "displayName": policy_set_definition_name,
@@ -464,7 +481,10 @@ class AzureCloudProvider(CloudProviderInterface):
     def _create_policy_set_assignment(
         self, session, root_management_group_name, policy_set_definition
     ):
-        create_policy_assignment_uri = f"{self.sdk.cloud.endpoints.resource_manager}providers/Microsoft.Management/managementGroups/{root_management_group_name}/providers/Microsoft.Authorization/policyAssignments/{policy_set_definition['properties']['displayName']}"
+        create_policy_assignment_uri = urljoin(
+            self.sdk.cloud.endpoints.resource_manager,
+            f"providers/Microsoft.Management/managementGroups/{root_management_group_name}/providers/Microsoft.Authorization/policyAssignments/{policy_set_definition['properties']['displayName']}",
+        )
         body = {
             "properties": {
                 "displayName": policy_set_definition["properties"]["displayName"],
@@ -537,10 +557,11 @@ class AzureCloudProvider(CloudProviderInterface):
 
     @log_and_raise_exceptions
     def validate_domain_name(self, name):
-        response = self.sdk.requests.get(
-            f"{self.sdk.cloud.endpoints.active_directory}{name}.onmicrosoft.com/.well-known/openid-configuration",
-            timeout=30,
+        url = urljoin(
+            self.sdk.cloud.endpoints.active_directory,
+            f"{name}.onmicrosoft.com/.well-known/openid-configuration",
         )
+        response = self.sdk.requests.get(url, timeout=30,)
         response.raise_for_status()
         # If an existing tenant with name cannot be found, 'error' will be in the response
         return "error" in response.json()
@@ -564,8 +585,12 @@ class AzureCloudProvider(CloudProviderInterface):
         payload.domain_name = self.generate_valid_domain_name(payload.domain_name)
         create_tenant_body = payload.dict(by_alias=True)
 
+        url = urljoin(
+            self.sdk.cloud.endpoints.resource_manager,
+            "providers/Microsoft.SignUp/createTenant",
+        )
         result = self.sdk.requests.post(
-            f"{self.sdk.cloud.endpoints.resource_manager}providers/Microsoft.SignUp/createTenant",
+            url,
             params={"api-version": "2020-01-01-preview"},
             json=create_tenant_body,
             headers=make_auth_header(sp_token),
@@ -608,7 +633,10 @@ class AzureCloudProvider(CloudProviderInterface):
         sp_token = self._get_root_provisioning_token()
 
         create_billing_account_body = payload.dict(by_alias=True)
-        billing_account_create_url = f"{self.sdk.cloud.endpoints.resource_manager}providers/Microsoft.Billing/billingAccounts/{payload.billing_account_name}/billingProfiles"
+        billing_account_create_url = urljoin(
+            self.sdk.cloud.endpoints.resource_manager,
+            f"providers/Microsoft.Billing/billingAccounts/{payload.billing_account_name}/billingProfiles",
+        )
         result = self.sdk.requests.post(
             billing_account_create_url,
             params={"api-version": "2019-10-01-preview"},
@@ -666,7 +694,10 @@ class AzureCloudProvider(CloudProviderInterface):
             }
         }
 
-        url = f"{self.sdk.cloud.endpoints.resource_manager}providers/Microsoft.Billing/billingAccounts/{payload.billing_account_name}/billingProfiles/{payload.billing_profile_name}/createBillingRoleAssignment"
+        url = urljoin(
+            self.sdk.cloud.endpoints.resource_manager,
+            f"providers/Microsoft.Billing/billingAccounts/{payload.billing_account_name}/billingProfiles/{payload.billing_profile_name}/createBillingRoleAssignment",
+        )
         result = self.sdk.requests.post(
             url,
             headers=make_auth_header(sp_token),
@@ -691,7 +722,10 @@ class AzureCloudProvider(CloudProviderInterface):
             }
         ]
 
-        url = f"{self.sdk.cloud.endpoints.resource_manager}providers/Microsoft.Billing/billingAccounts/{payload.billing_account_name}/billingProfiles/{payload.billing_profile_name}"
+        url = urljoin(
+            self.sdk.cloud.endpoints.resource_manager,
+            f"providers/Microsoft.Billing/billingAccounts/{payload.billing_account_name}/billingProfiles/{payload.billing_profile_name}",
+        )
 
         result = self.sdk.requests.patch(
             url,
@@ -739,7 +773,10 @@ class AzureCloudProvider(CloudProviderInterface):
             }
         }
 
-        url = f"{self.sdk.cloud.endpoints.resource_manager}providers/Microsoft.Billing/billingAccounts/{payload.billing_account_name}/billingProfiles/{payload.billing_profile_name}/instructions/{payload.initial_task_order_id}:CLIN00{payload.initial_clin_type}"
+        url = urljoin(
+            self.sdk.cloud.endpoints.resource_manager,
+            f"providers/Microsoft.Billing/billingAccounts/{payload.billing_account_name}/billingProfiles/{payload.billing_profile_name}/instructions/{payload.initial_task_order_id}:CLIN00{payload.initial_clin_type}",
+        )
 
         result = self.sdk.requests.put(
             url,
@@ -762,7 +799,10 @@ class AzureCloudProvider(CloudProviderInterface):
             "managementGroupId": payload.parent_group_id,
         }
 
-        url = f"{self.sdk.cloud.endpoints.resource_manager}providers/Microsoft.Billing/billingAccounts/{payload.billing_account_name}/billingProfiles/{payload.billing_profile_name}/invoiceSections/{payload.invoice_section_name}/providers/Microsoft.Subscription/createSubscription"
+        url = urljoin(
+            self.sdk.cloud.endpoints.resource_manager,
+            f"providers/Microsoft.Billing/billingAccounts/{payload.billing_account_name}/billingProfiles/{payload.billing_profile_name}/invoiceSections/{payload.invoice_section_name}/providers/Microsoft.Subscription/createSubscription",
+        )
         result = self.sdk.requests.post(
             url,
             headers=make_auth_header(token),
@@ -786,7 +826,10 @@ class AzureCloudProvider(CloudProviderInterface):
             "quantity": self.default_aadp_qty,
         }
 
-        product_purchase_url = f"https://management.azure.com/providers/Microsoft.Billing/billingAccounts/{payload.billing_account_name}/billingProfiles/{payload.billing_profile_name}/purchaseProduct"
+        product_purchase_url = urljoin(
+            self.sdk.cloud.endpoints.resource_manager,
+            f"providers/Microsoft.Billing/billingAccounts/{payload.billing_account_name}/billingProfiles/{payload.billing_profile_name}/purchaseProduct",
+        )
 
         result = self.sdk.requests.post(
             product_purchase_url,
@@ -862,7 +905,10 @@ class AzureCloudProvider(CloudProviderInterface):
             }
         }
 
-        url = f"{self.sdk.cloud.endpoints.resource_manager}{payload.role_assignment_scope}/providers/Microsoft.Authorization/roleAssignments/{payload.role_assignment_name}"
+        url = urljoin(
+            self.sdk.cloud.endpoints.resource_manager,
+            f"{payload.role_assignment_scope}/providers/Microsoft.Authorization/roleAssignments/{payload.role_assignment_name}",
+        )
         response = self.sdk.requests.put(
             url,
             headers=make_auth_header(token),
@@ -1372,7 +1418,10 @@ class AzureCloudProvider(CloudProviderInterface):
 
         assignment_guid = str(uuid4())
 
-        url = f"{self.sdk.cloud.endpoints.resource_manager}{payload.management_group_id}/providers/Microsoft.Authorization/roleAssignments/{assignment_guid}"
+        url = urljoin(
+            self.sdk.cloud.endpoints.resource_manager,
+            f"{payload.management_group_id}/providers/Microsoft.Authorization/roleAssignments/{assignment_guid}",
+        )
 
         response = self.sdk.requests.put(
             url,
@@ -1454,8 +1503,12 @@ class AzureCloudProvider(CloudProviderInterface):
 
     @log_and_raise_exceptions
     def _elevate_tenant_admin_access(self, token):
+        url = urljoin(
+            self.sdk.cloud.endpoints.resource_manager,
+            "providers/Microsoft.Authorization/elevateAccess",
+        )
         result = self.sdk.requests.post(
-            f"{self.sdk.cloud.endpoints.resource_manager}providers/Microsoft.Authorization/elevateAccess",
+            url,
             headers=make_auth_header(token),
             params={"api-version": "2016-07-01"},
             timeout=30,
@@ -1512,9 +1565,12 @@ class AzureCloudProvider(CloudProviderInterface):
                 "grouping": [{"type": "Dimension", "name": "InvoiceId"}],
             },
         }
-        cost_mgmt_url = f"/providers/Microsoft.CostManagement/query"
+        url = urljoin(
+            self.sdk.cloud.endpoints.resource_manager,
+            f"{payload.invoice_section_id}/providers/Microsoft.CostManagement/query",
+        )
         result = self.sdk.requests.post(
-            f"{self.sdk.cloud.endpoints.resource_manager}{payload.invoice_section_id}{cost_mgmt_url}",
+            url,
             params={"api-version": "2019-11-01"},
             json=request_body,
             headers=make_auth_header(token),
@@ -1539,11 +1595,12 @@ class AzureCloudProvider(CloudProviderInterface):
             params = api_version_param
         else:
             params.update(api_version_param)
-
+        url = urljoin(
+            self.sdk.cloud.endpoints.resource_manager,
+            "providers/Microsoft.Authorization/roleAssignments",
+        )
         response = self.sdk.requests.get(
-            url=f"{self.sdk.cloud.endpoints.resource_manager}providers/Microsoft.Authorization/roleAssignments",
-            headers=make_auth_header(token),
-            params=params,
+            url=url, headers=make_auth_header(token), params=params,
         )
         response.raise_for_status()
         return response.json()["value"]
@@ -1555,10 +1612,12 @@ class AzureCloudProvider(CloudProviderInterface):
             params = api_version_param
         else:
             params.update(api_version_param)
+        url = urljoin(
+            self.sdk.cloud.endpoints.resource_manager,
+            "providers/Microsoft.Authorization/roleDefinitions",
+        )
         response = self.sdk.requests.get(
-            url=f"{self.sdk.cloud.endpoints.resource_manager}providers/Microsoft.Authorization/roleDefinitions",
-            headers=make_auth_header(token),
-            params=params,
+            url=url, headers=make_auth_header(token), params=params,
         )
         response.raise_for_status()
         return response.json()["value"]
@@ -1570,7 +1629,7 @@ class AzureCloudProvider(CloudProviderInterface):
         https://docs.microsoft.com/en-us/rest/api/authorization/roleassignments/delete
         """
         response = self.sdk.requests.delete(
-            url=f"{self.sdk.cloud.endpoints.resource_manager}{role_assignment_id}",
+            url=urljoin(self.sdk.cloud.endpoints.resource_manager, role_assignment_id),
             params={"api-version": "2015-07-01"},
             headers=make_auth_header(token),
         )
