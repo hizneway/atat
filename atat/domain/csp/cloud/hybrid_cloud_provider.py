@@ -173,7 +173,18 @@ class HybridCloudProvider(object):
     def create_initial_mgmt_group(
         self, payload: InitialMgmtGroupCSPPayload
     ) -> InitialMgmtGroupCSPResult:
+        """Normally, we create an initial management group just to trigger the 
+        creation of the root management group and don't care about the name 
+        of this initial management group for the rest of provisioning. Here 
+        though, we patch the payload with the csp_data tenant id that was 
+        created in `create_tenant`. Now, when cloud models that require a 
+        root_management_group_name field access the `tenant_id` in csp data to 
+        populate that field, they will use this initial management group / mock 
+        tenant id value. This way, each portfolio will get its own management 
+        group under the hybrid tenant."""
+
         payload.display_name = f"{HYBRID_PREFIX} {payload.display_name}"
+        payload.management_group_name = payload.tenant_id
         return self.azure.create_initial_mgmt_group(payload)
 
     def create_initial_mgmt_group_verification(
@@ -184,19 +195,11 @@ class HybridCloudProvider(object):
     def create_tenant_admin_ownership(
         self, payload: TenantAdminOwnershipCSPPayload
     ) -> TenantAdminOwnershipCSPResult:
-        payload.root_management_group_name = self.hybrid_tenant_id
         return self.azure.create_tenant_admin_ownership(payload)
 
     def create_tenant_principal_ownership(
         self, payload: TenantPrincipalOwnershipCSPPayload
     ) -> TenantPrincipalOwnershipCSPResult:
-
-        """For this step, we needed to be able to retrieve the elevated
-        management token from KeyVault with the original tenant id, but make
-        the tenant principal ownership request with the root credentials.
-        """
-
-        payload.root_management_group_name = self.hybrid_tenant_id
         return self.azure.create_tenant_principal_ownership(payload)
 
     def create_billing_owner(
