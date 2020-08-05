@@ -964,7 +964,21 @@ class AzureCloudProvider(CloudProviderInterface):
             json=request_body,
             timeout=30,
         )
-        response.raise_for_status()
+        if (
+            response.status_code == 409
+            and response.json()["error"]["code"] == "RoleAssignmentExists"
+        ):
+            app.logger.warning(
+                "Tried to create a role assignment that already existed. Role definition name: %s principal id: %s",
+                payload.role_definition_name,
+                payload.principal_id,
+            )
+            return self._get_role_assignment_by_definition_and_principal(
+                token, payload.role_definition_name, payload.principal_id
+            )
+        else:
+            response.raise_for_status()
+            return response.json()
 
     def _get_role_assignment_by_definition_and_principal(
         self, token, definition_name, principal_id
@@ -995,10 +1009,10 @@ class AzureCloudProvider(CloudProviderInterface):
         with self._get_elevated_access_token(
             payload.tenant_id, payload.user_object_id
         ) as elevated_token:
-            response = self._create_role_assignment(
+            role_assignment = self._create_role_assignment(
                 role_assignment_payload, elevated_token
             )
-            return TenantAdminOwnershipCSPResult(**response.json())
+            return TenantAdminOwnershipCSPResult(**role_assignment)
 
     @log_and_raise_exceptions
     def create_tenant_principal_ownership(
@@ -1022,10 +1036,10 @@ class AzureCloudProvider(CloudProviderInterface):
         with self._get_elevated_access_token(
             payload.tenant_id, payload.user_object_id
         ) as elevated_token:
-            response = self._create_role_assignment(
+            role_assignment = self._create_role_assignment(
                 role_assignment_payload, elevated_token
             )
-            return TenantPrincipalOwnershipCSPResult(**response.json())
+            return TenantPrincipalOwnershipCSPResult(**role_assignment)
 
     @log_and_raise_exceptions
     def create_tenant_principal_app(self, payload: TenantPrincipalAppCSPPayload):
