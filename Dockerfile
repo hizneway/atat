@@ -107,6 +107,17 @@ RUN useradd --system atst -g atat
 RUN dnf install -y https://download.postgresql.org/pub/repos/yum/reporpms/EL-8-x86_64/pgdg-redhat-repo-latest.noarch.rpm --nogpgcheck
 RUN dnf install postgresql10 -y
 
+# Install dependencies for python3-saml
+RUN yum install -y \
+      libxml2-devel \
+      xmlsec1 \
+      xmlsec1-openssl
+
+# Install dev dependencies required to build the xmlsec dependency of python3-saml
+# TODO(tomdds): Find proper gpg secured sources for both of these
+RUN yum install -y ftp://ftp.redhat.com/pub/redhat/rhel/rhel-8-beta/appstream/x86_64/Packages/libtool-ltdl-devel-2.4.6-25.el8.x86_64.rpm --nogpgcheck
+RUN yum install -y ftp://ftp.ntua.gr/pub/linux/centos/8.2.2004/PowerTools/x86_64/os/Packages/xmlsec1-devel-1.2.25-4.el8.x86_64.rpm --nogpgcheck
+
 # Install dumb-init.
 # dumb-init is a simple process supervisor and init system designed to run as PID 1 inside minimal container environments.
 RUN pip3 install dumb-init
