@@ -965,7 +965,21 @@ class AzureCloudProvider(CloudProviderInterface):
             timeout=30,
         )
         response.raise_for_status()
-        return response
+
+    def _get_role_assignment_by_definition_and_principal(
+        self, token, definition_name, principal_id
+    ):
+        """List the role assignments for a particular principal, then filter by
+        defintion id to return a role assignment
+
+        Args:
+            definition_name: UUID of a role defintion
+            principal_id: UUID for a principal
+        """
+        role_assignments = self._list_role_assignments(
+            token, params={"$filter": f"principalId eq '{principal_id}'"},
+        )
+        return self._filter_role_assignments(role_assignments, definition_name)
 
     def create_tenant_admin_ownership(self, payload: TenantAdminOwnershipCSPPayload):
         """Assigns the tenant admin (human user) the Owner role on the root
@@ -1709,9 +1723,8 @@ class AzureCloudProvider(CloudProviderInterface):
         )
 
         try:
-            role_assignments = self._list_role_assignments(
-                token,
-                params={"$filter": f"principalId eq '{tenant_admin_user_object_id}'"},
+            assignment = self._get_role_assignment_by_definition_and_principal(
+                token, definition_id, tenant_admin_user_object_id
             )
         except UnknownServerException as exc:
             if exc.status_code == "403":
@@ -1727,7 +1740,6 @@ class AzureCloudProvider(CloudProviderInterface):
             else:
                 raise exc
 
-        assignment = self._filter_role_assignments(role_assignments, definition_id)
         if not assignment:
             app.logger.warning(
                 "User Access Administrator role assignment not found for user %s in tenant %s",
