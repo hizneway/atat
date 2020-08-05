@@ -184,17 +184,8 @@ class HybridCloudProvider(object):
     def create_tenant_admin_ownership(
         self, payload: TenantAdminOwnershipCSPPayload
     ) -> TenantAdminOwnershipCSPResult:
-        """For this step, we needed to be able to retrieve the elevated management
-        token from KeyVault with the original tenant id, but make the role assignment
-        request with the root credentials.
-        """
         payload.root_management_group_name = self.hybrid_tenant_id
-        try:
-            return self.azure.create_tenant_admin_ownership(payload)
-        except UnknownServerException:
-            return TenantAdminOwnershipCSPResult(
-                id=self.azure.config["AZURE_ADMIN_ROLE_ASSIGNMENT_ID"]
-            )
+        return self.azure.create_tenant_admin_ownership(payload)
 
     def create_tenant_principal_ownership(
         self, payload: TenantPrincipalOwnershipCSPPayload
