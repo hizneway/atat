@@ -110,6 +110,7 @@ class TaskOrders(BaseDomainClass):
           - the current date is within the CLIN's period of performance
           - the associated portfolio is done being provisioned
         """
+        today = pendulum.today(tz="UTC").date()
         return (
             db.session.query(CLIN)
             .join(TaskOrder)
@@ -117,7 +118,8 @@ class TaskOrders(BaseDomainClass):
             .join(PortfolioStateMachine)
             .filter(
                 CLIN.last_sent_at.is_(None),
-                CLIN.start_date < pendulum.now(tz="UTC"),
+                CLIN.start_date <= today,
+                CLIN.end_date >= today,
                 PortfolioStateMachine.state == PortfolioStates.COMPLETED,
             )
             .all()
