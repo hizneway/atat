@@ -37,7 +37,7 @@ RUN yum install -y \
 # Install dev dependencies required to build the xmlsec dependency of python3-saml
 # TODO(tomdds): Find proper gpg secured sources for both of these
 RUN yum install -y ftp://ftp.redhat.com/pub/redhat/rhel/rhel-8-beta/appstream/x86_64/Packages/libtool-ltdl-devel-2.4.6-25.el8.x86_64.rpm --nogpgcheck
-RUN yum install -y ftp://ftp.ntua.gr/pub/linux/centos/8.2.2004/PowerTools/x86_64/os/Packages/xmlsec1-devel-1.2.25-4.el8.x86_64.rpm --nogpgcheck
+RUN yum install -y http://mirror.centos.org/centos/8/PowerTools/x86_64/os/Packages/xmlsec1-devel-1.2.25-4.el8.x86_64.rpm --nogpgcheck
 
 # Install yarn.
 # https://linuxize.com/post/how-to-install-yarn-on-centos-8/
@@ -116,7 +116,7 @@ RUN yum install -y \
 # Install dev dependencies required to build the xmlsec dependency of python3-saml
 # TODO(tomdds): Find proper gpg secured sources for both of these
 RUN yum install -y ftp://ftp.redhat.com/pub/redhat/rhel/rhel-8-beta/appstream/x86_64/Packages/libtool-ltdl-devel-2.4.6-25.el8.x86_64.rpm --nogpgcheck
-RUN yum install -y ftp://ftp.ntua.gr/pub/linux/centos/8.2.2004/PowerTools/x86_64/os/Packages/xmlsec1-devel-1.2.25-4.el8.x86_64.rpm --nogpgcheck
+RUN yum install -y http://mirror.centos.org/centos/8/PowerTools/x86_64/os/Packages/xmlsec1-devel-1.2.25-4.el8.x86_64.rpm --nogpgcheck
 
 # Install dumb-init.
 # dumb-init is a simple process supervisor and init system designed to run as PID 1 inside minimal container environments.
