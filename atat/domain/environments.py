@@ -119,7 +119,7 @@ class Environments(object):
             .filter(
                 or_(
                     Environment.claimed_until == None,
-                    Environment.claimed_until <= func.now(tz="UTC"),
+                    Environment.claimed_until <= func.now(),
                 )
             )
         )
@@ -137,7 +137,7 @@ class Environments(object):
                     Environment.cloud_id.is_(None),
                     or_(
                         Environment.claimed_until.is_(None),
-                        Environment.claimed_until <= func.now(tz="UTC"),
+                        Environment.claimed_until <= func.now(),
                     ),
                 )
             )

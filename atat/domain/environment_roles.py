@@ -108,7 +108,7 @@ class EnvironmentRoles(object):
                     EnvironmentRole.cloud_id.is_(None),
                     or_(
                         EnvironmentRole.claimed_until.is_(None),
-                        EnvironmentRole.claimed_until <= func.now(tz="UTC"),
+                        EnvironmentRole.claimed_until <= func.now(),
                     ),
                 )
             )

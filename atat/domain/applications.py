@@ -140,7 +140,7 @@ class Applications(BaseDomainClass):
                     Application.cloud_id.is_(None),
                     or_(
                         Application.claimed_until.is_(None),
-                        Application.claimed_until <= func.now(tz="UTC"),
+                        Application.claimed_until <= func.now(),
                     ),
                 )
             )
