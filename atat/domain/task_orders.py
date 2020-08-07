@@ -1,4 +1,4 @@
-from sqlalchemy import or_
+from sqlalchemy import or_, func
 import pendulum
 
 from atat.database import db
@@ -110,7 +110,7 @@ class TaskOrders(BaseDomainClass):
           - the current date is within the CLIN's period of performance
           - the associated portfolio is done being provisioned
         """
-        today = pendulum.today(tz="UTC").date()
+
         return (
             db.session.query(CLIN)
             .join(TaskOrder)
@@ -118,8 +118,8 @@ class TaskOrders(BaseDomainClass):
             .join(PortfolioStateMachine)
             .filter(
                 CLIN.last_sent_at.is_(None),
-                CLIN.start_date <= today,
-                CLIN.end_date >= today,
+                CLIN.start_date <= func.now(),
+                CLIN.end_date >= func.now(),
                 PortfolioStateMachine.state == PortfolioStates.COMPLETED,
             )
             .all()
