@@ -5,7 +5,7 @@ import pendulum
 
 
 class TestPrepareAzureData:
-    start_of_month = pendulum.today(tz="utc").start_of("month").replace(tzinfo=None)
+    start_of_month = pendulum.today(tz="UTC").start_of("month").replace(tzinfo=None)
     next_month = start_of_month.add(months=1).to_atom_string()
     this_month = start_of_month.to_atom_string()
     last_month = start_of_month.subtract(months=1).to_atom_string()

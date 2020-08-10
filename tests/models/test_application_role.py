@@ -63,7 +63,7 @@ def test_environment_roles():
 
 class Test_display_status:
     def test_expired_invite(self):
-        yesterday = pendulum.today().subtract(days=1)
+        yesterday = pendulum.today(tz="UTC").subtract(days=1)
         expired_invite = ApplicationInvitationFactory.create(expiration_time=yesterday)
         assert expired_invite.role.display_status == "invite_expired"
 

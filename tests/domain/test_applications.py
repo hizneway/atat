@@ -231,7 +231,7 @@ def test_update_does_not_duplicate_names_within_portfolio():
 
 
 def test_get_applications_pending_creation():
-    now = pendulum.now(tz="utc")
+    now = pendulum.now(tz="UTC")
     later = now.add(minutes=30)
 
     portfolio1 = PortfolioFactory.create(state="COMPLETED")

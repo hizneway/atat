@@ -71,7 +71,7 @@ class AzureFileService(FileService):
             self.container_name,
             object_name,
             permission=self.BlobSasPermissions(create=True),
-            expiry=pendulum.now(tz="utc").add(self.timeout),
+            expiry=pendulum.now(tz="UTC").add(self.timeout),
             protocol="https",
         )
         return ({"token": sas_token}, object_name)
@@ -84,7 +84,7 @@ class AzureFileService(FileService):
             container_name=self.container_name,
             blob_name=object_name,
             permission=self.BlobPermissions(read=True),
-            expiry=pendulum.now(tz="utc").add(self.timeout),
+            expiry=pendulum.now(tz="UTC").add(self.timeout),
             content_disposition=f"attachment; filename={filename}",
             protocol="https",
         )

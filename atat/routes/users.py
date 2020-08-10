@@ -23,8 +23,8 @@ def user():
         next=next_,
         form=form,
         user=user,
-        mindate=pendulum.now(tz="utc").subtract(days=365),
-        maxdate=pendulum.now(tz="utc"),
+        mindate=pendulum.now(tz="UTC").subtract(days=365),
+        maxdate=pendulum.now(tz="UTC"),
     )
 
 
@@ -44,6 +44,6 @@ def update_user():
         form=form,
         user=user,
         next=next_url,
-        mindate=pendulum.now(tz="utc").subtract(days=365),
-        maxdate=pendulum.now(tz="utc"),
+        mindate=pendulum.now(tz="UTC").subtract(days=365),
+        maxdate=pendulum.now(tz="UTC"),
     )

@@ -53,7 +53,7 @@ def test_accept_expired_invitation():
     portfolio = PortfolioFactory.create()
     role = PortfolioRoleFactory.create(portfolio=portfolio)
     increment = PortfolioInvitations.EXPIRATION_LIMIT_MINUTES + 1
-    expiration_time = pendulum.now(tz="utc").subtract(minutes=increment)
+    expiration_time = pendulum.now(tz="UTC").subtract(minutes=increment)
     invite = PortfolioInvitationFactory.create(
         expiration_time=expiration_time,
         status=InvitationStatus.PENDING,

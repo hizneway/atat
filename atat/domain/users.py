@@ -111,7 +111,7 @@ class Users(object):
 
     @classmethod
     def update_last_login(cls, user):
-        user.last_login = pendulum.now(tz="utc")
+        user.last_login = pendulum.now(tz="UTC")
         db.session.add(user)
         db.session.commit()
 

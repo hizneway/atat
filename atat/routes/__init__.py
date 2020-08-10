@@ -1,27 +1,25 @@
+import os
 import urllib.parse as url
+
 from flask import (
     Blueprint,
-    render_template,
     g,
+    make_response,
     redirect,
+    render_template,
+    request,
     session,
     url_for,
-    request,
-    make_response,
-    current_app as app,
 )
-
+from flask import current_app as app
 from jinja2.exceptions import TemplateNotFound
-import pendulum
-import os
-from werkzeug.exceptions import NotFound, MethodNotAllowed
+from werkzeug.exceptions import MethodNotAllowed, NotFound
 from werkzeug.routing import RequestRedirect
 
-
-from atat.domain.users import Users
-from atat.domain.authnid import AuthenticationContext
 from atat.domain.auth import logout as _logout
+from atat.domain.authnid import AuthenticationContext
 from atat.domain.exceptions import UnauthenticatedError
+from atat.domain.users import Users
 from atat.utils.flash import formatted_flash as flash
 
 bp = Blueprint("atat", __name__)

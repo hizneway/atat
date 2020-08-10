@@ -170,7 +170,7 @@ def add_members_to_portfolio(portfolio):
 
 
 def add_task_orders_to_portfolio(portfolio):
-    today = pendulum.today()
+    today = pendulum.today(tz="UTC")
     future = today.add(days=100)
     yesterday = today.subtract(days=1)
 

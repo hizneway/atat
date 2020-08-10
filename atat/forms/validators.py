@@ -13,7 +13,7 @@ def DateRange(lower_bound=None, upper_bound=None, message=None):
         if field.data is None:
             return
 
-        now = pendulum.now().date()
+        now = pendulum.now(tz="UTC").date()
 
         if isinstance(field.data, str):
             date = datetime.strptime(field.data, field.format)

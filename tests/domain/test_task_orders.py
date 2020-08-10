@@ -135,7 +135,7 @@ def test_delete_task_order_with_clins(session):
 
 
 def test_task_order_sort_by_status():
-    today = pendulum.today()
+    today = pendulum.today(tz="UTC")
     yesterday = today.subtract(days=1)
     future = today.add(days=100)
 

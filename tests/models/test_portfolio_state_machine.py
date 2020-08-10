@@ -29,7 +29,7 @@ from atat.models.portfolio_state_machine import (
 
 @pytest.fixture
 def portfolio():
-    today = pendulum.today()
+    today = pendulum.today(tz="UTC")
     yesterday = today.subtract(days=1)
     future = today.add(days=100)
 

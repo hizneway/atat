@@ -262,7 +262,7 @@ def test_error_on_invalid_crl(client, monkeypatch):
 
 
 def test_last_login_set_when_user_logs_in(client, monkeypatch):
-    last_login = pendulum.now(tz="utc")
+    last_login = pendulum.now(tz="UTC")
     user = UserFactory.create(last_login=last_login)
     monkeypatch.setattr(
         "atat.domain.authnid.AuthenticationContext.authenticate", lambda *args: True
