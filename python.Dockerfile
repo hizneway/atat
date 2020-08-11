@@ -1,3 +1,5 @@
+# syntax=docker/dockerfile:experimental
+
 # Image source is provided using `--build-arg IMAGE=<some-image>`.
 # https://docs.docker.com/engine/reference/commandline/build/#options
 ARG IMAGE
@@ -33,7 +35,15 @@ RUN yum install -y openssl-devel
 # Enables us to add the CodeReady repository.
 RUN subscription-manager remove --all
 RUN subscription-manager clean
-RUN subscription-manager register --username $REDHAT_USERNAME --password $REDHAT_PASSWORD
+# Uses BuildKit preferred method of supplying secrets. These secrets will not
+# be saved in the docker image.
+#
+# https://docs.docker.com/develop/develop-images/build_enhancements/#new-docker-build-secret-information
+RUN --mount=type=secret,id=redhat_username \
+    --mount=type=secret,id=redhat_password \
+    subscription-manager register \
+    --username $(cat /run/secrets/redhat_username) \
+    --password $(cat /run/secrets/redhat_password)
 RUN subscription-manager refresh
 RUN subscription-manager attach --auto
 

@@ -93,3 +93,5 @@ js/test_templates
 
 # sonar cube files
 .scannerwork
+
+*.secret
