@@ -482,3 +482,19 @@ fi
 ```
 
 Also note that if the line number of a previously whitelisted secret changes, the whitelist file, `.secrets.baseline`, will be updated and needs to be committed.
+
+## How to build the RHEL Python base image
+
+First create two files, containing a RedHat username and password respectively.
+
+- redhat_username.secret
+- redhat_password.secret
+
+Then run the build script.
+
+```
+./script/build-docker-image-python-base.sh
+```
+
+Then publish the image.
+
