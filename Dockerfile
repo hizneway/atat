@@ -1,6 +1,12 @@
 # Image source is provided using `--build-arg IMAGE=<some-image>`.
+# This will typically be our RHEL Python image.
+#
+# --build-arg IMAGE=cloudzerodryrunregistry.azurecr.io/rhel-py
+#
 # https://docs.docker.com/engine/reference/commandline/build/#options
 ARG IMAGE
+ARG REDHAT_USERNAME
+ARG REDHAT_PASSWORD
 
 FROM $IMAGE as builder
 
@@ -36,8 +42,28 @@ RUN yum install -y \
 
 # Install dev dependencies required to build the xmlsec dependency of python3-saml
 # TODO(tomdds): Find proper gpg secured sources for both of these
-RUN yum install -y ftp://ftp.redhat.com/pub/redhat/rhel/rhel-8-beta/appstream/x86_64/Packages/libtool-ltdl-devel-2.4.6-25.el8.x86_64.rpm --nogpgcheck
-RUN yum install -y http://mirror.centos.org/centos/8/PowerTools/x86_64/os/Packages/xmlsec1-devel-1.2.25-4.el8.x86_64.rpm --nogpgcheck
+
+#
+#
+# https://developers.redhat.com/articles/renew-your-red-hat-developer-program-subscription
+RUN subscription-manager remove --all
+RUN subscription-manager clean
+RUN subscription-manager register --username $REDHAT_USERNAME --password $REDHAT_PASSWORD
+RUN subscription-manager refresh
+RUN subscription-manager attach --auto
+
+# https://access.redhat.com/articles/4348511#enable
+RUN subscription-manager repos --enable codeready-builder-for-rhel-8-x86_64-rpms
+
+# https://man7.org/linux/man-pages/man1/yum-utils.1.html
+RUN yum repolist
+RUN yum install yum-utils -y
+RUN yum install libtool-ltdl-devel -y
+RUN yum install xmlsec1-devel -y
+
+COPY . .
+RUN pip3 install uwsgi poetry
+RUN poetry install --no-root --no-dev
 
 # Install yarn.
 # https://linuxize.com/post/how-to-install-yarn-on-centos-8/
@@ -46,12 +72,7 @@ RUN curl --silent --location https://dl.yarnpkg.com/rpm/yarn.repo | tee /etc/yum
 RUN rpm --import https://dl.yarnpkg.com/rpm/pubkey.gpg
 RUN dnf install yarn -y
 
-COPY . .
-
 # Install app dependencies
-RUN pip3 install uwsgi poetry
-
-RUN poetry install --no-root --no-dev
 
 RUN yarn install
 
@@ -100,12 +121,27 @@ RUN useradd --system atst -g atat
 # Import it into the rpm db
 # RUN rpm --import RPM-GPG-KEY-foreman
 
+RUN subscription-manager remove --all
+RUN subscription-manager clean
+RUN subscription-manager register --username $REDHAT_USERNAME --password $REDHAT_PASSWORD
+RUN subscription-manager refresh
+RUN subscription-manager attach --auto
+
+# https://access.redhat.com/articles/4348511#enable
+RUN subscription-manager repos --enable codeready-builder-for-rhel-8-x86_64-rpms
+
+RUN yum install yum-utils -y
+RUN yum install libtool-ltdl-devel -y
+RUN yum install xmlsec1-devel -y
+
 # Install postgresql client.
 # https://www.postgresql.org/download/linux/redhat/
 # TODO(heyzoos): WE NEED TO CHECK THE GPG KEY ASAP
 # TODO(heyzoos): Copy the out of these from the first stage to the final image.
-RUN dnf install -y https://download.postgresql.org/pub/repos/yum/reporpms/EL-8-x86_64/pgdg-redhat-repo-latest.noarch.rpm --nogpgcheck
-RUN dnf install postgresql10 -y
+# RUN dnf install -y https://download.postgresql.org/pub/repos/yum/reporpms/EL-8-x86_64/pgdg-redhat-repo-latest.noarch.rpm
+RUN dnf install @postgresql -y
+# Install postgresql client library
+# RUN yum install libpq.i686
 
 # Install dependencies for python3-saml
 RUN yum install -y \
@@ -115,8 +151,10 @@ RUN yum install -y \
 
 # Install dev dependencies required to build the xmlsec dependency of python3-saml
 # TODO(tomdds): Find proper gpg secured sources for both of these
-RUN yum install -y ftp://ftp.redhat.com/pub/redhat/rhel/rhel-8-beta/appstream/x86_64/Packages/libtool-ltdl-devel-2.4.6-25.el8.x86_64.rpm --nogpgcheck
-RUN yum install -y http://mirror.centos.org/centos/8/PowerTools/x86_64/os/Packages/xmlsec1-devel-1.2.25-4.el8.x86_64.rpm --nogpgcheck
+# RUN yum install -y ftp://ftp.redhat.com/pub/redhat/rhel/rhel-8-beta/appstream/x86_64/Packages/libtool-ltdl-devel-2.4.6-25.el8.x86_64.rpm
+# RUN yum install -y http://mirror.centos.org/centos/8/PowerTools/x86_64/os/Packages/xmlsec1-devel-1.2.25-4.el8.x86_64.rps
+RUN yum install libtool-ltdl-devel -y
+RUN yum install xmlsec1-devel -y
 
 # Install dumb-init.
 # dumb-init is a simple process supervisor and init system designed to run as PID 1 inside minimal container environments.
