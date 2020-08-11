@@ -5,8 +5,6 @@
 #
 # https://docs.docker.com/engine/reference/commandline/build/#options
 ARG IMAGE
-ARG REDHAT_USERNAME
-ARG REDHAT_PASSWORD
 
 FROM $IMAGE as builder
 
@@ -33,27 +31,6 @@ RUN yum updateinfo && \
 
 # Install the `Python.h` file for compiling certain libraries.
 RUN dnf install python3-devel -y
-
-# Install dependencies for python3-saml
-RUN yum install -y \
-      libxml2-devel \
-      xmlsec1 \
-      xmlsec1-openssl
-
-# Install dev dependencies required to build the xmlsec dependency of python3-saml
-# TODO(tomdds): Find proper gpg secured sources for both of these
-
-#
-#
-# https://developers.redhat.com/articles/renew-your-red-hat-developer-program-subscription
-RUN subscription-manager remove --all
-RUN subscription-manager clean
-RUN subscription-manager register --username $REDHAT_USERNAME --password $REDHAT_PASSWORD
-RUN subscription-manager refresh
-RUN subscription-manager attach --auto
-
-# https://access.redhat.com/articles/4348511#enable
-RUN subscription-manager repos --enable codeready-builder-for-rhel-8-x86_64-rpms
 
 # https://man7.org/linux/man-pages/man1/yum-utils.1.html
 RUN yum repolist
@@ -114,47 +91,8 @@ RUN groupadd --system -g 101 atat
 # https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/6/html/deployment_guide/s2-users-cl-tools
 RUN useradd --system atst -g atat
 
-# TODO(heyzoos): Make this all work as part of the first stage.
-# Get the latest GPG key for enterprise linux 8.
-# https://yum.theforeman.org/
-# RUN wget "https://yum.theforeman.org/releases/2.1/RPM-GPG-KEY-foreman"
-# Import it into the rpm db
-# RUN rpm --import RPM-GPG-KEY-foreman
-
-RUN subscription-manager remove --all
-RUN subscription-manager clean
-RUN subscription-manager register --username $REDHAT_USERNAME --password $REDHAT_PASSWORD
-RUN subscription-manager refresh
-RUN subscription-manager attach --auto
-
-# https://access.redhat.com/articles/4348511#enable
-RUN subscription-manager repos --enable codeready-builder-for-rhel-8-x86_64-rpms
-
-RUN yum install yum-utils -y
-RUN yum install libtool-ltdl-devel -y
-RUN yum install xmlsec1-devel -y
-
 # Install postgresql client.
-# https://www.postgresql.org/download/linux/redhat/
-# TODO(heyzoos): WE NEED TO CHECK THE GPG KEY ASAP
-# TODO(heyzoos): Copy the out of these from the first stage to the final image.
-# RUN dnf install -y https://download.postgresql.org/pub/repos/yum/reporpms/EL-8-x86_64/pgdg-redhat-repo-latest.noarch.rpm
 RUN dnf install @postgresql -y
-# Install postgresql client library
-# RUN yum install libpq.i686
-
-# Install dependencies for python3-saml
-RUN yum install -y \
-      libxml2-devel \
-      xmlsec1 \
-      xmlsec1-openssl
-
-# Install dev dependencies required to build the xmlsec dependency of python3-saml
-# TODO(tomdds): Find proper gpg secured sources for both of these
-# RUN yum install -y ftp://ftp.redhat.com/pub/redhat/rhel/rhel-8-beta/appstream/x86_64/Packages/libtool-ltdl-devel-2.4.6-25.el8.x86_64.rpm
-# RUN yum install -y http://mirror.centos.org/centos/8/PowerTools/x86_64/os/Packages/xmlsec1-devel-1.2.25-4.el8.x86_64.rps
-RUN yum install libtool-ltdl-devel -y
-RUN yum install xmlsec1-devel -y
 
 # Install dumb-init.
 # dumb-init is a simple process supervisor and init system designed to run as PID 1 inside minimal container environments.

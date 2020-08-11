@@ -29,24 +29,23 @@ RUN yum install -y gcc libffi-devel make wget zlib-devel
 # Causes python to be built with SSL capabilitiy, allowing pip to function.
 RUN yum install -y openssl-devel
 
+# Register this machine with a RedHat subscription.
+# Enables us to add the CodeReady repository.
 RUN subscription-manager remove --all
 RUN subscription-manager clean
 RUN subscription-manager register --username $REDHAT_USERNAME --password $REDHAT_PASSWORD
 RUN subscription-manager refresh
 RUN subscription-manager attach --auto
 
+# Enable the CodeReady repository.
+# Allows us to install the xmlsec1-devel package.
 # https://access.redhat.com/articles/4348511#enable
 RUN subscription-manager repos --enable codeready-builder-for-rhel-8-x86_64-rpms
 
-# Need EPEL to install SQLLite
-# https://fedoraproject.org/wiki/EPEL
-# TODO(heyzoos): Do the GPG check.
+# Install dependencies of python3-saml.
+RUN yum install -y libxml2-devel xmlsec1 xmlsec1-openssl libtool-ltdl-devel xmlsec1-devel
 
-# Allows python to use SQLLite modules.
-RUN yum repolist
-RUN yum install yum-utils -y
-RUN yum install libtool-ltdl-devel -y
-RUN yum install xmlsec1-devel -y
+# Enable python3 to be built with sqlite extensions.
 RUN yum install -y sqlite sqlite-devel 
 
 # Install python!
