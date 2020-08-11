@@ -192,9 +192,10 @@ class FSMMixin:
         a trigger prefix of `create`, find the `create_tenant` trigger and call it.
         """
         trigger = next(
-            filter(
-                lambda trigger: trigger.startswith(trigger_prefix),
-                self.machine.get_triggers(self.state_str),
+            (
+                trigger
+                for trigger in self.machine.get_triggers(self.state_str)
+                if trigger.startswith(trigger_prefix)
             ),
             None,
         )
