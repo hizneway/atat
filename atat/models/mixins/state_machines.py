@@ -101,8 +101,6 @@ def _build_transitions(csp_stages):
     
     - from the last stage's `_CREATED` state to the system `COMPLETED` state
         - triggered with a `finish_<CSP stage>` trigger
-
-    TODO: Turn the nested for loop into a generator
     """
     transitions = []
     states = []
