@@ -89,7 +89,7 @@ def test_creates_user():
 
 
 def test_user_cert_has_no_email():
-    cert = open("ssl/client-certs/atat.mil.crt").read()
+    cert = open("tests/fixtures/artgarfunkel.crt").read()
     auth_context = AuthenticationContext(MockCRLCache(), "SUCCESS", DOD_SDN, cert)
     user = auth_context.get_user()
 
