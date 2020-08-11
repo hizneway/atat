@@ -32,12 +32,6 @@ RUN yum updateinfo && \
 # Install the `Python.h` file for compiling certain libraries.
 RUN dnf install python3-devel -y
 
-# https://man7.org/linux/man-pages/man1/yum-utils.1.html
-RUN yum repolist
-RUN yum install yum-utils -y
-RUN yum install libtool-ltdl-devel -y
-RUN yum install xmlsec1-devel -y
-
 COPY . .
 RUN pip3 install uwsgi poetry
 RUN poetry install --no-root --no-dev
