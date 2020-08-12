@@ -7,7 +7,8 @@ sys.path.append(parent_dir)
 
 from atat.app import make_config
 from atat.domain.csp.cloud.hybrid_cloud_provider import HYBRID_PREFIX
-from atat.domain.csp.cloud.utils import get_user_principal_token_for_scope
+from atat.domain.csp.cloud.utils import get_principal_auth_token, make_auth_header
+from atat.domain.csp.cloud.models import UserPrincipalTokenPayload
 from msrestazure.azure_cloud import AZURE_PUBLIC_CLOUD
 
 
@@ -15,23 +16,16 @@ GRAPH_API = "https://graph.microsoft.com"
 
 
 def delete_tenant_principal_app(token, app_id):
-    auth_header = {
-        "Authorization": f"Bearer {token}",
-    }
-
     url = f"{GRAPH_API}/v1.0/applications/{app_id}"
 
-    response = requests.delete(url, headers=auth_header)
+    response = requests.delete(url, headers=make_auth_header(token))
     response.raise_for_status()
 
 
 def list_app_registrations(token):
-    auth_header = {
-        "Authorization": f"Bearer {token}",
-    }
 
     url = f"{GRAPH_API}/v1.0/applications"
-    response = requests.get(url, headers=auth_header)
+    response = requests.get(url, headers=make_auth_header(token))
     response.raise_for_status()
 
     apps = response.json()["value"]
@@ -55,12 +49,9 @@ def delete_app_registrations(token):
 
 
 def list_management_groups(token):
-    auth_header = {
-        "Authorization": f"Bearer {token}",
-    }
     response = requests.get(
         "https://management.azure.com/providers/Microsoft.Management/managementGroups?api-version=2020-02-01",
-        headers=auth_header,
+        headers=make_auth_header(token),
     )
     response.raise_for_status()
     mgmt_groups = response.json()["value"]
@@ -73,12 +64,9 @@ def list_management_groups(token):
 
 
 def delete_management_group(token, mgmt_group_id):
-    auth_header = {
-        "Authorization": f"Bearer {token}",
-    }
     response = requests.delete(
         f"https://management.azure.com/providers/Microsoft.Management/managementGroups/{mgmt_group_id}?api-version=2020-02-01",
-        headers=auth_header,
+        headers=make_auth_header(token),
     )
     response.raise_for_status()
 
@@ -118,16 +106,21 @@ if __name__ == "__main__":
     tenant_id, username, password, ps_client_id = [config[s] for s in required_config]
 
     # Delete App registations (which also deletes connected service principals)
-    graph_token = get_user_principal_token_for_scope(
-        username, password, tenant_id, GRAPH_API + "/.default"
+    payload = UserPrincipalTokenPayload(
+        client_id=ps_client_id,
+        username=username,
+        password=password,
+        scope=GRAPH_API + "/.default",
     )
+    graph_token = get_principal_auth_token(tenant_id, payload)
     delete_app_registrations(graph_token)
 
     # Delete management_groups
-    resource_token = get_user_principal_token_for_scope(
-        username,
-        password,
-        tenant_id,
-        AZURE_PUBLIC_CLOUD.endpoints.resource_manager + "/.default",
+    payload = UserPrincipalTokenPayload(
+        client_id=ps_client_id,
+        username=username,
+        password=password,
+        scope=AZURE_PUBLIC_CLOUD.endpoints.resource_manager + "/.default",
     )
+    resource_token = get_principal_auth_token(tenant_id, payload)
     delete_management_groups(resource_token)
