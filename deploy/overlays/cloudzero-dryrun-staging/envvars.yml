@@ -4,7 +4,7 @@ kind: ConfigMap
 metadata:
   name: atst-worker-envvars
 data:
-  AZURE_ACCOUNT_NAME: dryruntasks
+  AZURE_STORAGE_ACCOUNT_NAME: dryruntasks
   AZURE_POWERSHELL_CLIENT_ID: 1950a258-227b-4e31-a9cf-717495945fc2
   AZURE_TENANT_ADMIN_USERNAME: hybrid.admin@atathybrid.onmicrosoft.com
   AZURE_VAULT_URL: "https://tenants-dryrun-keyvault.vault.azure.net/"
@@ -24,7 +24,7 @@ metadata:
   name: atst-envvars
 data:
   ASSETS_URL: ""
-  AZURE_ACCOUNT_NAME: dryruntasks
+  AZURE_STORAGE_ACCOUNT_NAME: dryruntasks
   AZURE_POWERSHELL_CLIENT_ID: 1950a258-227b-4e31-a9cf-717495945fc2
   AZURE_TENANT_ADMIN_USERNAME: hybrid.admin@atathybrid.onmicrosoft.com
   AZURE_VAULT_URL: "https://tenants-dryrun-keyvault.vault.azure.net/"
