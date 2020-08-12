@@ -1272,6 +1272,10 @@ class AzureCloudProvider(CloudProviderInterface):
 
         url = f"{self.graph_resource}/beta/roleManagement/directory/roleAssignments"
         result = self.sdk.requests.post(url, headers=auth_header, json=request_body)
+
+        error = result.json().get("error")
+        if error and "A conflicting object" in error.get("message"):
+            return
         result.raise_for_status()
 
     @log_and_raise_exceptions
