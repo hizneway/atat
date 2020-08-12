@@ -225,7 +225,7 @@ def make_config(direct_config=None):
     Finally, the final ConfigParser object is passed to `map_config()`
     """
 
-    config = ConfigParser(allow_no_value=True)
+    config = ConfigParser(allow_no_value=True, interpolation=None)
     config.optionxform = str
 
     # Read configuration values from base and environment configuration files

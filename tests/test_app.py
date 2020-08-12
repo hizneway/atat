@@ -33,7 +33,7 @@ def test_make_crl_validator_creates_crl_dir(app, tmpdir, replace_crl_dir_config)
 
 @pytest.fixture
 def config_object(request):
-    config = ConfigParser()
+    config = ConfigParser(interpolation=None)
     config.optionxform = str
     config.read_dict(request.param)
     return config
