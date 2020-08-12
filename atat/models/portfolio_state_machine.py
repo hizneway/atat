@@ -147,15 +147,21 @@ class PortfolioStateMachine(
         payload_data = payload_data_class(**payload)
         return getattr(self.cloud, f"create_{self.current_stage}")(payload_data)
 
+    def _update_csp_data(self, payload: dict) -> None:
+        # TODO: this is a good candidate for a domain class method, but trying
+        # to import the Portfolios domain class results in what appears to be a
+        # cyclical import error
+        if self.portfolio.csp_data is None:
+            self.portfolio.csp_data = {}
+        self.portfolio.csp_data.update(payload)
+        db.session.add(self.portfolio)
+        db.session.commit()
+
     def after_in_progress_callback(self, event):
         try:
             payload = event.kwargs.get("csp_data")
             response = self._do_provisioning_stage(payload)
-            if self.portfolio.csp_data is None:
-                self.portfolio.csp_data = {}
-            self.portfolio.csp_data.update(response.dict())
-            db.session.add(self.portfolio)
-            db.session.commit()
+            self._update_csp_data(response.dict())
             self.finish_stage()
         except:
             self.fail_stage()
