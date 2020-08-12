@@ -538,7 +538,7 @@ class AzureCloudProvider(CloudProviderInterface):
     @log_and_raise_exceptions
     def validate_domain_name(self, name):
         response = self.sdk.requests.get(
-            f"{self.sdk.cloud.endpoints.active_directory}/{name}.onmicrosoft.com/.well-known/openid-configuration",
+            f"{self.sdk.cloud.endpoints.active_directory}{name}.onmicrosoft.com/.well-known/openid-configuration",
             timeout=30,
         )
         response.raise_for_status()
@@ -608,7 +608,7 @@ class AzureCloudProvider(CloudProviderInterface):
         sp_token = self._get_root_provisioning_token()
 
         create_billing_account_body = payload.dict(by_alias=True)
-        billing_account_create_url = f"{self.sdk.cloud.endpoints.resource_manager}/providers/Microsoft.Billing/billingAccounts/{payload.billing_account_name}/billingProfiles"
+        billing_account_create_url = f"{self.sdk.cloud.endpoints.resource_manager}providers/Microsoft.Billing/billingAccounts/{payload.billing_account_name}/billingProfiles"
         result = self.sdk.requests.post(
             billing_account_create_url,
             params={"api-version": "2019-10-01-preview"},
@@ -666,7 +666,7 @@ class AzureCloudProvider(CloudProviderInterface):
             }
         }
 
-        url = f"{self.sdk.cloud.endpoints.resource_manager}/providers/Microsoft.Billing/billingAccounts/{payload.billing_account_name}/billingProfiles/{payload.billing_profile_name}/createBillingRoleAssignment"
+        url = f"{self.sdk.cloud.endpoints.resource_manager}providers/Microsoft.Billing/billingAccounts/{payload.billing_account_name}/billingProfiles/{payload.billing_profile_name}/createBillingRoleAssignment"
         result = self.sdk.requests.post(
             url,
             headers=make_auth_header(sp_token),
@@ -691,7 +691,7 @@ class AzureCloudProvider(CloudProviderInterface):
             }
         ]
 
-        url = f"{self.sdk.cloud.endpoints.resource_manager}/providers/Microsoft.Billing/billingAccounts/{payload.billing_account_name}/billingProfiles/{payload.billing_profile_name}"
+        url = f"{self.sdk.cloud.endpoints.resource_manager}providers/Microsoft.Billing/billingAccounts/{payload.billing_account_name}/billingProfiles/{payload.billing_profile_name}"
 
         result = self.sdk.requests.patch(
             url,
@@ -739,7 +739,7 @@ class AzureCloudProvider(CloudProviderInterface):
             }
         }
 
-        url = f"{self.sdk.cloud.endpoints.resource_manager}/providers/Microsoft.Billing/billingAccounts/{payload.billing_account_name}/billingProfiles/{payload.billing_profile_name}/instructions/{payload.initial_task_order_id}:CLIN00{payload.initial_clin_type}"
+        url = f"{self.sdk.cloud.endpoints.resource_manager}providers/Microsoft.Billing/billingAccounts/{payload.billing_account_name}/billingProfiles/{payload.billing_profile_name}/instructions/{payload.initial_task_order_id}:CLIN00{payload.initial_clin_type}"
 
         result = self.sdk.requests.put(
             url,
@@ -1455,7 +1455,7 @@ class AzureCloudProvider(CloudProviderInterface):
     @log_and_raise_exceptions
     def _elevate_tenant_admin_access(self, token):
         result = self.sdk.requests.post(
-            f"{self.sdk.cloud.endpoints.resource_manager}/providers/Microsoft.Authorization/elevateAccess",
+            f"{self.sdk.cloud.endpoints.resource_manager}providers/Microsoft.Authorization/elevateAccess",
             headers=make_auth_header(token),
             params={"api-version": "2016-07-01"},
             timeout=30,
