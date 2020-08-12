@@ -6,6 +6,12 @@ from flask import current_app as app
 from msrestazure.azure_cloud import AZURE_PUBLIC_CLOUD as cloud
 
 
+def make_auth_header(token):
+    return {
+        "Authorization": f"Bearer {token}",
+    }
+
+
 def generate_user_principal_name(name, domain_name):
     mail_name = generate_mail_nickname(name)
     return f"{mail_name}@{domain_name}.{app.config.get('OFFICE_365_DOMAIN')}"

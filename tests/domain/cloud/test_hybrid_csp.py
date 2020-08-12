@@ -12,6 +12,7 @@ from atat.domain.csp.cloud.models import (
     CostManagementQueryCSPPayload,
     SubscriptionCreationCSPPayload,
 )
+from atat.domain.csp.cloud.utils import make_auth_header
 from atat.jobs import (
     do_create_application,
     do_create_environment,
@@ -144,12 +145,9 @@ class TestIntegration:
 
     def _get_management_group(self, csp, tenant_id, management_group_id):
         sp_token = csp.azure._get_tenant_principal_token(tenant_id)
-        headers = {
-            "Authorization": f"Bearer {sp_token}",
-        }
         response = csp.azure.sdk.requests.get(
             f"{csp.azure.sdk.cloud.endpoints.resource_manager}{management_group_id}?api-version=2020-02-01",
-            headers=headers,
+            headers=make_auth_header(sp_token),
         )
         response.raise_for_status()
         return response.json()
