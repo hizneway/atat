@@ -98,6 +98,8 @@ USER_ACCESS_ADMIN_ROLE_DEFINITION_ID = "18d7d88d-d35e-4fb5-a5c3-7773c20a72d9"
 
 DEFAULT_POLICY_SET_DEFINITION_NAME = "Default JEDI Policy Set"
 
+DEFAULT_SCOPE_SUFFIX = "/.default"
+
 
 def log_and_raise_exceptions(func):
     """Wraps Azure cloud provider API calls to catch `requests` exceptions,
@@ -170,7 +172,7 @@ class AzureCloudProvider(CloudProviderInterface):
         self.vault_url = config["AZURE_VAULT_URL"]
         self.ps_client_id = config["AZURE_POWERSHELL_CLIENT_ID"]
         self.graph_resource = config["AZURE_GRAPH_RESOURCE"]
-        self.graph_scope = config["AZURE_GRAPH_RESOURCE"] + "/.default"
+        self.graph_scope = config["AZURE_GRAPH_RESOURCE"] + DEFAULT_SCOPE_SUFFIX
         self.default_aadp_qty = config["AZURE_AADP_QTY"]
         self.roles = {
             "owner": config["AZURE_ROLE_DEF_ID_OWNER"],
@@ -188,19 +190,18 @@ class AzureCloudProvider(CloudProviderInterface):
     @log_and_raise_exceptions
     def _get_keyvault_token(self):
         url = f"{self.sdk.cloud.endpoints.active_directory}/{self.root_tenant_id}/oauth2/token"
+        resource = f"https://{self.sdk.cloud.suffixes.keyvault_dns[1:]}"
         payload = {
             "grant_type": "client_credentials",
             "client_id": self.client_id,
             "client_secret": self.secret_key,
-            "resource": f"https://{self.sdk.cloud.suffixes.keyvault_dns[1:]}",
+            "resource": resource,
         }
         token_response = self.sdk.requests.get(url, data=payload, timeout=30)
         token_response.raise_for_status()
         token = token_response.json().get("access_token")
         if token is None:
-            message = (
-                f"Failed to get token for resource '{resource}' in tenant '{tenant_id}'"
-            )
+            message = f"Failed to get token for resource '{resource}' in tenant '{self.root_tenant_id}'"
             app.logger.error(message, exc_info=1)
             raise AuthenticationException(message)
         else:
@@ -425,7 +426,6 @@ class AzureCloudProvider(CloudProviderInterface):
                 raise ResourceProvisioningError("management group", f"{error_message}")
             else:
                 time.sleep(int(response.headers.get("Retry-After", 10)))
-                continue
 
     @log_and_raise_exceptions
     def _create_policy_definition(self, session, root_management_group_name, policy):
@@ -1232,7 +1232,7 @@ class AzureCloudProvider(CloudProviderInterface):
         """
         if graph_token is None:
             graph_token = self._get_tenant_principal_token(
-                payload.tenant_id, scope=self.graph_resource + "/.default"
+                payload.tenant_id, scope=self.graph_resource + DEFAULT_SCOPE_SUFFIX
             )
 
         # Step 1: Retrieve or create an AAD identity for the user
@@ -1271,15 +1271,12 @@ class AzureCloudProvider(CloudProviderInterface):
         }
 
         url = f"{self.graph_resource}/beta/roleManagement/directory/roleAssignments"
-
         result = self.sdk.requests.post(url, headers=auth_header, json=request_body)
 
         error = result.json().get("error")
         if error and "A conflicting object" in error.get("message"):
-            return True
-
+            return
         result.raise_for_status()
-        return True
 
     @log_and_raise_exceptions
     def _get_billing_owner_role(self, graph_token):
@@ -1316,7 +1313,7 @@ class AzureCloudProvider(CloudProviderInterface):
         # Request a graph api authorization token
 
         graph_token = self._get_tenant_principal_token(
-            payload.tenant_id, scope=self.graph_resource + "/.default"
+            payload.tenant_id, scope=self.graph_resource + DEFAULT_SCOPE_SUFFIX
         )
 
         # Use the graph api to invite a user
@@ -1430,12 +1427,6 @@ class AzureCloudProvider(CloudProviderInterface):
             raise UserProvisioningException(
                 f"Failed to create user role assignment: {response.json()}"
             )
-
-    def _extract_subscription_id(self, subscription_url):
-        sub_id_match = SUBSCRIPTION_ID_REGEX.match(subscription_url)
-
-        if sub_id_match:
-            return sub_id_match.group(1)
 
     def _get_tenant_admin_token(self, tenant_id, scope):
         creds = self._source_tenant_creds(tenant_id)
