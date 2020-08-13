@@ -493,7 +493,7 @@ First create two files, containing a RedHat username and password respectively.
 Then run the build script.
 
 ```
-./script/build-docker-image-python-base.sh
+env CONTAINER_REGISTRY=cloudzerodryrunregistry.azurecr.io ./script/build-docker-image-python-base.sh
 ```
 
 Then publish the image. Start by tagging it with the appropriate registry. In
