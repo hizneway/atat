@@ -512,74 +512,108 @@ def test_create_task_order_billing_creation(
     )
 
 
-def test_create_task_order_billing_verification(mock_azure, mock_http_error_response):
-
-    mock_result = mock_requests_response(
-        json_data={
-            "id": "/providers/Microsoft.Billing/billingAccounts/7c89b735-b22b-55c0-ab5a-c624843e8bf6:de4416ce-acc6-44b1-8122-c87c4e903c91_2019-05-31/billingProfiles/KQWI-W2SU-BG7-TGB",
-            "name": "KQWI-W2SU-BG7-TGB",
-            "properties": {
-                "address": {
-                    "addressLine1": "123 S Broad Street, Suite 2400",
-                    "city": "Philadelphia",
-                    "companyName": "Promptworks",
-                    "country": "US",
-                    "postalCode": "19109",
-                    "region": "PA",
-                },
-                "currency": "USD",
-                "displayName": "Test Billing Profile",
-                "enabledAzurePlans": [
-                    {
-                        "productId": "DZH318Z0BPS6",
-                        "skuId": "0001",
-                        "skuDescription": "Microsoft Azure Plan",
-                    }
-                ],
-                "hasReadAccess": True,
-                "invoiceDay": 5,
-                "invoiceEmailOptIn": False,
-                "invoiceSections": [
-                    {
-                        "id": "/providers/Microsoft.Billing/billingAccounts/7c89b735-b22b-55c0-ab5a-c624843e8bf6:de4416ce-acc6-44b1-8122-c87c4e903c91_2019-05-31/billingProfiles/KQWI-W2SU-BG7-TGB/invoiceSections/CHCO-BAAR-PJA-TGB",
-                        "name": "CHCO-BAAR-PJA-TGB",
-                        "properties": {"displayName": "Test Billing Profile"},
-                        "type": "Microsoft.Billing/billingAccounts/billingProfiles/invoiceSections",
-                    }
-                ],
-            },
-            "type": "Microsoft.Billing/billingAccounts/billingProfiles",
-        }
-    )
-
-    mock_azure.sdk.requests.get.side_effect = [
-        mock_azure.sdk.requests.exceptions.ConnectionError,
-        mock_azure.sdk.requests.exceptions.Timeout,
-        mock_http_error_response,
-        mock_result,
-    ]
-
-    payload = TaskOrderBillingVerificationCSPPayload(
-        **dict(
-            tenant_id="60ff9d34-82bf-4f21-b565-308ef0533435",
-            task_order_billing_verify_url="https://management.azure.com/providers/Microsoft.Billing/billingAccounts/7c89b735-b22b-55c0-ab5a-c624843e8bf6:de4416ce-acc6-44b1-8122-c87c4e903c91_2019-05-31/operationResults/createBillingProfile_478d5706-71f9-4a8b-8d4e-2cbaca27a668?api-version=2019-10-01-preview",
+class Test_create_task_order_billing_verification:
+    @pytest.fixture
+    def payload(self):
+        return TaskOrderBillingVerificationCSPPayload(
+            **dict(
+                tenant_id="60ff9d34-82bf-4f21-b565-308ef0533435",
+                task_order_billing_verify_url="https://management.azure.com/providers/Microsoft.Billing/billingAccounts/7c89b735-b22b-55c0-ab5a-c624843e8bf6:de4416ce-acc6-44b1-8122-c87c4e903c91_2019-05-31/operationResults/createBillingProfile_478d5706-71f9-4a8b-8d4e-2cbaca27a668?api-version=2019-10-01-preview",
+            )
         )
-    )
-    with pytest.raises(ConnectionException):
-        mock_azure.create_task_order_billing_verification(payload)
-    with pytest.raises(ConnectionException):
-        mock_azure.create_task_order_billing_verification(payload)
-    with pytest.raises(UnknownServerException, match=r".*500 Server Error.*"):
-        mock_azure.create_task_order_billing_verification(payload)
 
-    body: TaskOrderBillingVerificationCSPResult = mock_azure.create_task_order_billing_verification(
-        payload
-    )
-    assert body.billing_profile_name == "KQWI-W2SU-BG7-TGB"
-    assert (
-        body.billing_profile_enabled_plan_details.enabled_azure_plans[0].get("skuId")
-        == "0001"
-    )
+    def test_raises_http_error(self, mock_azure, mock_http_error_response, payload):
+        mock_azure.sdk.requests.get.side_effect = [
+            mock_azure.sdk.requests.exceptions.ConnectionError,
+            mock_azure.sdk.requests.exceptions.Timeout,
+            mock_http_error_response,
+        ]
+        with pytest.raises(ConnectionException):
+            mock_azure.create_task_order_billing_verification(payload)
+        with pytest.raises(ConnectionException):
+            mock_azure.create_task_order_billing_verification(payload)
+        with pytest.raises(UnknownServerException, match=r".*500 Server Error.*"):
+            mock_azure.create_task_order_billing_verification(payload)
+
+    def test_raises_provisioning_error(self, mock_azure, payload):
+        def make_error(status):
+            return {
+                "status": status,
+                "error": {"code": "11235", "message": "An error occured"},
+            }
+
+        mock_azure.sdk.requests.get.side_effect = [
+            mock_requests_response(json_data=make_error("Canceled")),
+            mock_requests_response(json_data=make_error("Failed")),
+        ]
+        with pytest.raises(ResourceProvisioningError):
+            mock_azure.create_task_order_billing_verification(payload)
+        with pytest.raises(ResourceProvisioningError):
+            mock_azure.create_task_order_billing_verification(payload)
+
+    def test_async_operation_succeeds(self, mock_azure, payload):
+        mock_result = mock_requests_response(
+            json_data={
+                "status": "Succeeded",
+                "id": "/providers/Microsoft.Billing/billingAccounts/7c89b735-b22b-55c0-ab5a-c624843e8bf6:de4416ce-acc6-44b1-8122-c87c4e903c91_2019-05-31/billingProfiles/KQWI-W2SU-BG7-TGB",
+                "name": "KQWI-W2SU-BG7-TGB",
+                "properties": {
+                    "address": {
+                        "addressLine1": "123 S Broad Street, Suite 2400",
+                        "city": "Philadelphia",
+                        "companyName": "Promptworks",
+                        "country": "US",
+                        "postalCode": "19109",
+                        "region": "PA",
+                    },
+                    "currency": "USD",
+                    "displayName": "Test Billing Profile",
+                    "enabledAzurePlans": [
+                        {
+                            "productId": "DZH318Z0BPS6",
+                            "skuId": "0001",
+                            "skuDescription": "Microsoft Azure Plan",
+                        }
+                    ],
+                    "hasReadAccess": True,
+                    "invoiceDay": 5,
+                    "invoiceEmailOptIn": False,
+                    "invoiceSections": [
+                        {
+                            "id": "/providers/Microsoft.Billing/billingAccounts/7c89b735-b22b-55c0-ab5a-c624843e8bf6:de4416ce-acc6-44b1-8122-c87c4e903c91_2019-05-31/billingProfiles/KQWI-W2SU-BG7-TGB/invoiceSections/CHCO-BAAR-PJA-TGB",
+                            "name": "CHCO-BAAR-PJA-TGB",
+                            "properties": {"displayName": "Test Billing Profile"},
+                            "type": "Microsoft.Billing/billingAccounts/billingProfiles/invoiceSections",
+                        }
+                    ],
+                },
+                "type": "Microsoft.Billing/billingAccounts/billingProfiles",
+            },
+        )
+        mock_azure.sdk.requests.get.side_effect = [
+            mock_result,
+        ]
+        body = mock_azure.create_task_order_billing_verification(payload)
+        assert body.billing_profile_name == "KQWI-W2SU-BG7-TGB"
+        assert (
+            body.billing_profile_enabled_plan_details.enabled_azure_plans[0].get(
+                "skuId"
+            )
+            == "0001"
+        )
+
+    def test_async_operation_in_progress(self, mock_azure, payload):
+        mock_result = mock_requests_response(
+            json_data={"status": "In Progress"},
+            headers={"Location": "https://retry-url.com", "Retry-After": "0",},
+        )
+        mock_azure.sdk.requests.get.side_effect = [
+            mock_result,
+        ]
+        body = mock_azure.create_task_order_billing_verification(payload)
+        assert body.reset_stage is True
+        assert body.task_order_billing_verify_url == "https://retry-url.com"
+        assert body.task_order_retry_after == 0
 
 
 def test_create_billing_instruction(
