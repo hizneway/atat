@@ -6,7 +6,8 @@
 # https://docs.docker.com/engine/reference/commandline/build/#options
 ARG IMAGE
 
-FROM $IMAGE as builder
+# FROM $IMAGE as builder
+FROM atst:rhel-py as builder
 
 ARG CDN_URL=/static/assets/
 ENV TZ UTC
@@ -52,7 +53,8 @@ RUN rm -rf ./static/fonts \
       && yarn build-prod
 
 ## NEW IMAGE
-FROM $IMAGE
+# FROM $IMAGE
+FROM atst:rhel-py
 
 ### Very low chance of changing
 ###############################
@@ -86,7 +88,7 @@ RUN groupadd --system -g 101 atat
 RUN useradd --system atst -g atat
 
 # Install postgresql client.
-RUN dnf install @postgresql -y
+RUN dnf install postgresql-10.6-1.module+el8+2469+5ecd5aae -y
 
 # Install dumb-init.
 # dumb-init is a simple process supervisor and init system designed to run as PID 1 inside minimal container environments.
