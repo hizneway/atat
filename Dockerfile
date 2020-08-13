@@ -7,7 +7,7 @@
 ARG IMAGE
 
 # FROM $IMAGE as builder
-FROM atst:rhel-py as builder
+FROM $IMAGE as builder
 
 ARG CDN_URL=/static/assets/
 ENV TZ UTC
@@ -52,9 +52,7 @@ RUN rm -rf ./static/fonts \
       && cp -rf ./node_modules/uswds/dist/fonts ./static/fonts \
       && yarn build-prod
 
-## NEW IMAGE
-# FROM $IMAGE
-FROM atst:rhel-py
+FROM $IMAGE
 
 ### Very low chance of changing
 ###############################
