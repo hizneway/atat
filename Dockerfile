@@ -100,8 +100,6 @@ RUN dnf install python3-devel -y
 # https://uwsgi-docs.readthedocs.io/en/latest/Logging.html#logging-to-files
 RUN pip3 install uwsgi pendulum
 
-COPY . .
-
 COPY --from=builder /install/.venv/ ./.venv/
 COPY --from=builder /install/alembic/ ./alembic/
 COPY --from=builder /install/alembic.ini .
