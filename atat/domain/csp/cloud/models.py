@@ -59,9 +59,18 @@ class AliasModel(BaseModel):
     * user_object_id:objectId
     """
 
+    reset_stage: bool = False
+
     class Config:
         alias_generator = snake_to_camel
         allow_population_by_field_name = True
+
+    def dict(self, *args, **kwargs):
+        kwargs.setdefault("exclude")
+        if kwargs["exclude"] is None:
+            kwargs["exclude"] = set()
+        kwargs["exclude"].update({"reset_stage"})
+        return super().dict(*args, **kwargs)
 
 
 class BaseCSPPayload(AliasModel):
