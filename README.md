@@ -496,5 +496,21 @@ Then run the build script.
 ./script/build-docker-image-python-base.sh
 ```
 
-Then publish the image.
+Then publish the image. Start by tagging it with the appropriate registry. In
+this example we use the dry run registry.
 
+```
+docker tag atst:rhel-py cloudzerodryrunregistry.azurecr.io/rhel-py
+```
+
+Make sure you're logged into said registry.
+
+```
+az acr login -n cloudzerodryrunregistry
+```
+
+Then push!
+
+```
+docker push cloudzerodryrunregistry.azurecr.io/rhel-py
+```
