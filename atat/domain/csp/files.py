@@ -39,7 +39,7 @@ class AzureFileService(FileService):
     DEFAULT_FILENAME = "task-order.pdf"
 
     def __init__(self, config):
-        self.account_name = config["AZURE_ACCOUNT_NAME"]
+        self.account_name = config["AZURE_STORAGE_ACCOUNT_NAME"]
         self.storage_key = config["AZURE_STORAGE_KEY"]
         self.container_name = config["AZURE_TO_BUCKET_NAME"]
         self.timeout = config["PERMANENT_SESSION_LIFETIME"]

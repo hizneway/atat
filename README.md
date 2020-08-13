@@ -210,7 +210,7 @@ In the flask config (`config/base.ini`, perhaps):
 CSP=< azure | mock>
 
 AZURE_STORAGE_KEY=""
-AZURE_ACCOUNT_NAME=""
+AZURE_STORAGE_ACCOUNT_NAME=""
 AZURE_TO_BUCKET_NAME=""
 ```
 
@@ -218,7 +218,7 @@ There are also some build-time configuration that are used by parcel. Add these 
 
 ```
 CLOUD_PROVIDER=<azure | mock>
-AZURE_ACCOUNT_NAME=""
+AZURE_STORAGE_ACCOUNT_NAME=""
 AZURE_CONTAINER_NAME=""
 ```
 
@@ -268,8 +268,8 @@ All config settings must be declared in "config/base.ini", even if they are null
 2. If FLASK_ENV is set as an environment variable and there is an INI file with a matching name, that INI file is read in and applied. For instance, if FLASK_ENV is set to "prod" and a "prod.ini" file exists, those values will be applied and will override any values set by the base.ini.
 3. MSFT supports an [OSS Kubernetes plugin](https://github.com/Azure/kubernetes-keyvault-flexvol) for mounting objects from Azure Key Vault into containers. We use this feature to store application secrets in a Key Vault instance and set them in the container at runtime (see "deploy/README.md" for more details). This is done by mounting the secrets into a known directory and specifying it with an environment variable, OVERRIDE_CONFIG_DIRECTORY. If OVERRIDE_CONFIG_DIRECTORY is set, ATAT will do the following:
   1. Find the specified directory. For example, "/config"
-  1. Search for files in that directory with names matching known settings. For example, a file called "AZURE_ACCOUNT_NAME".
-  1. Read in the contents of those files and set the content as the value for that setting. These will override any values previously set. For example, if the file "AZURE_ACCOUNT_NAME" has the content "my-azure-account-name", that content will be set as the value for the AZURE_ACCOUNT_NAME setting.
+  1. Search for files in that directory with names matching known settings. For example, a file called "AZURE_STORAGE_ACCOUNT_NAME".
+  1. Read in the contents of those files and set the content as the value for that setting. These will override any values previously set. For example, if the file "AZURE_STORAGE_ACCOUNT_NAME" has the content "my-azure-account-name", that content will be set as the value for the AZURE_STORAGE_ACCOUNT_NAME setting.
 4. Finally, ATAT will check for the presence of environment variables matching all known config values. If a matching environment variable exists, its value will override whatever value was previously set.
 
 ### Config Guide
@@ -279,7 +279,7 @@ All config settings must be declared in "config/base.ini", even if they are null
 - `ASSETS_URL`: URL to host which serves static assets (such as a CDN).
 - `APP_SSL_CERT_PATH`: Path to the self-signed SSL certificate for running the app in secure mode.
 - `APP_SSL_KEY_PATH`: Path to the self-signed SSL certificate key for running the app in secure mode.
-- `AZURE_ACCOUNT_NAME`: The name for the Azure blob storage account
+- `AZURE_STORAGE_ACCOUNT_NAME`: The name for the Azure blob storage account
 - `AZURE_BILLING_ACCOUNT_NAME`: The name for the root Azure billing account
 - `AZURE_CALC_CLIENT_ID`: The client id used to generate a token for the Azure pricing calculator
 - `AZURE_CALC_RESOURCE`: The resource URL used to generate a token for the Azure pricing calculator
@@ -366,7 +366,7 @@ Configuration variables that are needed solely to run Hybrid tests are in the `[
 
 CircleCI is our current CI/CD provider. The following variables need to be set in the project settings for CI/CD to run:
 
-- `AZURE_ACCOUNT_NAME`: The name of the Azure Storage Account used for task orders
+- `AZURE_STORAGE_ACCOUNT_NAME`: The name of the Azure Storage Account used for task orders
 - `AZURE_REGISTRY`: The name of the Azure Container Registry for ATAT docker images
 - `AZURE_SERVER_NAME`: The domain name of the same Azure Container Registry as AZURE_REGISTRY (e.g. cloudzeroregistry.azurecr.io)
 - `AZURE_SP`: The human-readable name of a Service Principal with the "Azure Kubernetes Service Cluster User Role" to the AKS cluster and the "AcrPush" role to the Azure Container Registry

@@ -5,7 +5,7 @@ metadata:
   name: atst-worker-envvars
   namespace: atat
 data:
-  AZURE_ACCOUNT_NAME: atat
+  AZURE_STORAGE_ACCOUNT_NAME: atat
   AZURE_TO_BUCKET_NAME: task-order-pdfs
   CAC_URL: https://auth-staging.atat.dev/login-redirect
   CELERY_DEFAULT_QUEUE: celery-master
