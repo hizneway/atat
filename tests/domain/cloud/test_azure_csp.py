@@ -11,6 +11,7 @@ from tests.mock_azure import mock_azure, MOCK_ACCESS_TOKEN  # pylint: disable=W0
 from tests.mock_azure import AZURE_CONFIG
 
 from atat.domain.csp.cloud import AzureCloudProvider
+import atat.domain.csp.cloud.azure_cloud_provider
 from atat.domain.csp.cloud.azure_cloud_provider import log_and_raise_exceptions
 from atat.domain.csp.cloud.exceptions import (
     AuthenticationException,
@@ -720,8 +721,6 @@ def test_create_tenant_principal_app(
     mock_azure: AzureCloudProvider, mock_http_error_response
 ):
     mock_result = mock_requests_response(json_data={"appId": "appId", "id": "id"})
-    mock_azure._get_user_principal_token_for_scope = Mock()
-    mock_azure._get_user_principal_token_for_scope.return_value = MOCK_ACCESS_TOKEN
 
     mock_azure.sdk.requests.post.side_effect = [
         mock_azure.sdk.requests.exceptions.ConnectionError,
@@ -754,8 +753,6 @@ def test_create_tenant_principal(
     mock_azure: AzureCloudProvider, mock_http_error_response
 ):
     mock_result = mock_requests_response(json_data={"id": "principal_id"})
-    mock_azure._get_user_principal_token_for_scope = Mock()
-    mock_azure._get_user_principal_token_for_scope.return_value = MOCK_ACCESS_TOKEN
 
     mock_azure.sdk.requests.post.side_effect = [
         mock_azure.sdk.requests.exceptions.ConnectionError,
@@ -786,8 +783,6 @@ def test_create_tenant_principal_credential(
     mock_azure: AzureCloudProvider, mock_http_error_response
 ):
     mock_result = mock_requests_response(json_data={"secretText": "new secret key"})
-    mock_azure._get_user_principal_token_for_scope = Mock()
-    mock_azure._get_user_principal_token_for_scope.return_value = MOCK_ACCESS_TOKEN
 
     mock_azure.sdk.requests.post.side_effect = [
         mock_azure.sdk.requests.exceptions.ConnectionError,
@@ -829,8 +824,6 @@ def test_create_admin_role_definition(
             ]
         }
     )
-    mock_azure._get_user_principal_token_for_scope = Mock()
-    mock_azure._get_user_principal_token_for_scope.return_value = MOCK_ACCESS_TOKEN
 
     mock_azure.sdk.requests.get.side_effect = [
         mock_azure.sdk.requests.exceptions.ConnectionError,
@@ -928,9 +921,6 @@ def test_create_principal_admin_role(
 ):
 
     mock_result = mock_requests_response(json_data={"id": "id"})
-    mock_azure._get_user_principal_token_for_scope = Mock()
-    mock_azure._get_user_principal_token_for_scope.return_value = MOCK_ACCESS_TOKEN
-
     mock_azure.sdk.requests.post.side_effect = [
         mock_azure.sdk.requests.exceptions.ConnectionError,
         mock_azure.sdk.requests.exceptions.Timeout,
@@ -1507,16 +1497,14 @@ def test_create_policies(mock_azure: AzureCloudProvider, monkeypatch):
     assert result.policy_assignment_id == final_assignment_id
 
 
-def test_get_service_principal_token_fails(unmocked_cloud_provider):
-    cloud_provider = unmocked_cloud_provider
-    mock_result = mock_requests_response(
-        status=401, json_data={"error": "invalid request"},
+def test_get_service_principal_token_fails(mock_azure, monkeypatch):
+    monkeypatch.setattr(
+        atat.domain.csp.cloud.azure_cloud_provider,
+        "get_principal_auth_token",
+        Mock(return_value=None),
     )
-    cloud_provider.sdk.requests.post = Mock()
-    cloud_provider.sdk.requests.post.side_effect = [mock_result]
-
     with pytest.raises(AuthenticationException):
-        cloud_provider._get_service_principal_token("resource", "client", "secret")
+        mock_azure._get_service_principal_token("tenant_id", "client", "secret")
 
 
 class TestCreateManagementGroup:

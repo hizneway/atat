@@ -6,7 +6,7 @@ metadata:
   namespace: atat
 data:
   ASSETS_URL: https://atat-cdn.azureedge.net/
-  AZURE_ACCOUNT_NAME: atat
+  AZURE_STORAGE_ACCOUNT_NAME: atat
   AZURE_TO_BUCKET_NAME: task-order-pdfs
   BLOB_STORAGE_URL: https://atat.blob.core.windows.net/
   CAC_URL: https://auth-staging.atat.dev/login-redirect

@@ -103,7 +103,7 @@ def update_and_render_next(
 def upload_config(csp, config):
     if csp == "azure" or csp == "hybrid":
         return {
-            "azureAccountName": config["AZURE_ACCOUNT_NAME"],
+            "azureAccountName": config["AZURE_STORAGE_ACCOUNT_NAME"],
             "azureContainerName": config["AZURE_TO_BUCKET_NAME"],
         }
     else:
