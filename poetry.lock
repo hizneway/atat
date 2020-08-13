@@ -143,7 +143,7 @@ description = "Microsoft Azure Blob Storage Client Library for Python"
 name = "azure-storage-blob"
 optional = false
 python-versions = "*"
-version = "12.3.2"
+version = "12.4.0"
 
 [package.dependencies]
 azure-core = ">=1.6.0,<2.0.0"
@@ -1628,8 +1628,8 @@ azure-storage = [
     {file = "azure_storage-0.36.0-py2.py3-none-any.whl", hash = "sha256:4c406422e3edd41920bb1f0c3930c34fee3eb0d55258ef7ec7308ccbb9385ad5"},
 ]
 azure-storage-blob = [
-    {file = "azure-storage-blob-12.3.2.zip", hash = "sha256:b99ce18c5063b22a988e6e997a491aab6c7c4dd62d1424b4e2b934e6ef104356"},
-    {file = "azure_storage_blob-12.3.2-py2.py3-none-any.whl", hash = "sha256:8a02a33cd28a16963274dc928960642e99ec19cad27166fb386ebcc0f1216706"},
+    {file = "azure-storage-blob-12.4.0.zip", hash = "sha256:96a09b2ff234d7623667e1002c916b5b562e5829ea62b4175309f65ab06a03e8"},
+    {file = "azure_storage_blob-12.4.0-py2.py3-none-any.whl", hash = "sha256:f7e7e78e6c629c93da1240a148e02ec7442287558f30cf01e4798be88ff7c8c8"},
 ]
 azure-storage-common = [
     {file = "azure-storage-common-2.1.0.tar.gz", hash = "sha256:ccedef5c67227bc4d6670ffd37cec18fb529a1b7c3a5e53e4096eb0cf23dc73f"},
