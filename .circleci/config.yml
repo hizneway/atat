@@ -9,9 +9,10 @@ commands:
             apk update
             apk add bash py3-pip
             apk add --virtual=build \
-              linux-headers gcc libffi-dev musl-dev openssl-dev python3-dev make
+              linux-headers gcc libffi-dev musl-dev openssl-dev python3-dev make curl
             pip3 --no-cache-dir install -U pip
             pip3 --no-cache-dir install azure-cli
+            curl -L https://aka.ms/acr/installaad/bash | /bin/bash
             apk del --purge build
       - run:
           name: Login to Azure CLI
