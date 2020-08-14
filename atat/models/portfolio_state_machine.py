@@ -158,8 +158,11 @@ class PortfolioStateMachine(
         try:
             payload = event.kwargs.get("csp_data")
             response = self._do_provisioning_stage(payload)
-            self._update_csp_data(response.dict())
-            self.finish_stage()
+            if response.reset_stage:
+                self.reset_stage()
+            else:
+                self._update_csp_data(response.dict())
+                self.finish_stage()
         except:
             self.fail_stage()
             raise

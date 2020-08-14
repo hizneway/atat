@@ -85,27 +85,39 @@ def _build_transitions(csp_stages):
     For each CSP state (a combination of CSP stages and StateStages) We need 
     transitions: 
     
-    - from the system `UNSTARTED` state or the previous stage's `_CREATED` state to
-     `<CSP stage>_IN_PROGRESS` to try the provisioning step
+    - from the system `UNSTARTED` state or the previous stage's `_CREATED` state
+      to `<CSP stage>_IN_PROGRESS` to try the provisioning step
         - triggered with a `create_<CSP stage>` trigger
     
-    - from `<CSP stage>_IN_PROGRESS` to `<CSP stage>_FAILED`, when the provisioning step fails
+    - from `<CSP stage>_IN_PROGRESS` to `<CSP stage>_FAILED`, when the 
+      provisioning step fails
         - triggered with a `fail_<CSP stage>` trigger
     
-    - from `<CSP stage>_FAILED` to `<CSP stage>_IN_PROGRESS`, to retry the provisioning step
+    - from `<CSP stage>_IN_PROGRESS` to the previous `<CSP stage>_CREATED` state
+      (or UNSTARTED), when we need to retry the provisioning step
+        - triggered with a `reset_<CSP stage>` trigger
+    
+    - from `<CSP stage>_FAILED` to `<CSP stage>_IN_PROGRESS`, to retry the
+      provisioning step
         - triggered with a `resume_progress_<CSP stage>` trigger
     
-    - from `<CSP stage>_IN_PROGRESS` to `<CSP stage>_CREATED` state, 
-      when the provisioning step is successful
+    - from `<CSP stage>_IN_PROGRESS` to `<CSP stage>_CREATED` state, when the 
+      provisioning step is successful
         - triggered with a `finish_<CSP stage>` trigger
     
     - from the last stage's `_CREATED` state to the system `COMPLETED` state
-        - triggered with a `finish_<CSP stage>` trigger
+        - triggered with a `complete` trigger
     """
     transitions = []
     states = []
     for stage_index, csp_stage in enumerate(csp_stages):
         for state in StageStates:
+            if stage_index > 0:
+                previous_state = compose_state(
+                    list(csp_stages)[stage_index - 1], StageStates.CREATED
+                )
+            else:
+                previous_state = PortfolioStates.UNSTARTED
             states.append(
                 dict(
                     name=compose_state(csp_stage, state),
@@ -113,16 +125,10 @@ def _build_transitions(csp_stages):
                 )
             )
             if state == StageStates.CREATED:
-                if stage_index > 0:
-                    source = compose_state(
-                        list(csp_stages)[stage_index - 1], StageStates.CREATED
-                    )
-                else:
-                    source = PortfolioStates.UNSTARTED
                 transitions.append(
                     dict(
                         trigger="create_" + csp_stage.name.lower(),
-                        source=source,
+                        source=previous_state,
                         dest=compose_state(csp_stage, StageStates.IN_PROGRESS),
                         after="after_in_progress_callback",
                     )
@@ -134,6 +140,13 @@ def _build_transitions(csp_stages):
                         source=compose_state(csp_stage, state),
                         dest=compose_state(csp_stage, StageStates.CREATED),
                         conditions=["is_csp_data_valid"],
+                    )
+                )
+                transitions.append(
+                    dict(
+                        trigger="reset_" + csp_stage.name.lower(),
+                        dest=previous_state,
+                        source=compose_state(csp_stage, state),
                     )
                 )
             if state == StageStates.FAILED:
@@ -218,3 +231,6 @@ class FSMMixin:
 
     def finish_stage(self, **kwargs):
         self._find_and_call_stage_trigger("finish_", **kwargs)
+
+    def reset_stage(self, **kwargs):
+        self._find_and_call_stage_trigger("reset_", **kwargs)
