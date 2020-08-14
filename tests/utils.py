@@ -58,6 +58,10 @@ class FakeLogger:
 FakeNotificationSender = lambda: Mock(spec=NotificationSender)
 
 
+def lists_contain_same_members(list_1, list_2):
+    return sorted(list_1) == sorted(list_2)
+
+
 def parse_for_issuer_and_next_update(crl):
     with open(crl, "rb") as crl_file:
         parsed = crypto.load_crl(crypto.FILETYPE_ASN1, crl_file.read())
