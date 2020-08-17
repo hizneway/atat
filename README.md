@@ -319,7 +319,12 @@ All config settings must be declared in "config/base.ini", even if they are null
 - `PGSSLROOTCERT`: Path to the root SSL certificate for the postgres database.
 - `PGUSER`: String specifying the username to use when connecting to the postgres database.
 - `PORT`: Integer specifying the port to bind to when running the flask server. Used only for local development.
-- `REDIS_URI`: URI for the redis server.
+- `REDIS_HOST`: String. Hostname for the redis server, including port number.
+- `REDIS_PASSWORD`: String. Password or authentication key for the Redis server.
+- `REDIS_SSLMODE`: String. Can be one of "required", "optional", or "none". Determines whether the client will perform a certificate verification of the server. (Implemented in redis-py with https://docs.python.org/3/library/ssl.html#ssl.SSLContext.verify_mode)
+- `REDIS_SSLCHECKHOSTNAME`: Boolean. Specifies whether to verify that the Redis server hostname matches what's on the cert the server presents. (Implemented in redis-py with https://docs.python.org/3/library/ssl.html#ssl.SSLContext.check_hostname)
+- `REDIS_TLS`: Boolean. Determines whether the Redis client should use SSL/TLS.
+- `REDIS_USER`: String. The Redis username (generally blank).
 - `SAML_ACS`: Fully qualified URI for the URL that the SAML Identity Provider will redirect to after successful authentication
 - `SAML_ENTITY_ID`: Fully qualified URI that ATAT will invoke SAML authentication from
 - `SAML_IDP_CERT`: Public certificate provided by SAML Identity Provider encoded via base64
@@ -327,7 +332,7 @@ All config settings must be declared in "config/base.ini", even if they are null
 - `SAML_IDP_SLS`: URL that SAML logout requests will be sent to
 - `SAML_IDP_SSOS`: URL that SAML login requests will be sent to
 - `SAML_SLS`: Fully qualified URI that ATAT will invoke SAML logout from
-- `SAMl_LOGIN_DEV`: Boolean that defines if Azure Fed Auth will be require to log in using the developer login route. Defaults to `False` 
+- `SAMl_LOGIN_DEV`: Boolean that defines if Azure Fed Auth will be require to log in using the developer login route. Defaults to `False`
 - `SECRET_KEY`: String key which will be used to sign the session cookie. Should be a long string of random bytes. https://flask.palletsprojects.com/en/1.1.x/config/#SECRET_KEY
 - `SERVER_NAME`: Hostname for ATAT. Only needs to be specified in contexts where the hostname cannot be inferred from the request, such as Celery workers. https://flask.palletsprojects.com/en/1.1.x/config/#SERVER_NAME
 - `SERVICE_DESK_URL`: The URL for the service desk.  This is the site that will be displayed when the Support button is pressed.

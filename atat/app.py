@@ -208,17 +208,17 @@ def apply_hybrid_config_options(config: ConfigParser):
 
 def make_config(direct_config=None):
     """Assemble a ConfigParser object to pass to map_config
-    
-    Configuration values are possibly applied from multiple sources. They are 
+
+    Configuration values are possibly applied from multiple sources. They are
     applied in the following order. At each step, options that are currently set
     are overwritten by options of the same name:
     1. The base config file, `base.ini`
     2. An environment's config file -- e.g. if ENV="test", `test.ini`
-    3. Optionally: If an OVERRIDE_CONFIG_DIRECTORY environment variable is 
+    3. Optionally: If an OVERRIDE_CONFIG_DIRECTORY environment variable is
         present, configuration files in that directory
     4. Environment variables
     5. Optionally: A dictionary passed in as the `direct_config` parameter
-    
+
     After the configuration is finished being written / overwritten, a database
     uri, redis uri, and broker uri (in our case, a celery uri) are set.
 
@@ -264,34 +264,24 @@ def make_config(direct_config=None):
     config.set("default", "DATABASE_URI", database_uri)
 
     # Assemble REDIS_URI value
-    redis_use_tls = config["default"].getboolean("REDIS_TLS")
+    redis_use_ssl = config["default"].getboolean("REDIS_TLS")
     redis_uri = "redis{}://{}:{}@{}".format(  # pragma: allowlist secret
-        ("s" if redis_use_tls else ""),
+        ("s" if redis_use_ssl else ""),
         (config.get("default", "REDIS_USER") or ""),
         (config.get("default", "REDIS_PASSWORD") or ""),
         config.get("default", "REDIS_HOST"),
     )
-    celery_uri = redis_uri
-    if redis_use_tls:
-        tls_mode = config.get("default", "REDIS_SSLMODE")
-        tls_mode_str = tls_mode.lower() if tls_mode else "none"
-        redis_uri = f"{redis_uri}/?ssl_cert_reqs={tls_mode_str}"
+    if redis_use_ssl:
+        ssl_mode = config.get("default", "REDIS_SSLMODE")
+        ssl_checkhostname = "false"
 
-        # TODO: Kombu, one of Celery's dependencies, still requires
-        # that ssl_cert_reqs be passed as the string version of an
-        # option on the ssl module. We can clean this up and use
-        # the REDIS_URI for both when this PR to Kombu is released:
-        # https://github.com/celery/kombu/pull/1139
-        kombu_modes = {
-            "none": "CERT_NONE",
-            "required": "CERT_REQUIRED",
-            "optional": "CERT_OPTIONAL",
-        }
-        celery_tls_mode_str = kombu_modes[tls_mode_str]
-        celery_uri = f"{celery_uri}/?ssl_cert_reqs={celery_tls_mode_str}"
+        if config["default"].getboolean("REDIS_SSLCHECKHOSTNAME"):
+            ssl_checkhostname = "true"
+
+        redis_uri = f"{redis_uri}/?ssl_cert_reqs={ssl_mode}&ssl_check_hostname={ssl_checkhostname}"
 
     config.set("default", "REDIS_URI", redis_uri)
-    config.set("default", "BROKER_URL", celery_uri)
+    config.set("default", "BROKER_URL", redis_uri)
 
     return map_config(config)
 
