@@ -1,7 +1,12 @@
 # Image source is provided using `--build-arg IMAGE=<some-image>`.
+# This will typically be our RHEL Python image.
+#
+# --build-arg IMAGE=cloudzerodryrunregistry.azurecr.io/rhel-py
+#
 # https://docs.docker.com/engine/reference/commandline/build/#options
 ARG IMAGE
 
+# FROM $IMAGE as builder
 FROM $IMAGE as builder
 
 ARG CDN_URL=/static/assets/
@@ -28,16 +33,9 @@ RUN yum updateinfo && \
 # Install the `Python.h` file for compiling certain libraries.
 RUN dnf install python3-devel -y
 
-# Install dependencies for python3-saml
-RUN yum install -y \
-      libxml2-devel \
-      xmlsec1 \
-      xmlsec1-openssl
-
-# Install dev dependencies required to build the xmlsec dependency of python3-saml
-# TODO(tomdds): Find proper gpg secured sources for both of these
-RUN yum install -y ftp://ftp.redhat.com/pub/redhat/rhel/rhel-8-beta/appstream/x86_64/Packages/libtool-ltdl-devel-2.4.6-25.el8.x86_64.rpm --nogpgcheck
-RUN yum install -y http://mirror.centos.org/centos/8/PowerTools/x86_64/os/Packages/xmlsec1-devel-1.2.25-4.el8.x86_64.rpm --nogpgcheck
+COPY . .
+RUN pip3 install uwsgi poetry
+RUN poetry install --no-root --no-dev
 
 # Install yarn.
 # https://linuxize.com/post/how-to-install-yarn-on-centos-8/
@@ -46,12 +44,7 @@ RUN curl --silent --location https://dl.yarnpkg.com/rpm/yarn.repo | tee /etc/yum
 RUN rpm --import https://dl.yarnpkg.com/rpm/pubkey.gpg
 RUN dnf install yarn -y
 
-COPY . .
-
 # Install app dependencies
-RUN pip3 install uwsgi poetry
-
-RUN poetry install --no-root --no-dev
 
 RUN yarn install
 
@@ -59,7 +52,6 @@ RUN rm -rf ./static/fonts \
       && cp -rf ./node_modules/uswds/dist/fonts ./static/fonts \
       && yarn build-prod
 
-## NEW IMAGE
 FROM $IMAGE
 
 ### Very low chance of changing
@@ -93,30 +85,8 @@ RUN groupadd --system -g 101 atat
 # https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/6/html/deployment_guide/s2-users-cl-tools
 RUN useradd --system atst -g atat
 
-# TODO(heyzoos): Make this all work as part of the first stage.
-# Get the latest GPG key for enterprise linux 8.
-# https://yum.theforeman.org/
-# RUN wget "https://yum.theforeman.org/releases/2.1/RPM-GPG-KEY-foreman"
-# Import it into the rpm db
-# RUN rpm --import RPM-GPG-KEY-foreman
-
 # Install postgresql client.
-# https://www.postgresql.org/download/linux/redhat/
-# TODO(heyzoos): WE NEED TO CHECK THE GPG KEY ASAP
-# TODO(heyzoos): Copy the out of these from the first stage to the final image.
-RUN dnf install -y https://download.postgresql.org/pub/repos/yum/reporpms/EL-8-x86_64/pgdg-redhat-repo-latest.noarch.rpm --nogpgcheck
-RUN dnf install postgresql10 -y
-
-# Install dependencies for python3-saml
-RUN yum install -y \
-      libxml2-devel \
-      xmlsec1 \
-      xmlsec1-openssl
-
-# Install dev dependencies required to build the xmlsec dependency of python3-saml
-# TODO(tomdds): Find proper gpg secured sources for both of these
-RUN yum install -y ftp://ftp.redhat.com/pub/redhat/rhel/rhel-8-beta/appstream/x86_64/Packages/libtool-ltdl-devel-2.4.6-25.el8.x86_64.rpm --nogpgcheck
-RUN yum install -y http://mirror.centos.org/centos/8/PowerTools/x86_64/os/Packages/xmlsec1-devel-1.2.25-4.el8.x86_64.rpm --nogpgcheck
+RUN dnf install postgresql-10.6-1.module+el8+2469+5ecd5aae -y
 
 # Install dumb-init.
 # dumb-init is a simple process supervisor and init system designed to run as PID 1 inside minimal container environments.
@@ -129,8 +99,6 @@ RUN dnf install python3-devel -y
 # Logfile plugin is embedded by default.
 # https://uwsgi-docs.readthedocs.io/en/latest/Logging.html#logging-to-files
 RUN pip3 install uwsgi pendulum
-
-COPY . .
 
 COPY --from=builder /install/.venv/ ./.venv/
 COPY --from=builder /install/alembic/ ./alembic/

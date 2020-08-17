@@ -1,3 +1,5 @@
+# syntax=docker/dockerfile:experimental
+
 # Image source is provided using `--build-arg IMAGE=<some-image>`.
 # https://docs.docker.com/engine/reference/commandline/build/#options
 ARG IMAGE
@@ -29,13 +31,32 @@ RUN yum install -y gcc libffi-devel make wget zlib-devel
 # Causes python to be built with SSL capabilitiy, allowing pip to function.
 RUN yum install -y openssl-devel
 
-# Need EPEL to install SQLLite
-# https://fedoraproject.org/wiki/EPEL
-# TODO(heyzoos): Do the GPG check.
-RUN yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm --nogpgcheck
+# Register this machine with a RedHat subscription.
+# Enables us to add the CodeReady repository.
+RUN subscription-manager remove --all
+RUN subscription-manager clean
+# Uses BuildKit preferred method of supplying secrets. These secrets will not
+# be saved in the docker image.
+#
+# https://docs.docker.com/develop/develop-images/build_enhancements/#new-docker-build-secret-information
+RUN --mount=type=secret,id=redhat_username \
+    --mount=type=secret,id=redhat_password \
+    subscription-manager register \
+    --username $(cat /run/secrets/redhat_username) \
+    --password $(cat /run/secrets/redhat_password)
+RUN subscription-manager refresh
+RUN subscription-manager attach --auto
 
-# Allows python to use SQLLite modules.
-RUN yum install -y sqlite sqlite-devel libsqlite3x.x86_64
+# Enable the CodeReady repository.
+# Allows us to install the xmlsec1-devel package.
+# https://access.redhat.com/articles/4348511#enable
+RUN subscription-manager repos --enable codeready-builder-for-rhel-8-x86_64-rpms
+
+# Install dependencies of python3-saml.
+RUN yum install -y libxml2-devel xmlsec1 xmlsec1-openssl libtool-ltdl-devel xmlsec1-devel
+
+# Enable python3 to be built with sqlite extensions.
+RUN yum install -y sqlite sqlite-devel 
 
 # Install python!
 # https://github.com/python/cpython#build-instructions

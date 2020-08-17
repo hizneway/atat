@@ -482,3 +482,35 @@ fi
 ```
 
 Also note that if the line number of a previously whitelisted secret changes, the whitelist file, `.secrets.baseline`, will be updated and needs to be committed.
+
+## How to build the RHEL Python base image
+
+First create two files, containing a RedHat username and password respectively.
+
+- redhat_username.secret
+- redhat_password.secret
+
+Then run the build script.
+
+```
+env CONTAINER_REGISTRY=cloudzerodryrunregistry.azurecr.io ./script/build-docker-image-python-base.sh
+```
+
+Then publish the image. Start by tagging it with the appropriate registry. In
+this example we use the dry run registry.
+
+```
+docker tag atst:rhel-py cloudzerodryrunregistry.azurecr.io/rhel-py
+```
+
+Make sure you're logged into said registry.
+
+```
+az acr login -n cloudzerodryrunregistry
+```
+
+Then push!
+
+```
+docker push cloudzerodryrunregistry.azurecr.io/rhel-py
+```
