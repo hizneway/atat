@@ -10,19 +10,19 @@ const TOFormWrapper = makeTestWrapper({
   templatePath: 'to_form.html',
 })
 
-describe('TOForm Test', () => {
-  it('should allow users to add new CLINs', () => {
+describe('TOForm Test', async () => {
+  it('should allow users to add new CLINs', async () => {
     const wrapper = mount(TOFormWrapper, {
       propsData: {
         initialData: {},
       },
     })
     expect(wrapper.findAll(clinFields).length).toBe(1)
-    wrapper.find('#add-clin').trigger('click')
+    await wrapper.find('#add-clin').trigger('click')
     expect(wrapper.findAll(clinFields).length).toBe(2)
   })
 
-  it('should not enable the save button until the form is complete and valid', () => {
+  it('should not enable the save button until the form is complete and valid', async () => {
     const wrapper = mount(TOFormWrapper, {
       propsData: {
         initialData: {},
@@ -52,8 +52,8 @@ describe('TOForm Test', () => {
     expectSubmitIsDisabled()
     // need to trigger the change function on the hidden date inputs so that
     // the corresponding event fires to notify the parent form that it is valid
-    wrapper.find('input[name="clins-0-start_date"]').trigger('change')
-    wrapper.find('input[name="clins-0-end_date"]').trigger('change')
+    await wrapper.find('input[name="clins-0-start_date"]').trigger('change')
+    await wrapper.find('input[name="clins-0-end_date"]').trigger('change')
 
     // check save button is enabled
     expect(submit.attributes('disabled')).toBeUndefined()
