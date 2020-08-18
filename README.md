@@ -396,6 +396,16 @@ regularly and archive them with the AT-AT codebase in the `uitests` directory.
 For further information about Ghost Inspector and its use in AT-AT, check out [its README](./uitests/README.md)
 in the `uitests` directory.
 
+## SonarQube
+
+To run SonarScanner
+
+```
+script/sonarqube <SonarQube user> <SonarQube password>
+```
+
+Both user and password are in 1Password.  It is possible that the hostname for SonarQube will change from time to time.  In this case the value for the key `sonar.host.url` will have to be updated in the The `sonar-qube.properties` file.  
+
 ## Notes
 
 Jinja templates are like mustache templates -- add the

@@ -95,3 +95,6 @@ js/test_templates
 .scannerwork
 
 *.secret
+
+# python coverage report
+coverage.xml
