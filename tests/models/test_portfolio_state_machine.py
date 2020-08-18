@@ -20,7 +20,6 @@ from atat.models.mixins.state_machines import (
 )
 from atat.models.portfolio_state_machine import (
     PortfolioStateMachine,
-    _stage_to_classname,
     get_stage_csp_class,
 )
 
@@ -72,14 +71,6 @@ class TestTriggerNextTransition:
             csp_data=state_machine.portfolio.to_dictionary()
         )
         assert state_machine.current_state == PortfolioStates.TENANT_CREATED
-
-
-@pytest.mark.state_machine
-def test_stage_to_classname():
-    assert (
-        _stage_to_classname(AzureStages.BILLING_PROFILE_CREATION.name)
-        == "BillingProfileCreation"
-    )
 
 
 @pytest.mark.state_machine

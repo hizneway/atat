@@ -20,10 +20,7 @@ from atat.models.mixins.state_machines import (
     StateMachineMisconfiguredError,
 )
 from atat.models.types import Id
-
-
-def _stage_to_classname(stage):
-    return "".join(map(lambda word: word.capitalize(), stage.split("_")))
+from atat.domain.csp.cloud.models import stage_to_classname
 
 
 def get_stage_csp_class(stage, class_type):
@@ -32,7 +29,7 @@ def get_stage_csp_class(stage, class_type):
     class_type is either 'payload' or 'result'
 
     """
-    cls_name = f"{_stage_to_classname(stage)}CSP{class_type.capitalize()}"
+    cls_name = f"{stage_to_classname(stage)}CSP{class_type.capitalize()}"
     try:
         return getattr(
             importlib.import_module("atat.domain.csp.cloud.models"), cls_name

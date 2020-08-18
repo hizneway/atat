@@ -1,5 +1,6 @@
 import json
 import time
+from enum import Enum
 from contextlib import contextmanager
 from functools import wraps
 from secrets import token_hex, token_urlsafe
@@ -21,6 +22,7 @@ from .exceptions import (
     UserProvisioningException,
 )
 from .models import (
+    class_to_stage,
     AdminRoleDefinitionCSPPayload,
     AdminRoleDefinitionCSPResult,
     ApplicationCSPPayload,
@@ -163,6 +165,15 @@ class AzureSDKProvider(object):
 
         self.cloud = AZURE_PUBLIC_CLOUD
         self.requests = requests
+
+
+class AsyncOperationStatus(Enum):
+    """https://docs.microsoft.com/en-us/azure/azure-resource-manager/management/async-operations"""
+
+    SUCCEEDED = "Succeeded"
+    FAILED = "Failed"
+    CANCELED = "Canceled"
+    IN_PROGRESS = "InProgress"
 
 
 class AzureCloudProvider(CloudProviderInterface):
@@ -741,6 +752,42 @@ class AzureCloudProvider(CloudProviderInterface):
             return TaskOrderBillingCreationCSPResult(**result.headers)
         elif result.status_code == 200:
             return TaskOrderBillingVerificationCSPResult(**result.json())
+
+    def _handle_async_operation_response(
+        self, response, creation_response_model, verification_response_model
+    ):
+        """Handle the response of an Async operation
+        https://docs.microsoft.com/en-us/azure/azure-resource-manager/management/async-operations
+
+        Args:
+            response (requests.Response): a requests response object
+            creation_response_model (pydantic.BaseModel): the model to create and
+                return if the operation is still in progress
+            verification_response_model (pydantic.BaseModel): the model to 
+                create and return if the operation succeeds
+
+        Raises:
+            ResourceProvisioningError: The operation didn't complete successfully
+
+        Returns:
+            pydantic.BaseModel: the creation_response_mode or verification_response_model
+        """
+        response_json = response.json()
+        if response.status_code == 202:
+            return creation_response_model(**response.headers, reset_stage=True)
+        elif response.status_code == 200:
+            status = response_json["status"]
+            if status == AsyncOperationStatus.SUCCEEDED.value:
+                return verification_response_model(**response_json)
+            elif status in (
+                AsyncOperationStatus.FAILED.value,
+                AsyncOperationStatus.CANCELED.value,
+            ):
+                provisioning_stage = class_to_stage(verification_response_model)
+                error_message = f"{response_json['error']['message']}\nError code: {response_json['error']['code']}"
+                raise ResourceProvisioningError(provisioning_stage, f"{error_message}")
+            else:
+                return creation_response_model(**response.headers, reset_stage=True)
 
     @log_and_raise_exceptions
     def create_task_order_billing_verification(
