@@ -430,11 +430,14 @@ class AzureCloudProvider(CloudProviderInterface):
             response.raise_for_status()
             response_json = response.json()
             status = response_json["status"]
-            if status == "Succeeded":
+            if status == AsyncOperationStatus.SUCCEEDED.value:
                 resp = session.get(result_url)
                 resp.raise_for_status()
                 return resp.json()
-            elif status in ("Failed", "Canceled"):
+            elif status in (
+                AsyncOperationStatus.FAILED.value,
+                AsyncOperationStatus.CANCELED.value,
+            ):
                 error_message = f"{response_json['error']['message']}\nError code: {response_json['error']['code']}"
                 raise ResourceProvisioningError("management group", f"{error_message}")
             else:
