@@ -271,7 +271,9 @@ def existing_crl_modification_time(crl):
     if os.path.exists(crl):
         prev_time = os.path.getmtime(crl)
         buffered = prev_time + MODIFIED_TIME_BUFFER
-        mod_time = prev_time if pendulum.now().timestamp() < buffered else buffered
+        mod_time = (
+            prev_time if pendulum.now(tz="UTC").timestamp() < buffered else buffered
+        )
         dt = pendulum.from_timestamp(mod_time, tz="UTC")
         return dt.format("ddd, DD MMM YYYY HH:mm:ss zz")
 

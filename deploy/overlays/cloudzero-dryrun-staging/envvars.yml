@@ -4,7 +4,7 @@ kind: ConfigMap
 metadata:
   name: atst-worker-envvars
 data:
-  AZURE_ACCOUNT_NAME: dryruntasks
+  AZURE_STORAGE_ACCOUNT_NAME: dryruntasks
   AZURE_POWERSHELL_CLIENT_ID: 1950a258-227b-4e31-a9cf-717495945fc2
   AZURE_TENANT_ADMIN_USERNAME: hybrid.admin@atathybrid.onmicrosoft.com
   AZURE_VAULT_URL: "https://tenants-dryrun-keyvault.vault.azure.net/"
@@ -24,7 +24,7 @@ metadata:
   name: atst-envvars
 data:
   ASSETS_URL: ""
-  AZURE_ACCOUNT_NAME: dryruntasks
+  AZURE_STORAGE_ACCOUNT_NAME: dryruntasks
   AZURE_POWERSHELL_CLIENT_ID: 1950a258-227b-4e31-a9cf-717495945fc2
   AZURE_TENANT_ADMIN_USERNAME: hybrid.admin@atathybrid.onmicrosoft.com
   AZURE_VAULT_URL: "https://tenants-dryrun-keyvault.vault.azure.net/"
@@ -41,3 +41,9 @@ data:
   REDIS_HOST: cloudzero-dryrun-redis.redis.cache.windows.net:6380
   SESSION_COOKIE_DOMAIN: atat.dev
   STATIC_URL: "https://staging.atat.dev/static/"
+  SAML_ENTITY_ID: https://staging.atat.dev/login-dev?saml
+  SAML_ACS: https://staging.atat.dev/login-dev?acs
+  SAML_SLS: https://staging.atat.dev/login-dev?sls
+  SAML_IDP_ENTITY_ID: https://sts.windows.net/b5ab0e1e-09f8-4258-afb7-fb17654bc5b3/
+  SAML_IDP_SSOS: https://login.microsoftonline.com/b5ab0e1e-09f8-4258-afb7-fb17654bc5b3/saml2
+  SAML_IDP_SLS: https://login.microsoftonline.com/common/wsfederation?wa=wsignout1.0

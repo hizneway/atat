@@ -46,7 +46,7 @@ def _random_date(year_min, year_max, operation):
         inc = random.randrange(year_min, year_max)
 
     return pendulum.date(
-        operation(pendulum.today().year, inc),
+        operation(pendulum.today(tz="UTC").year, inc),
         random.randrange(1, 12),
         random.randrange(1, 28),
     )
@@ -103,7 +103,7 @@ class UserFactory(Base):
     citizenship = "United States"
     designation = "military"
     date_latest_training = factory.LazyFunction(
-        lambda: pendulum.today().subtract(days=(random.randrange(1, 365)))
+        lambda: pendulum.today(tz="UTC").subtract(days=(random.randrange(1, 365)))
     )
 
     @classmethod
@@ -344,7 +344,7 @@ class CLINFactory(Base):
 
     task_order = factory.SubFactory(TaskOrderFactory)
     number = factory.Sequence(left_pad_sequence(4))
-    start_date = pendulum.today()
+    start_date = pendulum.today(tz="UTC")
     end_date = factory.LazyFunction(random_future_date)
     total_amount = factory.LazyFunction(lambda *args: random.randint(50000, 999999))
     obligated_amount = factory.LazyFunction(lambda *args: random.randint(100, 50000))

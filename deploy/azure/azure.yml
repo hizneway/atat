@@ -4,7 +4,7 @@ kind: Namespace
 metadata:
   name: atat
 ---
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
@@ -168,7 +168,7 @@ spec:
               keyvaultobjecttypes: "secret;secret;secret;secret;key"
               tenantid: $TENANT_ID
 ---
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
@@ -241,7 +241,7 @@ spec:
               keyvaultobjecttypes: "secret;secret;secret;secret;key"
               tenantid: $TENANT_ID
 ---
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
@@ -323,7 +323,6 @@ metadata:
   name: atst-main
   namespace: atat
 spec:
-  loadBalancerIP: 13.92.235.6
   externalTrafficPolicy: Local
   ports:
     - port: 80
@@ -344,7 +343,6 @@ metadata:
   name: atst-auth
   namespace: atat
 spec:
-  loadBalancerIP: 23.100.24.41
   externalTrafficPolicy: Local
   ports:
     - port: 80

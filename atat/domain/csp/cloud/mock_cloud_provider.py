@@ -46,8 +46,6 @@ from .models import (
     ProductPurchaseVerificationCSPResult,
     SubscriptionCreationCSPPayload,
     SubscriptionCreationCSPResult,
-    SubscriptionVerificationCSPPayload,
-    SuscriptionVerificationCSPResult,
     TaskOrderBillingCreationCSPPayload,
     TaskOrderBillingCreationCSPResult,
     TaskOrderBillingVerificationCSPPayload,
@@ -109,26 +107,12 @@ class MockCloudProvider(CloudProviderInterface):
         return default
 
     def create_subscription(self, payload: SubscriptionCreationCSPPayload):
-        return self.create_subscription_creation(payload)
-
-    def create_subscription_creation(self, payload: SubscriptionCreationCSPPayload):
         self._maybe_raise(self.NETWORK_FAILURE_PCT, self.NETWORK_EXCEPTION)
         self._maybe_raise(self.SERVER_FAILURE_PCT, self.SERVER_EXCEPTION)
         self._maybe_raise(self.UNAUTHORIZED_RATE, self.AUTHORIZATION_EXCEPTION)
 
         return SubscriptionCreationCSPResult(
             subscription_verify_url="https://zombo.com", subscription_retry_after=10
-        )
-
-    def create_subscription_verification(
-        self, payload: SubscriptionVerificationCSPPayload
-    ):
-        self._maybe_raise(self.NETWORK_FAILURE_PCT, self.NETWORK_EXCEPTION)
-        self._maybe_raise(self.SERVER_FAILURE_PCT, self.SERVER_EXCEPTION)
-        self._maybe_raise(self.UNAUTHORIZED_RATE, self.AUTHORIZATION_EXCEPTION)
-
-        return SuscriptionVerificationCSPResult(
-            subscription_id="subscriptions/60fbbb72-0516-4253-ab18-c92432ba3230"
         )
 
     def create_tenant(self, payload: TenantCSPPayload):
@@ -514,7 +498,7 @@ class MockCloudProvider(CloudProviderInterface):
         self._maybe_raise(self.UNAUTHORIZED_RATE, self.AUTHORIZATION_EXCEPTION)
         object_id = str(uuid4())
 
-        start_of_month = pendulum.today(tz="utc").start_of("month").replace(tzinfo=None)
+        start_of_month = pendulum.today(tz="UTC").start_of("month").replace(tzinfo=None)
         this_month = start_of_month.to_atom_string()
         last_month = start_of_month.subtract(months=1).to_atom_string()
         two_months_ago = start_of_month.subtract(months=2).to_atom_string()

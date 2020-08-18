@@ -9,11 +9,5 @@ provider "azuread" {
   version = "=0.7.0"
 }
 
-terraform {
-  backend "azurerm" {
-    resource_group_name  = "cloudzero-pwdev-cloudzerodevtfstate"
-    storage_account_name = "cloudzerodevtfstate"
-    container_name       = "tfstate"
-    key                  = "pwdev.terraform.tfstate"
-  }
-}
+# (Just for reference) this terraform config requires a partial config https://www.terraform.io/docs/backends/config.html
+terraform {}

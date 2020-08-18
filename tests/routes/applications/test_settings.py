@@ -12,6 +12,7 @@ from werkzeug.datastructures import ImmutableMultiDict
 from atat.database import db
 from atat.domain.application_roles import ApplicationRoles
 from atat.domain.applications import Applications
+from atat.domain.environments import Environments
 from atat.domain.common import Paginator
 from atat.domain.csp.cloud.azure_cloud_provider import AzureCloudProvider
 from atat.domain.csp.cloud.exceptions import GeneralCSPException
@@ -29,7 +30,6 @@ from atat.models.application_role import Status as ApplicationRoleStatus
 from atat.models.environment_role import CSPRole, EnvironmentRole
 from atat.models.permissions import Permissions
 from atat.routes.applications.settings import (
-    build_subscription_payload,
     filter_env_roles_data,
     filter_env_roles_form_data,
     get_environments_obj_for_app,
@@ -617,7 +617,7 @@ def test_filter_environment_roles():
         user = UserFactory.create()
         # need to set the time created to yesterday, otherwise the original invite and resent
         # invite have the same time_created and then we can't rely on time to order the invites
-        yesterday = pendulum.today().subtract(days=1)
+        yesterday = pendulum.today(tz="UTC").subtract(days=1)
         invite = ApplicationInvitationFactory.create(
             user=user, time_created=yesterday, email="original@example.com"
         )
@@ -786,53 +786,8 @@ def test_handle_update_member_with_error(set_g, monkeypatch, mock_logger):
     assert mock_logger.messages[-1] == exception
 
 
-def test_create_subscription_success(
-    client, user_session, mock_azure: AzureCloudProvider
-):
+def test_create_subscription(client, user_session):
     environment = EnvironmentFactory.create()
-    user_session(environment.portfolio.owner)
-    environment.cloud_id = "management/group/id"
-    environment.portfolio.csp_data = {
-        "billing_account_name": "xxxx-xxxx-xxx-xxx",
-        "billing_profile_name": "xxxxxxxxxxx:xxxxxxxxxxxxx_xxxxxx",
-        "tenant_id": "xxxxxxxxxxx-xxxxxxxxxx-xxxxxxx-xxxxx",
-        "billing_profile_properties": {
-            "invoice_sections": [{"invoice_section_name": "xxxx-xxxx-xxx-xxx"}]
-        },
-    }
-
-    with patch.object(
-        AzureCloudProvider, "create_subscription", wraps=mock_azure.create_subscription,
-    ) as create_subscription:
-        create_subscription.return_value = SubscriptionCreationCSPResult(
-            subscription_verify_url="https://zombo.com", subscription_retry_after=10
-        )
-
-        response = client.post(
-            url_for("applications.create_subscription", environment_id=environment.id),
-        )
-
-        assert response.status_code == 302
-        assert response.location == url_for(
-            "applications.settings",
-            application_id=environment.application.id,
-            _external=True,
-            fragment="application-environments",
-            _anchor="application-environments",
-        )
-
-
-def test_create_subscription_failure(client, user_session, monkeypatch):
-    environment = EnvironmentFactory.create()
-
-    def _raise_csp_exception(*args, **kwargs):
-        raise GeneralCSPException("An error occurred.")
-
-    monkeypatch.setattr(
-        "atat.domain.csp.cloud.MockCloudProvider.create_subscription",
-        _raise_csp_exception,
-    )
-
     user_session(environment.portfolio.owner)
     environment.cloud_id = "management/group/id"
     environment.portfolio.csp_data = {
@@ -848,67 +803,11 @@ def test_create_subscription_failure(client, user_session, monkeypatch):
         url_for("applications.create_subscription", environment_id=environment.id),
     )
 
-    assert response.status_code == 400
-
-
-class TestBuildSubscriptionPayload:
-    def test_unique_display_name(self):
-        # Create 2 Applications with the same name that both have an environment named 'Environment'
-        app_1 = ApplicationFactory.create(
-            name="Application", environments=[{"name": "Environment", "cloud_id": 123}]
-        )
-        env_1 = app_1.environments[0]
-        app_2 = ApplicationFactory.create(
-            name="Application", environments=[{"name": "Environment", "cloud_id": 456}]
-        )
-        env_2 = app_2.environments[0]
-        env_1.portfolio.csp_data = {
-            "billing_account_name": "xxxx-xxxx-xxx-xxx",
-            "billing_profile_name": "xxxxxxxxxxx:xxxxxxxxxxxxx_xxxxxx",
-            "tenant_id": "xxxxxxxxxxx-xxxxxxxxxx-xxxxxxx-xxxxx",
-            "billing_profile_properties": {
-                "invoice_sections": [{"invoice_section_name": "xxxx-xxxx-xxx-xxx"}]
-            },
-        }
-        env_2.portfolio.csp_data = {
-            "billing_account_name": "xxxx-xxxx-xxx-xxx",
-            "billing_profile_name": "xxxxxxxxxxx:xxxxxxxxxxxxx_xxxxxx",
-            "tenant_id": "xxxxxxxxxxx-xxxxxxxxxx-xxxxxxx-xxxxx",
-            "billing_profile_properties": {
-                "invoice_sections": [{"invoice_section_name": "xxxx-xxxx-xxx-xxx"}]
-            },
-        }
-
-        # Create subscription payload for each environment
-        payload_1 = build_subscription_payload(env_1)
-        payload_2 = build_subscription_payload(env_2)
-
-        assert payload_1.display_name != payload_2.display_name
-
-    def test_populates_payload_correctly(self, app):
-        application = ApplicationFactory.create(
-            name="Application", environments=[{"name": "Environment", "cloud_id": 123}]
-        )
-        environment = application.environments[0]
-        account_name = app.config["AZURE_BILLING_ACCOUNT_NAME"]
-        profile_name = "fake-profile-name"
-        tenant_id = "123"
-        section_name = "fake-section-name"
-
-        environment.portfolio.csp_data = {
-            "billing_profile_name": profile_name,
-            "tenant_id": tenant_id,
-            "billing_profile_properties": {
-                "invoice_sections": [{"invoice_section_name": section_name}]
-            },
-        }
-        payload = build_subscription_payload(environment)
-        assert type(payload) == SubscriptionCreationCSPPayload
-        # Check all key/value pairs except for display_name because of the appended random string
-        assert {
-            "tenant_id": tenant_id,
-            "parent_group_id": environment.cloud_id,
-            "billing_account_name": account_name,
-            "billing_profile_name": profile_name,
-            "invoice_section_name": section_name,
-        }.items() <= payload.dict().items()
+    assert response.status_code == 302
+    assert response.location == url_for(
+        "applications.settings",
+        application_id=environment.application.id,
+        _external=True,
+        fragment="application-environments",
+        _anchor="application-environments",
+    )

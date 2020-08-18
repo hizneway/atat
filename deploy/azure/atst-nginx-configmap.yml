@@ -9,7 +9,7 @@ data:
     server {
         access_log /var/log/nginx/access.log json;
 
-        listen ${PORT_PREFIX}342;
+        listen 8342;
         server_name ${MAIN_DOMAIN};
         root /usr/share/nginx/html;
         location /.well-known/acme-challenge/ {
@@ -22,7 +22,7 @@ data:
     server {
         access_log /var/log/nginx/access.log json;
 
-        listen ${PORT_PREFIX}343;
+        listen 8343;
         server_name ${AUTH_DOMAIN};
         root /usr/share/nginx/html;
         location /.well-known/acme-challenge/ {
@@ -37,8 +37,8 @@ data:
 
         server_name ${MAIN_DOMAIN};
         # access_log /var/log/nginx/access.log json;
-        listen ${PORT_PREFIX}442 ssl;
-        listen [::]:${PORT_PREFIX}442 ssl ipv6only=on;
+        listen 8442 ssl;
+        listen [::]:8442 ssl ipv6only=on;
         ssl_certificate /etc/ssl/atat.crt;
         ssl_certificate_key /etc/ssl/atat.key;
         # additional SSL/TLS settings
@@ -70,8 +70,8 @@ data:
         access_log /var/log/nginx/access.log json;
 
         server_name ${AUTH_DOMAIN};
-        listen ${PORT_PREFIX}443 ssl;
-        listen [::]:${PORT_PREFIX}443 ssl ipv6only=on;
+        listen 8443 ssl;
+        listen [::]:8443 ssl ipv6only=on;
         ssl_certificate /etc/ssl/atat.crt;
         ssl_certificate_key /etc/ssl/atat.key;
         # Request and validate client certificate

@@ -151,7 +151,7 @@ def test_multistep_certificate_chain():
 
 def test_no_op_crl_cache_logs_common_name():
     logger = FakeLogger()
-    cert = open("ssl/client-certs/atat.mil.crt", "rb").read()
+    cert = open("tests/fixtures/artgarfunkel.crt", "rb").read()
     cache = NoOpCRLCache(logger=logger)
     assert cache.crl_check(cert)
     assert "ART.GARFUNKEL.1234567890" in logger.messages[-1]

@@ -10,7 +10,6 @@ The production configuration (master.atat.dev, currently) is reflected in the co
 
 - CONTAINER_IMAGE: The ATAT container image to use.
 - NGINX_CONTAINER_IMAGE: Container image to run the nginx server.
-- PORT_PREFIX: "8" for production, "9" for staging.
 - MAIN_DOMAIN: The host domain for the environment.
 - AUTH_DOMAIN: The host domain for the authentication endpoint for the environment.
 - TENANT_ID: The id of the active directory tenant in which the cluster and it's associated users exist. This is a GUID.

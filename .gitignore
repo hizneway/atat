@@ -46,6 +46,10 @@ crl_locations.json
 # test CA config
 ssl/client-certs/*.srl
 
+# local cert
+ssl/local.crt
+ssl/local.key
+
 # uploads
 /uploads
 
@@ -83,3 +87,11 @@ js/test_templates
 
 # vscode config files
 .vscode/
+
+# mac indexing
+**/*.DS_Store
+
+# sonar cube files
+.scannerwork
+
+*.secret

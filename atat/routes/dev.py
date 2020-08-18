@@ -7,6 +7,7 @@ from flask import (
     render_template,
     url_for,
     current_app as app,
+    session,
 )
 import pendulum
 
@@ -17,6 +18,7 @@ from atat.domain.permission_sets import PermissionSets
 from atat.forms.data import SERVICE_BRANCHES
 from atat.jobs import send_mail
 from atat.utils import pick
+from atat.routes.saml_helpers import saml_get, saml_post, init_saml_auth
 
 
 bp = Blueprint("dev", __name__)
@@ -118,35 +120,55 @@ class IncompleteInfoError(Exception):
         return "You must provide each of: first_name, last_name and dod_id"
 
 
-@bp.route("/login-dev")
+@bp.route("/login-dev", methods=["GET", "POST"])
 def login_dev():
-    dod_id = request.args.get("dod_id", None)
+    query_string_parameters = session.get("query_string_parameters", {})
+    user = None
 
-    if dod_id is not None:
-        user = Users.get_by_dod_id(dod_id)
-    else:
-        role = request.args.get("username", "amanda")
-        user_data = _DEV_USERS[role]
-        user = Users.get_or_create_by_dod_id(
-            user_data["dod_id"],
-            **pick(
-                [
-                    "permission_sets",
-                    "first_name",
-                    "last_name",
-                    "email",
-                    "service_branch",
-                    "phone_number",
-                    "citizenship",
-                    "designation",
-                    "date_latest_training",
-                ],
-                user_data,
-            ),
+    if (
+        "saml" in request.args or app.config.get("SAML_LOGIN_DEV", False)
+    ) and request.method == "GET":
+        saml_auth = init_saml_auth(request)
+        return redirect(saml_get(saml_auth, request))
+
+    if "acs" in request.args and request.method == "POST":
+        saml_auth = init_saml_auth(request)
+        user = saml_post(saml_auth)
+
+    if not user:
+        dod_id = query_string_parameters.get("dod_id_param", None) or request.args.get(
+            "dod_id", None
         )
+        if dod_id is not None:
+            user = Users.get_by_dod_id(dod_id)
+        else:
+            role = query_string_parameters.get(
+                "username_param", None
+            ) or request.args.get("username", "amanda")
+            user_data = _DEV_USERS[role]
+            user = Users.get_or_create_by_dod_id(
+                user_data["dod_id"],
+                **pick(
+                    [
+                        "permission_sets",
+                        "first_name",
+                        "last_name",
+                        "email",
+                        "service_branch",
+                        "phone_number",
+                        "citizenship",
+                        "designation",
+                        "date_latest_training",
+                    ],
+                    user_data,
+                ),
+            )
 
+    next_param = query_string_parameters.get("next_param", None)
+    if "query_string_parameters" in session:
+        del session["query_string_parameters"]
     current_user_setup(user)
-    return redirect(redirect_after_login_url())
+    return redirect(redirect_after_login_url(next_param))
 
 
 @bp.route("/dev-new-user")

@@ -117,8 +117,8 @@ class TestTaskOrderStatus:
     def test_upcoming_status(self, is_signed, is_completed, start_date, end_date):
         # Given that I have a signed TO and today is before its start_date
         to = TaskOrderFactory.create()
-        start_date.return_value = pendulum.today().add(days=1).date()
-        end_date.return_value = pendulum.today().add(days=2).date()
+        start_date.return_value = pendulum.today(tz="UTC").add(days=1).date()
+        end_date.return_value = pendulum.today(tz="UTC").add(days=2).date()
         is_signed.return_value = True
         is_completed.return_value = True
 
@@ -132,8 +132,8 @@ class TestTaskOrderStatus:
     def test_expired_status(self, is_signed, is_completed, end_date, start_date):
         # Given that I have a signed TO and today is after its expiration date
         to = TaskOrderFactory.create()
-        end_date.return_value = pendulum.today().subtract(days=1).date()
-        start_date.return_value = pendulum.today().subtract(days=2).date()
+        end_date.return_value = pendulum.today(tz="UTC").subtract(days=1).date()
+        start_date.return_value = pendulum.today(tz="UTC").subtract(days=2).date()
         is_signed.return_value = True
         is_completed.return_value = True
 
@@ -144,7 +144,7 @@ class TestTaskOrderStatus:
     @patch("atat.models.TaskOrder.is_signed", new_callable=PropertyMock)
     def test_unsigned_status(self, is_signed, is_completed):
         # Given that I have a TO that is completed but not signed
-        to = TaskOrder(signed_at=pendulum.now().subtract(days=1))
+        to = TaskOrder(signed_at=pendulum.now(tz="UTC").subtract(days=1))
         is_completed.return_value = True
         is_signed.return_value = False
 

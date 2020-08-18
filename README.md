@@ -63,6 +63,12 @@ locally:
   echo 'export PATH="/usr/local/opt/node@10/bin:$PATH"' >> ~/.zshrc
   ```
 
+* `xmlsec1`
+  This is a downstream requirement of [python3-saml](https://github.com/onelogin/python3-saml). For macOS, use brew to install:
+  ```
+  brew install libxmlsec1
+  ```
+
 ### Cloning
 This project contains git submodules. Here is an example clone command that will
 automatically initialize and update those modules:
@@ -126,6 +132,16 @@ To start the app locally in the foreground and watch for changes:
 After running `script/server`, the application is available at
 [`http://localhost:8000`](http://localhost:8000).
 
+In some cases, you may be required to run the localhost server via https. In order to do this, you can run:
+
+    script/secure_server
+
+The application will then be available  at
+[`https://localhost:8000`](https://localhost:8000). You will likely be presented with a warning about a non-secure connection at this point, most browsers have the option of bypassing this warning by checking the `advanced` or `more info` links on the error page.
+
+If starting the secure server fails, you may need to generate the local certificates first:
+
+    script/create_local_certs
 
 ### Users
 
@@ -154,6 +170,12 @@ When in development mode, you can create new users by passing first name, last n
 And it will create the new user, sign in as them, and load their profile page to fill out the rest of the details.
 
 Once this user is created, you can log in as them again the future using the DoD ID dev login endpoint documented above.
+
+**Federated Authentication with Azure**
+
+Note that when `FLASK_ENV` is set to `master`, that the `/login-dev` routes will all require you to have a valid account in the Azure tenant and authenticate against it.
+Alternatively, you can include `saml` in your query string to force federate authentication, which may be useful when debugging.
+Example: `/login-dev?saml`
 
 ### Seeding the database
 
@@ -188,7 +210,7 @@ In the flask config (`config/base.ini`, perhaps):
 CSP=< azure | mock>
 
 AZURE_STORAGE_KEY=""
-AZURE_ACCOUNT_NAME=""
+AZURE_STORAGE_ACCOUNT_NAME=""
 AZURE_TO_BUCKET_NAME=""
 ```
 
@@ -196,7 +218,7 @@ There are also some build-time configuration that are used by parcel. Add these 
 
 ```
 CLOUD_PROVIDER=<azure | mock>
-AZURE_ACCOUNT_NAME=""
+AZURE_STORAGE_ACCOUNT_NAME=""
 AZURE_CONTAINER_NAME=""
 ```
 
@@ -246,8 +268,8 @@ All config settings must be declared in "config/base.ini", even if they are null
 2. If FLASK_ENV is set as an environment variable and there is an INI file with a matching name, that INI file is read in and applied. For instance, if FLASK_ENV is set to "prod" and a "prod.ini" file exists, those values will be applied and will override any values set by the base.ini.
 3. MSFT supports an [OSS Kubernetes plugin](https://github.com/Azure/kubernetes-keyvault-flexvol) for mounting objects from Azure Key Vault into containers. We use this feature to store application secrets in a Key Vault instance and set them in the container at runtime (see "deploy/README.md" for more details). This is done by mounting the secrets into a known directory and specifying it with an environment variable, OVERRIDE_CONFIG_DIRECTORY. If OVERRIDE_CONFIG_DIRECTORY is set, ATAT will do the following:
   1. Find the specified directory. For example, "/config"
-  1. Search for files in that directory with names matching known settings. For example, a file called "AZURE_ACCOUNT_NAME".
-  1. Read in the contents of those files and set the content as the value for that setting. These will override any values previously set. For example, if the file "AZURE_ACCOUNT_NAME" has the content "my-azure-account-name", that content will be set as the value for the AZURE_ACCOUNT_NAME setting.
+  1. Search for files in that directory with names matching known settings. For example, a file called "AZURE_STORAGE_ACCOUNT_NAME".
+  1. Read in the contents of those files and set the content as the value for that setting. These will override any values previously set. For example, if the file "AZURE_STORAGE_ACCOUNT_NAME" has the content "my-azure-account-name", that content will be set as the value for the AZURE_STORAGE_ACCOUNT_NAME setting.
 4. Finally, ATAT will check for the presence of environment variables matching all known config values. If a matching environment variable exists, its value will override whatever value was previously set.
 
 ### Config Guide
@@ -255,7 +277,9 @@ All config settings must be declared in "config/base.ini", even if they are null
 #### General Config
 
 - `ASSETS_URL`: URL to host which serves static assets (such as a CDN).
-- `AZURE_ACCOUNT_NAME`: The name for the Azure blob storage account
+- `APP_SSL_CERT_PATH`: Path to the self-signed SSL certificate for running the app in secure mode.
+- `APP_SSL_KEY_PATH`: Path to the self-signed SSL certificate key for running the app in secure mode.
+- `AZURE_STORAGE_ACCOUNT_NAME`: The name for the Azure blob storage account
 - `AZURE_BILLING_ACCOUNT_NAME`: The name for the root Azure billing account
 - `AZURE_CALC_CLIENT_ID`: The client id used to generate a token for the Azure pricing calculator
 - `AZURE_CALC_RESOURCE`: The resource URL used to generate a token for the Azure pricing calculator
@@ -296,6 +320,14 @@ All config settings must be declared in "config/base.ini", even if they are null
 - `PGUSER`: String specifying the username to use when connecting to the postgres database.
 - `PORT`: Integer specifying the port to bind to when running the flask server. Used only for local development.
 - `REDIS_URI`: URI for the redis server.
+- `SAML_ACS`: Fully qualified URI for the URL that the SAML Identity Provider will redirect to after successful authentication
+- `SAML_ENTITY_ID`: Fully qualified URI that ATAT will invoke SAML authentication from
+- `SAML_IDP_CERT`: Public certificate provided by SAML Identity Provider encoded via base64
+- `SAML_IDP_ENTITY_ID`: Identifier endpoint of SAML Identity Provider.
+- `SAML_IDP_SLS`: URL that SAML logout requests will be sent to
+- `SAML_IDP_SSOS`: URL that SAML login requests will be sent to
+- `SAML_SLS`: Fully qualified URI that ATAT will invoke SAML logout from
+- `SAMl_LOGIN_DEV`: Boolean that defines if Azure Fed Auth will be require to log in using the developer login route. Defaults to `False` 
 - `SECRET_KEY`: String key which will be used to sign the session cookie. Should be a long string of random bytes. https://flask.palletsprojects.com/en/1.1.x/config/#SECRET_KEY
 - `SERVER_NAME`: Hostname for ATAT. Only needs to be specified in contexts where the hostname cannot be inferred from the request, such as Celery workers. https://flask.palletsprojects.com/en/1.1.x/config/#SERVER_NAME
 - `SERVICE_DESK_URL`: The URL for the service desk.  This is the site that will be displayed when the Support button is pressed.
@@ -318,8 +350,8 @@ Values where "[Testing only]" is mentioned are only required for running the Hyb
 Configuration variables that are needed solely to run Hybrid tests are in the `[hybrid]` section of the base configuration file.
 - `AZURE_ADMIN_ROLE_ASSIGNMENT_ID`: The fully pathed role assignment ID that associates a user with admin privileges to the root tenant of the Hybrid Cloud
 - `AZURE_BILLING_PROFILE_ID`: ID of the billing profile used for Cost Management queries with the Hybrid interface.
-- `AZURE_HYBRID_CLIENT_ID`: [Testing only] Client ID of an app registration in the hybrid tenant used in all tests except for portfolio provisioning
-- `AZURE_HYBRID_SECRET_KEY`: [Testing only] Secret key for the app registration associated with the `AZURE_HYBRID_CLIENT_ID`
+- `AZURE_SUBSCRIPTION_CREATION_CLIENT_ID`: [Testing only] Client ID of an app registration in the root tenant used for subscription integration tests
+- `AZURE_SUBSCRIPTION_CREATION_SECRET`: [Testing only] Secret key for the app registration associated with the `AZURE_SUBSCRIPTION_CREATION_CLIENT_ID`
 - `AZURE_HYBRID_REPORTING_CLIENT_ID`: Client ID of an app registration with an "Invoice Section Reader" role for the invoice section defined by AZURE_INVOICE_SECTION_ID
 - `AZURE_HYBRID_REPORTING_SECRET`: Secret key for the app registration associated with the `AZURE_HYBRID_REPORTING_CLIENT_ID`
 - `AZURE_HYBRID_TENANT_DOMAIN`: The domain of the hybrid tenant
@@ -334,7 +366,7 @@ Configuration variables that are needed solely to run Hybrid tests are in the `[
 
 CircleCI is our current CI/CD provider. The following variables need to be set in the project settings for CI/CD to run:
 
-- `AZURE_ACCOUNT_NAME`: The name of the Azure Storage Account used for task orders
+- `AZURE_STORAGE_ACCOUNT_NAME`: The name of the Azure Storage Account used for task orders
 - `AZURE_REGISTRY`: The name of the Azure Container Registry for ATAT docker images
 - `AZURE_SERVER_NAME`: The domain name of the same Azure Container Registry as AZURE_REGISTRY (e.g. cloudzeroregistry.azurecr.io)
 - `AZURE_SP`: The human-readable name of a Service Principal with the "Azure Kubernetes Service Cluster User Role" to the AKS cluster and the "AcrPush" role to the Azure Container Registry
@@ -451,3 +483,34 @@ fi
 
 Also note that if the line number of a previously whitelisted secret changes, the whitelist file, `.secrets.baseline`, will be updated and needs to be committed.
 
+## How to build the RHEL Python base image
+
+First create two files, containing a RedHat username and password respectively.
+
+- redhat_username.secret
+- redhat_password.secret
+
+Then run the build script.
+
+```
+env CONTAINER_REGISTRY=cloudzerodryrunregistry.azurecr.io ./script/build-docker-image-python-base.sh
+```
+
+Then publish the image. Start by tagging it with the appropriate registry. In
+this example we use the dry run registry.
+
+```
+docker tag atst:rhel-py cloudzerodryrunregistry.azurecr.io/rhel-py
+```
+
+Make sure you're logged into said registry.
+
+```
+az acr login -n cloudzerodryrunregistry
+```
+
+Then push!
+
+```
+docker push cloudzerodryrunregistry.azurecr.io/rhel-py
+```

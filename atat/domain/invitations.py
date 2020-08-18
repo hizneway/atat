@@ -99,7 +99,7 @@ class BaseInvitations(object):
 
     @classmethod
     def current_expiration_time(cls):
-        return pendulum.now(tz="utc").add(minutes=cls.EXPIRATION_LIMIT_MINUTES)
+        return pendulum.now(tz="UTC").add(minutes=cls.EXPIRATION_LIMIT_MINUTES)
 
     @classmethod
     def _update_status(cls, invite, new_status):

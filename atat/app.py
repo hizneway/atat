@@ -56,6 +56,7 @@ def make_app(config):
     app.json_encoder = CustomJSONEncoder
     make_redis(app, config)
     csrf = CSRFProtect()
+    csrf.exempt("atat.routes.dev.login_dev")
 
     app.config.update(config)
     app.config.update({"SESSION_REDIS": app.redis})
@@ -195,6 +196,7 @@ def map_config(config):
             config.get("default", "CONTRACT_END_DATE"), "YYYY-MM-DD"
         ).date(),
         "SESSION_COOKIE_SECURE": config.getboolean("default", "SESSION_COOKIE_SECURE"),
+        "SAML_LOGIN_DEV": config.getboolean("default", "SAML_LOGIN_DEV"),
     }
 
 
@@ -223,7 +225,7 @@ def make_config(direct_config=None):
     Finally, the final ConfigParser object is passed to `map_config()`
     """
 
-    config = ConfigParser(allow_no_value=True)
+    config = ConfigParser(allow_no_value=True, interpolation=None)
     config.optionxform = str
 
     # Read configuration values from base and environment configuration files

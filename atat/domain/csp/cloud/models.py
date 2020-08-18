@@ -59,6 +59,22 @@ class TenantCSPPayload(AliasModel):
     password_recovery_email_address: str
 
 
+class PrincipalTokenPayload(BaseModel):
+    scope: str
+    client_id: str
+
+
+class UserPrincipalTokenPayload(PrincipalTokenPayload):
+    grant_type = "password"
+    username: str
+    password: str
+
+
+class ServicePrincipalTokenPayload(PrincipalTokenPayload):
+    grant_type = "client_credentials"
+    client_secret: str
+
+
 class TenantCSPResult(AliasModel):
     user_id: str
     tenant_id: str
@@ -259,7 +275,24 @@ class BillingInstructionCSPResult(AliasModel):
         }
 
 
+class RoleAssignmentPayload(BaseModel):
+    role_definition_scope: str
+    role_definition_name: str
+    role_assignment_scope: str
+    role_assignment_name = str(uuid4())
+    principal_id: str
+
+    @property
+    def role_definition_id(self):
+        return (
+            self.role_definition_scope
+            + "/providers/Microsoft.Authorization/roleDefinitions/"
+            + self.role_definition_name
+        )
+
+
 class TenantAdminOwnershipCSPPayload(BaseCSPPayload):
+    root_management_group_name: str
     user_object_id: str
 
 
@@ -280,6 +313,8 @@ class TenantAdminCredentialResetCSPResult(AliasModel):
 
 
 class TenantPrincipalOwnershipCSPPayload(BaseCSPPayload):
+    root_management_group_name: str
+    user_object_id: str
     principal_id: str
 
 
@@ -292,6 +327,7 @@ class TenantPrincipalOwnershipCSPResult(AliasModel):
 
 class TenantPrincipalAppCSPPayload(BaseCSPPayload):
     display_name: str
+    tenant_principal_app_display_name = "ATAT Remote Admin"
 
 
 class TenantPrincipalAppCSPResult(AliasModel):
@@ -417,6 +453,8 @@ class InitialMgmtGroupCSPResult(AliasModel):
 
 
 class InitialMgmtGroupVerificationCSPPayload(ManagementGroupGetCSPPayload):
+    user_object_id: str
+
     class Config:
         fields = {"management_group_name": "root_management_group_name"}
 

@@ -38,12 +38,16 @@ To run the Ghost Inspector tests against a local instance of AT-AT,
 you will need the following:
 
 - [docker](https://docs.docker.com/v17.12/install/)
-- the prerequisite variable information listed [here](https://ghostinspector.com/docs/integration/circle-ci/): NGROK_TOKEN, GI_API_KEY, GI_SUITE
+- the prerequisite variable information listed [here](https://ghostinspector.com/docs/integration/circle-ci/):
+ - NGROK_TOKEN - Either a personal token or a team shared one.
+ - GI_API_KEY - Shared Ghost inspector token, listed in team password manager
+ - GI_SUITE - The suite ID of the GI suite you wish to run, which can be obtained from the GI dashboard.
+
 
 First you will need to build a copy of the container:
 
 ```
-docker build . --build-arg CSP=azure -f ./Dockerfile -t atat:builder --target builder
+docker build . --build-arg IMAGE=<location of the base image from a container repository> --build-arg CSP=azure -f ./Dockerfile -t atat:builder --target builder
 ```
 
 This builds the first stage of the docker container, which is the one we need to run integration tests. You can tag the container whatever you want; in the example we've tagged it "atat:builder".
@@ -53,6 +57,14 @@ Then you can run the integration tests script. You will need four environment va
 ```
 NGROK_TOKEN=<token> GI_API_KEY=<api key> GI_SUITE=<suite> CONTAINER_IMAGE=atat:builder ./script/integration_tests
 ```
+
+Alternatively, if you need to run the tests against a secured server with a static url, you can use this command. NOTE: this **requires** you to use an ngrok token associated with a paid ngrok account, since reserved domains are only available there.
+
+```
+NGROK_TOKEN=<token> GI_API_KEY=<api key> GI_SUITE=<suite> NGROK_DOMAIN=<reserved_domain> CONTAINER_IMAGE=atat:builder ./script/integration_tests_secure
+```
+
+The results of the test are visible on the GI website in the suite you chose to run.
 
 ### Troubleshooting
 

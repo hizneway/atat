@@ -1,29 +1,26 @@
+import os
 import urllib.parse as url
+
 from flask import (
     Blueprint,
-    render_template,
     g,
+    make_response,
     redirect,
+    render_template,
+    request,
     session,
     url_for,
-    request,
-    make_response,
-    current_app as app,
 )
-
+from flask import current_app as app
 from jinja2.exceptions import TemplateNotFound
-import pendulum
-import os
-from werkzeug.exceptions import NotFound, MethodNotAllowed
+from werkzeug.exceptions import MethodNotAllowed, NotFound
 from werkzeug.routing import RequestRedirect
 
-
-from atat.domain.users import Users
-from atat.domain.authnid import AuthenticationContext
 from atat.domain.auth import logout as _logout
+from atat.domain.authnid import AuthenticationContext
 from atat.domain.exceptions import UnauthenticatedError
+from atat.domain.users import Users
 from atat.utils.flash import formatted_flash as flash
-
 
 bp = Blueprint("atat", __name__)
 
@@ -62,8 +59,8 @@ def _make_authentication_context():
     )
 
 
-def redirect_after_login_url():
-    returl = request.args.get("next")
+def redirect_after_login_url(next_param=None):
+    returl = next_param or request.args.get("next")
     if match_url_pattern(returl):
         param_name = request.args.get(app.form_cache.PARAM_NAME)
         if param_name:

@@ -1,12 +1,10 @@
 from flask import (
-    current_app as app,
     g,
     redirect,
     render_template,
     request as http_request,
     url_for,
 )
-from secrets import token_urlsafe
 
 from .blueprint import applications_bp
 from atat.domain.exceptions import AlreadyExistsError
@@ -15,7 +13,6 @@ from atat.domain.applications import Applications
 from atat.domain.application_roles import ApplicationRoles
 from atat.domain.audit_log import AuditLog
 from atat.domain.csp.cloud.exceptions import GeneralCSPException
-from atat.domain.csp.cloud.models import SubscriptionCreationCSPPayload
 from atat.domain.common import Paginator
 from atat.domain.environment_roles import EnvironmentRoles
 from atat.domain.invitations import ApplicationInvitations
@@ -29,7 +26,7 @@ from atat.models.permissions import Permissions
 from atat.domain.permission_sets import PermissionSets
 from atat.utils.flash import formatted_flash as flash
 from atat.utils.localization import translate
-from atat.jobs import send_mail
+from atat.jobs import send_mail, create_subscription as create_subscription_job
 from atat.routes.errors import log_error
 
 
@@ -262,7 +259,7 @@ def handle_update_environment(form, application=None, environment=None):
         try:
             if environment:
                 environment = Environments.update(
-                    environment=environment, name=form.name.data
+                    environment=environment, new_data={"name": form.name.data}
                 )
                 flash("application_environments_updated")
             else:
@@ -532,45 +529,13 @@ def resend_invite(application_id, application_role_id):
     )
 
 
-def build_subscription_payload(environment) -> SubscriptionCreationCSPPayload:
-    csp_data = environment.portfolio.csp_data
-    parent_group_id = environment.cloud_id
-    invoice_section_name = csp_data["billing_profile_properties"]["invoice_sections"][
-        0
-    ]["invoice_section_name"]
-
-    display_name = (
-        f"{environment.application.name}-{environment.name}-{token_urlsafe(6)}"
-    )
-
-    return SubscriptionCreationCSPPayload(
-        tenant_id=csp_data.get("tenant_id"),
-        display_name=display_name,
-        parent_group_id=parent_group_id,
-        billing_account_name=app.config["AZURE_BILLING_ACCOUNT_NAME"],
-        billing_profile_name=csp_data.get("billing_profile_name"),
-        invoice_section_name=invoice_section_name,
-    )
-
-
 @applications_bp.route(
     "/environments/<environment_id>/add_subscription", methods=["POST"]
 )
 @user_can(Permissions.EDIT_ENVIRONMENT, message="create new environment subscription")
 def create_subscription(environment_id):
     environment = Environments.get(environment_id)
-
-    try:
-        payload = build_subscription_payload(environment)
-        app.csp.cloud.create_subscription(payload)
-        flash("environment_subscription_success", name=environment.displayname)
-
-    except GeneralCSPException:
-        flash("environment_subscription_failure")
-        return (
-            render_settings_page(application=environment.application, show_flash=True),
-            400,
-        )
+    create_subscription_job.delay(environment_id=environment.id)
 
     return redirect(
         url_for(

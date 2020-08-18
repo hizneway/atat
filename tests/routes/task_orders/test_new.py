@@ -332,30 +332,39 @@ def test_task_orders_form_step_five_confirm_signature_incomplete_to(
     assert response.status_code == 404
 
 
-def test_task_orders_submit_task_order(client, user_session, task_order):
-    user_session(task_order.portfolio.owner)
-    response = client.post(
-        url_for("task_orders.submit_task_order", task_order_id=task_order.id)
-    )
-    assert response.status_code == 302
+class Test_task_orders_submit_task_order:
+    today = pendulum.today(tz="UTC").date()
 
-    active_start_date = pendulum.today().subtract(days=1)
-    active_task_order = TaskOrderFactory(portfolio=task_order.portfolio)
-    CLINFactory(task_order=active_task_order, start_date=active_start_date)
-    assert active_task_order.status == TaskOrderStatus.UNSIGNED
-    response = client.post(
-        url_for("task_orders.submit_task_order", task_order_id=active_task_order.id)
-    )
-    assert active_task_order.status == TaskOrderStatus.ACTIVE
+    def test_active(self, client, user_session, task_order):
+        user_session(task_order.portfolio.owner)
+        active_start_date = self.today.subtract(days=1)
 
-    upcoming_start_date = pendulum.today().add(days=1)
-    upcoming_task_order = TaskOrderFactory(portfolio=task_order.portfolio)
-    CLINFactory(task_order=upcoming_task_order, start_date=upcoming_start_date)
-    assert upcoming_task_order.status == TaskOrderStatus.UNSIGNED
-    response = client.post(
-        url_for("task_orders.submit_task_order", task_order_id=upcoming_task_order.id)
-    )
-    assert upcoming_task_order.status == TaskOrderStatus.UPCOMING
+        response = client.post(
+            url_for("task_orders.submit_task_order", task_order_id=task_order.id)
+        )
+        assert response.status_code == 302
+
+        active_task_order = TaskOrderFactory(portfolio=task_order.portfolio)
+        CLINFactory(task_order=active_task_order, start_date=active_start_date)
+        assert active_task_order.status == TaskOrderStatus.UNSIGNED
+        response = client.post(
+            url_for("task_orders.submit_task_order", task_order_id=active_task_order.id)
+        )
+        assert active_task_order.status == TaskOrderStatus.ACTIVE
+
+    def test_upcoming(self, client, user_session, task_order):
+        user_session(task_order.portfolio.owner)
+        upcoming_start_date = self.today.add(days=1)
+
+        upcoming_task_order = TaskOrderFactory(portfolio=task_order.portfolio)
+        CLINFactory(task_order=upcoming_task_order, start_date=upcoming_start_date)
+        assert upcoming_task_order.status == TaskOrderStatus.UNSIGNED
+        client.post(
+            url_for(
+                "task_orders.submit_task_order", task_order_id=upcoming_task_order.id
+            )
+        )
+        assert upcoming_task_order.status == TaskOrderStatus.UPCOMING
 
 
 @pytest.mark.parametrize(

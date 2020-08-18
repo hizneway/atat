@@ -1,14 +1,15 @@
 import json
 import time
+from contextlib import contextmanager
 from functools import wraps
 from secrets import token_hex, token_urlsafe
 from typing import Dict, Optional, Tuple
 from uuid import uuid4
+from urllib.parse import urljoin
 
 from flask import current_app as app
 
 from atat.utils import sha256_hex
-from atat.domain.csp.cloud.utils import get_user_principal_token_for_scope
 
 from .cloud_provider_interface import CloudProviderInterface
 from .exceptions import (
@@ -53,10 +54,10 @@ from .models import (
     ProductPurchaseCSPResult,
     ProductPurchaseVerificationCSPPayload,
     ProductPurchaseVerificationCSPResult,
+    RoleAssignmentPayload,
+    ServicePrincipalTokenPayload,
     SubscriptionCreationCSPPayload,
     SubscriptionCreationCSPResult,
-    SubscriptionVerificationCSPPayload,
-    SuscriptionVerificationCSPResult,
     TaskOrderBillingCreationCSPPayload,
     TaskOrderBillingCreationCSPResult,
     TaskOrderBillingVerificationCSPPayload,
@@ -77,10 +78,12 @@ from .models import (
     TenantPrincipalOwnershipCSPResult,
     UserCSPPayload,
     UserCSPResult,
+    UserPrincipalTokenPayload,
     UserRoleCSPPayload,
     UserRoleCSPResult,
 )
 from .policy import AzurePolicyManager
+from .utils import get_principal_auth_token, make_auth_header
 
 # This needs to be a fully pathed role definition identifier, not just a UUID
 # TODO: Extract these from sdk msrestazure.azure_cloud import AZURE_PUBLIC_CLOUD
@@ -93,7 +96,12 @@ REMOTE_ROOT_ROLE_DEF_ID = "/providers/Microsoft.Authorization/roleDefinitions/00
 # setting the "Application Type" to "all" and searching for "Microsoft Graph".
 GRAPH_API_APPLICATION_ID = "00000003-0000-0000-c000-000000000000"
 
+# https://docs.microsoft.com/en-us/azure/role-based-access-control/built-in-roles#user-access-administrator
+USER_ACCESS_ADMIN_ROLE_DEFINITION_ID = "18d7d88d-d35e-4fb5-a5c3-7773c20a72d9"
+
 DEFAULT_POLICY_SET_DEFINITION_NAME = "Default JEDI Policy Set"
+
+DEFAULT_SCOPE_SUFFIX = "/.default"
 
 
 def log_and_raise_exceptions(func):
@@ -165,16 +173,15 @@ class AzureCloudProvider(CloudProviderInterface):
         self.secret_key = config["AZURE_SECRET_KEY"]
         self.root_tenant_id = config["AZURE_TENANT_ID"]
         self.vault_url = config["AZURE_VAULT_URL"]
-        self.ps_client_id = config["AZURE_POWERSHELL_CLIENT_ID"]
+        self.powershell_client_id = config["AZURE_POWERSHELL_CLIENT_ID"]
         self.graph_resource = config["AZURE_GRAPH_RESOURCE"]
-        self.graph_scope = config["AZURE_GRAPH_RESOURCE"] + "/.default"
+        self.graph_scope = config["AZURE_GRAPH_RESOURCE"] + DEFAULT_SCOPE_SUFFIX
         self.default_aadp_qty = config["AZURE_AADP_QTY"]
         self.roles = {
             "owner": config["AZURE_ROLE_DEF_ID_OWNER"],
             "contributor": config["AZURE_ROLE_DEF_ID_CONTRIBUTOR"],
             "billing": config["AZURE_ROLE_DEF_ID_BILLING_READER"],
         }
-        self.tenant_principal_app_display_name = "ATAT Remote Admin"
 
         if azure_sdk_provider is None:
             self.sdk = AzureSDKProvider()
@@ -185,20 +192,22 @@ class AzureCloudProvider(CloudProviderInterface):
 
     @log_and_raise_exceptions
     def _get_keyvault_token(self):
-        url = f"{self.sdk.cloud.endpoints.active_directory}/{self.root_tenant_id}/oauth2/token"
+        url = urljoin(
+            self.sdk.cloud.endpoints.active_directory,
+            f"{self.root_tenant_id}/oauth2/token",
+        )
+        resource = f"https://{self.sdk.cloud.suffixes.keyvault_dns[1:]}"
         payload = {
             "grant_type": "client_credentials",
             "client_id": self.client_id,
             "client_secret": self.secret_key,
-            "resource": f"https://{self.sdk.cloud.suffixes.keyvault_dns[1:]}",
+            "resource": resource,
         }
         token_response = self.sdk.requests.get(url, data=payload, timeout=30)
         token_response.raise_for_status()
         token = token_response.json().get("access_token")
         if token is None:
-            message = (
-                f"Failed to get token for resource '{resource}' in tenant '{tenant_id}'"
-            )
+            message = f"Failed to get token for resource '{resource}' in tenant '{self.root_tenant_id}'"
             app.logger.error(message, exc_info=1)
             raise AuthenticationException(message)
         else:
@@ -207,17 +216,12 @@ class AzureCloudProvider(CloudProviderInterface):
     @log_and_raise_exceptions
     def set_secret(self, secret_key, secret_value):
         kv_token = self._get_keyvault_token()
-
-        set_secret_headers = {
-            "Authorization": f"Bearer {kv_token}",
-        }
-        set_secret_body = {"value": secret_value}
-
         result = self.sdk.requests.put(
-            f"{self.vault_url}secrets/{secret_key}?api-version=7.0",
-            headers=set_secret_headers,
+            f"{self.vault_url}secrets/{secret_key}",
+            params={"api-version": "7.0"},
+            headers=make_auth_header(kv_token),
             timeout=30,
-            json=set_secret_body,
+            json={"value": secret_value},
         )
 
         result.raise_for_status()
@@ -226,14 +230,10 @@ class AzureCloudProvider(CloudProviderInterface):
     @log_and_raise_exceptions
     def get_secret(self, secret_key):
         kv_token = self._get_keyvault_token()
-
-        get_secret_headers = {
-            "Authorization": f"Bearer {kv_token}",
-        }
-
         result = self.sdk.requests.get(
-            f"{self.vault_url}secrets/{secret_key}?api-version=7.0",
-            headers=get_secret_headers,
+            f"{self.vault_url}secrets/{secret_key}",
+            params={"api-version": "7.0"},
+            headers=make_auth_header(kv_token),
             timeout=30,
         )
 
@@ -296,16 +296,20 @@ class AzureCloudProvider(CloudProviderInterface):
         https://docs.microsoft.com/en-us/azure/governance/management-groups/overview
         """
 
-        mgmt_token = self._get_elevated_management_token(payload.tenant_id)
-        headers = {
-            "Authorization": f"Bearer {mgmt_token}",
-        }
-        response = self.sdk.requests.get(
-            f"{self.sdk.cloud.endpoints.resource_manager}providers/Microsoft.Management/managementGroups/{payload.management_group_name}?api-version=2020-02-01",
-            headers=headers,
-        )
-        response.raise_for_status()
-        return InitialMgmtGroupVerificationCSPResult(**response.json())
+        with self._get_elevated_access_token(
+            payload.tenant_id, payload.user_object_id
+        ) as elevated_token:
+            url = urljoin(
+                self.sdk.cloud.endpoints.resource_manager,
+                f"providers/Microsoft.Management/managementGroups/{payload.management_group_name}",
+            )
+            response = self.sdk.requests.get(
+                url,
+                headers=make_auth_header(elevated_token),
+                params={"api-version": "2020-02-01"},
+            )
+            response.raise_for_status()
+            return InitialMgmtGroupVerificationCSPResult(**response.json())
 
     @log_and_raise_exceptions
     def _create_management_group(
@@ -327,23 +331,26 @@ class AzureCloudProvider(CloudProviderInterface):
         """
         sp_token = self._get_tenant_principal_token(tenant_id)
         session = self.sdk.requests.Session()
-        session.headers = {
-            "Authorization": f"Bearer {sp_token}",
-        }
+        session.headers = make_auth_header(sp_token)
         request_body = {"properties": {"displayName": display_name}}
 
         if parent_id:
             request_body["properties"]["parent"] = {"id": parent_id}
-
+        url = urljoin(
+            self.sdk.cloud.endpoints.resource_manager,
+            f"providers/Microsoft.Management/managementGroups/{management_group_id}",
+        )
         response = session.put(
-            f"{self.sdk.cloud.endpoints.resource_manager}providers/Microsoft.Management/managementGroups/{management_group_id}?api-version=2020-02-01",
-            json=request_body,
+            url, params={"api-version": "2020-02-01"}, json=request_body,
         )
         response.raise_for_status()
 
         if response.status_code == 202:
             status_url = response.headers["Azure-AsyncOperation"]
-            resp = self._poll_management_group_creation_job(status_url, session)
+            result_url = response.headers["Location"]
+            resp = self._poll_management_group_creation_job(
+                status_url, result_url, session
+            )
         else:
             resp = response.json()
 
@@ -369,24 +376,32 @@ class AzureCloudProvider(CloudProviderInterface):
             True
         """
         request_body = {"parentId": parent_id}
+        url = urljoin(
+            self.sdk.cloud.endpoints.resource_manager,
+            f"providers/Microsoft.Management/managementGroups/{management_group_id}",
+        )
         response = session.patch(
-            f"{self.sdk.cloud.endpoints.resource_manager}providers/Microsoft.Management/managementGroups/{management_group_id}?api-version=2020-02-01",
-            json=request_body,
+            url, params={"api-version": "2020-02-01"}, json=request_body,
         )
         response.raise_for_status()
 
         return True
 
     @log_and_raise_exceptions
-    def _poll_management_group_creation_job(self, url: str, session) -> Dict:
+    def _poll_management_group_creation_job(
+        self, status_url: str, result_url: str, session
+    ) -> Dict:
         """Polls the management group creation job until it is resolved and
         returns the result.
 
         https://docs.microsoft.com/en-us/azure/azure-resource-manager/management/async-operations
 
         Args:
-            url: The url to check for job completion, provided by the
+            status_url: The url to check for job status, provided by the
                 Azure-AsyncOperation response header after creating the
+                management group.
+            result_url: The url to check for job completion, provided by the
+                Locataion response header after creating the
                 management group.
             session: a requests session populated with a service principal
                 bearer token.
@@ -400,25 +415,34 @@ class AzureCloudProvider(CloudProviderInterface):
         """
 
         while True:
-            response = session.get(url)
+            response = session.get(status_url)
             response.raise_for_status()
             response_json = response.json()
             status = response_json["status"]
             if status == "Succeeded":
-                return response_json
+                resp = session.get(result_url)
+                resp.raise_for_status()
+                return resp.json()
             elif status in ("Failed", "Canceled"):
                 error_message = f"{response_json['error']['message']}\nError code: {response_json['error']['code']}"
                 raise ResourceProvisioningError("management group", f"{error_message}")
             else:
                 time.sleep(int(response.headers.get("Retry-After", 10)))
-                continue
 
     @log_and_raise_exceptions
     def _create_policy_definition(self, session, root_management_group_name, policy):
-        create_policy_definition_uri = f"{self.sdk.cloud.endpoints.resource_manager}providers/Microsoft.Management/managementGroups/{root_management_group_name}/providers/Microsoft.Authorization/policyDefinitions/{policy.definition['properties']['displayName']}?api-version=2019-09-01"
+        create_policy_definition_uri = urljoin(
+            self.sdk.cloud.endpoints.resource_manager,
+            f"providers/Microsoft.Management/managementGroups/{root_management_group_name}/providers/Microsoft.Authorization/policyDefinitions/{policy.definition['properties']['displayName']}",
+        )
         body = policy.definition
 
-        result = session.put(create_policy_definition_uri, json=body, timeout=30,)
+        result = session.put(
+            create_policy_definition_uri,
+            params={"api-version": "2019-09-01"},
+            json=body,
+            timeout=30,
+        )
         result.raise_for_status()
         if result.status_code == 201:
             return result.json()
@@ -431,7 +455,10 @@ class AzureCloudProvider(CloudProviderInterface):
         policy_set_definition_name,
         definition_references,
     ):
-        create_policy_set_uri = f"{self.sdk.cloud.endpoints.resource_manager}providers/Microsoft.Management/managementGroups/{root_management_group_name}/providers/Microsoft.Authorization/policySetDefinitions/{policy_set_definition_name}?api-version=2019-09-01"
+        create_policy_set_uri = urljoin(
+            self.sdk.cloud.endpoints.resource_manager,
+            f"providers/Microsoft.Management/managementGroups/{root_management_group_name}/providers/Microsoft.Authorization/policySetDefinitions/{policy_set_definition_name}",
+        )
         body = {
             "properties": {
                 "displayName": policy_set_definition_name,
@@ -440,7 +467,12 @@ class AzureCloudProvider(CloudProviderInterface):
             }
         }
 
-        result = session.put(create_policy_set_uri, json=body, timeout=30,)
+        result = session.put(
+            create_policy_set_uri,
+            params={"api-version": "2019-09-01"},
+            json=body,
+            timeout=30,
+        )
         result.raise_for_status()
         if result.status_code in [200, 201]:
             return result.json()
@@ -449,7 +481,10 @@ class AzureCloudProvider(CloudProviderInterface):
     def _create_policy_set_assignment(
         self, session, root_management_group_name, policy_set_definition
     ):
-        create_policy_assignment_uri = f"{self.sdk.cloud.endpoints.resource_manager}providers/Microsoft.Management/managementGroups/{root_management_group_name}/providers/Microsoft.Authorization/policyAssignments/{policy_set_definition['properties']['displayName']}?api-version=2019-09-01"
+        create_policy_assignment_uri = urljoin(
+            self.sdk.cloud.endpoints.resource_manager,
+            f"providers/Microsoft.Management/managementGroups/{root_management_group_name}/providers/Microsoft.Authorization/policyAssignments/{policy_set_definition['properties']['displayName']}",
+        )
         body = {
             "properties": {
                 "displayName": policy_set_definition["properties"]["displayName"],
@@ -457,7 +492,12 @@ class AzureCloudProvider(CloudProviderInterface):
             }
         }
 
-        result = session.put(create_policy_assignment_uri, json=body, timeout=30,)
+        result = session.put(
+            create_policy_assignment_uri,
+            params={"api-version": "2019-09-01"},
+            json=body,
+            timeout=30,
+        )
         result.raise_for_status()
         if result.status_code == 201:
             return result.json()
@@ -472,10 +512,9 @@ class AzureCloudProvider(CloudProviderInterface):
         """
 
         sp_token = self._get_tenant_principal_token(payload.tenant_id)
-        headers = {
-            "Authorization": f"Bearer {sp_token}",
-        }
+
         policy_session = self.sdk.requests.Session()
+        headers = make_auth_header(sp_token)
         policy_session.headers.update(headers)
         definition_references = []
         for policy in self.policy_manager.portfolio_definitions:
@@ -505,24 +544,24 @@ class AzureCloudProvider(CloudProviderInterface):
     @log_and_raise_exceptions
     def disable_user(self, tenant_id, role_assignment_cloud_id):
         sp_token = self._get_tenant_principal_token(tenant_id)
-        headers = {
-            "Authorization": f"Bearer {sp_token}",
-        }
 
-        result = self.sdk.requests.delete(
-            f"{self.sdk.cloud.endpoints.resource_manager}{role_assignment_cloud_id}?api-version=2015-07-01",
-            headers=headers,
-            timeout=30,
-        )
-        result.raise_for_status()
-        return result.json()
+        # TODO: Normalize this elsewhere in the app so that we can always
+        # expect role_assignment_cloud_id to be a UUID
+        prefix = "providers/Microsoft.Authorization/roleAssignments/"
+        (scope, prefix, assignment_uuid) = role_assignment_cloud_id.rpartition(prefix)
+        if not scope:
+            scope = f"providers/Microsoft.Management/managementGroups/{tenant_id}/"
+        role_assignment_id = scope + prefix + assignment_uuid
+
+        return self._remove_role_assignment(sp_token, role_assignment_id)
 
     @log_and_raise_exceptions
     def validate_domain_name(self, name):
-        response = self.sdk.requests.get(
-            f"{self.sdk.cloud.endpoints.active_directory}/{name}.onmicrosoft.com/.well-known/openid-configuration",
-            timeout=30,
+        url = urljoin(
+            self.sdk.cloud.endpoints.active_directory,
+            f"{name}.onmicrosoft.com/.well-known/openid-configuration",
         )
+        response = self.sdk.requests.get(url, timeout=30,)
         response.raise_for_status()
         # If an existing tenant with name cannot be found, 'error' will be in the response
         return "error" in response.json()
@@ -546,14 +585,15 @@ class AzureCloudProvider(CloudProviderInterface):
         payload.domain_name = self.generate_valid_domain_name(payload.domain_name)
         create_tenant_body = payload.dict(by_alias=True)
 
-        create_tenant_headers = {
-            "Authorization": f"Bearer {sp_token}",
-        }
-
+        url = urljoin(
+            self.sdk.cloud.endpoints.resource_manager,
+            "providers/Microsoft.SignUp/createTenant",
+        )
         result = self.sdk.requests.post(
-            f"{self.sdk.cloud.endpoints.resource_manager}providers/Microsoft.SignUp/createTenant?api-version=2020-01-01-preview",
+            url,
+            params={"api-version": "2020-01-01-preview"},
             json=create_tenant_body,
-            headers=create_tenant_headers,
+            headers=make_auth_header(sp_token),
             timeout=30,
         )
         result.raise_for_status()
@@ -593,17 +633,15 @@ class AzureCloudProvider(CloudProviderInterface):
         sp_token = self._get_root_provisioning_token()
 
         create_billing_account_body = payload.dict(by_alias=True)
-
-        create_billing_account_headers = {
-            "Authorization": f"Bearer {sp_token}",
-        }
-
-        billing_account_create_url = f"{self.sdk.cloud.endpoints.resource_manager}/providers/Microsoft.Billing/billingAccounts/{payload.billing_account_name}/billingProfiles?api-version=2019-10-01-preview"
-
+        billing_account_create_url = urljoin(
+            self.sdk.cloud.endpoints.resource_manager,
+            f"providers/Microsoft.Billing/billingAccounts/{payload.billing_account_name}/billingProfiles",
+        )
         result = self.sdk.requests.post(
             billing_account_create_url,
+            params={"api-version": "2019-10-01-preview"},
             json=create_billing_account_body,
-            headers=create_billing_account_headers,
+            headers=make_auth_header(sp_token),
             timeout=30,
         )
         result.raise_for_status()
@@ -630,12 +668,10 @@ class AzureCloudProvider(CloudProviderInterface):
             """
         sp_token = self._get_root_provisioning_token()
 
-        auth_header = {
-            "Authorization": f"Bearer {sp_token}",
-        }
-
         result = self.sdk.requests.get(
-            payload.billing_profile_verify_url, headers=auth_header, timeout=30,
+            payload.billing_profile_verify_url,
+            headers=make_auth_header(sp_token),
+            timeout=30,
         )
         result.raise_for_status()
 
@@ -658,13 +694,16 @@ class AzureCloudProvider(CloudProviderInterface):
             }
         }
 
-        headers = {
-            "Authorization": f"Bearer {sp_token}",
-        }
-
-        url = f"{self.sdk.cloud.endpoints.resource_manager}/providers/Microsoft.Billing/billingAccounts/{payload.billing_account_name}/billingProfiles/{payload.billing_profile_name}/createBillingRoleAssignment?api-version=2019-10-01-preview"
+        url = urljoin(
+            self.sdk.cloud.endpoints.resource_manager,
+            f"providers/Microsoft.Billing/billingAccounts/{payload.billing_account_name}/billingProfiles/{payload.billing_profile_name}/createBillingRoleAssignment",
+        )
         result = self.sdk.requests.post(
-            url, headers=headers, json=request_body, timeout=30,
+            url,
+            headers=make_auth_header(sp_token),
+            params={"api-version": "2019-10-01-preview"},
+            json=request_body,
+            timeout=30,
         )
         result.raise_for_status()
         if result.status_code == 201:
@@ -683,14 +722,17 @@ class AzureCloudProvider(CloudProviderInterface):
             }
         ]
 
-        request_headers = {
-            "Authorization": f"Bearer {sp_token}",
-        }
-
-        url = f"{self.sdk.cloud.endpoints.resource_manager}/providers/Microsoft.Billing/billingAccounts/{payload.billing_account_name}/billingProfiles/{payload.billing_profile_name}?api-version=2019-10-01-preview"
+        url = urljoin(
+            self.sdk.cloud.endpoints.resource_manager,
+            f"providers/Microsoft.Billing/billingAccounts/{payload.billing_account_name}/billingProfiles/{payload.billing_profile_name}",
+        )
 
         result = self.sdk.requests.patch(
-            url, headers=request_headers, json=request_body, timeout=30,
+            url,
+            headers=make_auth_header(sp_token),
+            params={"api-version": "2019-10-01-preview"},
+            json=request_body,
+            timeout=30,
         )
         result.raise_for_status()
 
@@ -706,12 +748,10 @@ class AzureCloudProvider(CloudProviderInterface):
     ):
         sp_token = self._get_root_provisioning_token()
 
-        auth_header = {
-            "Authorization": f"Bearer {sp_token}",
-        }
-
         result = self.sdk.requests.get(
-            payload.task_order_billing_verify_url, headers=auth_header, timeout=30,
+            payload.task_order_billing_verify_url,
+            headers=make_auth_header(sp_token),
+            timeout=30,
         )
         result.raise_for_status()
 
@@ -733,21 +773,25 @@ class AzureCloudProvider(CloudProviderInterface):
             }
         }
 
-        url = f"{self.sdk.cloud.endpoints.resource_manager}/providers/Microsoft.Billing/billingAccounts/{payload.billing_account_name}/billingProfiles/{payload.billing_profile_name}/instructions/{payload.initial_task_order_id}:CLIN00{payload.initial_clin_type}?api-version=2019-10-01-preview"
-
-        auth_header = {
-            "Authorization": f"Bearer {sp_token}",
-        }
+        url = urljoin(
+            self.sdk.cloud.endpoints.resource_manager,
+            f"providers/Microsoft.Billing/billingAccounts/{payload.billing_account_name}/billingProfiles/{payload.billing_profile_name}/instructions/{payload.initial_task_order_id}:CLIN00{payload.initial_clin_type}",
+        )
 
         result = self.sdk.requests.put(
-            url, headers=auth_header, json=request_body, timeout=30
+            url,
+            headers=make_auth_header(sp_token),
+            params={"api-version": "2019-10-01-preview"},
+            json=request_body,
+            timeout=30,
         )
         result.raise_for_status()
         return BillingInstructionCSPResult(**result.json())
 
     @log_and_raise_exceptions
-    def create_subscription(self, payload: SubscriptionCreationCSPPayload):
-        sp_token = self._get_tenant_principal_token(payload.tenant_id)
+    def create_subscription(self, payload: SubscriptionCreationCSPPayload, token=None):
+        if token is None:
+            token = self._get_tenant_principal_token(payload.tenant_id)
 
         request_body = {
             "displayName": payload.display_name,
@@ -755,40 +799,21 @@ class AzureCloudProvider(CloudProviderInterface):
             "managementGroupId": payload.parent_group_id,
         }
 
-        url = f"{self.sdk.cloud.endpoints.resource_manager}providers/Microsoft.Billing/billingAccounts/{payload.billing_account_name}/billingProfiles/{payload.billing_profile_name}/invoiceSections/{payload.invoice_section_name}/providers/Microsoft.Subscription/createSubscription?api-version=2018-11-01-preview"
-
-        auth_header = {
-            "Authorization": f"Bearer {sp_token}",
-        }
-
-        result = self.sdk.requests.put(
-            url, headers=auth_header, json=request_body, timeout=30
+        url = urljoin(
+            self.sdk.cloud.endpoints.resource_manager,
+            f"providers/Microsoft.Billing/billingAccounts/{payload.billing_account_name}/billingProfiles/{payload.billing_profile_name}/invoiceSections/{payload.invoice_section_name}/providers/Microsoft.Subscription/createSubscription",
+        )
+        result = self.sdk.requests.post(
+            url,
+            headers=make_auth_header(token),
+            params={"api-version": "2019-10-01-preview"},
+            json=request_body,
+            timeout=30,
         )
         result.raise_for_status()
         if result.status_code in [200, 202]:
             # 202 has location/retry after headers
             return SubscriptionCreationCSPResult(**result.headers, **result.json())
-
-    def create_subscription_creation(self, payload: SubscriptionCreationCSPPayload):
-        return self.create_subscription(payload)
-
-    @log_and_raise_exceptions
-    def create_subscription_verification(
-        self, payload: SubscriptionVerificationCSPPayload
-    ):
-        sp_token = self._get_tenant_principal_token(payload.tenant_id)
-
-        auth_header = {
-            "Authorization": f"Bearer {sp_token}",
-        }
-
-        result = self.sdk.requests.get(
-            payload.subscription_verify_url, headers=auth_header, timeout=30
-        )
-        result.raise_for_status()
-
-        # 202 has location/retry after headers
-        return SuscriptionVerificationCSPResult(**result.json())
 
     @log_and_raise_exceptions
     def create_product_purchase(self, payload: ProductPurchaseCSPPayload):
@@ -800,16 +825,17 @@ class AzureCloudProvider(CloudProviderInterface):
             "productProperties": {"beneficiaryTenantId": payload.tenant_id,},
             "quantity": self.default_aadp_qty,
         }
-        create_product_purchase_headers = {
-            "Authorization": f"Bearer {sp_token}",
-        }
 
-        product_purchase_url = f"https://management.azure.com/providers/Microsoft.Billing/billingAccounts/{payload.billing_account_name}/billingProfiles/{payload.billing_profile_name}/purchaseProduct?api-version=2019-10-01-preview"
+        product_purchase_url = urljoin(
+            self.sdk.cloud.endpoints.resource_manager,
+            f"providers/Microsoft.Billing/billingAccounts/{payload.billing_account_name}/billingProfiles/{payload.billing_profile_name}/purchaseProduct",
+        )
 
         result = self.sdk.requests.post(
             product_purchase_url,
+            params={"api-version": "2019-10-01-preview"},
             json=create_product_purchase_body,
-            headers=create_product_purchase_headers,
+            headers=make_auth_header(sp_token),
             timeout=30,
         )
         result.raise_for_status()
@@ -827,12 +853,10 @@ class AzureCloudProvider(CloudProviderInterface):
     ):
         sp_token = self._get_root_provisioning_token()
 
-        auth_header = {
-            "Authorization": f"Bearer {sp_token}",
-        }
-
         result = self.sdk.requests.get(
-            payload.product_purchase_verify_url, headers=auth_header, timeout=30
+            payload.product_purchase_verify_url,
+            headers=make_auth_header(sp_token),
+            timeout=30,
         )
         result.raise_for_status()
 
@@ -861,72 +885,85 @@ class AzureCloudProvider(CloudProviderInterface):
         return TenantAdminCredentialResetCSPResult()
 
     @log_and_raise_exceptions
-    def create_tenant_admin_ownership(self, payload: TenantAdminOwnershipCSPPayload):
-        """Gives the tenant admin (human user) the Owner role on the root management group."""
+    def _create_role_assignment(self, payload: RoleAssignmentPayload, token):
+        """
+        https://docs.microsoft.com/en-us/rest/api/authorization/roleassignments/create
+        
+        Role assignment definition IDs are assigned at a particular scope
+        https://docs.microsoft.com/en-us/azure/role-based-access-control/role-assignments-rest#add-a-role-assignment
 
-        mgmt_token = self._get_elevated_management_token(payload.tenant_id)
-
-        role_definition_id = f"/providers/Microsoft.Management/managementGroups/{payload.tenant_id}/providers/Microsoft.Authorization/roleDefinitions/{self.roles['owner']}"
-
+        Args:
+            payload: a RoleAssignmentPayload model
+            token: a token from a user who has elevated access
+        Returns:
+            Azure RoleAssignment object: https://docs.microsoft.com/en-us/rest/api/authorization/roleassignments/create#roleassignment
+        """
         request_body = {
             "properties": {
-                "roleDefinitionId": role_definition_id,
-                "principalId": payload.user_object_id,
+                "roleDefinitionId": payload.role_definition_id,
+                "principalId": payload.principal_id,
             }
         }
 
-        auth_header = {
-            "Authorization": f"Bearer {mgmt_token}",
-        }
-
-        assignment_guid = str(uuid4())
-
-        url = f"{self.sdk.cloud.endpoints.resource_manager}providers/Microsoft.Management/managementGroups/{payload.tenant_id}/providers/Microsoft.Authorization/roleAssignments/{assignment_guid}?api-version=2015-07-01"
-
-        result = self.sdk.requests.put(
-            url, headers=auth_header, json=request_body, timeout=30
+        url = urljoin(
+            self.sdk.cloud.endpoints.resource_manager,
+            f"{payload.role_assignment_scope}/providers/Microsoft.Authorization/roleAssignments/{payload.role_assignment_name}",
         )
-        result.raise_for_status()
+        response = self.sdk.requests.put(
+            url,
+            headers=make_auth_header(token),
+            params={"api-version": "2015-07-01"},
+            json=request_body,
+            timeout=30,
+        )
+        response.raise_for_status()
+        return response
 
-        return TenantAdminOwnershipCSPResult(**result.json())
+    def create_tenant_admin_ownership(self, payload: TenantAdminOwnershipCSPPayload):
+        """Assigns the tenant admin (human user) the Owner role on the root 
+        management group."""
+
+        role_assignment_payload = RoleAssignmentPayload(
+            role_definition_scope=f"/providers/Microsoft.Management/managementGroups/{payload.root_management_group_name}",
+            role_definition_name=self.roles["owner"],
+            role_assignment_scope=f"/providers/Microsoft.Management/managementGroups/{payload.root_management_group_name}",
+            role_assignment_name=str(uuid4()),
+            principal_id=payload.user_object_id,
+        )
+        with self._get_elevated_access_token(
+            payload.tenant_id, payload.user_object_id
+        ) as elevated_token:
+            response = self._create_role_assignment(
+                role_assignment_payload, elevated_token
+            )
+            return TenantAdminOwnershipCSPResult(**response.json())
 
     @log_and_raise_exceptions
     def create_tenant_principal_ownership(
         self, payload: TenantPrincipalOwnershipCSPPayload
     ):
-        """Gives the service principal the owner role over the root management group.
+        """Assigns the the owner role for the service principal over the root management group.
 
-        The security principal object defines the access policy and permissions
-        for the user/application in the Azure AD tenant.
-
-        https://docs.microsoft.com/en-us/azure/active-directory/develop/app-objects-and-service-principals
+        https://docs.microsoft.com/en-us/rest/api/authorization/roleassignments/create
+        
+        Role assignment definition IDs are assigned at a particular scope
+        https://docs.microsoft.com/en-us/azure/role-based-access-control/role-assignments-rest#add-a-role-assignment
         """
 
-        mgmt_token = self._get_elevated_management_token(payload.tenant_id)
-
-        # NOTE: the tenant_id is also the id of the root management group, once it is created
-        role_definition_id = f"/providers/Microsoft.Management/managementGroups/{payload.tenant_id}/providers/Microsoft.Authorization/roleDefinitions/{self.roles['owner']}"
-
-        request_body = {
-            "properties": {
-                "roleDefinitionId": role_definition_id,
-                "principalId": payload.principal_id,
-            }
-        }
-
-        auth_header = {
-            "Authorization": f"Bearer {mgmt_token}",
-        }
-
-        assignment_guid = str(uuid4())
-
-        url = f"{self.sdk.cloud.endpoints.resource_manager}providers/Microsoft.Management/managementGroups/{payload.tenant_id}/providers/Microsoft.Authorization/roleAssignments/{assignment_guid}?api-version=2015-07-01"
-
-        result = self.sdk.requests.put(
-            url, headers=auth_header, json=request_body, timeout=30,
+        role_assignment_payload = RoleAssignmentPayload(
+            role_definition_scope=f"/providers/Microsoft.Management/managementGroups/{payload.root_management_group_name}",
+            role_definition_name=self.roles["owner"],
+            role_assignment_scope=f"/providers/Microsoft.Management/managementGroups/{payload.root_management_group_name}",
+            role_assignment_name=str(uuid4()),
+            principal_id=payload.principal_id,
         )
-        result.raise_for_status()
-        return TenantPrincipalOwnershipCSPResult(**result.json())
+        with self._get_elevated_access_token(
+            payload.tenant_id, payload.user_object_id
+        ) as elevated_token:
+            response = self._create_role_assignment(
+                role_assignment_payload, elevated_token
+            )
+            return TenantPrincipalOwnershipCSPResult(**response.json())
 
     @log_and_raise_exceptions
     def create_tenant_principal_app(self, payload: TenantPrincipalAppCSPPayload):
@@ -936,16 +973,13 @@ class AzureCloudProvider(CloudProviderInterface):
         """
 
         graph_token = self._get_tenant_admin_token(payload.tenant_id, self.graph_scope)
-        request_body = {"displayName": self.tenant_principal_app_display_name}
-
-        auth_header = {
-            "Authorization": f"Bearer {graph_token}",
-        }
-
-        url = f"{self.graph_resource}/v1.0/applications"
+        request_body = {"displayName": payload.tenant_principal_app_display_name}
 
         result = self.sdk.requests.post(
-            url, json=request_body, headers=auth_header, timeout=30
+            f"{self.graph_resource}/v1.0/applications",
+            json=request_body,
+            headers=make_auth_header(graph_token),
+            timeout=30,
         )
         result.raise_for_status()
         return TenantPrincipalAppCSPResult(**result.json())
@@ -960,44 +994,41 @@ class AzureCloudProvider(CloudProviderInterface):
         https://docs.microsoft.com/en-us/azure/active-directory/develop/app-objects-and-service-principals
         """
         graph_token = self._get_tenant_admin_token(payload.tenant_id, self.graph_scope)
-        auth_header = {
-            "Authorization": f"Bearer {graph_token}",
-        }
         request_body = {"appId": payload.principal_app_id}
 
         url = f"{self.graph_resource}/beta/servicePrincipals"
 
         result = self.sdk.requests.post(
-            url, json=request_body, headers=auth_header, timeout=30
+            url, json=request_body, headers=make_auth_header(graph_token), timeout=30,
         )
         result.raise_for_status()
         return TenantPrincipalCSPResult(**result.json())
 
     @log_and_raise_exceptions
     def create_tenant_principal_credential(
-        self, payload: TenantPrincipalCredentialCSPPayload
+        self, payload: TenantPrincipalCredentialCSPPayload, graph_token=None
     ):
-        graph_token = self._get_tenant_admin_token(payload.tenant_id, self.graph_scope)
+        if graph_token is None:
+            graph_token = self._get_tenant_admin_token(
+                payload.tenant_id, self.graph_scope
+            )
+
         request_body = {
             "passwordCredentials": [{"displayName": "ATAT Generated Password"}]
         }
 
-        auth_header = {
-            "Authorization": f"Bearer {graph_token}",
-        }
-
-        url = f"{self.graph_resource}/v1.0/applications/{payload.principal_app_object_id}/addPassword"
-
-        result = self.sdk.requests.post(
-            url, json=request_body, headers=auth_header, timeout=30
+        response = self.sdk.requests.post(
+            f"{self.graph_resource}/v1.0/applications/{payload.principal_app_object_id}/addPassword",
+            json=request_body,
+            headers=make_auth_header(graph_token),
+            timeout=30,
         )
-        result.raise_for_status()
-        result_json = result.json()
+        response.raise_for_status()
         self.update_tenant_creds(
             payload.tenant_id,
             KeyVaultCredentials(
                 tenant_id=payload.tenant_id,
-                tenant_sp_key=result_json.get("secretText"),
+                tenant_sp_key=response.json().get("secretText"),
                 tenant_sp_client_id=payload.principal_app_id,
             ),
         )
@@ -1031,7 +1062,7 @@ class AzureCloudProvider(CloudProviderInterface):
         response = self.sdk.requests.post(
             f"{self.graph_resource}/v1.0/servicePrincipals/{payload.principal_id}/appRoleAssignments",
             json=request_body,
-            headers={"Authorization": f"Bearer {graph_token}"},
+            headers=make_auth_header(graph_token),
         )
         response.raise_for_status()
 
@@ -1103,8 +1134,11 @@ class AzureCloudProvider(CloudProviderInterface):
             registration and the app role id for "Directory.ReadWrite.All"
         """
         response = self.sdk.requests.get(
-            f"{self.graph_resource}/v1.0/servicePrincipals?$filter=servicePrincipalNames/any(name:name+eq+'{GRAPH_API_APPLICATION_ID}')",
-            headers={"Authorization": f"Bearer {graph_token}"},
+            f"{self.graph_resource}/v1.0/servicePrincipals",
+            params={
+                "$filter": f"servicePrincipalNames/any(name:name eq '{GRAPH_API_APPLICATION_ID}')"
+            },
+            headers=make_auth_header(graph_token),
         )
         response.raise_for_status()
         graph_service_principal = self._extract_service_principal_from_query(response)
@@ -1118,13 +1152,12 @@ class AzureCloudProvider(CloudProviderInterface):
         """Fetch the UUID for the "Global Admin" / "Company Admin" role."""
 
         graph_token = self._get_tenant_admin_token(payload.tenant_id, self.graph_scope)
-        auth_header = {
-            "Authorization": f"Bearer {graph_token}",
-        }
 
         url = f"{self.graph_resource}/beta/roleManagement/directory/roleDefinitions"
 
-        response = self.sdk.requests.get(url, headers=auth_header, timeout=30)
+        response = self.sdk.requests.get(
+            url, headers=make_auth_header(graph_token), timeout=30
+        )
         response.raise_for_status()
 
         result = response.json()
@@ -1154,28 +1187,21 @@ class AzureCloudProvider(CloudProviderInterface):
         request_body = {
             "principalId": payload.principal_id,
             "roleDefinitionId": payload.admin_role_def_id,
-            "resourceScope": "/",
-        }
-
-        auth_header = {
-            "Authorization": f"Bearer {graph_token}",
+            "directoryScopeId": "/",
         }
 
         url = f"{self.graph_resource}/beta/roleManagement/directory/roleAssignments"
 
         result = self.sdk.requests.post(
-            url, headers=auth_header, json=request_body, timeout=30
+            url, headers=make_auth_header(graph_token), json=request_body, timeout=30,
         )
         result.raise_for_status()
         return PrincipalAdminRoleCSPResult(**result.json())
 
     @log_and_raise_exceptions
     def _get_billing_admin_role_template_id(self, graph_token):
-        auth_header = {
-            "Authorization": f"Bearer {graph_token}",
-        }
         url = f"{self.graph_resource}/v1.0/directoryRoleTemplates"
-        response = self.sdk.requests.get(url, headers=auth_header)
+        response = self.sdk.requests.get(url, headers=make_auth_header(graph_token))
         response.raise_for_status()
         try:
             role_template = next(
@@ -1193,12 +1219,11 @@ class AzureCloudProvider(CloudProviderInterface):
 
     @log_and_raise_exceptions
     def _activate_billing_admin_role(self, graph_token, role_template_id):
-        auth_header = {
-            "Authorization": f"Bearer {graph_token}",
-        }
         request_body = {"roleTemplateId": role_template_id}
         url = f"{self.graph_resource}/v1.0/directoryRoles"
-        response = self.sdk.requests.post(url, headers=auth_header, json=request_body)
+        response = self.sdk.requests.post(
+            url, headers=make_auth_header(graph_token), json=request_body
+        )
         response.raise_for_status()
         return response.json()["id"]
 
@@ -1215,23 +1240,22 @@ class AzureCloudProvider(CloudProviderInterface):
     def _get_existing_billing_owner(
         self, token: str, payload: BillingOwnerCSPPayload
     ) -> Optional[UserCSPResult]:
-        header = {"Authorization": f"Bearer {token}"}
         url = f"{self.graph_resource}/v1.0/users/{payload.user_principal_name}"
-        result = self.sdk.requests.get(url, headers=header)
+        result = self.sdk.requests.get(url, headers=make_auth_header(token))
         if result.status_code == 200:
             return UserCSPResult(**result.json())
         return None
 
-    def create_billing_owner(self, payload: BillingOwnerCSPPayload):
+    def create_billing_owner(self, payload: BillingOwnerCSPPayload, graph_token=None):
         """Create a billing account owner, which is a billing role that can
         manage everything for a billing account.
 
         https://docs.microsoft.com/en-us/azure/cost-management-billing/manage/understand-mca-roles
         """
-
-        graph_token = self._get_tenant_principal_token(
-            payload.tenant_id, scope=self.graph_resource + "/.default"
-        )
+        if graph_token is None:
+            graph_token = self._get_tenant_principal_token(
+                payload.tenant_id, scope=self.graph_resource + DEFAULT_SCOPE_SUFFIX
+            )
 
         # Step 1: Retrieve or create an AAD identity for the user
         user_result = self._get_existing_billing_owner(graph_token, payload)
@@ -1261,32 +1285,23 @@ class AzureCloudProvider(CloudProviderInterface):
         request_body = {
             "roleDefinitionId": billing_admin_role_id,
             "principalId": user_id,
-            "resourceScope": "/",
-        }
-
-        auth_header = {
-            "Authorization": f"Bearer {graph_token}",
+            "directoryScopeId": "/",
         }
 
         url = f"{self.graph_resource}/beta/roleManagement/directory/roleAssignments"
-
-        result = self.sdk.requests.post(url, headers=auth_header, json=request_body)
+        result = self.sdk.requests.post(
+            url, headers=make_auth_header(graph_token), json=request_body
+        )
 
         error = result.json().get("error")
         if error and "A conflicting object" in error.get("message"):
-            return True
-
+            return
         result.raise_for_status()
-        return True
 
     @log_and_raise_exceptions
     def _get_billing_owner_role(self, graph_token):
-        auth_header = {
-            "Authorization": f"Bearer {graph_token}",
-        }
-
         url = f"{self.graph_resource}/v1.0/directoryRoles"
-        result = self.sdk.requests.get(url, headers=auth_header)
+        result = self.sdk.requests.get(url, headers=make_auth_header(graph_token))
         result.raise_for_status()
         result = result.json()
         for role in result["value"]:
@@ -1314,7 +1329,7 @@ class AzureCloudProvider(CloudProviderInterface):
         # Request a graph api authorization token
 
         graph_token = self._get_tenant_principal_token(
-            payload.tenant_id, scope=self.graph_resource + "/.default"
+            payload.tenant_id, scope=self.graph_resource + DEFAULT_SCOPE_SUFFIX
         )
 
         # Use the graph api to invite a user
@@ -1328,8 +1343,9 @@ class AzureCloudProvider(CloudProviderInterface):
         }
 
         url = f"{self.graph_resource}/v1.0/invitations"
-        headers = {"Authorization": f"Bearer {graph_token}"}
-        response = self.sdk.requests.post(url, json=body, headers=headers)
+        response = self.sdk.requests.post(
+            url, json=body, headers=make_auth_header(graph_token)
+        )
         response.raise_for_status()
 
         return UserCSPResult(id=response.json()["invitedUser"]["id"])
@@ -1347,14 +1363,10 @@ class AzureCloudProvider(CloudProviderInterface):
             },
         }
 
-        auth_header = {
-            "Authorization": f"Bearer {graph_token}",
-        }
-
         url = f"{self.graph_resource}/v1.0/users"
 
         result = self.sdk.requests.post(
-            url, headers=auth_header, json=request_body, timeout=30
+            url, headers=make_auth_header(graph_token), json=request_body, timeout=30,
         )
         result.raise_for_status()
 
@@ -1364,14 +1376,10 @@ class AzureCloudProvider(CloudProviderInterface):
     def _update_active_directory_user_email(self, graph_token, user_id, payload):
         request_body = {"otherMails": [payload.email]}
 
-        auth_header = {
-            "Authorization": f"Bearer {graph_token}",
-        }
-
         url = f"{self.graph_resource}/v1.0/users/{user_id}"
 
         result = self.sdk.requests.patch(
-            url, headers=auth_header, json=request_body, timeout=30
+            url, headers=make_auth_header(graph_token), json=request_body, timeout=30,
         )
         result.raise_for_status()
         return True
@@ -1386,14 +1394,10 @@ class AzureCloudProvider(CloudProviderInterface):
             }
         }
 
-        auth_header = {
-            "Authorization": f"Bearer {graph_token}",
-        }
-
         url = f"{self.graph_resource}/v1.0/users/{payload.user_object_id}"
 
         result = self.sdk.requests.patch(
-            url, headers=auth_header, json=request_body, timeout=30
+            url, headers=make_auth_header(graph_token), json=request_body, timeout=30,
         )
         result.raise_for_status()
         return True
@@ -1412,15 +1416,19 @@ class AzureCloudProvider(CloudProviderInterface):
             }
         }
 
-        auth_header = {
-            "Authorization": f"Bearer {graph_token}",
-        }
-
         assignment_guid = str(uuid4())
 
-        url = f"{self.sdk.cloud.endpoints.resource_manager}{payload.management_group_id}/providers/Microsoft.Authorization/roleAssignments/{assignment_guid}?api-version=2015-07-01"
+        url = urljoin(
+            self.sdk.cloud.endpoints.resource_manager,
+            f"{payload.management_group_id}/providers/Microsoft.Authorization/roleAssignments/{assignment_guid}",
+        )
 
-        response = self.sdk.requests.put(url, headers=auth_header, json=request_body)
+        response = self.sdk.requests.put(
+            url,
+            headers=make_auth_header(graph_token),
+            params={"api-version": "2015-07-01"},
+            json=request_body,
+        )
 
         if response.ok:
             return UserRoleCSPResult(**response.json())
@@ -1428,12 +1436,6 @@ class AzureCloudProvider(CloudProviderInterface):
             raise UserProvisioningException(
                 f"Failed to create user role assignment: {response.json()}"
             )
-
-    def _extract_subscription_id(self, subscription_url):
-        sub_id_match = SUBSCRIPTION_ID_REGEX.match(subscription_url)
-
-        if sub_id_match:
-            return sub_id_match.group(1)
 
     def _get_tenant_admin_token(self, tenant_id, scope):
         creds = self._source_tenant_creds(tenant_id)
@@ -1454,19 +1456,11 @@ class AzureCloudProvider(CloudProviderInterface):
     def _get_service_principal_token(
         self, tenant_id, client_id, secret_key, scope=None
     ):
-        url = (
-            f"{self.sdk.cloud.endpoints.active_directory}/{tenant_id}/oauth2/v2.0/token"
-        )
         payload_scope = scope or self.sdk.cloud.endpoints.resource_manager + ".default"
-        payload = {
-            "grant_type": "client_credentials",
-            "client_id": client_id,
-            "client_secret": secret_key,
-            "scope": payload_scope,
-        }
-        token_response = self.sdk.requests.post(url, data=payload, timeout=30)
-        token_response.raise_for_status()
-        token = token_response.json().get("access_token")
+        payload = ServicePrincipalTokenPayload(
+            scope=payload_scope, client_id=client_id, client_secret=secret_key,
+        )
+        token = get_principal_auth_token(tenant_id, payload)
         if token is None:
             message = f"Failed to get service principal token for scope '{payload_scope}' in tenant '{tenant_id}'"
             app.logger.error(message, exc_info=1)
@@ -1476,7 +1470,19 @@ class AzureCloudProvider(CloudProviderInterface):
 
     @log_and_raise_exceptions
     def _get_user_principal_token_for_scope(self, username, password, tenant_id, scope):
-        return get_user_principal_token_for_scope(username, password, tenant_id, scope)
+        payload = UserPrincipalTokenPayload(
+            client_id=self.powershell_client_id,
+            username=username,
+            password=password,
+            scope=scope,
+        )
+        token = get_principal_auth_token(tenant_id, payload)
+        if token is None:
+            message = f"Failed to get user principal token for scope '{scope}' in tenant '{tenant_id}'"
+            app.logger.error(message, exc_info=1)
+            raise AuthenticationException(message)
+        else:
+            return token
 
     @property
     def _root_creds(self):
@@ -1496,20 +1502,19 @@ class AzureCloudProvider(CloudProviderInterface):
         )
 
     @log_and_raise_exceptions
-    def _get_elevated_management_token(self, tenant_id):
-        mgmt_token = self._get_tenant_admin_token(
-            tenant_id, self.sdk.cloud.endpoints.resource_manager + "/.default"
+    def _elevate_tenant_admin_access(self, token):
+        url = urljoin(
+            self.sdk.cloud.endpoints.resource_manager,
+            "providers/Microsoft.Authorization/elevateAccess",
         )
-
-        auth_header = {
-            "Authorization": f"Bearer {mgmt_token}",
-        }
-        url = f"{self.sdk.cloud.endpoints.resource_manager}/providers/Microsoft.Authorization/elevateAccess?api-version=2016-07-01"
-
-        result = self.sdk.requests.post(url, headers=auth_header, timeout=30)
+        result = self.sdk.requests.post(
+            url,
+            headers=make_auth_header(token),
+            params={"api-version": "2016-07-01"},
+            timeout=30,
+        )
         result.raise_for_status()
-
-        return mgmt_token
+        return token
 
     def _source_root_creds(self):
         return KeyVaultCredentials(
@@ -1550,8 +1555,6 @@ class AzureCloudProvider(CloudProviderInterface):
         if token is None:
             token = self._get_tenant_principal_token(payload.tenant_id)
 
-        headers = {"Authorization": f"Bearer {token}"}
-
         request_body = {
             "type": "Usage",
             "timeframe": "Custom",
@@ -1562,13 +1565,15 @@ class AzureCloudProvider(CloudProviderInterface):
                 "grouping": [{"type": "Dimension", "name": "InvoiceId"}],
             },
         }
-        cost_mgmt_url = (
-            f"/providers/Microsoft.CostManagement/query?api-version=2019-11-01"
+        url = urljoin(
+            self.sdk.cloud.endpoints.resource_manager,
+            f"{payload.invoice_section_id}/providers/Microsoft.CostManagement/query",
         )
         result = self.sdk.requests.post(
-            f"{self.sdk.cloud.endpoints.resource_manager}{payload.invoice_section_id}{cost_mgmt_url}",
+            url,
+            params={"api-version": "2019-11-01"},
             json=request_body,
-            headers=headers,
+            headers=make_auth_header(token),
             timeout=30,
         )
         result.raise_for_status()
@@ -1582,3 +1587,144 @@ class AzureCloudProvider(CloudProviderInterface):
             scope=self.config.get("AZURE_CALC_RESOURCE"),
         )
         return f"{self.config.get('AZURE_CALC_URL')}?access_token={calc_access_token}"
+
+    @log_and_raise_exceptions
+    def _list_role_assignments(self, token, params=None):
+        api_version_param = {"api-version": "2015-07-01"}
+        if params is None:
+            params = api_version_param
+        else:
+            params.update(api_version_param)
+        url = urljoin(
+            self.sdk.cloud.endpoints.resource_manager,
+            "providers/Microsoft.Authorization/roleAssignments",
+        )
+        response = self.sdk.requests.get(
+            url=url, headers=make_auth_header(token), params=params,
+        )
+        response.raise_for_status()
+        return response.json()["value"]
+
+    @log_and_raise_exceptions
+    def _list_role_definitions(self, token, params=None):
+        api_version_param = {"api-version": "2015-07-01"}
+        if params is None:
+            params = api_version_param
+        else:
+            params.update(api_version_param)
+        url = urljoin(
+            self.sdk.cloud.endpoints.resource_manager,
+            "providers/Microsoft.Authorization/roleDefinitions",
+        )
+        response = self.sdk.requests.get(
+            url=url, headers=make_auth_header(token), params=params,
+        )
+        response.raise_for_status()
+        return response.json()["value"]
+
+    @log_and_raise_exceptions
+    def _remove_role_assignment(self, token, role_assignment_id):
+        """Removes role assignment in a given tenant
+        
+        https://docs.microsoft.com/en-us/rest/api/authorization/roleassignments/delete
+        """
+        response = self.sdk.requests.delete(
+            url=urljoin(self.sdk.cloud.endpoints.resource_manager, role_assignment_id),
+            params={"api-version": "2015-07-01"},
+            headers=make_auth_header(token),
+        )
+        response.raise_for_status()
+        return response.json()
+
+    def _get_role_definition_id(self, token, role_definition_name):
+        definitions = self._list_role_definitions(
+            token, params={"$filter": f"roleName eq '{role_definition_name}'"}
+        )
+        return next((d["name"] for d in definitions), None)
+
+    def _filter_role_assignments(self, assignments, role_definition_id):
+        """Find a role assignment in a list of role assignments with a given role definition id"""
+
+        for assignment in assignments:
+            if assignment["properties"]["roleDefinitionId"].endswith(
+                role_definition_id
+            ):
+                return assignment
+        return None
+
+    def _remove_tenant_admin_elevated_access(
+        self, tenant_id, tenant_admin_user_object_id, token=None
+    ) -> bool:
+        """Remove the User Access Administrator role assignment from the tenant admin"""
+
+        if token is None:
+            token = self._get_tenant_admin_token(
+                tenant_id, self.sdk.cloud.endpoints.resource_manager + "/.default",
+            )
+
+        # The User Access Administrator definition id may be a constant, but
+        # other documentation describing this process includes listing
+        # definitions to find the ID:
+        # https://docs.microsoft.com/en-us/azure/role-based-access-control/elevate-access-global-admin#remove-elevated-access-3
+        # Here, we try to get the id by listing first, but use the default in
+        # case we can't find it
+        definition_id = (
+            self._get_role_definition_id(
+                token, role_definition_name="User Access Administrator"
+            )
+            or USER_ACCESS_ADMIN_ROLE_DEFINITION_ID
+        )
+
+        try:
+            role_assignments = self._list_role_assignments(
+                token,
+                params={"$filter": f"principalId eq '{tenant_admin_user_object_id}'"},
+            )
+        except UnknownServerException as exc:
+            if exc.status_code == "403":
+                app.logger.warning(
+                    (
+                        "Tenant admin of tenant %s unable to list role assignments."
+                        "This could indicate that the tenant admin does not have a User"
+                        "Access Administrator role assignment."
+                    ),
+                    tenant_id,
+                )
+                return True
+            else:
+                raise exc
+
+        assignment = self._filter_role_assignments(role_assignments, definition_id)
+        if not assignment:
+            app.logger.warning(
+                "User Access Administrator role assignment not found for user %s in tenant %s",
+                tenant_admin_user_object_id,
+                tenant_id,
+            )
+            return True
+
+        return bool(self._remove_role_assignment(token, assignment["id"]))
+
+    @contextmanager
+    def _get_elevated_access_token(self, tenant_id, user_object_id):
+
+        tenant_admin_token = self._get_tenant_admin_token(
+            tenant_id, self.sdk.cloud.endpoints.resource_manager + "/.default"
+        )
+        elevated_token = self._elevate_tenant_admin_access(tenant_admin_token)
+        try:
+            yield elevated_token
+        finally:
+            try:
+
+                self._remove_tenant_admin_elevated_access(
+                    tenant_id, user_object_id, token=elevated_token
+                )
+
+            except self.sdk.requests.exceptions.RequestException:
+                app.logger.error(
+                    "Could not remove User Access Administrator for user %s in tenant %s",
+                    user_object_id,
+                    tenant_id,
+                )
+                raise Exception("Error removing elevated access")

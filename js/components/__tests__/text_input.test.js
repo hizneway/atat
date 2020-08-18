@@ -33,7 +33,7 @@ describe('TextInput Validates Correctly', () => {
       )
     })
 
-    it('Should allow valid TO numbers', () => {
+    it('Should allow valid TO numbers', async () => {
       const wrapper = mount(ToNumberWrapperComponent, {
         propsData: {
           name: 'testTextInput',
@@ -56,16 +56,16 @@ describe('TextInput Validates Correctly', () => {
 
       for (const number of validToNumbers) {
         // set value to be a valid TO number
-        textInputField.setValue(number)
+        await textInputField.setValue(number)
         // manually trigger change event in hidden fields
-        hiddenField.trigger('change')
+        await hiddenField.trigger('change')
         // check for validation classes
         expect(wrapper.contains('.usa-input--success')).toBe(true)
         expect(wrapper.contains('.usa-input--error')).toBe(false)
       }
     })
 
-    it('Should not allow invalid TO numbers', () => {
+    it('Should not allow invalid TO numbers', async () => {
       const wrapper = mount(ToNumberWrapperComponent, {
         propsData: {
           name: 'testTextInput',
@@ -86,9 +86,9 @@ describe('TextInput Validates Correctly', () => {
 
       for (const number of invalidToNumbers) {
         // set value to be a valid TO number
-        textInputField.setValue(number)
+        await textInputField.setValue(number)
         // manually trigger change event in hidden fields
-        hiddenField.trigger('change')
+        await hiddenField.trigger('change')
         // check for validation classes
         expect(wrapper.contains('.usa-input--success')).toBe(false)
         expect(wrapper.contains('.usa-input--error')).toBe(true)

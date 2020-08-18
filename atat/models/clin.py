@@ -79,7 +79,11 @@ class CLIN(Base, mixins.TimestampsMixin):
         return data
 
     @property
+    def is_within_pop(self):
+        return pendulum.today(tz="UTC").date() in pendulum.period(
+            self.start_date, self.end_date
+        )
+
+    @property
     def is_active(self):
-        return (
-            self.start_date <= pendulum.today().date() <= self.end_date
-        ) and self.task_order.signed_at
+        return self.is_within_pop and self.task_order.signed_at

@@ -8,7 +8,7 @@
     name: azure_keyvault
   vars:
     get_secrets: true
-    deploy_tag: deploy_tag
+    deploy_tag: "{{ deploy_tag }}"
 
 
 

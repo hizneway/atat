@@ -103,11 +103,18 @@ def update_and_render_next(
 def upload_config(csp, config):
     if csp == "azure" or csp == "hybrid":
         return {
-            "azureAccountName": config["AZURE_ACCOUNT_NAME"],
+            "azureAccountName": config["AZURE_STORAGE_ACCOUNT_NAME"],
             "azureContainerName": config["AZURE_TO_BUCKET_NAME"],
         }
     else:
         return {}
+
+
+def upload_cloud_provider(csp):
+    if csp == "hybrid":
+        return "azure"
+    else:
+        return csp
 
 
 @task_orders_bp.route("/task_orders/<portfolio_id>/upload_token")
@@ -115,12 +122,11 @@ def upload_config(csp, config):
 def upload_token(portfolio_id):
     (token, object_name) = app.csp.files.get_token()
     csp = app.config["CSP"]
-    config = upload_config(csp, app.config)
     render_args = {
-        "cloudProvider": csp,
+        "cloudProvider": upload_cloud_provider(csp),
         "token": token,
         "objectName": object_name,
-        "config": config,
+        "config": upload_config(csp, app.config),
     }
 
     return jsonify(render_args)
