@@ -1,16 +1,40 @@
 import pytest
-
 from pydantic import ValidationError
 
 from atat.domain.csp.cloud.models import (
     AZURE_MGMNT_PATH,
+    BillingOwnerCSPPayload,
+    BillingProfileCreationCSPResult,
+    BillingProfileVerificationCSPResult,
     KeyVaultCredentials,
     ManagementGroupCSPPayload,
     ManagementGroupCSPResponse,
+    TenantCSPResult,
     UserCSPPayload,
     UserRoleCSPPayload,
-    BillingOwnerCSPPayload,
+    class_to_stage,
+    stage_to_classname,
 )
+from atat.models.mixins.state_machines import AzureStages
+
+
+def test_stage_to_classname():
+    assert (
+        stage_to_classname(AzureStages.BILLING_PROFILE_CREATION.name)
+        == "BillingProfileCreation"
+    )
+
+
+@pytest.mark.parametrize(
+    "klass, stage",
+    [
+        (TenantCSPResult, "tenant"),
+        (BillingProfileCreationCSPResult, "billing_profile"),
+        (BillingProfileVerificationCSPResult, "billing_profile"),
+    ],
+)
+def test_class_to_stage(klass, stage):
+    assert class_to_stage(klass) == stage
 
 
 def test_ManagementGroupCSPPayload_management_group_name():

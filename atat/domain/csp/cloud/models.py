@@ -10,7 +10,7 @@ from .utils import (
     generate_mail_nickname,
     generate_user_principal_name,
 )
-from atat.utils import snake_to_camel
+from atat.utils import snake_to_camel, camel_to_snake
 
 
 AZURE_MGMNT_PATH = "/providers/Microsoft.Management/managementGroups/"
@@ -21,6 +21,25 @@ SUBSCRIPTION_ID_REGEX = re.compile(
     "\/?subscriptions\/([0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})",
     re.I,
 )
+PAYLOAD_CLASS_SUFFIX_REGEX = re.compile(r"(Creation|Verification)?CSP.*")
+
+
+def stage_to_classname(stage):
+    return "".join(map(lambda word: word.capitalize(), stage.split("_")))
+
+
+def class_to_stage(klass):
+    """Given a CSP model class, derive the stage name
+
+    Args:
+        klass (pydantic.BaseModel): a pydantic CSP data model class
+
+    Returns:
+        str: the stage name
+    """
+    class_name = klass.__name__
+    stage_camel_case = PAYLOAD_CLASS_SUFFIX_REGEX.split(class_name)[0]
+    return camel_to_snake(stage_camel_case)
 
 
 def normalize_management_group_id(cls, id_):
@@ -40,9 +59,18 @@ class AliasModel(BaseModel):
     * user_object_id:objectId
     """
 
+    reset_stage: bool = False
+
     class Config:
         alias_generator = snake_to_camel
         allow_population_by_field_name = True
+
+    def dict(self, *args, **kwargs):
+        kwargs.setdefault("exclude")
+        if kwargs["exclude"] is None:
+            kwargs["exclude"] = set()
+        kwargs["exclude"].update({"reset_stage"})
+        return super().dict(*args, **kwargs)
 
 
 class BaseCSPPayload(AliasModel):
