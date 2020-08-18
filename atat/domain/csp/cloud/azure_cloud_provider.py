@@ -801,12 +801,11 @@ class AzureCloudProvider(CloudProviderInterface):
             timeout=30,
         )
         result.raise_for_status()
-
-        if result.status_code == 202:
-            # 202 has location/retry after headers
-            return TaskOrderBillingCreationCSPResult(**result.headers)
-        elif result.status_code == 200:
-            return TaskOrderBillingVerificationCSPResult(**result.json())
+        return self._handle_async_operation_response(
+            result,
+            TaskOrderBillingCreationCSPResult,
+            TaskOrderBillingVerificationCSPResult,
+        )
 
     @log_and_raise_exceptions
     def create_billing_instruction(self, payload: BillingInstructionCSPPayload):
