@@ -621,6 +621,16 @@ class ProductPurchaseVerificationCSPPayload(BaseCSPPayload):
 class ProductPurchaseVerificationCSPResult(AliasModel):
     premium_purchase_date: str
 
+    @root_validator(pre=True)
+    def extract_premium_purchase_date(cls, values):
+        if "premium_purchase_date" in values:
+            return values
+        try:
+            values["premium_purchase_date"] = values["properties"]["purchaseDate"]
+            return values
+        except KeyError:
+            raise ValueError("Premium purchasedate not present in payload")
+
 
 class UserMixin(BaseModel):
     password: Optional[str]

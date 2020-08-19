@@ -9,6 +9,7 @@ from atat.domain.csp.cloud.models import (
     KeyVaultCredentials,
     ManagementGroupCSPPayload,
     ManagementGroupCSPResponse,
+    ProductPurchaseVerificationCSPResult,
     TenantCSPResult,
     UserCSPPayload,
     UserRoleCSPPayload,
@@ -124,6 +125,18 @@ def test_KeyVaultCredentials_enforce_root_creds():
     assert KeyVaultCredentials(
         root_tenant_id="an id", root_sp_client_id="C3PO", root_sp_key="beep boop"
     )
+
+
+class Test_ProductPurchaseVerificationCSPResult:
+    def test_azure_payload(self):
+        model = ProductPurchaseVerificationCSPResult(
+            **{"properties": {"purchaseDate": "2020/01/01"}}
+        )
+        assert model.premium_purchase_date == "2020/01/01"
+
+    def test_keywords(self):
+        model = ProductPurchaseVerificationCSPResult(premium_purchase_date="2020/01/01")
+        assert model.premium_purchase_date == "2020/01/01"
 
 
 def test_KeyVaultCredentials_merge_credentials():
