@@ -6,6 +6,7 @@ from uuid import uuid4
 import pendulum
 import pydantic
 import pytest
+
 from tests.factories import ApplicationFactory, EnvironmentFactory
 from tests.mock_azure import mock_azure, MOCK_ACCESS_TOKEN  # pylint: disable=W0611
 from tests.mock_azure import AZURE_CONFIG
@@ -74,6 +75,7 @@ from atat.domain.csp.cloud.models import (
     TenantPrincipalOwnershipCSPPayload,
     TenantPrincipalOwnershipCSPResult,
     UserCSPPayload,
+    UserCSPResult,
     UserRoleCSPPayload,
 )
 
@@ -1219,37 +1221,6 @@ def test_set_secret(unmocked_cloud_provider, mock_http_error_response):
     assert result["id"] == response_id
 
 
-def test_create_active_directory_user(
-    mock_azure: AzureCloudProvider, mock_http_error_response
-):
-    mock_result = mock_requests_response(json_data={"id": "id"})
-
-    mock_azure.sdk.requests.post.side_effect = [
-        mock_azure.sdk.requests.exceptions.ConnectionError,
-        mock_azure.sdk.requests.exceptions.Timeout,
-        mock_http_error_response,
-        mock_result,
-    ]
-
-    payload = UserCSPPayload(
-        tenant_id=uuid4().hex,
-        display_name="Test Testerson",
-        tenant_host_name="testtenant",
-        email="test@testerson.test",
-        password="asdfghjkl",  # pragma: allowlist secret
-    )
-    with pytest.raises(ConnectionException):
-        mock_azure._create_active_directory_user("token", payload)
-    with pytest.raises(ConnectionException):
-        mock_azure._create_active_directory_user("token", payload)
-    with pytest.raises(UnknownServerException, match=r".*500 Server Error.*"):
-        mock_azure._create_active_directory_user("token", payload)
-
-    result = mock_azure._create_active_directory_user("token", payload)
-
-    assert result.id == "id"
-
-
 def test_update_active_directory_user_email(
     mock_azure: AzureCloudProvider, mock_http_error_response
 ):
@@ -1378,15 +1349,19 @@ def test_create_user_role_failure(mock_azure: AzureCloudProvider):
         mock_azure.create_user_role(payload)
 
 
-def test_create_billing_owner(mock_azure: AzureCloudProvider):
+def test_create_billing_owner(monkeypatch, mock_azure: AzureCloudProvider):
 
     final_result = "1-2-3"
 
     # create_billing_owner does: POST, PATCH, GET, POST
 
+    monkeypatch.setattr(
+        mock_azure,
+        "_create_active_directory_user",
+        Mock(return_value=UserCSPResult(id=final_result)),
+    )
     # mock POST so that it pops off results in the order we want
     mock_azure.sdk.requests.post.side_effect = [
-        mock_requests_response(json_data={"id": final_result}),
         mock_requests_response(),
     ]
     # return value for PATCH doesn't matter much

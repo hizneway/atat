@@ -26,12 +26,12 @@ def generate_mail_nickname(name):
 
 def get_principal_auth_token(tenant_id, payload):
     """Returns an OAuth Access token for a User or Service Principal
-    
+
     args:
         tenant_id (str)
         payload (UserPrincipalTokenPayload or ServicePrincipalTokenPayload)
     returns:
-        str: token 
+        str: token
         or
         None
     """
@@ -41,3 +41,22 @@ def get_principal_auth_token(tenant_id, payload):
     response.raise_for_status()
     token = response.json().get("access_token")
     return token
+
+
+def create_active_directory_user(graph_token, graph_resource, payload):
+    request_body = {
+        "accountEnabled": True,
+        "displayName": payload.display_name,
+        "mailNickname": payload.mail_nickname,
+        "userPrincipalName": payload.user_principal_name,
+        "passwordProfile": {
+            "forceChangePasswordNextSignIn": True,
+            "password": payload.password,
+        },
+    }
+
+    url = f"{graph_resource}/v1.0/users"
+
+    return requests.post(
+        url, headers=make_auth_header(graph_token), json=request_body, timeout=30,
+    )
