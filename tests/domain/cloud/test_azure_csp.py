@@ -357,6 +357,7 @@ def test_validate_billing_profile_creation(
         json_data={
             "id": "/providers/Microsoft.Billing/billingAccounts/7c89b735-b22b-55c0-ab5a-c624843e8bf6:de4416ce-acc6-44b1-8122-c87c4e903c91_2019-05-31/billingProfiles/KQWI-W2SU-BG7-TGB",
             "name": "KQWI-W2SU-BG7-TGB",
+            "status": "Succeeded",
             "properties": {
                 "address": {
                     "addressLine1": "123 S Broad Street, Suite 2400",
@@ -706,6 +707,7 @@ def test_create_product_purchase_verification(mock_azure, mock_http_error_respon
         json_data={
             "id": "/providers/Microsoft.Billing/billingAccounts/BILLINGACCOUNTNAME/billingProfiles/BILLINGPROFILENAME/invoiceSections/INVOICESECTION/products/29386e29-a025-faae-f70b-b1cbbc266600",
             "name": "29386e29-a025-faae-f70b-b1cbbc266600",
+            "status": "Succeeded",
             "properties": {
                 "availabilityId": "C07TTFC7Q9XK",
                 "billingProfileId": "/providers/Microsoft.Billing/billingAccounts/BILLINGACCOUNTNAME/billingProfiles/BILLINGPROFILENAME",

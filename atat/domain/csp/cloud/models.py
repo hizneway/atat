@@ -621,6 +621,16 @@ class ProductPurchaseVerificationCSPPayload(BaseCSPPayload):
 class ProductPurchaseVerificationCSPResult(AliasModel):
     premium_purchase_date: str
 
+    @root_validator(pre=True)
+    def populate_premium_purchase_date(cls, values):
+        if "premium_purchase_date" in values:
+            return values
+        try:
+            values["premium_purchase_date"] = values["properties"]["purchaseDate"]
+            return values
+        except KeyError:
+            raise ValueError("Premium purchasedate not present in payload")
+
 
 class UserMixin(BaseModel):
     password: Optional[str]
@@ -688,7 +698,9 @@ class CostManagementQueryCSPPayload(BaseCSPPayload):
     to_date: str
 
     @root_validator(pre=True)
-    def extract_invoice_section(cls, values):
+    def populate_invoice_section_id(cls, values):
+        if "invoice_section_id" in values:
+            return values
         try:
             values["invoice_section_id"] = values["billing_profile_properties"][
                 "invoice_sections"

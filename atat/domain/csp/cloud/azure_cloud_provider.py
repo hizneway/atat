@@ -688,12 +688,11 @@ class AzureCloudProvider(CloudProviderInterface):
             timeout=30,
         )
         result.raise_for_status()
-
-        if result.status_code == 202:
-            # 202 has location/retry after headers
-            return BillingProfileCreationCSPResult(**result.headers)
-        elif result.status_code == 200:
-            return BillingProfileVerificationCSPResult(**result.json())
+        return self._handle_async_operation_response(
+            result,
+            BillingProfileCreationCSPResult,
+            BillingProfileVerificationCSPResult,
+        )
 
     @log_and_raise_exceptions
     def create_billing_profile_tenant_access(
@@ -908,15 +907,9 @@ class AzureCloudProvider(CloudProviderInterface):
             timeout=30,
         )
         result.raise_for_status()
-
-        if result.status_code == 202:
-            # 202 has location/retry after headers
-            return ProductPurchaseCSPResult(**result.headers)
-        elif result.status_code == 200:
-            premium_purchase_date = result.json()["properties"]["purchaseDate"]
-            return ProductPurchaseVerificationCSPResult(
-                premium_purchase_date=premium_purchase_date
-            )
+        return self._handle_async_operation_response(
+            result, ProductPurchaseCSPResult, ProductPurchaseVerificationCSPResult,
+        )
 
     def create_tenant_admin_credential_reset(
         self, payload: TenantAdminCredentialResetCSPPayload
