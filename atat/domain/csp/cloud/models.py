@@ -622,7 +622,7 @@ class ProductPurchaseVerificationCSPResult(AliasModel):
     premium_purchase_date: str
 
     @root_validator(pre=True)
-    def extract_premium_purchase_date(cls, values):
+    def populate_premium_purchase_date(cls, values):
         if "premium_purchase_date" in values:
             return values
         try:
@@ -698,7 +698,9 @@ class CostManagementQueryCSPPayload(BaseCSPPayload):
     to_date: str
 
     @root_validator(pre=True)
-    def extract_invoice_section(cls, values):
+    def populate_invoice_section_id(cls, values):
+        if "invoice_section_id" in values:
+            return values
         try:
             values["invoice_section_id"] = values["billing_profile_properties"][
                 "invoice_sections"
