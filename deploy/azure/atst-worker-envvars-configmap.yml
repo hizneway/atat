@@ -24,6 +24,8 @@ data:
   PGSSLROOTCERT: /opt/atat/atst/ssl/pgsslrootcert.crt
   PGUSER: atat_master@atat-db
   REDIS_HOST: atat.redis.cache.windows.net:6380
+  REDIS_SSLCHECKHOSTNAME: "true"
+  REDIS_SSLMODE: "required"
   REDIS_TLS: "true"
   SERVER_NAME: staging.atat.dev
   TZ: UTC
