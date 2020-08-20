@@ -37,9 +37,9 @@ RANDFILE       = $dir/.rnd     # private random number file
 nameopt        = default_ca
 certopt        = default_ca
 policy         = policy_match
-default_days   = 365
+default_days   = 3650
 default_md     = sha256
-default_crl_days = 365
+default_crl_days = 3650
 
 [ policy_match ]
 countryName            = optional
