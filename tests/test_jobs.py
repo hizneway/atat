@@ -23,6 +23,7 @@ from atat.domain.csp.cloud.models import (
     UserRoleCSPResult,
     SubscriptionCreationCSPPayload,
 )
+from atat.domain.csp.cloud.utils import OFFICE_365_DOMAIN
 from atat.jobs import (
     RecordFailure,
     build_subscription_payload,
@@ -163,7 +164,7 @@ class TestCreateUserJob:
         return PortfolioFactory.create(
             csp_data={
                 "tenant_id": str(uuid4()),
-                "domain_name": f"rebelalliance.{app.config.get('OFFICE_365_DOMAIN')}",
+                "domain_name": f"rebelalliance.{OFFICE_365_DOMAIN}",
             }
         )
 
@@ -383,7 +384,7 @@ def test_send_ppoc_email(monkeypatch, app):
             "email.portfolio_ready.body",
             {
                 "password_reset_address": app.config.get("AZURE_LOGIN_URL"),
-                "username": f"{user_id}@{domain_name}.{app.config.get('OFFICE_365_DOMAIN')}",
+                "username": f"{user_id}@{domain_name}.{OFFICE_365_DOMAIN}",
             },
         ),
     )

@@ -188,7 +188,6 @@ def map_config(config):
         # with a Beat job once a day)
         "CELERY_RESULT_EXPIRES": 0,
         "CELERY_RESULT_EXTENDED": True,
-        "OFFICE_365_DOMAIN": "onmicrosoft.com",
         "CONTRACT_START_DATE": pendulum.from_format(
             config.get("default", "CONTRACT_START_DATE"), "YYYY-MM-DD"
         ).date(),

@@ -89,6 +89,7 @@ from .utils import (
     get_principal_auth_token,
     make_auth_header,
     create_active_directory_user,
+    OFFICE_365_DOMAIN,
 )
 
 # This needs to be a fully pathed role definition identifier, not just a UUID
@@ -618,8 +619,9 @@ class AzureCloudProvider(CloudProviderInterface):
 
         result_dict = result.json()
         tenant_id = result_dict.get("tenantId")
-        tenant_admin_username = f"{payload.user_id}@{payload.domain_name}.{self.config.get('OFFICE_365_DOMAIN')}"
-
+        tenant_admin_username = (
+            f"{payload.user_id}@{payload.domain_name}.{OFFICE_365_DOMAIN}"
+        )
         self.create_tenant_creds(
             tenant_id,
             KeyVaultCredentials(

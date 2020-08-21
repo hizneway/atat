@@ -2,8 +2,10 @@ import re
 import string
 
 import requests
-from flask import current_app as app
 from msrestazure.azure_cloud import AZURE_PUBLIC_CLOUD as cloud
+
+
+OFFICE_365_DOMAIN = "onmicrosoft.com"
 
 
 def make_auth_header(token):
@@ -14,7 +16,7 @@ def make_auth_header(token):
 
 def generate_user_principal_name(name, domain_name):
     mail_name = generate_mail_nickname(name)
-    return f"{mail_name}@{domain_name}.{app.config.get('OFFICE_365_DOMAIN')}"
+    return f"{mail_name}@{domain_name}.{OFFICE_365_DOMAIN}"
 
 
 ESCAPED_PUNCTUATION = re.escape(string.punctuation)
