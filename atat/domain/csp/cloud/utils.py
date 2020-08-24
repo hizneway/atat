@@ -45,14 +45,16 @@ def get_principal_auth_token(tenant_id, payload):
     return token
 
 
-def create_active_directory_user(graph_token, graph_resource, payload):
+def create_active_directory_user(
+    graph_token, graph_resource, payload, password_reset=True
+):
     request_body = {
         "accountEnabled": True,
         "displayName": payload.display_name,
         "mailNickname": payload.mail_nickname,
         "userPrincipalName": payload.user_principal_name,
         "passwordProfile": {
-            "forceChangePasswordNextSignIn": True,
+            "forceChangePasswordNextSignIn": password_reset,
             "password": payload.password,
         },
     }

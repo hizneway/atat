@@ -44,7 +44,9 @@ def create_user(token, tenant_id, tenant_host_name):
         email=email,
         password=password,
     )
-    response = create_active_directory_user(token, GRAPH_RESOURCE, payload)
+    response = create_active_directory_user(
+        token, GRAPH_RESOURCE, payload, password_reset=False
+    )
     response.raise_for_status()
     result = payload.dict()
     result.update(
