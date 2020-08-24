@@ -1770,16 +1770,19 @@ class AzureCloudProvider(CloudProviderInterface):
         tenant_admin_token = self._get_tenant_admin_token(
             tenant_id, self.sdk.cloud.endpoints.resource_manager + "/.default"
         )
-        elevated_token = self._elevate_tenant_admin_access(tenant_admin_token)
+        self._elevate_tenant_admin_access(tenant_admin_token)
+        elevated_token = None
         try:
+            elevated_token = self._get_tenant_admin_token(
+                tenant_id, self.sdk.cloud.endpoints.resource_manager + "/.default"
+            )
             yield elevated_token
         finally:
             try:
-
+                remove_access_token = elevated_token or tenant_admin_token
                 self._remove_tenant_admin_elevated_access(
-                    tenant_id, user_object_id, token=elevated_token
+                    tenant_id, user_object_id, token=remove_access_token
                 )
-
             except self.sdk.requests.exceptions.RequestException:
                 app.logger.error(
                     "Could not remove User Access Administrator for user %s in tenant %s",
