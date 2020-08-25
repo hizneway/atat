@@ -48,39 +48,6 @@ def saml_post(saml_auth):
     if len(errors) == 0:
         if "AuthNRequestID" in session:
             del session["AuthNRequestID"]
-
-        query_string_parameters = session.get("query_string_parameters", {})
-        if (
-            "username_param" in query_string_parameters
-            or "dod_id_param" in query_string_parameters
-        ):
-            return None
-        else:
-            # if username or dod_id param not passed in,
-            # we get or create user from SAML information
-            saml_user_details = {}
-            saml_user_details["first_name"] = saml_auth.get_attribute(
-                "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname"
-            )[0]
-            saml_user_details["last_name"] = saml_auth.get_attribute(
-                "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/surname"
-            )[0]
-            try:
-                # We check for an existing user by searching for any user with the
-                # same first and last name. This could possibly cause collisions
-                # of two users with the exact same first and last name.
-                # However, the Azure SAML token doesn't seem to currently provide
-                # more distinquishing detail than that that
-                user = Users.get_by_first_and_last_name(
-                    saml_user_details["first_name"], saml_user_details["last_name"]
-                )
-            except NotFoundError:
-                new_dod_id = unique_dod_id()
-
-                created_user = Users.create(new_dod_id, **saml_user_details)
-                return created_user
-            return user
-
     else:
         app.logger.error(
             f"SAML response from IdP contained the following errors: {', '.join(errors)}"
