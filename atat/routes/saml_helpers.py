@@ -4,7 +4,7 @@ from urllib.parse import parse_qs, urlparse
 from flask import current_app as app
 from flask import g, session
 from onelogin.saml2.auth import OneLogin_Saml2_Auth
-
+from onelogin.saml2.errors import OneLogin_Saml2_ValidationError
 from atat.domain.exceptions import NotFoundError, UnauthenticatedError
 from atat.domain.users import Users
 from atat.utils import first_or_none
@@ -43,7 +43,11 @@ def saml_post(saml_auth):
     if "AuthNRequestID" in session:
         request_id = session["AuthNRequestID"]
 
-    saml_auth.process_response(request_id=request_id)
+    try:
+        saml_auth.process_response(request_id=request_id)
+    except OneLogin_Saml2_ValidationError as error_message:
+        app.logger.error(f"OneLogin_Saml2_ValidationError detected: {error_message}")
+        raise UnauthenticatedError("SAML Validation Failed")
     errors = saml_auth.get_errors()
     if len(errors) == 0:
         if "AuthNRequestID" in session:
