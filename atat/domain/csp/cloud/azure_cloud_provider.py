@@ -85,7 +85,12 @@ from .models import (
     UserRoleCSPResult,
 )
 from .policy import AzurePolicyManager
-from .utils import get_principal_auth_token, make_auth_header
+from .utils import (
+    get_principal_auth_token,
+    make_auth_header,
+    create_active_directory_user,
+    OFFICE_365_DOMAIN,
+)
 
 # This needs to be a fully pathed role definition identifier, not just a UUID
 # TODO: Extract these from sdk msrestazure.azure_cloud import AZURE_PUBLIC_CLOUD
@@ -614,8 +619,9 @@ class AzureCloudProvider(CloudProviderInterface):
 
         result_dict = result.json()
         tenant_id = result_dict.get("tenantId")
-        tenant_admin_username = f"{payload.user_id}@{payload.domain_name}.{self.config.get('OFFICE_365_DOMAIN')}"
-
+        tenant_admin_username = (
+            f"{payload.user_id}@{payload.domain_name}.{OFFICE_365_DOMAIN}"
+        )
         self.create_tenant_creds(
             tenant_id,
             KeyVaultCredentials(
@@ -765,7 +771,7 @@ class AzureCloudProvider(CloudProviderInterface):
             response (requests.Response): a requests response object
             creation_response_model (pydantic.BaseModel): the model to create and
                 return if the operation is still in progress
-            verification_response_model (pydantic.BaseModel): the model to 
+            verification_response_model (pydantic.BaseModel): the model to
                 create and return if the operation succeeds
 
         Raises:
@@ -930,7 +936,7 @@ class AzureCloudProvider(CloudProviderInterface):
     def _create_role_assignment(self, payload: RoleAssignmentPayload, token):
         """
         https://docs.microsoft.com/en-us/rest/api/authorization/roleassignments/create
-        
+
         Role assignment definition IDs are assigned at a particular scope
         https://docs.microsoft.com/en-us/azure/role-based-access-control/role-assignments-rest#add-a-role-assignment
 
@@ -962,7 +968,7 @@ class AzureCloudProvider(CloudProviderInterface):
         return response
 
     def create_tenant_admin_ownership(self, payload: TenantAdminOwnershipCSPPayload):
-        """Assigns the tenant admin (human user) the Owner role on the root 
+        """Assigns the tenant admin (human user) the Owner role on the root
         management group."""
 
         role_assignment_payload = RoleAssignmentPayload(
@@ -987,7 +993,7 @@ class AzureCloudProvider(CloudProviderInterface):
         """Assigns the the owner role for the service principal over the root management group.
 
         https://docs.microsoft.com/en-us/rest/api/authorization/roleassignments/create
-        
+
         Role assignment definition IDs are assigned at a particular scope
         https://docs.microsoft.com/en-us/azure/role-based-access-control/role-assignments-rest#add-a-role-assignment
         """
@@ -1083,7 +1089,7 @@ class AzureCloudProvider(CloudProviderInterface):
     def create_principal_app_graph_api_permissions(
         self, payload: PrincipalAppGraphApiPermissionsCSPPayload
     ) -> PrincipalAppGraphApiPermissionsCSPResult:
-        """Grant the Directory.ReadWrite.All app role assignment to the tenant 
+        """Grant the Directory.ReadWrite.All app role assignment to the tenant
         service principal
 
         https://docs.microsoft.com/en-us/graph/api/serviceprincipal-post-approleassignments?view=graph-rest-1.0&tabs=http
@@ -1112,14 +1118,14 @@ class AzureCloudProvider(CloudProviderInterface):
 
     def _extract_service_principal_from_query(self, response):
         """Extract a service principal object from a response
-        
-        In `_get_graph_sp_and_user_invite_app_role_ids`, the query parameters 
-        should make it so that a single service principal object is returned in 
+
+        In `_get_graph_sp_and_user_invite_app_role_ids`, the query parameters
+        should make it so that a single service principal object is returned in
         a list. This method returns that single service principal.
 
         Returns:
             servicePrincipal: https://docs.microsoft.com/en-us/graph/api/resources/serviceprincipal?view=graph-rest-1.0
-        
+
         Raises:
             ResourceProvisioningError: No service principal present
 
@@ -1143,7 +1149,7 @@ class AzureCloudProvider(CloudProviderInterface):
 
         Returns:
             appRole: https://docs.microsoft.com/en-us/graph/api/resources/approle?view=graph-rest-1.0
-        
+
         Raises:
             ResourceProvisioningError: No app role found in service principal's appRoles list with the given value
         """
@@ -1172,7 +1178,7 @@ class AzureCloudProvider(CloudProviderInterface):
         https://docs.microsoft.com/en-us/graph/api/serviceprincipal-list?view=graph-rest-1.0&tabs=http
 
         Returns:
-            Tuple of the service principal object ID of the Graph API app 
+            Tuple of the service principal object ID of the Graph API app
             registration and the app role id for "Directory.ReadWrite.All"
         """
         response = self.sdk.requests.get(
@@ -1394,22 +1400,7 @@ class AzureCloudProvider(CloudProviderInterface):
 
     @log_and_raise_exceptions
     def _create_active_directory_user(self, graph_token, payload) -> UserCSPResult:
-        request_body = {
-            "accountEnabled": True,
-            "displayName": payload.display_name,
-            "mailNickname": payload.mail_nickname,
-            "userPrincipalName": payload.user_principal_name,
-            "passwordProfile": {
-                "forceChangePasswordNextSignIn": True,
-                "password": payload.password,
-            },
-        }
-
-        url = f"{self.graph_resource}/v1.0/users"
-
-        result = self.sdk.requests.post(
-            url, headers=make_auth_header(graph_token), json=request_body, timeout=30,
-        )
+        result = create_active_directory_user(graph_token, self.graph_resource, payload)
         result.raise_for_status()
 
         return UserCSPResult(**result.json())
@@ -1667,7 +1658,7 @@ class AzureCloudProvider(CloudProviderInterface):
     @log_and_raise_exceptions
     def _remove_role_assignment(self, token, role_assignment_id):
         """Removes role assignment in a given tenant
-        
+
         https://docs.microsoft.com/en-us/rest/api/authorization/roleassignments/delete
         """
         response = self.sdk.requests.delete(
