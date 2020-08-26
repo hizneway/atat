@@ -36,5 +36,6 @@ def reset_database():
 if __name__ == "__main__":
     config = make_config({"default": {"DEBUG": False}})
     app = make_app(config)
+    print(f"Creating extension {app}")
     with app.app_context():
         reset_database()
