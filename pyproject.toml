@@ -63,7 +63,7 @@ pytest-depends = "^1.0.1"
 
 [tool.black]
 line-length = 88
-target-version = ['py36']
+target-version = ['py37']
 include = '\.pyi?$'
 exclude = '''
 /(
@@ -79,3 +79,6 @@ exclude = '''
   | node_modules
 )/
 '''
+
+[tool.isort]
+profile = 'black'
