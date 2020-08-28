@@ -155,6 +155,10 @@ commands:
 
 jobs:
   docker-build:
+    parameters:
+      container_registry:
+        type: string
+        default: ${AZURE_REGISTRY}
     docker:
       - image: docker:18.06.0-ce-git
     steps:
