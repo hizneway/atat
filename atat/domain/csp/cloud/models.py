@@ -323,6 +323,9 @@ class TenantAdminOwnershipCSPPayload(BaseCSPPayload):
     root_management_group_name: str
     user_object_id: str
 
+    class Config:
+        fields = {"root_management_group_name": "tenant_id"}
+
 
 class TenantAdminOwnershipCSPResult(AliasModel):
     admin_owner_assignment_id: str
@@ -344,6 +347,9 @@ class TenantPrincipalOwnershipCSPPayload(BaseCSPPayload):
     root_management_group_name: str
     user_object_id: str
     principal_id: str
+
+    class Config:
+        fields = {"root_management_group_name": "tenant_id"}
 
 
 class TenantPrincipalOwnershipCSPResult(AliasModel):
@@ -407,7 +413,7 @@ class PrincipalAdminRoleCSPResult(AliasModel):
         fields = {"principal_assignment_id": "id"}
 
 
-class ManagementGroupCSPPayload(AliasModel):
+class ManagementGroupCSPPayload(BaseCSPPayload):
     """
     :param: management_group_name: Just pass a UUID for this.
     :param: display_name: This can contain any character and
@@ -416,7 +422,6 @@ class ManagementGroupCSPPayload(AliasModel):
         i.e. /providers/Microsoft.Management/managementGroups/[management group ID]
     """
 
-    tenant_id: str
     management_group_name: Optional[str]
     display_name: str
     parent_id: Optional[str]
@@ -456,7 +461,10 @@ class ManagementGroupGetCSPResponse(AliasModel):
 
 
 class ApplicationCSPPayload(ManagementGroupCSPPayload):
-    pass
+    class Config:
+        fields = {
+            "root_management_group_name": "tenant_id",
+        }
 
 
 class ApplicationCSPResult(ManagementGroupCSPResponse):
@@ -468,23 +476,23 @@ class InitialMgmtGroupCSPPayload(ManagementGroupCSPPayload):
 
 
 class InitialMgmtGroupCSPResult(AliasModel):
-    root_management_group_name: str
+    initial_management_group_name: str
 
     class Config:
         fields = {
-            "root_management_group_name": "name",
+            "initial_management_group_name": "name",
         }
 
     @property
-    def root_management_group_id(self):
-        return f"/providers/Microsoft.Management/managementGroups/{self.root_management_group_name}"
+    def initial_management_group_id(self):
+        return f"/providers/Microsoft.Management/managementGroups/{self.initial_management_group_name}"
 
 
 class InitialMgmtGroupVerificationCSPPayload(ManagementGroupGetCSPPayload):
     user_object_id: str
 
     class Config:
-        fields = {"management_group_name": "root_management_group_name"}
+        fields = {"management_group_name": "initial_management_group_name"}
 
 
 class InitialMgmtGroupVerificationCSPResult(ManagementGroupGetCSPResponse):
@@ -734,9 +742,12 @@ class BillingOwnerCSPResult(AliasModel):
     billing_owner_id: str
 
 
-class PoliciesCSPPayload(AliasModel):
+class PoliciesCSPPayload(BaseCSPPayload):
     root_management_group_name: str
     tenant_id: str
+
+    class Config:
+        fields = {"root_management_group_name": "tenant_id"}
 
 
 class PoliciesCSPResult(AliasModel):
