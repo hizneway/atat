@@ -9,20 +9,25 @@ from atat.domain.csp.cloud.models import (
     ProductPurchaseVerificationCSPPayload,
 )
 from script.provision.provision_base import handle
-from atat.domain.csp.cloud.exceptions import GeneralCSPException
 import time
 
 
 def poll_purchase(csp, inputs, csp_response):
     if csp_response.get("product_purchase_verify_url") is not None:
-        purchase_premium = ProductPurchaseVerificationCSPPayload(
-            **{**inputs.get("initial_inputs"), **inputs.get("csp_data"), **csp_response}
-        )
-        try:
-            return csp.create_product_purchase_verification(purchase_premium)
-        except GeneralCSPException:
-            time.sleep(10)
-            return poll_purchase(csp, inputs, csp_respons)
+        retries = 3
+        for _ in range(retries):
+            purchase_premium = ProductPurchaseVerificationCSPPayload(
+                **{
+                    **inputs.get("initial_inputs"),
+                    **inputs.get("csp_data"),
+                    **csp_response,
+                }
+            )
+            response = csp.create_product_purchase_verification(purchase_premium)
+            if response.reset_stage:
+                time.sleep(10)
+            else:
+                return response
     else:
         return csp_response
 

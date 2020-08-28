@@ -9,20 +9,25 @@ from atat.domain.csp.cloud.models import (
     BillingProfileVerificationCSPPayload,
 )
 from script.provision.provision_base import handle
-from atat.domain.csp.cloud.exceptions import GeneralCSPException
 import time
 
 
 def poll_billing(csp, inputs, csp_response):
     if csp_response.get("billing_profile_verify_url") is not None:
-        get_billing_profile = BillingProfileVerificationCSPPayload(
-            **{**inputs.get("initial_inputs"), **inputs.get("csp_data"), **csp_response}
-        )
-        try:
-            return csp.create_billing_profile_verification(get_billing_profile)
-        except GeneralCSPException:
-            time.sleep(10)
-            return poll_billing(csp, inputs, csp_response)
+        retries = 3
+        for _ in range(retries):
+            get_billing_profile = BillingProfileVerificationCSPPayload(
+                **{
+                    **inputs.get("initial_inputs"),
+                    **inputs.get("csp_data"),
+                    **csp_response,
+                }
+            )
+            response = csp.create_billing_profile_verification(get_billing_profile)
+            if response.reset_stage:
+                time.sleep(10)
+            else:
+                return response
     else:
         return csp_response
 
