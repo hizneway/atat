@@ -72,7 +72,14 @@ def init_saml_auth(request):
     saml_request_config = prepare_flask_request(request)
     saml_auth_config = _make_saml_config()
     auth = OneLogin_Saml2_Auth(saml_request_config, saml_auth_config)
-    return auth
+    saml_settings = auth.get_settings()
+    metadata = saml_settings.get_sp_metadata()
+    errors = saml_settings.validate_metadata(metadata)
+    if len(errors) != 0:
+        app.logger.error("Error found on Metadata: %s" % (", ".join(errors)))
+        raise UnauthenticatedError("SAML Metadata Validation Failed")
+    else:
+        return auth
 
 
 def prepare_flask_request(request):
