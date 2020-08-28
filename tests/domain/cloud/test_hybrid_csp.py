@@ -164,7 +164,7 @@ class TestIntegration:
         # the portfolio management group should be the parent of the management
         # group we just created for the application
         assert (
-            application.portfolio.csp_data["root_management_group_name"]
+            application.portfolio.csp_data["tenant_id"]
             in mgmt_grp_resp["properties"]["details"]["parent"]["id"]
         )
 

@@ -964,8 +964,36 @@ class AzureCloudProvider(CloudProviderInterface):
             json=request_body,
             timeout=30,
         )
-        response.raise_for_status()
-        return response
+        if (
+            response.status_code == 409
+            and response.json()["error"]["code"] == "RoleAssignmentExists"
+        ):
+            app.logger.warning(
+                "Tried to create a role assignment that already existed. Role definition name: %s principal id: %s",
+                payload.role_definition_name,
+                payload.principal_id,
+            )
+            return self._get_role_assignment_by_definition_and_principal(
+                token, payload.role_definition_name, payload.principal_id
+            )
+        else:
+            response.raise_for_status()
+            return response.json()
+
+    def _get_role_assignment_by_definition_and_principal(
+        self, token, definition_name, principal_id
+    ):
+        """List the role assignments for a particular principal, then filter by
+        defintion id to return a role assignment
+
+        Args:
+            definition_name: UUID of a role defintion
+            principal_id: UUID for a principal
+        """
+        role_assignments = self._list_role_assignments(
+            token, params={"$filter": f"principalId eq '{principal_id}'"},
+        )
+        return self._filter_role_assignments(role_assignments, definition_name)
 
     def create_tenant_admin_ownership(self, payload: TenantAdminOwnershipCSPPayload):
         """Assigns the tenant admin (human user) the Owner role on the root
@@ -981,10 +1009,10 @@ class AzureCloudProvider(CloudProviderInterface):
         with self._get_elevated_access_token(
             payload.tenant_id, payload.user_object_id
         ) as elevated_token:
-            response = self._create_role_assignment(
+            role_assignment = self._create_role_assignment(
                 role_assignment_payload, elevated_token
             )
-            return TenantAdminOwnershipCSPResult(**response.json())
+            return TenantAdminOwnershipCSPResult(**role_assignment)
 
     @log_and_raise_exceptions
     def create_tenant_principal_ownership(
@@ -1008,10 +1036,10 @@ class AzureCloudProvider(CloudProviderInterface):
         with self._get_elevated_access_token(
             payload.tenant_id, payload.user_object_id
         ) as elevated_token:
-            response = self._create_role_assignment(
+            role_assignment = self._create_role_assignment(
                 role_assignment_payload, elevated_token
             )
-            return TenantPrincipalOwnershipCSPResult(**response.json())
+            return TenantPrincipalOwnershipCSPResult(**role_assignment)
 
     @log_and_raise_exceptions
     def create_tenant_principal_app(self, payload: TenantPrincipalAppCSPPayload):
@@ -1675,12 +1703,12 @@ class AzureCloudProvider(CloudProviderInterface):
         )
         return next((d["name"] for d in definitions), None)
 
-    def _filter_role_assignments(self, assignments, role_definition_id):
+    def _filter_role_assignments(self, assignments, role_definition_name):
         """Find a role assignment in a list of role assignments with a given role definition id"""
 
         for assignment in assignments:
             if assignment["properties"]["roleDefinitionId"].endswith(
-                role_definition_id
+                role_definition_name
             ):
                 return assignment
         return None
@@ -1709,9 +1737,8 @@ class AzureCloudProvider(CloudProviderInterface):
         )
 
         try:
-            role_assignments = self._list_role_assignments(
-                token,
-                params={"$filter": f"principalId eq '{tenant_admin_user_object_id}'"},
+            assignment = self._get_role_assignment_by_definition_and_principal(
+                token, definition_id, tenant_admin_user_object_id
             )
         except UnknownServerException as exc:
             if exc.status_code == "403":
@@ -1727,7 +1754,6 @@ class AzureCloudProvider(CloudProviderInterface):
             else:
                 raise exc
 
-        assignment = self._filter_role_assignments(role_assignments, definition_id)
         if not assignment:
             app.logger.warning(
                 "User Access Administrator role assignment not found for user %s in tenant %s",
@@ -1744,16 +1770,19 @@ class AzureCloudProvider(CloudProviderInterface):
         tenant_admin_token = self._get_tenant_admin_token(
             tenant_id, self.sdk.cloud.endpoints.resource_manager + "/.default"
         )
-        elevated_token = self._elevate_tenant_admin_access(tenant_admin_token)
+        self._elevate_tenant_admin_access(tenant_admin_token)
+        elevated_token = None
         try:
+            elevated_token = self._get_tenant_admin_token(
+                tenant_id, self.sdk.cloud.endpoints.resource_manager + "/.default"
+            )
             yield elevated_token
         finally:
             try:
-
+                remove_access_token = elevated_token or tenant_admin_token
                 self._remove_tenant_admin_elevated_access(
-                    tenant_id, user_object_id, token=elevated_token
+                    tenant_id, user_object_id, token=remove_access_token
                 )
-
             except self.sdk.requests.exceptions.RequestException:
                 app.logger.error(
                     "Could not remove User Access Administrator for user %s in tenant %s",

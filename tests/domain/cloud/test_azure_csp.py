@@ -225,9 +225,8 @@ def test_create_initial_mgmt_group_succeeds(
     )
     result: InitialMgmtGroupCSPResult = mock_azure.create_initial_mgmt_group(payload)
 
-    # TODO: The initial mgmt group != the root management group
-    assert result.root_management_group_id == management_group_id
-    assert result.root_management_group_name == payload.management_group_name
+    assert result.initial_management_group_id == management_group_id
+    assert result.initial_management_group_name == payload.management_group_name
 
 
 def test_create_initial_mgmt_group_verification(
@@ -2070,12 +2069,12 @@ class Test_remove_tenant_admin_elevated_access:
         @pytest.fixture(autouse=True)
         def patch_submethods(self, mock_azure, monkeypatch):
             monkeypatch.setattr(
-                mock_azure, "_get_tenant_admin_token", Mock(return_value="MOCK_TOKEN"),
+                mock_azure,
+                "_get_tenant_admin_token",
+                Mock(side_effect=["MOCK_TOKEN", "MOCK_ELEVATED_TOKEN"]),
             )
             monkeypatch.setattr(
-                mock_azure,
-                "_elevate_tenant_admin_access",
-                Mock(return_value="MOCK_ELEVATED_TOKEN"),
+                mock_azure, "_elevate_tenant_admin_access", Mock(),
             )
             monkeypatch.setattr(
                 mock_azure, "_remove_tenant_admin_elevated_access", Mock(),
@@ -2110,3 +2109,17 @@ class Test_remove_tenant_admin_elevated_access:
                 ) as _:
                     pass
             assert len(mock_logger.messages) == 1
+
+        def test_second_token_request_fails(self, mock_azure, monkeypatch):
+            monkeypatch.setattr(
+                mock_azure,
+                "_get_tenant_admin_token",
+                Mock(side_effect=["MOCK_TOKEN", AuthenticationException("weird")]),
+            )
+            with pytest.raises(AuthenticationException):
+                with mock_azure._get_elevated_access_token(
+                    "tenant_id", "user_object_id"
+                ) as _:
+                    mock_azure._remove_tenant_admin_elevated_access.assert_called_with(
+                        "tenant_id", "user_object_id", token="MOCK_TOKEN"
+                    )
