@@ -13,6 +13,17 @@ import time
 
 
 def poll_billing(csp, inputs, csp_response):
+    """Polls billing endpoint for async response three times.  If verify url is not 
+    available, the csp_response payload will be returned. 
+
+    Args:
+        csp: CSP Class object
+        inputs: Json string
+        csp_response: Result from billing profile creation
+
+    Returns:
+        Response from billing profile verification or csp_response payload
+    """
     if csp_response.get("billing_profile_verify_url") is not None:
         retries = 3
         for _ in range(retries):
