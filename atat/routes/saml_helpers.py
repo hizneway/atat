@@ -57,6 +57,7 @@ def saml_post(saml_auth):
         app.logger.error(
             f"SAML response from IdP contained the following errors: {', '.join(errors)}"
         )
+        app.logger.error(saml_auth.get_last_error_reason())
         raise UnauthenticatedError("SAML Authentication Failed")
 
 
@@ -70,7 +71,7 @@ def unique_dod_id():
 
 
 def init_saml_auth(request):
-    saml_request_config = prepare_flask_request(request)
+    saml_request_config = _prepare_flask_request(request)
     saml_auth_config = _make_saml_config()
     auth = OneLogin_Saml2_Auth(saml_request_config, saml_auth_config)
     saml_settings = auth.get_settings()
@@ -83,8 +84,26 @@ def init_saml_auth(request):
         return auth
 
 
-def prepare_flask_request(request):
-    # If server is behind proxys or balancers use the HTTP_X_FORWARDED fields
+def init_saml_auth_dev(request):
+    saml_request_config = _prepare_flask_request(request)
+    saml_auth_config = _make_dev_saml_config()
+    auth = OneLogin_Saml2_Auth(saml_request_config, saml_auth_config)
+    saml_settings = auth.get_settings()
+    metadata = saml_settings.get_sp_metadata()
+    errors = saml_settings.validate_metadata(metadata)
+    if len(errors) != 0:
+        app.logger.error("Error found on Metadata: %s" % (", ".join(errors)))
+        raise UnauthenticatedError("SAML Metadata Validation Failed")
+    else:
+        return auth
+
+
+def _prepare_flask_request(request):
+    """
+    Prepares a request object for use in building the SAML request.
+    Since we use an AD FS SAML Identity Provider, we need to ensure
+    that lowercase_urlencoding is enabled, per https://github.com/onelogin/python-saml/pull/144
+    """
     url_data = urlparse(request.url)
     return {
         "https": "on" if request.scheme == "https" else "off",
@@ -95,6 +114,31 @@ def prepare_flask_request(request):
         "lowercase_urlencoding": True,  # Required by ADFS
         "post_data": request.form.copy(),
     }
+
+
+def _make_dev_saml_config():
+    config = {
+        "strict": True,
+        "debug": True,
+        "sp": {
+            "entityId": app.config["SAML_DEV_ENTITY_ID"],
+            "assertionConsumerService": {
+                "url": app.config["SAML_DEV_ACS"],
+                "binding": "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST",
+            },
+            "singleLogoutService": {
+                "url": app.config["SAML_DEV_SLS"],
+                "binding": "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect",
+            },
+            "NameIDFormat": "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress",
+        },
+    }
+
+    idp_config = OneLogin_Saml2_IdPMetadataParser.parse_remote(
+        app.config["SAML_DEV_IDP_URI"], validate_cert=False
+    )
+    config["idp"] = idp_config["idp"]
+    return config
 
 
 def _make_saml_config():
@@ -111,30 +155,16 @@ def _make_saml_config():
                 "url": app.config["SAML_SLS"],
                 "binding": "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect",
             },
-            "NameIDFormat": "urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified",
-            "x509cert": "",
-            "privateKey": "",
-        },
-        "idp": {
-            "entityId": app.config["SAML_IDP_ENTITY_ID"],
-            "singleSignOnService": {
-                "url": app.config["SAML_IDP_SSOS"],
-                "binding": "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect",
-            },
-            "singleLogoutService": {
-                "url": app.config["SAML_IDP_SLS"],
-                "binding": "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect",
-            },
-            "x509cert": app.config["SAML_IDP_CERT"],
+            "NameIDFormat": "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress",
         },
         "security": {
             "wantAssertionsSigned": True,  # Needed by EIFS
             "requestedAuthnContext": False,  # Needed by EIFS
         },
     }
+
     idp_config = OneLogin_Saml2_IdPMetadataParser.parse_remote(
-        "https://fs.disa.mil/federationmetadata/2007-06/federationmetadata.xml", # Carleton TODO make config value
-        validate_cert=False,
+        app.config["SAML_IDP_URI"], validate_cert=False
     )
     config["idp"] = idp_config["idp"]
     return config
