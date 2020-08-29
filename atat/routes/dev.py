@@ -9,7 +9,7 @@ from atat.domain.permission_sets import PermissionSets
 from atat.domain.users import Users
 from atat.forms.data import SERVICE_BRANCHES
 from atat.jobs import send_mail
-from atat.routes.saml_helpers import init_saml_auth, saml_get, saml_post
+from atat.routes.saml_helpers import init_saml_auth_dev, saml_get, saml_post
 from atat.utils import pick
 
 from . import current_user_setup, redirect_after_login_url
@@ -137,12 +137,14 @@ def login_dev():
     if "sls" in request.args and request.method == "GET":
         return redirect(url_for("atat.root"))
 
-    if request.method == "GET":
-        saml_auth = init_saml_auth(request)
+    if (
+        "saml" in request.args or app.config.get("SAML_LOGIN_DEV", False)
+    ) and request.method == "GET":
+        saml_auth = init_saml_auth_dev(request)
         return redirect(saml_get(saml_auth, request))
 
     if "acs" in request.args and request.method == "POST":
-        saml_auth = init_saml_auth(request)
+        saml_auth = init_saml_auth_dev(request)
         session["login_method"] = "dev"
         saml_post(saml_auth)
         query_string_parameters = session.get("query_string_parameters", {})
