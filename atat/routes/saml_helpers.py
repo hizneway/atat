@@ -5,6 +5,7 @@ from flask import current_app as app
 from flask import g, session
 from onelogin.saml2.auth import OneLogin_Saml2_Auth
 from onelogin.saml2.errors import OneLogin_Saml2_ValidationError
+from onelogin.saml2.idp_metadata_parser import OneLogin_Saml2_IdPMetadataParser
 from atat.domain.exceptions import NotFoundError, UnauthenticatedError
 from atat.domain.users import Users
 from atat.utils import first_or_none
@@ -91,14 +92,13 @@ def prepare_flask_request(request):
         "server_port": url_data.port,
         "script_name": request.path,
         "get_data": request.args.copy(),
-        # Uncomment if using ADFS as IdP, https://github.com/onelogin/python-saml/pull/144
-        # 'lowercase_urlencoding': True,
+        "lowercase_urlencoding": True,  # Required by ADFS
         "post_data": request.form.copy(),
     }
 
 
 def _make_saml_config():
-    return {
+    config = {
         "strict": True,
         "debug": g.dev,
         "sp": {
@@ -127,4 +127,14 @@ def _make_saml_config():
             },
             "x509cert": app.config["SAML_IDP_CERT"],
         },
+        "security": {
+            "wantAssertionsSigned": True,  # Needed by EIFS
+            "requestedAuthnContext": False,  # Needed by EIFS
+        },
     }
+    idp_config = OneLogin_Saml2_IdPMetadataParser.parse_remote(
+        "https://fs.disa.mil/federationmetadata/2007-06/federationmetadata.xml", # Carleton TODO make config value
+        validate_cert=False,
+    )
+    config["idp"] = idp_config["idp"]
+    return config
