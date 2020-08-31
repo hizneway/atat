@@ -57,7 +57,7 @@ def make_app(config):
     make_redis(app, config)
     csrf = CSRFProtect()
     csrf.exempt("atat.routes.dev.login_dev")
-    csrf.exempt("atat.login")
+    csrf.exempt("atat.routes.login")
 
     app.config.update(config)
     app.config.update({"SESSION_REDIS": app.redis})
