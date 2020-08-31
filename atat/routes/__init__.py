@@ -156,11 +156,11 @@ def login():
         parsed_samAccountName = samAccountName.split(".")
         dod_id, short_designation = parsed_samAccountName
         if short_designation == "MIL":
-            saml_user_details["designation"] = "Miltary"
+            saml_user_details["designation"] = "miltary"
         elif short_designation == "CIV":
-            saml_user_details["designation"] = "Civilian"
+            saml_user_details["designation"] = "civilian"
         elif short_designation == "CTR":
-            saml_user_details["designation"] = "Contractor"
+            saml_user_details["designation"] = "contractor"
         # TODO: Do we need to add phone, agency
         user = Users.get_or_create_by_dod_id(dod_id, **saml_user_details)
 
