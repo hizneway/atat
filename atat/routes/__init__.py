@@ -14,6 +14,7 @@ from atat.domain.exceptions import UnauthenticatedError
 from atat.domain.users import Users
 from atat.routes.saml_helpers import init_saml_auth
 from atat.utils.flash import formatted_flash as flash
+from atat.routes.saml_helpers import saml_get, saml_post, init_saml_auth
 
 bp = Blueprint("atat", __name__)
 
@@ -129,3 +130,43 @@ def logout():
 @bp.route("/about")
 def about():
     return render_template("about.html")
+
+
+@bp.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == "GET":
+        saml_auth = init_saml_auth(request)
+        return redirect(saml_get(saml_auth, request))
+
+    if "acs" in request.args and request.method == "POST":
+        saml_auth = init_saml_auth(request)
+        saml_post(saml_auth)
+
+        saml_user_details = {}
+        saml_user_details["first_name"] = saml_auth.get_attribute(
+            "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname"
+        )[0]
+        saml_user_details["last_name"] = saml_auth.get_attribute(
+            "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/surname"
+        )[0]
+        saml_user_details["email"] = saml_auth.get_attribute(
+            "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress"
+        )[0]
+        samAccountName = saml_auth.get_attribute("samAccountName")[0]
+        parsed_samAccountName = samAccountName.split(".")
+        dod_id, short_designation = parsed_samAccountName
+        if short_designation == "MIL":
+            saml_user_details["designation"] = "Miltary"
+        elif short_designation == "CIV":
+            saml_user_details["designation"] = "Civilian"
+        elif short_designation == "CTR":
+            saml_user_details["designation"] = "Contractor"
+        # TODO: Do we need to add phone, agency
+        user = Users.get_or_create_by_dod_id(dod_id, **saml_user_details)
+
+    query_string_parameters = session.get("query_string_parameters", {})
+    next_param = query_string_parameters.get("next_param", None)
+    if "query_string_parameters" in session:
+        del session["query_string_parameters"]
+    current_user_setup(user)
+    return redirect(redirect_after_login_url(next_param))
