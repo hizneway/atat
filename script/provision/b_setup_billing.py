@@ -23,7 +23,8 @@ def setup_billing(csp, inputs):
         payload = BillingProfileVerificationCSPPayload(
             **{**inputs.get("initial_inputs"), **inputs.get("csp_data"), **result,}
         )
-        result = verify_async(csp_method, payload)
+        retry_after = result.get("billing_profile_retry_after")
+        result = verify_async(csp_method, payload, retry_after)
 
     return result
 

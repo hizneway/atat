@@ -23,7 +23,8 @@ def purchase_aadp(csp, inputs):
         payload = ProductPurchaseVerificationCSPPayload(
             **{**inputs.get("initial_inputs"), **inputs.get("csp_data"), **result,}
         )
-        result = verify_async(csp_method, payload)
+        retry_after = result.get("product_purchase_retry_after")
+        result = verify_async(csp_method, payload, retry_after)
 
     return result
 
