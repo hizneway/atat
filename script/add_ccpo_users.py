@@ -17,7 +17,14 @@ from atat.models import User
 def add_ccpo_users(ccpo_users):
     print("Creating initial set of CCPO users.")
     for user_data in ccpo_users:
-        user = User(**user_data)
+        user = User(
+            first_name=user_data["first_name"],
+            last_name=user_data["last_name"],
+            dod_id=user_data["dod_id"],
+            email=user_data.get("email"),
+            phone_number=user_data.get("phone_number"),
+            phone_ext=user_data.get("phone_ext"),
+        )
         Users.give_ccpo_perms(user, commit=False)
         db.session.add(user)
 

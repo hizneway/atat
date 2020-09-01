@@ -353,7 +353,6 @@ All config settings must be declared in "config/base.ini", even if they are null
 Values where "[Testing only]" is mentioned are only required for running the Hybrid test suite, **not** for using the Hybrid interface for a running instance of ATAT.
 
 Configuration variables that are needed solely to run Hybrid tests are in the `[hybrid]` section of the base configuration file.
-- `AZURE_ADMIN_ROLE_ASSIGNMENT_ID`: The fully pathed role assignment ID that associates a user with admin privileges to the root tenant of the Hybrid Cloud
 - `AZURE_BILLING_PROFILE_ID`: ID of the billing profile used for Cost Management queries with the Hybrid interface.
 - `AZURE_SUBSCRIPTION_CREATION_CLIENT_ID`: [Testing only] Client ID of an app registration in the root tenant used for subscription integration tests
 - `AZURE_SUBSCRIPTION_CREATION_SECRET`: [Testing only] Secret key for the app registration associated with the `AZURE_SUBSCRIPTION_CREATION_CLIENT_ID`

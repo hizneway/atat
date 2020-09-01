@@ -119,7 +119,7 @@ def login_redirect():
 def logout():
     _logout()
     response = make_response(redirect(url_for(".root")))
-    response.set_cookie("expandSidenav", "", expires=0)
+    response.set_cookie("expandSidenav", "", expires=0, httponly=True)
     flash("logged_out")
     return response
 

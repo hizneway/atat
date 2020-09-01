@@ -6,6 +6,7 @@ from uuid import uuid4
 import pendulum
 import pydantic
 import pytest
+
 from tests.factories import ApplicationFactory, EnvironmentFactory
 from tests.mock_azure import mock_azure, MOCK_ACCESS_TOKEN  # pylint: disable=W0611
 from tests.mock_azure import AZURE_CONFIG
@@ -74,6 +75,7 @@ from atat.domain.csp.cloud.models import (
     TenantPrincipalOwnershipCSPPayload,
     TenantPrincipalOwnershipCSPResult,
     UserCSPPayload,
+    UserCSPResult,
     UserRoleCSPPayload,
 )
 
@@ -223,9 +225,8 @@ def test_create_initial_mgmt_group_succeeds(
     )
     result: InitialMgmtGroupCSPResult = mock_azure.create_initial_mgmt_group(payload)
 
-    # TODO: The initial mgmt group != the root management group
-    assert result.root_management_group_id == management_group_id
-    assert result.root_management_group_name == payload.management_group_name
+    assert result.initial_management_group_id == management_group_id
+    assert result.initial_management_group_name == payload.management_group_name
 
 
 def test_create_initial_mgmt_group_verification(
@@ -1219,37 +1220,6 @@ def test_set_secret(unmocked_cloud_provider, mock_http_error_response):
     assert result["id"] == response_id
 
 
-def test_create_active_directory_user(
-    mock_azure: AzureCloudProvider, mock_http_error_response
-):
-    mock_result = mock_requests_response(json_data={"id": "id"})
-
-    mock_azure.sdk.requests.post.side_effect = [
-        mock_azure.sdk.requests.exceptions.ConnectionError,
-        mock_azure.sdk.requests.exceptions.Timeout,
-        mock_http_error_response,
-        mock_result,
-    ]
-
-    payload = UserCSPPayload(
-        tenant_id=uuid4().hex,
-        display_name="Test Testerson",
-        tenant_host_name="testtenant",
-        email="test@testerson.test",
-        password="asdfghjkl",  # pragma: allowlist secret
-    )
-    with pytest.raises(ConnectionException):
-        mock_azure._create_active_directory_user("token", payload)
-    with pytest.raises(ConnectionException):
-        mock_azure._create_active_directory_user("token", payload)
-    with pytest.raises(UnknownServerException, match=r".*500 Server Error.*"):
-        mock_azure._create_active_directory_user("token", payload)
-
-    result = mock_azure._create_active_directory_user("token", payload)
-
-    assert result.id == "id"
-
-
 def test_update_active_directory_user_email(
     mock_azure: AzureCloudProvider, mock_http_error_response
 ):
@@ -1378,15 +1348,19 @@ def test_create_user_role_failure(mock_azure: AzureCloudProvider):
         mock_azure.create_user_role(payload)
 
 
-def test_create_billing_owner(mock_azure: AzureCloudProvider):
+def test_create_billing_owner(monkeypatch, mock_azure: AzureCloudProvider):
 
     final_result = "1-2-3"
 
     # create_billing_owner does: POST, PATCH, GET, POST
 
+    monkeypatch.setattr(
+        mock_azure,
+        "_create_active_directory_user",
+        Mock(return_value=UserCSPResult(id=final_result)),
+    )
     # mock POST so that it pops off results in the order we want
     mock_azure.sdk.requests.post.side_effect = [
-        mock_requests_response(json_data={"id": final_result}),
         mock_requests_response(),
     ]
     # return value for PATCH doesn't matter much
@@ -2095,12 +2069,12 @@ class Test_remove_tenant_admin_elevated_access:
         @pytest.fixture(autouse=True)
         def patch_submethods(self, mock_azure, monkeypatch):
             monkeypatch.setattr(
-                mock_azure, "_get_tenant_admin_token", Mock(return_value="MOCK_TOKEN"),
+                mock_azure,
+                "_get_tenant_admin_token",
+                Mock(side_effect=["MOCK_TOKEN", "MOCK_ELEVATED_TOKEN"]),
             )
             monkeypatch.setattr(
-                mock_azure,
-                "_elevate_tenant_admin_access",
-                Mock(return_value="MOCK_ELEVATED_TOKEN"),
+                mock_azure, "_elevate_tenant_admin_access", Mock(),
             )
             monkeypatch.setattr(
                 mock_azure, "_remove_tenant_admin_elevated_access", Mock(),
@@ -2135,3 +2109,17 @@ class Test_remove_tenant_admin_elevated_access:
                 ) as _:
                     pass
             assert len(mock_logger.messages) == 1
+
+        def test_second_token_request_fails(self, mock_azure, monkeypatch):
+            monkeypatch.setattr(
+                mock_azure,
+                "_get_tenant_admin_token",
+                Mock(side_effect=["MOCK_TOKEN", AuthenticationException("weird")]),
+            )
+            with pytest.raises(AuthenticationException):
+                with mock_azure._get_elevated_access_token(
+                    "tenant_id", "user_object_id"
+                ) as _:
+                    mock_azure._remove_tenant_admin_elevated_access.assert_called_with(
+                        "tenant_id", "user_object_id", token="MOCK_TOKEN"
+                    )
