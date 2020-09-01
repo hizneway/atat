@@ -2101,9 +2101,7 @@ class Test_remove_tenant_admin_elevated_access:
 
         def test_remove_elevated_access_fails(self, mock_azure, mock_logger):
             mock_azure._remove_tenant_admin_elevated_access.side_effect = [
-                mock_azure.sdk.requests.exceptions.ConnectionError,
-                mock_azure.sdk.requests.exceptions.ConnectionError,
-                mock_azure.sdk.requests.exceptions.ConnectionError,
+                mock_azure.sdk.requests.exceptions.ConnectionError
             ]
             with pytest.raises(Exception):
                 with mock_azure._get_elevated_access_token(
@@ -2125,3 +2123,15 @@ class Test_remove_tenant_admin_elevated_access:
                     mock_azure._remove_tenant_admin_elevated_access.assert_called_with(
                         "tenant_id", "user_object_id", token="MOCK_TOKEN"
                     )
+
+        def test_remove_elevated_access_called_after_exception(
+            self, mock_azure, mock_logger
+        ):
+            with pytest.raises(Exception):
+                with mock_azure._get_elevated_access_token(
+                    "tenant_id", "user_object_id"
+                ) as elevated_token:
+                    raise Exception
+            mock_azure._remove_tenant_admin_elevated_access.assert_called_once_with(
+                "tenant_id", "user_object_id", token=elevated_token
+            )
