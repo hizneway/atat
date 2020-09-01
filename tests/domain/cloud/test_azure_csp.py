@@ -2092,12 +2092,13 @@ class Test_remove_tenant_admin_elevated_access:
                 ) as _:
                     pass
 
-        def test_get_token(self, mock_azure):
+        def test_get_token(self, mock_azure, mock_logger):
             with mock_azure._get_elevated_access_token(
                 "tenant_id", "user_object_id"
             ) as elevated_token:
                 pass
             assert elevated_token == "MOCK_ELEVATED_TOKEN"
+            assert len(mock_logger.messages) == 2
 
         def test_remove_elevated_access_fails(self, mock_azure, mock_logger):
             mock_azure._remove_tenant_admin_elevated_access.side_effect = [
@@ -2108,7 +2109,7 @@ class Test_remove_tenant_admin_elevated_access:
                     "tenant_id", "user_object_id"
                 ) as _:
                     pass
-            assert len(mock_logger.messages) == 1
+            assert len(mock_logger.messages) == 2
 
         def test_second_token_request_fails(self, mock_azure, monkeypatch):
             monkeypatch.setattr(
