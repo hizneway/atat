@@ -161,6 +161,9 @@ def login():
         elif short_designation == "CTR":
             saml_user_details["designation"] = "contractor"
         # TODO: Do we need to add phone, agency
+        is_us_citizen = saml_auth.get_attribute("extenstionAttribute4")[0]
+        if is_us_citizen == "Y":
+            saml_user_details["citizenship"] = "United States"
         user = Users.get_or_create_by_dod_id(dod_id, **saml_user_details)
 
     query_string_parameters = session.get("query_string_parameters", {})
