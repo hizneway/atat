@@ -18,7 +18,7 @@
     "ally.js": "^1.4.1",
     "autoprefixer": "^9.8.6",
     "babel-polyfill": "^6.26.0",
-    "date-fns": "^2.16.0",
+    "date-fns": "^2.16.1",
     "ramda": "^0.27.1",
     "stickybits": "^3.7.7",
     "svg-innerhtml": "^1.1.0",
@@ -30,7 +30,7 @@
     "whatwg-fetch": "^3.4.0"
   },
   "devDependencies": {
-    "@vue/test-utils": "^1.0.4",
+    "@vue/test-utils": "^1.0.5",
     "babel-core": "^6.26.3",
     "babel-jest": "^23.6.0",
     "babel-preset-env": "^1.7.0",
