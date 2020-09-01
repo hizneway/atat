@@ -9,7 +9,6 @@ from atat.domain.csp.cloud.models import (
     ProductPurchaseVerificationCSPPayload,
 )
 from script.provision.provision_base import handle
-import time
 
 
 def poll_purchase(csp, inputs, csp_response):
@@ -24,23 +23,12 @@ def poll_purchase(csp, inputs, csp_response):
     Returns:
         Response from billing profile verification or csp_response payload
     """
-    if csp_response.get("product_purchase_verify_url") is not None:
-        retries = 3
-        for _ in range(retries):
-            purchase_premium = ProductPurchaseVerificationCSPPayload(
-                **{
-                    **inputs.get("initial_inputs"),
-                    **inputs.get("csp_data"),
-                    **csp_response,
-                }
-            )
-            response = csp.create_product_purchase_verification(purchase_premium)
-            if response.reset_stage:
-                time.sleep(10)
-            else:
-                return response
-    else:
-        return csp_response
+    verify_url = csp_response.get("product_purchase_verify_url")
+    csp_method = csp.create_product_purchase_verification
+    payload = ProductPurchaseVerificationCSPPayload(
+        **{**inputs.get("initial_inputs"), **inputs.get("csp_data"), **csp_response,}
+    )
+    return verify_async(verify_url, csp_method, payload, csp_response)
 
 
 def purchase_aadp(csp, inputs):

@@ -8,8 +8,7 @@ from atat.domain.csp.cloud.models import (
     BillingProfileCreationCSPPayload,
     BillingProfileVerificationCSPPayload,
 )
-from script.provision.provision_base import handle
-import time
+from script.provision.provision_base import handle, verify_async
 
 
 def poll_billing(csp, inputs, csp_response):
@@ -24,23 +23,12 @@ def poll_billing(csp, inputs, csp_response):
     Returns:
         Response from billing profile verification or csp_response payload
     """
-    if csp_response.get("billing_profile_verify_url") is not None:
-        retries = 3
-        for _ in range(retries):
-            get_billing_profile = BillingProfileVerificationCSPPayload(
-                **{
-                    **inputs.get("initial_inputs"),
-                    **inputs.get("csp_data"),
-                    **csp_response,
-                }
-            )
-            response = csp.create_billing_profile_verification(get_billing_profile)
-            if response.reset_stage:
-                time.sleep(10)
-            else:
-                return response
-    else:
-        return csp_response
+    verify_url = csp_response.get("billing_profile_verify_url")
+    csp_method = csp.create_billing_profile_verification
+    payload = BillingProfileVerificationCSPPayload(
+        **{**inputs.get("initial_inputs"), **inputs.get("csp_data"), **csp_response,}
+    )
+    return verify_async(verify_url, csp_method, payload, csp_response)
 
 
 def setup_billing(csp, inputs):
