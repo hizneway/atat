@@ -161,9 +161,21 @@ def login():
         elif short_designation == "CTR":
             saml_user_details["designation"] = "contractor"
         # TODO: Do we need to add phone, agency
-        is_us_citizen = saml_auth.get_attribute("extenstionAttribute4")[0]
+        is_us_citizen = saml_auth.get_attribute("extensionAttribute4")[0]
         if is_us_citizen == "Y":
             saml_user_details["citizenship"] = "United States"
+        agency_code = saml_auth.get_attribute("extensionAttribute1")[0]
+        if agency_code == "F":
+            saml_user_details["service_branch"] = "air_force"
+        elif agency_code == "N":
+            saml_user_details["service_branch"] = "navy"
+        elif agency_code == "M":
+            saml_user_details["service_branch"] = "marine_corps"
+        elif agency_code == "A":
+            saml_user_details["service_branch"] = "army"
+        mobile = saml_auth.get_attribute("mobile")[0]
+        # TODO catch multiple phone attributes
+        saml_user_details["phone_number"] = mobile
         user = Users.get_or_create_by_dod_id(dod_id, **saml_user_details)
 
     query_string_parameters = session.get("query_string_parameters", {})
