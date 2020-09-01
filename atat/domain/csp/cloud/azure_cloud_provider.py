@@ -1072,7 +1072,7 @@ class AzureCloudProvider(CloudProviderInterface):
         graph_token = self._get_tenant_admin_token(payload.tenant_id, self.graph_scope)
         request_body = {"appId": payload.principal_app_id}
 
-        url = f"{self.graph_resource}/beta/servicePrincipals"
+        url = f"{self.graph_resource}/v1.0/servicePrincipals"
 
         result = self.sdk.requests.post(
             url, json=request_body, headers=make_auth_header(graph_token), timeout=30,
