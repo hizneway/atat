@@ -152,9 +152,8 @@ def login():
         saml_user_details["email"] = saml_auth.get_attribute(
             "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress"
         )[0]
-        samAccountName = saml_auth.get_attribute("samAccountName")[0]
-        parsed_samAccountName = samAccountName.split(".")
-        dod_id, short_designation = parsed_samAccountName
+        sam_account_name = saml_auth.get_attribute("samAccountName")[0]
+        dod_id, short_designation = sam_account_name.split(".")
         if short_designation == "MIL":
             saml_user_details["designation"] = "miltary"
         elif short_designation == "CIV":
