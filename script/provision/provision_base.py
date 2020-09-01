@@ -76,13 +76,10 @@ def handle(f):
         traceback.print_exc()
 
 
-def verify_async(verify_url, csp_method, payload, csp_response):
-    if verify_url is not None:
-        while True:
-            response = csp_method(payload)
-            if response.reset_stage:
-                time.sleep(10)
-            else:
-                return response
-    else:
-        return csp_response
+def verify_async(csp_method, payload):
+    while True:
+        response = csp_method(payload)
+        if response.reset_stage:
+            time.sleep(10)
+        else:
+            return response.dict()
