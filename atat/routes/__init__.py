@@ -14,7 +14,13 @@ from atat.domain.exceptions import UnauthenticatedError, NotFoundError
 from atat.domain.users import Users
 from atat.routes.saml_helpers import init_saml_auth
 from atat.utils.flash import formatted_flash as flash
-from atat.routes.saml_helpers import saml_get, saml_post, init_saml_auth, EIFSAttributes
+from atat.routes.saml_helpers import (
+    saml_get,
+    saml_post,
+    init_saml_auth,
+    EIFSAttributes,
+    SAM_ACCOUNT_FORMAT,
+)
 
 bp = Blueprint("atat", __name__)
 
@@ -153,6 +159,11 @@ def login():
 
 
 def get_user_from_saml_attributes(saml_attributes):
+    """Finds a user based on DoD ID in SAML attributes or creates a new user
+    with the info if one isn't found. saml_attributes are expected to be in
+    the format returned by OneLogin_Saml2_Auth.get_attributes(), dictionary
+    of string : list
+    """
     saml_attributes = {k: v[0] for k, v in saml_attributes.items()}
     saml_user_details = {}
 
@@ -160,10 +171,15 @@ def get_user_from_saml_attributes(saml_attributes):
     saml_user_details["last_name"] = saml_attributes.get(EIFSAttributes.LAST_NAME)
     saml_user_details["email"] = saml_attributes.get(EIFSAttributes.EMAIL)
 
-    sam_account_name = saml_attributes.get(EIFSAttributes.SAM_ACCOUNT_NAME)
-    if sam_account_name is None:
-        raise Exception("Missing SAM account name.")
-    dod_id, short_designation = sam_account_name.split(".")
+    try:
+        sam_account_name = saml_attributes.get(EIFSAttributes.SAM_ACCOUNT_NAME)
+        dod_id, short_designation = SAM_ACCOUNT_FORMAT.match(sam_account_name).groups()
+    except TypeError:
+        app.logger.error("SAML response missing SAM Account Name")
+        raise Exception("SAML response missing SAM Account Name")
+    except AttributeError:
+        app.logger.error(f"Incorrect format of SAM account name {sam_account_name}")
+        raise Exception(f"Incorrect format of SAM account name {sam_account_name}")
 
     try:
         return Users.get_by_dod_id(dod_id)

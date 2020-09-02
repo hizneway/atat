@@ -1,14 +1,18 @@
 from random import randint
+import re
 from urllib.parse import parse_qs, urlparse
 
-from flask import current_app as app
-from flask import g, session
+from flask import current_app as app, g, session
+
 from onelogin.saml2.auth import OneLogin_Saml2_Auth
 from onelogin.saml2.errors import OneLogin_Saml2_ValidationError
 from onelogin.saml2.idp_metadata_parser import OneLogin_Saml2_IdPMetadataParser
 from atat.domain.exceptions import NotFoundError, UnauthenticatedError
 from atat.domain.users import Users
 from atat.utils import first_or_none
+
+
+SAM_ACCOUNT_FORMAT = re.compile("(1\d{9})\.(MIL|CIV|CTR)")
 
 
 class EIFSAttributes:

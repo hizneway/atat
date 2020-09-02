@@ -79,6 +79,20 @@ def test_get_user_from_saml_attributes_missing_dod_id():
         get_user_from_saml_attributes(saml_attributes)
 
 
+def test_get_user_from_saml_invalid_sam_format():
+    saml_attributes = {
+        EIFSAttributes.GIVEN_NAME: [""],
+        EIFSAttributes.LAST_NAME: [""],
+        EIFSAttributes.SAM_ACCOUNT_NAME: ["sam account name format changed"],
+        EIFSAttributes.EMAIL: [""],
+        EIFSAttributes.US_CITIZEN: [""],
+        EIFSAttributes.AGENCY_CODE: [""],
+        EIFSAttributes.MOBILE: [""],
+    }
+    with pytest.raises(Exception):
+        get_user_from_saml_attributes(saml_attributes)
+
+
 def test_get_user_from_saml_existing_user():
     expected_dod_id = "1234567890"
     saml_attributes = {
