@@ -10,7 +10,7 @@ from werkzeug.routing import RequestRedirect
 
 from atat.domain.auth import logout as _logout
 from atat.domain.authnid import AuthenticationContext
-from atat.domain.exceptions import UnauthenticatedError
+from atat.domain.exceptions import UnauthenticatedError, NotFoundError
 from atat.domain.users import Users
 from atat.routes.saml_helpers import init_saml_auth
 from atat.utils.flash import formatted_flash as flash
@@ -142,41 +142,7 @@ def login():
         saml_auth = init_saml_auth(request)
         saml_post(saml_auth)
 
-        saml_user_details = {}
-        saml_user_details["first_name"] = saml_auth.get_attribute(
-            "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname"
-        )[0]
-        saml_user_details["last_name"] = saml_auth.get_attribute(
-            "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/surname"
-        )[0]
-        saml_user_details["email"] = saml_auth.get_attribute(
-            "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress"
-        )[0]
-        sam_account_name = saml_auth.get_attribute("samAccountName")[0]
-        dod_id, short_designation = sam_account_name.split(".")
-        if short_designation == "MIL":
-            saml_user_details["designation"] = "miltary"
-        elif short_designation == "CIV":
-            saml_user_details["designation"] = "civilian"
-        elif short_designation == "CTR":
-            saml_user_details["designation"] = "contractor"
-        # TODO: Do we need to add phone, agency
-        is_us_citizen = saml_auth.get_attribute("extensionAttribute4")[0]
-        if is_us_citizen == "Y":
-            saml_user_details["citizenship"] = "United States"
-        agency_code = saml_auth.get_attribute("extensionAttribute1")[0]
-        if agency_code == "F":
-            saml_user_details["service_branch"] = "air_force"
-        elif agency_code == "N":
-            saml_user_details["service_branch"] = "navy"
-        elif agency_code == "M":
-            saml_user_details["service_branch"] = "marine_corps"
-        elif agency_code == "A":
-            saml_user_details["service_branch"] = "army"
-        mobile = saml_auth.get_attribute("mobile")[0]
-        # TODO catch multiple phone attributes
-        saml_user_details["phone_number"] = mobile
-        user = Users.get_or_create_by_dod_id(dod_id, **saml_user_details)
+        user = get_user_from_saml_attributes(saml_auth.get_attributes())
 
     query_string_parameters = session.get("query_string_parameters", {})
     next_param = query_string_parameters.get("next_param", None)
@@ -184,3 +150,58 @@ def login():
         del session["query_string_parameters"]
     current_user_setup(user)
     return redirect(redirect_after_login_url(next_param))
+
+
+def get_user_from_saml_attributes(saml_attributes):
+    saml_attributes = {k: v[0] for k, v in saml_attributes.items()}
+    saml_user_details = {}
+    saml_user_details["first_name"] = saml_attributes.get(
+        "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname"
+    )
+    saml_user_details["last_name"] = saml_attributes.get(
+        "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/surname"
+    )
+    saml_user_details["email"] = saml_attributes.get(
+        "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress"
+    )
+    sam_account_name = saml_attributes.get("samAccountName")
+
+    if sam_account_name is None:
+        raise Exception("Missing SAM account name.")
+
+    dod_id, short_designation = sam_account_name.split(".")
+
+    try:
+        return Users.get_by_dod_id(dod_id)
+    except NotFoundError:
+        app.logger.info(f"No user found for DoD ID {dod_id}, creating...")
+
+    if short_designation == "MIL":
+        saml_user_details["designation"] = "military"
+    elif short_designation == "CIV":
+        saml_user_details["designation"] = "civilian"
+    elif short_designation == "CTR":
+        saml_user_details["designation"] = "contractor"
+
+    # TODO: Do we need to add phone, agency
+
+    is_us_citizen = saml_attributes.get("extensionAttribute4")
+    if is_us_citizen == "Y":
+        saml_user_details["citizenship"] = "United States"
+
+    agency_code = saml_attributes.get("extensionAttribute1")
+    if agency_code == "F":
+        saml_user_details["service_branch"] = "air_force"
+    elif agency_code == "N":
+        saml_user_details["service_branch"] = "navy"
+    elif agency_code == "M":
+        saml_user_details["service_branch"] = "marine_corps"
+    elif agency_code == "A":
+        saml_user_details["service_branch"] = "army"
+
+    mobile = saml_attributes.get("mobile")
+
+    # TODO catch multiple phone attributes
+    saml_user_details["phone_number"] = mobile
+
+    return Users.get_or_create_by_dod_id(dod_id, **saml_user_details)
