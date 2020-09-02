@@ -285,7 +285,6 @@ All config settings must be declared in "config/base.ini", even if they are null
 - `AZURE_STORAGE_KEY`: A valid secret key for the Azure blob storage account
 - `AZURE_TO_BUCKET_NAME`: The Azure blob storage container name for task order uploads
 - `BLOB_STORAGE_URL`: URL to Azure blob storage container.
-- `CAC_URL`: URL for the CAC authentication route.
 - `CA_CHAIN`: Path to the CA chain file.
 - `CDN_ORIGIN`: URL for the origin host for asset files.
 - `CELERY_DEFAULT_QUEUE`: String specifying the name of the queue that background tasks will be added to.

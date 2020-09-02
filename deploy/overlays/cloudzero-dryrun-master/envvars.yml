@@ -4,7 +4,6 @@ kind: ConfigMap
 metadata:
   name: atst-worker-envvars
 data:
-  CAC_URL: https://auth-master.atat.dev/login-redirect
   CELERY_DEFAULT_QUEUE: celery-master
   FLASK_ENV: master
   PGDATABASE: cloudzero_dryrun_master
@@ -15,7 +14,6 @@ kind: ConfigMap
 metadata:
   name: atst-envvars
 data:
-  CAC_URL: https://auth-master.atat.dev/login-redirect
   CDN_ORIGIN: https://master.atat.dev
   CELERY_DEFAULT_QUEUE: celery-master
   FLASK_ENV: master

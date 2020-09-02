@@ -24,7 +24,7 @@ def root():
     if g.current_user:
         return redirect(url_for(".home"))
 
-    redirect_url = app.config.get("CAC_URL")
+    redirect_url = url_for(".login")
     if request.args.get("next"):
         redirect_url = url.urljoin(
             redirect_url,
