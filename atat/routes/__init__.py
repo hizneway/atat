@@ -14,7 +14,7 @@ from atat.domain.exceptions import UnauthenticatedError, NotFoundError
 from atat.domain.users import Users
 from atat.routes.saml_helpers import init_saml_auth
 from atat.utils.flash import formatted_flash as flash
-from atat.routes.saml_helpers import saml_get, saml_post, init_saml_auth
+from atat.routes.saml_helpers import saml_get, saml_post, init_saml_auth, EIFSAttributes
 
 bp = Blueprint("atat", __name__)
 
@@ -155,20 +155,14 @@ def login():
 def get_user_from_saml_attributes(saml_attributes):
     saml_attributes = {k: v[0] for k, v in saml_attributes.items()}
     saml_user_details = {}
-    saml_user_details["first_name"] = saml_attributes.get(
-        "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname"
-    )
-    saml_user_details["last_name"] = saml_attributes.get(
-        "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/surname"
-    )
-    saml_user_details["email"] = saml_attributes.get(
-        "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress"
-    )
-    sam_account_name = saml_attributes.get("samAccountName")
 
+    saml_user_details["first_name"] = saml_attributes.get(EIFSAttributes.GIVEN_NAME)
+    saml_user_details["last_name"] = saml_attributes.get(EIFSAttributes.LAST_NAME)
+    saml_user_details["email"] = saml_attributes.get(EIFSAttributes.EMAIL)
+
+    sam_account_name = saml_attributes.get(EIFSAttributes.SAM_ACCOUNT_NAME)
     if sam_account_name is None:
         raise Exception("Missing SAM account name.")
-
     dod_id, short_designation = sam_account_name.split(".")
 
     try:
@@ -183,13 +177,11 @@ def get_user_from_saml_attributes(saml_attributes):
     elif short_designation == "CTR":
         saml_user_details["designation"] = "contractor"
 
-    # TODO: Do we need to add phone, agency
-
-    is_us_citizen = saml_attributes.get("extensionAttribute4")
+    is_us_citizen = saml_attributes.get(EIFSAttributes.US_CITIZEN)
     if is_us_citizen == "Y":
         saml_user_details["citizenship"] = "United States"
 
-    agency_code = saml_attributes.get("extensionAttribute1")
+    agency_code = saml_attributes.get(EIFSAttributes.AGENCY_CODE)
     if agency_code == "F":
         saml_user_details["service_branch"] = "air_force"
     elif agency_code == "N":
@@ -199,7 +191,7 @@ def get_user_from_saml_attributes(saml_attributes):
     elif agency_code == "A":
         saml_user_details["service_branch"] = "army"
 
-    mobile = saml_attributes.get("mobile")
+    mobile = saml_attributes.get(EIFSAttributes.MOBILE)
 
     # TODO catch multiple phone attributes
     saml_user_details["phone_number"] = mobile

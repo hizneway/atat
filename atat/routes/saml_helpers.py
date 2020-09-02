@@ -11,6 +11,18 @@ from atat.domain.users import Users
 from atat.utils import first_or_none
 
 
+class EIFSAttributes:
+    GIVEN_NAME = "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname"
+    LAST_NAME = "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/surname"
+    EMAIL = "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress"
+    # SAM Account Name provides both DoD ID and Short Designation (military/civlian/contractor)
+    # Name is provided in format 1234567890.MIL
+    SAM_ACCOUNT_NAME = "samAccountName"
+    US_CITIZEN = "extensionAttribute4"
+    AGENCY_CODE = "extensionAttribute1"
+    MOBILE = "mobile"
+
+
 def saml_get(saml_auth, request):
     if "query_string_parameters" in session:
         del session["query_string_parameters"]
