@@ -3,14 +3,13 @@ import pytest
 from atat.domain.authnid import AuthenticationContext
 from atat.domain.authnid.crl import (
     CRLCache,
-    CRLRevocationException,
     CRLInvalidException,
+    CRLRevocationException,
 )
-from atat.domain.exceptions import UnauthenticatedError, NotFoundError
+from atat.domain.exceptions import NotFoundError, UnauthenticatedError
 from atat.domain.users import Users
-
-from tests.mocks import DOD_SDN_INFO, DOD_SDN, FIXTURE_EMAIL_ADDRESS
 from tests.factories import UserFactory
+from tests.mocks import DOD_SDN, DOD_SDN_INFO, FIXTURE_EMAIL_ADDRESS
 
 CERT = open("tests/fixtures/{}.crt".format(FIXTURE_EMAIL_ADDRESS)).read()
 

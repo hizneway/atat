@@ -1,43 +1,42 @@
 import os
 import re
 from configparser import ConfigParser
-import pendulum
-from flask import Flask, request, g, session, url_for as flask_url_for
-from flask_session import Session
-import redis
-from unipath import Path
-from flask_wtf.csrf import CSRFProtect
+from logging.config import dictConfig
 from urllib.parse import urljoin
 
-from atat.database import db
+import pendulum
+import redis
+from flask import Flask, g, request, session
+from flask import url_for as flask_url_for
+from flask_session import Session
+from flask_wtf.csrf import CSRFProtect
+from unipath import Path
+
 from atat.assets import environment as assets_environment
-from atat.filters import register_filters
-from atat.routes import bp
-from atat.routes.portfolios import portfolios_bp as portfolio_routes
-from atat.routes.task_orders import task_orders_bp
-from atat.routes.applications import applications_bp
-from atat.routes.dev import bp as dev_routes
-from atat.routes.users import bp as user_routes
-from atat.routes.errors import make_error_pages
-from atat.routes.ccpo import bp as ccpo_routes
-from atat.domain.authnid.crl import CRLCache, NoOpCRLCache
+from atat.database import db
 from atat.domain.auth import apply_authentication
+from atat.domain.authnid.crl import CRLCache, NoOpCRLCache
 from atat.domain.authz import Authorization
 from atat.domain.csp import make_csp_provider
 from atat.domain.portfolios import Portfolios
+from atat.filters import register_filters
 from atat.models.permissions import Permissions
 from atat.queue import celery, update_celery
+from atat.routes import bp
+from atat.routes.applications import applications_bp
+from atat.routes.ccpo import bp as ccpo_routes
+from atat.routes.dev import bp as dev_routes
+from atat.routes.errors import make_error_pages
+from atat.routes.portfolios import portfolios_bp as portfolio_routes
+from atat.routes.task_orders import task_orders_bp
+from atat.routes.users import bp as user_routes
 from atat.utils import mailer
+from atat.utils.context_processors import assign_resources
 from atat.utils.form_cache import FormCache
 from atat.utils.json import CustomJSONEncoder, sqlalchemy_dumps
+from atat.utils.logging import JsonFormatter, RequestContextFilter
 from atat.utils.notification_sender import NotificationSender
 from atat.utils.session_limiter import SessionLimiter
-
-from logging.config import dictConfig
-from atat.utils.logging import JsonFormatter, RequestContextFilter
-
-from atat.utils.context_processors import assign_resources
-
 
 ENV = os.getenv("FLASK_ENV", "dev")
 

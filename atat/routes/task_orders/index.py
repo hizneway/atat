@@ -1,11 +1,12 @@
-from flask import g, render_template, url_for, redirect
+from flask import g, redirect, render_template, url_for
 
-from .blueprint import task_orders_bp
 from atat.domain.authz.decorator import user_can_access_decorator as user_can
 from atat.domain.portfolios import Portfolios
 from atat.domain.task_orders import TaskOrders
 from atat.forms.task_order import SignatureForm
 from atat.models import Permissions
+
+from .blueprint import task_orders_bp
 
 
 @task_orders_bp.route("/task_orders/<task_order_id>")

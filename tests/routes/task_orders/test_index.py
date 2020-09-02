@@ -1,5 +1,5 @@
-from flask import url_for
 import pytest
+from flask import url_for
 
 from atat.domain.permission_sets import PermissionSets
 from atat.domain.task_orders import TaskOrders
@@ -7,7 +7,6 @@ from atat.models import *
 from atat.models.portfolio_role import Status as PortfolioStatus
 from atat.models.task_order import Status as TaskOrderStatus
 from atat.utils.localization import translate
-
 from tests.factories import *
 from tests.utils import captured_templates
 

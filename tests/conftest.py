@@ -1,26 +1,25 @@
 import os
-import pytest
-import alembic.config
-import alembic.command
-from logging.config import dictConfig
-from werkzeug.datastructures import FileStorage
 from collections import OrderedDict
+from logging.config import dictConfig
 from unittest.mock import Mock
 
-from atat.app import make_app, make_config
-from atat.database import db as _db
-import tests.factories as factories
-from tests.mocks import PDF_FILENAME, PDF_FILENAME2
-from tests.utils import FakeLogger, FakeNotificationSender
-
 import pendulum
-from cryptography.hazmat.primitives.asymmetric import rsa
+import pytest
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives.serialization import Encoding
 from cryptography.x509.oid import NameOID
+from werkzeug.datastructures import FileStorage
 
+import alembic.command
+import alembic.config
+import tests.factories as factories
+from atat.app import make_app, make_config
+from atat.database import db as _db
+from tests.mocks import PDF_FILENAME, PDF_FILENAME2
+from tests.utils import FakeLogger, FakeNotificationSender
 
 dictConfig({"version": 1, "handlers": {"wsgi": {"class": "logging.NullHandler"}}})
 

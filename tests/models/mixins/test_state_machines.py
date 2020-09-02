@@ -5,8 +5,8 @@ from pytest import raises
 
 from atat.models.mixins.state_machines import (
     AzureStages,
-    StageStates,
     PortfolioStates,
+    StageStates,
     StateMachineMisconfiguredError,
     _build_csp_states,
     _build_transitions,

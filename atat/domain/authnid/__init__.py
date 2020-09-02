@@ -1,7 +1,8 @@
-from atat.domain.exceptions import UnauthenticatedError, NotFoundError
+from atat.domain.exceptions import NotFoundError, UnauthenticatedError
 from atat.domain.users import Users
-from .utils import parse_sdn, email_from_certificate
-from .crl import CRLRevocationException, CRLInvalidException
+
+from .crl import CRLInvalidException, CRLRevocationException
+from .utils import email_from_certificate, parse_sdn
 
 
 class AuthenticationContext:

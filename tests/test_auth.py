@@ -1,22 +1,20 @@
 import os
+from datetime import datetime
 from urllib.parse import urlparse
 
-import pytest
-from datetime import datetime
 import pendulum
-from flask import session, url_for
+import pytest
 from cryptography.hazmat.primitives.serialization import Encoding
+from flask import session, url_for
 
-from atat.domain.users import Users
-from atat.domain.exceptions import NotFoundError
-from atat.domain.authnid.crl import CRLInvalidException
 from atat.domain.auth import UNPROTECTED_ROUTES
-from atat.domain.authnid.crl import CRLCache
+from atat.domain.authnid.crl import CRLCache, CRLInvalidException
+from atat.domain.exceptions import NotFoundError
+from atat.domain.users import Users
 
 from .factories import UserFactory
-from .mocks import DOD_SDN_INFO, DOD_SDN, FIXTURE_EMAIL_ADDRESS
-from .utils import make_crl_list, FakeLogger
-
+from .mocks import DOD_SDN, DOD_SDN_INFO, FIXTURE_EMAIL_ADDRESS
+from .utils import FakeLogger, make_crl_list
 
 MOCK_USER = {"id": "438567dd-25fa-4d83-a8cc-8aa8366cb24a"}
 

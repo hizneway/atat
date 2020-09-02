@@ -7,7 +7,6 @@ import pytest
 
 from atat.domain.csp import CSP
 from atat.domain.csp.cloud.hybrid_cloud_provider import HYBRID_PREFIX
-
 from atat.domain.csp.cloud.models import (
     CostManagementQueryCSPPayload,
     SubscriptionCreationCSPPayload,

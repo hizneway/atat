@@ -1,12 +1,12 @@
-from sqlalchemy.orm.exc import NoResultFound
-from sqlalchemy.exc import IntegrityError
 import pendulum
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm.exc import NoResultFound
 
 from atat.database import db
 from atat.models import User
 
+from .exceptions import AlreadyExistsError, NotFoundError, UnauthorizedError
 from .permission_sets import PermissionSets
-from .exceptions import NotFoundError, AlreadyExistsError, UnauthorizedError
 
 
 class Users(object):

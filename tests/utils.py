@@ -1,15 +1,14 @@
-from contextlib import contextmanager
 import os
+from contextlib import contextmanager
 from unittest.mock import Mock
 
-from OpenSSL import crypto
+import pendulum
 from cryptography.hazmat.backends import default_backend
 from flask import template_rendered
-import pendulum
-
-from atat.utils.notification_sender import NotificationSender
+from OpenSSL import crypto
 
 import tests.factories as factories
+from atat.utils.notification_sender import NotificationSender
 
 
 @contextmanager

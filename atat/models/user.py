@@ -1,19 +1,18 @@
-from sqlalchemy import String, ForeignKey, Column, Date, Table, TIMESTAMP
-from sqlalchemy.orm import relationship
+from sqlalchemy import TIMESTAMP, Column, Date, ForeignKey, String, Table
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.event import listen
+from sqlalchemy.orm import relationship
 
-from atat.models.base import Base
-import atat.models.types as types
 import atat.models.mixins as mixins
-from atat.models.portfolio_invitation import PortfolioInvitation
+import atat.models.types as types
 from atat.models.application_invitation import ApplicationInvitation
+from atat.models.base import Base
 from atat.models.mixins.auditable import (
-    AuditableMixin,
     ACTION_UPDATE,
+    AuditableMixin,
     record_permission_sets_updates,
 )
-
+from atat.models.portfolio_invitation import PortfolioInvitation
 
 users_permission_sets = Table(
     "users_permission_sets",

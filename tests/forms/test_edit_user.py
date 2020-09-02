@@ -2,7 +2,6 @@ import pytest
 from werkzeug.datastructures import ImmutableMultiDict
 
 from atat.forms.edit_user import EditUserForm
-
 from tests.factories import UserFactory
 
 
