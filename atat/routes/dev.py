@@ -9,7 +9,12 @@ from atat.domain.permission_sets import PermissionSets
 from atat.domain.users import Users
 from atat.forms.data import SERVICE_BRANCHES
 from atat.jobs import send_mail
-from atat.routes.saml_helpers import init_saml_auth_dev, saml_get, saml_post
+from atat.routes.saml_helpers import (
+    init_saml_auth_dev,
+    saml_get,
+    saml_post,
+    unique_dod_id,
+)
 from atat.utils import pick
 
 from . import current_user_setup, redirect_after_login_url
