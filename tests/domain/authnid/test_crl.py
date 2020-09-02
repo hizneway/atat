@@ -1,27 +1,27 @@
 # Import installed packages
-import pytest
-import re
 import os
+import re
 import shutil
+
+import pytest
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.serialization import Encoding
 from OpenSSL import crypto
 
 from atat.domain.authnid.crl import (
     CRLCache,
-    CRLRevocationException,
     CRLInvalidException,
+    CRLRevocationException,
     NoOpCRLCache,
 )
 from atat.domain.authnid.crl.util import (
+    JSON_CACHE,
+    CRLParseError,
     load_crl_locations_cache,
     serialize_crl_locations_cache,
-    CRLParseError,
-    JSON_CACHE,
 )
-
-from tests.mocks import FIXTURE_EMAIL_ADDRESS, DOD_CN
-from tests.utils import FakeLogger, parse_for_issuer_and_next_update, make_crl_list
+from tests.mocks import DOD_CN, FIXTURE_EMAIL_ADDRESS
+from tests.utils import FakeLogger, make_crl_list, parse_for_issuer_and_next_update
 
 
 class MockX509Store:

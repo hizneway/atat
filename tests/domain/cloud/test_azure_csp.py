@@ -1,5 +1,5 @@
-from contextlib import contextmanager
 import json
+from contextlib import contextmanager
 from unittest.mock import Mock, call
 from uuid import uuid4
 
@@ -7,12 +7,8 @@ import pendulum
 import pydantic
 import pytest
 
-from tests.factories import ApplicationFactory, EnvironmentFactory
-from tests.mock_azure import mock_azure, MOCK_ACCESS_TOKEN  # pylint: disable=W0611
-from tests.mock_azure import AZURE_CONFIG
-
-from atat.domain.csp.cloud import AzureCloudProvider
 import atat.domain.csp.cloud.azure_cloud_provider
+from atat.domain.csp.cloud import AzureCloudProvider
 from atat.domain.csp.cloud.azure_cloud_provider import log_and_raise_exceptions
 from atat.domain.csp.cloud.exceptions import (
     AuthenticationException,
@@ -77,6 +73,12 @@ from atat.domain.csp.cloud.models import (
     UserCSPPayload,
     UserCSPResult,
     UserRoleCSPPayload,
+)
+from tests.factories import ApplicationFactory, EnvironmentFactory
+from tests.mock_azure import (  # pylint: disable=W0611
+    AZURE_CONFIG,
+    MOCK_ACCESS_TOKEN,
+    mock_azure,
 )
 
 BILLING_ACCOUNT_NAME = "52865e4c-52e8-5a6c-da6b-c58f0814f06f:7ea5de9d-b8ce-4901-b1c5-d864320c7b03_2019-05-31"

@@ -1,12 +1,12 @@
 import json
 import time
-from enum import Enum
 from contextlib import contextmanager
+from enum import Enum
 from functools import wraps
 from secrets import token_hex, token_urlsafe
 from typing import Dict, Optional, Tuple
-from uuid import uuid4
 from urllib.parse import urljoin
+from uuid import uuid4
 
 from flask import current_app as app
 
@@ -22,7 +22,6 @@ from .exceptions import (
     UserProvisioningException,
 )
 from .models import (
-    class_to_stage,
     AdminRoleDefinitionCSPPayload,
     AdminRoleDefinitionCSPResult,
     ApplicationCSPPayload,
@@ -83,13 +82,14 @@ from .models import (
     UserPrincipalTokenPayload,
     UserRoleCSPPayload,
     UserRoleCSPResult,
+    class_to_stage,
 )
 from .policy import AzurePolicyManager
 from .utils import (
+    OFFICE_365_DOMAIN,
+    create_active_directory_user,
     get_principal_auth_token,
     make_auth_header,
-    create_active_directory_user,
-    OFFICE_365_DOMAIN,
 )
 
 # This needs to be a fully pathed role definition identifier, not just a UUID
@@ -163,10 +163,10 @@ def log_and_raise_exceptions(func):
 
 class AzureSDKProvider(object):
     def __init__(self):
-        from msrestazure.azure_cloud import (
-            AZURE_PUBLIC_CLOUD,
-        )  # TODO: choose cloud type from config
         import requests
+        from msrestazure.azure_cloud import (  # TODO: choose cloud type from config
+            AZURE_PUBLIC_CLOUD,
+        )
 
         self.cloud = AZURE_PUBLIC_CLOUD
         self.requests = requests

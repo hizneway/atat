@@ -1,13 +1,14 @@
-import os
-import re
 import hashlib
 import logging
+import os
+import re
 
-from OpenSSL import crypto, SSL
 from flask import current_app as app
+from OpenSSL import SSL, crypto
 
 from atat.utils.processify import processify
-from .util import load_crl_locations_cache, serialize_crl_locations_cache, CRL_LIST
+
+from .util import CRL_LIST, load_crl_locations_cache, serialize_crl_locations_cache
 
 # error codes from OpenSSL: https://github.com/openssl/openssl/blob/2c75f03b39de2fa7d006bc0f0d7c58235a54d9bb/include/openssl/x509_vfy.h#L111
 CRL_EXPIRED_ERROR_CODE = 12

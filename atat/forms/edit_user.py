@@ -1,19 +1,18 @@
-import pendulum
 from copy import deepcopy
-from wtforms.fields.html5 import DateField, EmailField, TelField
-from wtforms.fields import RadioField, StringField
-from wtforms.validators import Email, DataRequired, Optional
 
-from .fields import SelectField
-from .forms import BaseForm
-from .data import SERVICE_BRANCHES
+import pendulum
+from wtforms.fields import RadioField, StringField
+from wtforms.fields.html5 import DateField, EmailField, TelField
+from wtforms.validators import DataRequired, Email, Length, Optional
+
+from atat.forms.validators import Number
 from atat.models.user import User
 from atat.utils.localization import translate
-from wtforms.validators import Length
-from atat.forms.validators import Number
 
-from .validators import Name, DateRange, PhoneNumber
-
+from .data import SERVICE_BRANCHES
+from .fields import SelectField
+from .forms import BaseForm
+from .validators import DateRange, Name, PhoneNumber
 
 USER_FIELDS = {
     "first_name": StringField(

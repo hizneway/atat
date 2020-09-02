@@ -1,17 +1,14 @@
+import re
 from enum import Enum
 from secrets import token_urlsafe
 from typing import Dict, List, Optional
 from uuid import uuid4
-import re
 
-from pydantic import BaseModel, validator, root_validator
+from pydantic import BaseModel, root_validator, validator
 
-from .utils import (
-    generate_mail_nickname,
-    generate_user_principal_name,
-)
-from atat.utils import snake_to_camel, camel_to_snake
+from atat.utils import camel_to_snake, snake_to_camel
 
+from .utils import generate_mail_nickname, generate_user_principal_name
 
 AZURE_MGMNT_PATH = "/providers/Microsoft.Management/managementGroups/"
 

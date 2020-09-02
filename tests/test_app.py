@@ -1,14 +1,14 @@
 import os
-
 from configparser import ConfigParser
+
 import pytest
 
 from atat.app import (
-    make_crl_validator,
     apply_config_from_directory,
     apply_config_from_environment,
     apply_hybrid_config_options,
     make_config,
+    make_crl_validator,
 )
 
 

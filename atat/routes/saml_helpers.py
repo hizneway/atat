@@ -1,8 +1,11 @@
-from urllib.parse import urlparse, parse_qs
 from random import randint
-from flask import current_app as app, session, g
+from urllib.parse import parse_qs, urlparse
+
+from flask import current_app as app
+from flask import g, session
 from onelogin.saml2.auth import OneLogin_Saml2_Auth
-from atat.domain.exceptions import UnauthenticatedError, NotFoundError
+
+from atat.domain.exceptions import NotFoundError, UnauthenticatedError
 from atat.domain.users import Users
 from atat.utils import first_or_none
 

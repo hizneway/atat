@@ -1,5 +1,6 @@
-from flask import url_for
 from urllib.parse import quote
+
+from flask import url_for
 
 from tests.factories import UserFactory
 

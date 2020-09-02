@@ -1,25 +1,19 @@
 import random
 
-from flask import (
-    Blueprint,
-    request,
-    redirect,
-    render_template,
-    url_for,
-    current_app as app,
-    session,
-)
 import pendulum
+from flask import Blueprint
+from flask import current_app as app
+from flask import redirect, render_template, request, session, url_for
 
-from . import redirect_after_login_url, current_user_setup
 from atat.domain.exceptions import AlreadyExistsError, NotFoundError
-from atat.domain.users import Users
 from atat.domain.permission_sets import PermissionSets
+from atat.domain.users import Users
 from atat.forms.data import SERVICE_BRANCHES
 from atat.jobs import send_mail
+from atat.routes.saml_helpers import init_saml_auth, saml_get, saml_post
 from atat.utils import pick
-from atat.routes.saml_helpers import saml_get, saml_post, init_saml_auth
 
+from . import current_user_setup, redirect_after_login_url
 
 bp = Blueprint("dev", __name__)
 

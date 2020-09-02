@@ -347,8 +347,8 @@ def sync_crls(tmp_location, final_location):
 
 
 if __name__ == "__main__":
-    import sys
     import logging
+    import sys
 
     logging.basicConfig(
         level=logging.INFO, format="[%(asctime)s]:%(levelname)s: %(message)s"

@@ -4,7 +4,6 @@ import string
 import requests
 from msrestazure.azure_cloud import AZURE_PUBLIC_CLOUD as cloud
 
-
 OFFICE_365_DOMAIN = "onmicrosoft.com"
 
 

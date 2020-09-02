@@ -1,17 +1,9 @@
 import os
 import urllib.parse as url
 
-from flask import (
-    Blueprint,
-    g,
-    make_response,
-    redirect,
-    render_template,
-    request,
-    session,
-    url_for,
-)
+from flask import Blueprint
 from flask import current_app as app
+from flask import g, make_response, redirect, render_template, request, session, url_for
 from jinja2.exceptions import TemplateNotFound
 from werkzeug.exceptions import MethodNotAllowed, NotFound
 from werkzeug.routing import RequestRedirect

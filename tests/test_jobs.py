@@ -5,23 +5,12 @@ from uuid import uuid4
 import pendulum
 import pytest
 from azure.core.exceptions import AzureError
-from tests.factories import (
-    ApplicationFactory,
-    ApplicationRoleFactory,
-    CLINFactory,
-    EnvironmentFactory,
-    EnvironmentRoleFactory,
-    PortfolioFactory,
-    PortfolioStateMachineFactory,
-    TaskOrderFactory,
-    UserFactory,
-)
 
 from atat.domain.csp.cloud import MockCloudProvider
-from atat.domain.csp.cloud.exceptions import GeneralCSPException, ConnectionException
+from atat.domain.csp.cloud.exceptions import ConnectionException, GeneralCSPException
 from atat.domain.csp.cloud.models import (
-    UserRoleCSPResult,
     SubscriptionCreationCSPPayload,
+    UserRoleCSPResult,
 )
 from atat.domain.csp.cloud.utils import OFFICE_365_DOMAIN
 from atat.jobs import (
@@ -29,7 +18,6 @@ from atat.jobs import (
     build_subscription_payload,
     create_billing_instruction,
     create_environment,
-    do_create_subscription,
     dispatch_create_application,
     dispatch_create_environment,
     dispatch_create_environment_role,
@@ -38,6 +26,7 @@ from atat.jobs import (
     do_create_application,
     do_create_environment,
     do_create_environment_role,
+    do_create_subscription,
     do_create_user,
     do_provision_portfolio,
     log_do_create_environment,
@@ -49,12 +38,23 @@ from atat.jobs import (
 from atat.models import (
     ApplicationRoleStatus,
     EnvironmentRoleStatus,
-    PortfolioStates,
     JobFailure,
     Portfolio,
+    PortfolioStates,
 )
 from atat.models.mixins.state_machines import AzureStages
 from atat.utils.localization import translate
+from tests.factories import (
+    ApplicationFactory,
+    ApplicationRoleFactory,
+    CLINFactory,
+    EnvironmentFactory,
+    EnvironmentRoleFactory,
+    PortfolioFactory,
+    PortfolioStateMachineFactory,
+    TaskOrderFactory,
+    UserFactory,
+)
 
 
 @pytest.fixture(autouse=True, scope="function")

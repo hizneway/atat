@@ -4,13 +4,12 @@ from uuid import uuid4
 import pytest
 import requests
 
+from atat.domain.csp.cloud.models import UserCSPPayload
 from atat.domain.csp.cloud.utils import (
+    create_active_directory_user,
     get_principal_auth_token,
     make_auth_header,
-    create_active_directory_user,
 )
-from atat.domain.csp.cloud.models import UserCSPPayload
-
 from tests.domain.cloud.test_azure_csp import mock_requests_response
 from tests.mock_azure import mock_requests
 

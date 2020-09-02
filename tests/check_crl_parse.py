@@ -1,10 +1,9 @@
 import os
+
 import pytest
 
-from atat.domain.authnid.crl.util import crl_local_path, CRL_LIST
-
+from atat.domain.authnid.crl.util import CRL_LIST, crl_local_path
 from tests.utils import parse_for_issuer_and_next_update
-
 
 CRL_DIR = "crls"
 

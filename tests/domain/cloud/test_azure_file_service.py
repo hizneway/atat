@@ -1,7 +1,7 @@
 import pytest
+from azure.storage.blob.models import Blob
 
 from atat.domain.csp.files import AzureFileService
-from azure.storage.blob.models import Blob
 
 
 @pytest.fixture

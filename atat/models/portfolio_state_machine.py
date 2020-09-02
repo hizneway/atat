@@ -11,16 +11,16 @@ from transitions.extensions.states import Tags, add_state_features
 
 import atat.models.mixins as mixins
 from atat.database import db
+from atat.domain.csp.cloud.models import stage_to_classname
 from atat.models.base import Base
 from atat.models.mixins.state_machines import (
     AzureStages,
     PortfolioStates,
     StageStates,
-    _build_transitions,
     StateMachineMisconfiguredError,
+    _build_transitions,
 )
 from atat.models.types import Id
-from atat.domain.csp.cloud.models import stage_to_classname
 
 
 def get_stage_csp_class(stage, class_type):

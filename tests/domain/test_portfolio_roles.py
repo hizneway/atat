@@ -3,12 +3,11 @@ from atat.domain.portfolio_roles import PortfolioRoles
 from atat.domain.users import Users
 from atat.models.permissions import Permissions
 from atat.models.portfolio_role import Status as PortfolioRoleStatus
-
 from tests.factories import (
     PortfolioFactory,
-    UserFactory,
     PortfolioInvitationFactory,
     PortfolioRoleFactory,
+    UserFactory,
 )
 
 

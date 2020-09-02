@@ -1,4 +1,5 @@
 from uuid import uuid4
+
 import pendulum
 
 
@@ -44,10 +45,10 @@ class AzureFileService(FileService):
         self.container_name = config["AZURE_TO_BUCKET_NAME"]
         self.timeout = config["PERMANENT_SESSION_LIFETIME"]
 
-        from azure.storage.common import CloudStorageAccount
         from azure.storage.blob import BlobSasPermissions
-        from azure.storage.blob.models import BlobPermissions
         from azure.storage.blob.blockblobservice import BlockBlobService
+        from azure.storage.blob.models import BlobPermissions
+        from azure.storage.common import CloudStorageAccount
 
         self.CloudStorageAccount = CloudStorageAccount
         self.BlobSasPermissions = BlobSasPermissions

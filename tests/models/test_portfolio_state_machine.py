@@ -4,16 +4,8 @@ import pendulum
 import pydantic
 import pytest
 from pytest import raises
-from tests.utils import lists_contain_same_members
-from tests.factories import (
-    ApplicationFactory,
-    CLINFactory,
-    PortfolioFactory,
-    PortfolioStateMachineFactory,
-    TaskOrderFactory,
-    UserFactory,
-)
 
+from atat.domain.csp.cloud.models import AliasModel
 from atat.models.mixins.state_machines import (
     AzureStages,
     PortfolioStates,
@@ -23,7 +15,15 @@ from atat.models.portfolio_state_machine import (
     PortfolioStateMachine,
     get_stage_csp_class,
 )
-from atat.domain.csp.cloud.models import AliasModel
+from tests.factories import (
+    ApplicationFactory,
+    CLINFactory,
+    PortfolioFactory,
+    PortfolioStateMachineFactory,
+    TaskOrderFactory,
+    UserFactory,
+)
+from tests.utils import lists_contain_same_members
 
 # TODO: Write failure case tests
 
