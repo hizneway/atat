@@ -114,6 +114,63 @@ def init_saml_auth_dev(request):
         return auth
 
 
+def get_user_from_saml_attributes(saml_attributes):
+    """Finds a user based on DoD ID in SAML attributes or creates a new user
+    with the info if one isn't found. saml_attributes are expected to be in
+    the format returned by OneLogin_Saml2_Auth.get_attributes(), dictionary
+    of string : list
+    """
+    saml_attributes = {k: v[0] for k, v in saml_attributes.items()}
+    saml_user_details = {}
+
+    saml_user_details["first_name"] = saml_attributes.get(EIFSAttributes.GIVEN_NAME)
+    saml_user_details["last_name"] = saml_attributes.get(EIFSAttributes.LAST_NAME)
+    saml_user_details["email"] = saml_attributes.get(EIFSAttributes.EMAIL)
+
+    try:
+        sam_account_name = saml_attributes.get(EIFSAttributes.SAM_ACCOUNT_NAME)
+        dod_id, short_designation = SAM_ACCOUNT_FORMAT.match(sam_account_name).groups()
+    except TypeError:
+        app.logger.error("SAML response missing SAM Account Name")
+        raise Exception("SAML response missing SAM Account Name")
+    except AttributeError:
+        app.logger.error(f"Incorrect format of SAM account name {sam_account_name}")
+        raise Exception(f"Incorrect format of SAM account name {sam_account_name}")
+
+    try:
+        return Users.get_by_dod_id(dod_id)
+    except NotFoundError:
+        app.logger.info(f"No user found for DoD ID {dod_id}, creating...")
+
+    if short_designation == "MIL":
+        saml_user_details["designation"] = "military"
+    elif short_designation == "CIV":
+        saml_user_details["designation"] = "civilian"
+    elif short_designation == "CTR":
+        saml_user_details["designation"] = "contractor"
+
+    is_us_citizen = saml_attributes.get(EIFSAttributes.US_CITIZEN)
+    if is_us_citizen == "Y":
+        saml_user_details["citizenship"] = "United States"
+
+    agency_code = saml_attributes.get(EIFSAttributes.AGENCY_CODE)
+    if agency_code == "F":
+        saml_user_details["service_branch"] = "air_force"
+    elif agency_code == "N":
+        saml_user_details["service_branch"] = "navy"
+    elif agency_code == "M":
+        saml_user_details["service_branch"] = "marine_corps"
+    elif agency_code == "A":
+        saml_user_details["service_branch"] = "army"
+
+    mobile = saml_attributes.get(EIFSAttributes.MOBILE)
+
+    # TODO catch multiple phone attributes
+    saml_user_details["phone_number"] = mobile
+
+    return Users.get_or_create_by_dod_id(dod_id, **saml_user_details)
+
+
 def _prepare_flask_request(request):
     """
     Prepares a request object for use in building the SAML request.
