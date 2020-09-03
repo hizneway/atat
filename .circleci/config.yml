@@ -114,6 +114,13 @@ commands:
           command: docker run --network atat -e PGDATABASE=<< parameters.pgdatabase >> << pipeline.parameters.container_env >> atat:builder .venv/bin/python script/seed_roles.py
 
   deploy:
+    parameters:
+      namespace:
+        type: string
+        default: << pipeline.parameters.namespace >>
+      tag:
+        type: string
+        default: << pipeline.parameters.tag >>
     steps:
       - checkout
       - setup_remote_docker:
@@ -288,13 +295,6 @@ jobs:
               /bin/sh -c "poetry install --no-root && /bin/sh script/sync-crls && poetry run pytest --no-cov tests/check_crl_parse.py"
 
   deploy-staging:
-    parameters:
-      namespace:
-        type: string
-        default: << pipeline.parameters.namespace >>
-      atat-image-tag:
-        type: string
-        default: << pipeline.parameters.atat-image-tag >>
     docker:
       - image: docker:18.06.0-ce-git
     steps:
