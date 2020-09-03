@@ -27,10 +27,10 @@ parameters:
     default: atat
   atat-image-tag:
     type: string
-    default: << parameters.azure_server_name >>/atat:latest
+    default: << pipeline.parameters.azure_server_name >>/atat:latest
   nginx-image-tag:
     type: string
-    default: << parameters.azure_server_name >>/nginx:latest
+    default: << pipeline.parameters.azure_server_name >>/nginx:latest
   cluster_name:
     type: string
     default: ${CLUSTER_NAME}
@@ -58,12 +58,12 @@ commands:
           command: |
             az login \
               --service-principal \
-              --tenant << parameters.tenant_id >> \
-              --password << parameters.sp_password >> \
-              --username << parameters.sp >>
+              --tenant << pipeline.parameters.tenant_id >> \
+              --password << pipeline.parameters.sp_password >> \
+              --username << pipeline.parameters.sp >>
             echo "Successfully logged in to Azure CLI."
-            az acr login --name << parameters.container_registry >> | grep "Succeeded"
-  cache_docker_images:
+            az acr login --name << pipeline.parameters.container_registry >> | grep "Succeeded"
+  cache_docker_images :
     steps:
       - run:
           name: Save the docker images to a cache
@@ -104,13 +104,13 @@ commands:
           command: sleep 3
       - run:
           name: Create database
-          command: "docker exec postgres createdb -U postgres << parameters.pgdatabase >>"
+          command: "docker exec postgres createdb -U postgres << pipeline.parameters.pgdatabase >>"
       - run:
           name: Apply migrations
-          command: docker run --network atat -e PGDATABASE=<< parameters.pgdatabase >> << parameters.container_env >> atat:builder .venv/bin/python .venv/bin/alembic upgrade head
+          command: docker run --network atat -e PGDATABASE=<< pipeline.parameters.pgdatabase >> << pipeline.parameters.container_env >> atat:builder .venv/bin/python .venv/bin/alembic upgrade head
       - run:
           name: Apply the default permission sets
-          command: docker run --network atat -e PGDATABASE=<< parameters.pgdatabase >> << parameters.container_env >> atat:builder .venv/bin/python script/seed_roles.py
+          command: docker run --network atat -e PGDATABASE=<< pipeline.parameters.pgdatabase >> << pipeline.parameters.container_env >> atat:builder .venv/bin/python script/seed_roles.py
 
   deploy:
     steps:
@@ -132,33 +132,33 @@ commands:
           name: Configure kubectl
           command: |
             apk add libssl1.0
-            az aks get-credentials --name << parameters.cluster_name >>  --resource-group << parameters.resource_group >>
+            az aks get-credentials --name << pipeline.parameters.cluster_name >>  --resource-group << pipeline.parameters.resource_group >>
       - run:
           name: Build nginx image
           command: docker build -t nginx:latest --build-arg IMAGE=<< parameters.container_registry >>.azurecr.io/rhelubi:8.2 - < nginx.Dockerfile
       - run:
           name: Tag images
           command: |
-            docker tag atat:latest << parameters.atat-image-tag >>
-            docker tag nginx:latest << parameters.nginx-image-tag >>
+            docker tag atat:latest << pipeline.parameters.atat-image-tag >>
+            docker tag nginx:latest << pipeline.parameters.nginx-image-tag >>
       - run:
           name: Push image
           command: |
-            docker push << parameters.atat-image-tag >>
-            docker push << parameters.nginx-image-tag >>
+            docker push << pipeline.parameters.atat-image-tag >>
+            docker push << pipeline.parameters.nginx-image-tag >>
       - run:
           name: Add gettext package
           command: apk add gettext
       - run:
-          command: K8S_NAMESPACE=<< parameters.namespace >> CONTAINER_IMAGE=<< parameters.atat-image-tag >> /bin/sh ./script/cluster_migration
+          command: K8S_NAMESPACE=<< pipeline.parameters.namespace >> CONTAINER_IMAGE=<< pipeline.parameters.atat-image-tag >> /bin/sh ./script/cluster_migration
           name: Apply Migrations and Seed Roles
       - run:
           name: Update Kubernetes cluster
           command: |
-            kubectl set image deployment.apps/atst atst=<< parameters.atat-image-tag >> --namespace=<< parameters.namespace >>
-            kubectl set image deployment.apps/atst-worker atst-worker=<< parameters.atat-image-tag >> --namespace=<< parameters.namespace >>
-            kubectl set image deployment.apps/atst-beat atst-beat=<< parameters.atat-image-tag >> --namespace=<< parameters.namespace >>
-            kubectl set image cronjobs.batch/crls crls=<< parameters.atat-image-tag >> --namespace=<< parameters.namespace >>
+            kubectl set image deployment.apps/atst atst=<< pipeline.parameters.atat-image-tag >> --namespace=<< pipeline.parameters.namespace >>
+            kubectl set image deployment.apps/atst-worker atst-worker=<< pipeline.parameters.atat-image-tag >> --namespace=<< pipeline.parameters.namespace >>
+            kubectl set image deployment.apps/atst-beat atst-beat=<< pipeline.parameters.atat-image-tag >> --namespace=<< pipeline.parameters.namespace >>
+            kubectl set image cronjobs.batch/crls crls=<< pipeline.parameters.atat-image-tag >> --namespace=<< pipeline.parameters.namespace >>
 
 jobs:
   docker-build:
