@@ -105,13 +105,13 @@ commands:
           command: sleep 3
       - run:
           name: Create database
-          command: "docker exec postgres createdb -U postgres << pipeline.parameters.pgdatabase >>"
+          command: "docker exec postgres createdb -U postgres << parameters.pgdatabase >>"
       - run:
           name: Apply migrations
-          command: docker run --network atat -e PGDATABASE=<< pipeline.parameters.pgdatabase >> << pipeline.parameters.container_env >> atat:builder .venv/bin/python .venv/bin/alembic upgrade head
+          command: docker run --network atat -e PGDATABASE=<< parameters.pgdatabase >> << pipeline.parameters.container_env >> atat:builder .venv/bin/python .venv/bin/alembic upgrade head
       - run:
           name: Apply the default permission sets
-          command: docker run --network atat -e PGDATABASE=<< pipeline.parameters.pgdatabase >> << pipeline.parameters.container_env >> atat:builder .venv/bin/python script/seed_roles.py
+          command: docker run --network atat -e PGDATABASE=<< parameters.pgdatabase >> << pipeline.parameters.container_env >> atat:builder .venv/bin/python script/seed_roles.py
 
   deploy:
     steps:
