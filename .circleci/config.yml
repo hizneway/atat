@@ -1,20 +1,45 @@
 version: 2.1
 
+parameters:
+  container_registry:
+    type: string
+    default: ${AZURE_REGISTRY}
+  tenant_id:
+    type: string
+    default: ${AZURE_SP_TENANT}
+  sp_password:
+    type: string
+    default: ${AZURE_SP_PASSWORD}
+  sp:
+    type: string
+    default: ${AZURE_SP}
+  pgdatabase:
+    type: string
+    default: atat_test
+  container_env:
+    type: string
+    default: -e PGHOST=postgres -e REDIS_HOST=redis:6379
+  azure_server_name:
+    type: string
+    default: ${AZURE_SERVER_NAME}
+  namespace:
+    type: string
+    default: atat
+  atat-image-tag:
+    type: string
+    default: << parameters.azure_server_name >>/atat:latest
+  nginx-image-tag:
+    type: string
+    default: << parameters.azure_server_name >>/nginx:latest
+  cluster_name:
+    type: string
+    default: ${CLUSTER_NAME}
+  resource_group:
+    type: string
+    default: ${RESOURCE_GROUP}
+
 commands:
   azlogin:
-    parameters:
-      container_registry:
-        type: string
-        default: ${AZURE_REGISTRY}
-      tenant_id:
-        type: string
-        default: ${AZURE_SP_TENANT}
-      sp_password:
-        type: string
-        default: ${AZURE_SP_PASSWORD}
-      sp:
-        type: string
-        default: ${AZURE_SP}
     steps:
       - run:
           name: Install Azure CLI
@@ -61,13 +86,6 @@ commands:
             docker load < docker-cache/atat.tar
             docker load < docker-cache/builder.tar
   setup_datastores:
-    parameters:
-      pgdatabase:
-        type: string
-        default: atat_test
-      container_env:
-        type: string
-        default: -e PGHOST=postgres -e REDIS_HOST=redis:6379
     steps:
       - run:
           name: remove temp network if exists
@@ -95,28 +113,6 @@ commands:
           command: docker run --network atat -e PGDATABASE=<< parameters.pgdatabase >> << parameters.container_env >> atat:builder .venv/bin/python script/seed_roles.py
 
   deploy:
-    parameters:
-      azure_server_name:
-        type: string
-        default: ${AZURE_SERVER_NAME}
-      container_registry:
-        type: string
-        default: ${AZURE_REGISTRY}
-      namespace:
-        type: string
-        default: atat
-      atat-image-tag:
-        type: string
-        default: << parameters.azure_server_name >>/atat:latest
-      nginx-image-tag:
-        type: string
-        default: << parameters.azure_server_name >>/nginx:latest
-      cluster_name:
-        type: string
-        default: ${CLUSTER_NAME}
-      resource_group:
-        type: string
-        default: ${RESOURCE_GROUP}
     steps:
       - checkout
       - setup_remote_docker:
@@ -166,10 +162,6 @@ commands:
 
 jobs:
   docker-build:
-    parameters:
-      container_registry:
-        type: string
-        default: ${AZURE_REGISTRY}
     docker:
       - image: docker:18.06.0-ce-git
     steps:
