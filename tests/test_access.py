@@ -41,7 +41,7 @@ def protected_routes(app):
     return _protected_routes
 
 
-sample_config = make_config({"default": {"CRL_STORAGE_PROVIDER": "LOCAL"}})
+sample_config = make_config()
 sample_app = make_app(sample_config)
 _PROTECTED_ROUTES = protected_routes(sample_app)
 

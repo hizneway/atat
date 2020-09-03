@@ -57,7 +57,7 @@ def create_database_user(username, password, dbname):
 
 
 if __name__ == "__main__":
-    config = make_config({"default": {"DISABLE_CRL_CHECK": True, "DEBUG": False}})
+    config = make_config({"default": {"DEBUG": False}})
     app = make_app(config)
     with app.app_context():
         dbname = config.get("PGDATABASE", "atat")
