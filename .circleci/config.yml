@@ -24,10 +24,10 @@ parameters:
     default: atat
   atat-image-tag:
     type: string
-    default: << pipeline.parameters.azure_server_name >>/atat:latest
+    default: ${AZURE_SERVER_NAME}/atat:latest
   nginx-image-tag:
     type: string
-    default: << pipeline.parameters.azure_server_name >>/nginx:latest
+    default: ${AZURE_SERVER_NAME}/nginx:latest
   cluster_name:
     type: string
     default: ${CLUSTER_NAME}
