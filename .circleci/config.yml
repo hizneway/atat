@@ -289,9 +289,12 @@ jobs:
 
   deploy-staging:
     parameters:
-      container_registry:
+      namespace:
         type: string
-        default: ${AZURE_REGISTRY}
+        default: << pipeline.parameters.namespace >>
+      atat-image-tag:
+        type: string
+        default: << pipeline.parameters.atat-image-tag >>
     docker:
       - image: docker:18.06.0-ce-git
     steps:
