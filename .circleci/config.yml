@@ -1,6 +1,9 @@
 version: 2.1
 
 parameters:
+  subscription:
+    type: string
+    default: ${AZURE_SUBSCRIPTION}
   container_registry:
     type: string
     default: ${AZURE_REGISTRY}
