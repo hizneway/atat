@@ -112,9 +112,7 @@ def login_dev():
     query_string_parameters = session.get("query_string_parameters", {})
     user = None
 
-    if (
-        "saml" in request.args or app.config.get("SAML_LOGIN_DEV", False)
-    ) and request.method == "GET":
+    if request.method == "GET":
         saml_auth = init_saml_auth(request)
         return redirect(saml_get(saml_auth, request))
 

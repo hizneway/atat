@@ -194,7 +194,6 @@ def map_config(config):
             config.get("default", "CONTRACT_END_DATE"), "YYYY-MM-DD"
         ).date(),
         "SESSION_COOKIE_SECURE": config.getboolean("default", "SESSION_COOKIE_SECURE"),
-        "SAML_LOGIN_DEV": config.getboolean("default", "SAML_LOGIN_DEV"),
     }
 
 

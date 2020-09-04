@@ -332,7 +332,6 @@ All config settings must be declared in "config/base.ini", even if they are null
 - `SAML_IDP_SLS`: URL that SAML logout requests will be sent to
 - `SAML_IDP_SSOS`: URL that SAML login requests will be sent to
 - `SAML_SLS`: Fully qualified URI that ATAT will invoke SAML logout from
-- `SAMl_LOGIN_DEV`: Boolean that defines if Azure Fed Auth will be require to log in using the developer login route. Defaults to `False`
 - `SECRET_KEY`: String key which will be used to sign the session cookie. Should be a long string of random bytes. https://flask.palletsprojects.com/en/1.1.x/config/#SECRET_KEY
 - `SERVER_NAME`: Hostname for ATAT. Only needs to be specified in contexts where the hostname cannot be inferred from the request, such as Celery workers. https://flask.palletsprojects.com/en/1.1.x/config/#SERVER_NAME
 - `SERVICE_DESK_URL`: The URL for the service desk.  This is the site that will be displayed when the Support button is pressed.
@@ -408,7 +407,7 @@ To run SonarScanner
 script/sonarqube <SonarQube user> <SonarQube password>
 ```
 
-Both user and password are in 1Password.  It is possible that the hostname for SonarQube will change from time to time.  In this case the value for the key `sonar.host.url` will have to be updated in the The `sonar-qube.properties` file.  
+Both user and password are in 1Password.  It is possible that the hostname for SonarQube will change from time to time.  In this case the value for the key `sonar.host.url` will have to be updated in the The `sonar-qube.properties` file.
 
 ## Notes
 
