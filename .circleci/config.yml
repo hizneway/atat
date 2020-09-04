@@ -1,7 +1,7 @@
 version: 2.1
 
 parameters:
-  subscription:
+  subscription_id:
     type: string
     default: ${AZURE_SUBSCRIPTION}
   container_registry:
@@ -61,6 +61,7 @@ commands:
               --tenant << pipeline.parameters.tenant_id >> \
               --password << pipeline.parameters.sp_password >> \
               --username << pipeline.parameters.sp >>
+            az account set -s << pipeline.parameters.subscription_id >>
             echo "Successfully logged in to Azure CLI."
             az acr login --name << pipeline.parameters.container_registry >> | grep "Succeeded"
   cache_docker_images :
