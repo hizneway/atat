@@ -14,7 +14,8 @@ from atat.utils import pick
 
 from . import current_user_setup, redirect_after_login_url
 
-bp = Blueprint("dev", __name__)
+dev_bp = Blueprint("dev", __name__)
+automated_access_bp = Blueprint("automated_access_bp", __name__)
 
 _ALL_PERMS = [
     PermissionSets.VIEW_PORTFOLIO,
@@ -107,7 +108,7 @@ class IncompleteInfoError(Exception):
         return "You must provide each of: first_name, last_name and dod_id"
 
 
-@bp.route("/login-dev", methods=["GET", "POST"])
+@dev_bp.route("/login-dev", methods=["GET", "POST"])
 def login_dev():
     query_string_parameters = session.get("query_string_parameters", {})
     user = None
@@ -155,7 +156,7 @@ def login_dev():
     return redirect(redirect_after_login_url(next_param))
 
 
-@bp.route("/dev-new-user")
+@automated_access_bp.route("/dev-new-user")
 def dev_new_user():
     first_name = request.args.get("first_name", None)
     last_name = request.args.get("last_name", None)
@@ -178,7 +179,7 @@ def dev_new_user():
     return redirect(redirect_after_login_url())
 
 
-@bp.route("/test-email")
+@dev_bp.route("/test-email")
 def test_email():
     send_mail.delay(
         [request.args.get("to")], request.args.get("subject"), request.args.get("body")
@@ -187,6 +188,6 @@ def test_email():
     return redirect(url_for("dev.messages"))
 
 
-@bp.route("/messages")
+@dev_bp.route("/messages")
 def messages():
     return render_template("dev/emails.html", messages=app.mailer.messages)
