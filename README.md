@@ -276,7 +276,7 @@ All config settings must be declared in "config/base.ini", even if they are null
 
 #### General Config
 
-- `ALLOW_AUTOMATED_ACCESS`: Enables additional development routes that will allow automated tools (like functional end-user tests) to authenticate
+- `ALLOW_LOCAL_ACCESS`: Enables additional development routes that will allow developers working locally and automated tools (like functional end-user tests) to authenticate
 - `ASSETS_URL`: URL to host which serves static assets (such as a CDN).
 - `APP_SSL_CERT_PATH`: Path to the self-signed SSL certificate for running the app in secure mode.
 - `APP_SSL_KEY_PATH`: Path to the self-signed SSL certificate key for running the app in secure mode.

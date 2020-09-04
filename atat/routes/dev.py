@@ -15,7 +15,7 @@ from atat.utils import pick
 from . import current_user_setup, redirect_after_login_url
 
 dev_bp = Blueprint("dev", __name__)
-automated_access_bp = Blueprint("automated_access_bp", __name__)
+local_access_bp = Blueprint("local_access", __name__)
 
 _ALL_PERMS = [
     PermissionSets.VIEW_PORTFOLIO,
@@ -108,6 +108,27 @@ class IncompleteInfoError(Exception):
         return "You must provide each of: first_name, last_name and dod_id"
 
 
+def get_or_create_dev_user(name):
+    user_data = _DEV_USERS[name]
+    return Users.get_or_create_by_dod_id(
+        user_data["dod_id"],
+        **pick(
+            [
+                "permission_sets",
+                "first_name",
+                "last_name",
+                "email",
+                "service_branch",
+                "phone_number",
+                "citizenship",
+                "designation",
+                "date_latest_training",
+            ],
+            user_data,
+        ),
+    )
+
+
 @dev_bp.route("/login-dev", methods=["GET", "POST"])
 def login_dev():
     query_string_parameters = session.get("query_string_parameters", {})
@@ -131,23 +152,7 @@ def login_dev():
             role = query_string_parameters.get(
                 "username_param", None
             ) or request.args.get("username", "amanda")
-            user_data = _DEV_USERS[role]
-            user = Users.get_or_create_by_dod_id(
-                user_data["dod_id"],
-                **pick(
-                    [
-                        "permission_sets",
-                        "first_name",
-                        "last_name",
-                        "email",
-                        "service_branch",
-                        "phone_number",
-                        "citizenship",
-                        "designation",
-                    ],
-                    user_data,
-                ),
-            )
+            user = get_or_create_dev_user(role)
 
     next_param = query_string_parameters.get("next_param", None)
     if "query_string_parameters" in session:
@@ -156,7 +161,7 @@ def login_dev():
     return redirect(redirect_after_login_url(next_param))
 
 
-@automated_access_bp.route("/dev-new-user")
+@local_access_bp.route("/dev-new-user")
 def dev_new_user():
     first_name = request.args.get("first_name", None)
     last_name = request.args.get("last_name", None)
@@ -176,6 +181,15 @@ def dev_new_user():
     created_user = Users.create(dod_id, **new_user)
 
     current_user_setup(created_user)
+    return redirect(redirect_after_login_url())
+
+
+@local_access_bp.route("/login-local")
+def local_access():
+    name = request.args.get("username", "amanda")
+    user = get_or_create_dev_user(name)
+    current_user_setup(user)
+
     return redirect(redirect_after_login_url())
 
 
