@@ -11,7 +11,6 @@ The production configuration (master.atat.dev, currently) is reflected in the co
 - CONTAINER_IMAGE: The ATAT container image to use.
 - NGINX_CONTAINER_IMAGE: Container image to run the nginx server.
 - MAIN_DOMAIN: The host domain for the environment.
-- AUTH_DOMAIN: The host domain for the authentication endpoint for the environment.
 - TENANT_ID: The id of the active directory tenant in which the cluster and it's associated users exist. This is a GUID.
 - VMSS_CLIENT_ID: The client ID for the managed identity associated with the VMSS underlying the AKS instance. This managed identity should have read access to the Key Vault specified by KV_NAME.
 - KV_NAME: The name of the Key Vault where ATAT's configuration secrets are stored.
