@@ -188,16 +188,38 @@ def login_dev():
         if dod_id is not None:
             user = Users.get_by_dod_id(dod_id)
         else:
-            role = query_string_parameters.get(
+            persona = query_string_parameters.get(
                 "username_param", None
             ) or request.args.get("username", "amanda")
-            user = get_or_create_dev_user(role)
+            user = get_or_create_persona(persona)
 
     next_param = query_string_parameters.get("next_param", None)
     if "query_string_parameters" in session:
         del session["query_string_parameters"]
     current_user_setup(user)
     return redirect(redirect_after_login_url(next_param))
+
+
+def get_or_create_persona(persona):
+    user_data = _DEV_USERS[persona]
+    user = Users.get_or_create_by_dod_id(
+        user_data["dod_id"],
+        **pick(
+            [
+                "permission_sets",
+                "first_name",
+                "last_name",
+                "email",
+                "service_branch",
+                "phone_number",
+                "citizenship",
+                "designation",
+                "date_latest_training",
+            ],
+            user_data,
+        ),
+    )
+    return user
 
 
 @local_access_bp.route("/dev-new-user")
