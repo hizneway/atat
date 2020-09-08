@@ -61,6 +61,7 @@ commands:
           command: |
             docker load < docker-cache/atat.tar
             docker load < docker-cache/builder.tar
+            docker load < docker-cache/nginx.tar
   setup_datastores:
     parameters:
       pgdatabase:
