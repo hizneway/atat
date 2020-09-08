@@ -25,10 +25,10 @@ parameters:
   namespace:
     type: string
     default: atat
-  atat_image_tag: 
+  atat_image_tag:
     type: string
     default: ${AZURE_REGISTRY}.azurecr.io/atat:latest
-  nginx_image_tag: 
+  nginx_image_tag:
     type: string
     default: ${AZURE_REGISTRY}.azurecr.io/nginx:latest
   cluster_name:
@@ -211,7 +211,6 @@ jobs:
           name: Start application container
           command: |
             docker run -d \
-            -e DISABLE_CRL_CHECK=true \
             -e PGHOST=postgres \
             -e REDIS_HOST=redis:6379 \
             -p 8000:8000 \
@@ -255,28 +254,6 @@ jobs:
               --network atat \
               ghostinspector/test-runner-standalone:latest
 
-  test-crl-parser:
-    docker:
-      - image: docker:18.06.0-ce-git
-      - image: circleci/postgres:10-alpine-ram
-      - image: circleci/redis:4-alpine3.8
-    steps:
-      - setup_remote_docker:
-          docker_layer_caching: true
-          version: 18.06.0-ce
-      - restore_docker_image
-      - setup_datastores:
-          pgdatabase: atat_test
-      - run:
-          name: Sync CRLs and run CRL test
-          command: |
-            docker run \
-              -e PGHOST=postgres \
-              -e REDIS_HOST=redis:6379 \
-              --network atat \
-              atat:builder \
-              /bin/sh -c "poetry install --no-root && /bin/sh script/sync-crls && poetry run pytest --no-cov tests/check_crl_parse.py"
-
   deploy-staging:
     docker:
       - image: docker:18.06.0-ce-git
@@ -298,7 +275,7 @@ jobs:
           namespace: master
           atat_image_tag: << pipeline.parameters.container_registry >>.azurecr.io/atat:master-${CIRCLE_SHA1}
           nginx_image_tag: << pipeline.parameters.container_registry >>.azurecr.io/nginx:master-${CIRCLE_SHA1}
-  
+
   push-images:
     docker:
       - image: docker:18.06.0-ce-git
@@ -378,24 +355,8 @@ workflows:
             branches:
               only:
                 - master
-  
+
   push-images:
     when: << pipeline.parameters.build_and_push_images_only >>
     jobs:
       - push-images
-
-  test-crl-parser:
-    when:
-      not: << pipeline.parameters.build_and_push_images_only >>
-    triggers:
-      - schedule:
-          cron: "0 4 * * *"
-          filters:
-            branches:
-              only:
-                - staging
-    jobs:
-      - docker-build
-      - test-crl-parser:
-          requires:
-            - docker-build
