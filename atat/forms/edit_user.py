@@ -1,8 +1,7 @@
 from copy import deepcopy
 
-import pendulum
 from wtforms.fields import RadioField, StringField
-from wtforms.fields.html5 import DateField, EmailField, TelField
+from wtforms.fields.html5 import EmailField, TelField
 from wtforms.validators import DataRequired, Email, Length, Optional
 
 from atat.forms.validators import Number
@@ -12,7 +11,7 @@ from atat.utils.localization import translate
 from .data import SERVICE_BRANCHES
 from .fields import SelectField
 from .forms import BaseForm
-from .validators import DateRange, Name, PhoneNumber
+from .validators import Name, PhoneNumber
 
 USER_FIELDS = {
     "first_name": StringField(

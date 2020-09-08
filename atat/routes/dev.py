@@ -1,6 +1,5 @@
 import random
 
-import pendulum
 from flask import Blueprint
 from flask import current_app as app
 from flask import redirect, render_template, request, session, url_for

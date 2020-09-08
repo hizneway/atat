@@ -1,4 +1,4 @@
-from sqlalchemy import TIMESTAMP, Column, Date, ForeignKey, String, Table
+from sqlalchemy import TIMESTAMP, Column, ForeignKey, String, Table
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.event import listen
 from sqlalchemy.orm import relationship
