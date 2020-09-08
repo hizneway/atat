@@ -38,7 +38,7 @@ commands:
               --username << parameters.sp >>  
             echo "Successfully logged in to Azure CLI."
             az acr login --name << parameters.container_registry >> | grep "Succeeded"
-  cache_docker_image:
+  cache_docker_images:
     steps:
       - run:
           name: Save the docker images to a cache
@@ -46,6 +46,7 @@ commands:
             mkdir -p docker-cache
             docker save -o docker-cache/atat.tar atat:latest
             docker save -o docker-cache/builder.tar atat:builder
+            docker save -o docker-cache/nginx.tar nginx:latest
       - save_cache:
           key: docker-cache-{{ .Branch }}-{{ .Revision }}
           paths:
@@ -102,9 +103,12 @@ commands:
       namespace:
         type: string
         default: atat
-      tag:
+      atat-image-tag:
         type: string
         default: << parameters.azure_server_name>>/atat:latest
+      nginx-image-tag:
+        type: string
+        default: << parameters.azure_server_name>>/nginx:latest
       cluster_name:
         type: string
         default: ${CLUSTER_NAME}
@@ -134,24 +138,26 @@ commands:
       - run:
           name: Tag images
           command: |
-            docker tag atat:latest << parameters.tag >>
+            docker tag atat:latest << parameters.atat-image-tag >>
+            docker tag nginx:latest << parameters.nginx-image-tag >>
       - run:
           name: Push image
           command: |
-            docker push << parameters.tag >>
+            docker push << parameters.atat-image-tag >>
+            docker push << parameters.nginx-image-tag >>
       - run:
           name: Add gettext package
           command: apk add gettext
       - run:
-          command: K8S_NAMESPACE=<< parameters.namespace >> CONTAINER_IMAGE=<< parameters.tag >> /bin/sh ./script/cluster_migration
+          command: K8S_NAMESPACE=<< parameters.namespace >> CONTAINER_IMAGE=<< parameters.atat-image-tag >> /bin/sh ./script/cluster_migration
           name: Apply Migrations and Seed Roles
       - run:
           name: Update Kubernetes cluster
           command: |
-            kubectl set image deployment.apps/atst atst=<< parameters.tag >> --namespace=<< parameters.namespace >>
-            kubectl set image deployment.apps/atst-worker atst-worker=<< parameters.tag >> --namespace=<< parameters.namespace >>
-            kubectl set image deployment.apps/atst-beat atst-beat=<< parameters.tag >> --namespace=<< parameters.namespace >>
-            kubectl set image cronjobs.batch/crls crls=<< parameters.tag >> --namespace=<< parameters.namespace >>
+            kubectl set image deployment.apps/atst atst=<< parameters.atat-image-tag >> --namespace=<< parameters.namespace >>
+            kubectl set image deployment.apps/atst-worker atst-worker=<< parameters.atat-image-tag >> --namespace=<< parameters.namespace >>
+            kubectl set image deployment.apps/atst-beat atst-beat=<< parameters.atat-image-tag >> --namespace=<< parameters.namespace >>
+            kubectl set image cronjobs.batch/crls crls=<< parameters.atat-image-tag >> --namespace=<< parameters.namespace >>
 
 jobs:
   docker-build:
@@ -168,11 +174,12 @@ jobs:
           version: 18.06.0-ce
       - azlogin
       - run:
-          name: Build image
+          name: Build images
           command: |
             docker build . --build-arg GIT_SHA=${CIRCLE_SHA1} --build-arg IMAGE=<<parameters.container_registry>>.azurecr.io/rhel-py -f ./Dockerfile -t atat:builder --target builder
             docker build . --build-arg GIT_SHA=${CIRCLE_SHA1} --build-arg IMAGE=<<parameters.container_registry>>.azurecr.io/rhel-py -f ./Dockerfile -t atat:latest
-      - cache_docker_image
+            docker build --build-arg IMAGE=<<parameters.container_registry>>.azurecr.io/rhelubi:8.2 - < nginx.Dockerfile
+      - cache_docker_images
 
   test:
     docker:
@@ -288,7 +295,8 @@ jobs:
     steps:
       - deploy:
           namespace: staging
-          tag: ${AZURE_SERVER_NAME}/atat:staging-${CIRCLE_SHA1}
+          atat-image-tag: ${AZURE_SERVER_NAME}/atat:staging-${CIRCLE_SHA1}
+          nginx-image-tag: ${AZURE_SERVER_NAME}/nginx:staging-${CIRCLE_SHA1}
 
   deploy-master:
     docker:
@@ -296,7 +304,8 @@ jobs:
     steps:
       - deploy:
           namespace: master
-          tag: ${AZURE_SERVER_NAME}/atat:master-${CIRCLE_SHA1}
+          atat-image-tag: ${AZURE_SERVER_NAME}/atat:master-${CIRCLE_SHA1}
+          nginx-image-tag: ${AZURE_SERVER_NAME}/nginx:master-${CIRCLE_SHA1}
 
 workflows:
   version: 2
