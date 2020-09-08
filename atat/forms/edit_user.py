@@ -46,18 +46,6 @@ USER_FIELDS = {
             ("contractor", "Contractor"),
         ],
     ),
-    "date_latest_training": DateField(
-        translate("forms.edit_user.date_latest_training_label"),
-        description=translate("forms.edit_user.date_latest_training_description"),
-        validators=[
-            DateRange(
-                lower_bound=pendulum.duration(years=1),
-                upper_bound=pendulum.duration(days=0),
-                message="Must be a date within the last year.",
-            )
-        ],
-        format="%m/%d/%Y",
-    ),
 }
 
 
@@ -89,4 +77,3 @@ class EditUserForm(BaseForm):
     service_branch = inherit_user_field("service_branch")
     citizenship = inherit_user_field("citizenship")
     designation = inherit_user_field("designation")
-    date_latest_training = inherit_user_field("date_latest_training")
