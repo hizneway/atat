@@ -234,7 +234,7 @@ class AzureCloudProvider(CloudProviderInterface):
         kv_token = self._get_keyvault_token()
         result = self.sdk.requests.put(
             f"{self.vault_url}secrets/{secret_key}",
-            params={"api-version": "7.0"},
+            params={"api-version": "7.1"},
             headers=make_auth_header(kv_token),
             timeout=30,
             json={"value": secret_value},
@@ -248,7 +248,7 @@ class AzureCloudProvider(CloudProviderInterface):
         kv_token = self._get_keyvault_token()
         result = self.sdk.requests.get(
             f"{self.vault_url}secrets/{secret_key}",
-            params={"api-version": "7.0"},
+            params={"api-version": "7.1"},
             headers=make_auth_header(kv_token),
             timeout=30,
         )
