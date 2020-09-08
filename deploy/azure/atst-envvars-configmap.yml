@@ -5,6 +5,7 @@ metadata:
   name: atst-envvars
   namespace: atat
 data:
+  ALLOW_LOCAL_ACCESS: "false"
   ASSETS_URL: https://atat-cdn.azureedge.net/
   AZURE_STORAGE_ACCOUNT_NAME: atat
   AZURE_TO_BUCKET_NAME: task-order-pdfs
