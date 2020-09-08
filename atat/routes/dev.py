@@ -182,16 +182,7 @@ def login_dev():
                 user = created_user
 
     if not user:
-        dod_id = query_string_parameters.get("dod_id_param", None) or request.args.get(
-            "dod_id", None
-        )
-        if dod_id is not None:
-            user = Users.get_by_dod_id(dod_id)
-        else:
-            persona = query_string_parameters.get(
-                "username_param", None
-            ) or request.args.get("username", "amanda")
-            user = get_or_create_persona(persona)
+        user = get_or_create_non_saml_user(request, query_string_parameters)
 
     next_param = query_string_parameters.get("next_param", None)
     if "query_string_parameters" in session:
@@ -199,6 +190,20 @@ def login_dev():
     current_user_setup(user)
     return redirect(redirect_after_login_url(next_param))
 
+
+def get_or_create_non_saml_user(request, query_string_parameters):
+    dod_id = query_string_parameters.get("dod_id_param", None) or request.args.get(
+        "dod_id", None
+    )
+    if dod_id is not None:
+        user = Users.get_by_dod_id(dod_id)
+    else:
+        persona = query_string_parameters.get(
+            "username_param", None
+        ) or request.args.get("username", "amanda")
+        user = get_or_create_persona(persona)
+
+    return user
 
 def get_or_create_persona(persona):
     user_data = _DEV_USERS[persona]
