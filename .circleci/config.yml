@@ -46,7 +46,6 @@ commands:
             mkdir -p docker-cache
             docker save -o docker-cache/atat.tar atat:latest
             docker save -o docker-cache/builder.tar atat:builder
-            docker save -o docker-cache/nginx.tar nginx:latest
       - save_cache:
           key: docker-cache-{{ .Branch }}-{{ .Revision }}
           paths:
@@ -61,7 +60,6 @@ commands:
           command: |
             docker load < docker-cache/atat.tar
             docker load < docker-cache/builder.tar
-            docker load < docker-cache/nginx.tar
   setup_datastores:
     parameters:
       pgdatabase:
