@@ -234,7 +234,7 @@ class AzureCloudProvider(CloudProviderInterface):
         kv_token = self._get_keyvault_token()
         result = self.sdk.requests.put(
             f"{self.vault_url}secrets/{secret_key}",
-            params={"api-version": "7.0"},
+            params={"api-version": "7.1"},
             headers=make_auth_header(kv_token),
             timeout=30,
             json={"value": secret_value},
@@ -248,7 +248,7 @@ class AzureCloudProvider(CloudProviderInterface):
         kv_token = self._get_keyvault_token()
         result = self.sdk.requests.get(
             f"{self.vault_url}secrets/{secret_key}",
-            params={"api-version": "7.0"},
+            params={"api-version": "7.1"},
             headers=make_auth_header(kv_token),
             timeout=30,
         )
@@ -1072,7 +1072,7 @@ class AzureCloudProvider(CloudProviderInterface):
         graph_token = self._get_tenant_admin_token(payload.tenant_id, self.graph_scope)
         request_body = {"appId": payload.principal_app_id}
 
-        url = f"{self.graph_resource}/beta/servicePrincipals"
+        url = f"{self.graph_resource}/v1.0/servicePrincipals"
 
         result = self.sdk.requests.post(
             url, json=request_body, headers=make_auth_header(graph_token), timeout=30,
