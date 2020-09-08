@@ -233,11 +233,12 @@ def _make_saml_config():
                 "url": app.config["SAML_SLS"],
                 "binding": "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect",
             },
-            "NameIDFormat": "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress",
+            "NameIDFormat": "urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified",
         },
         "security": {
             "wantAssertionsSigned": True,  # Needed by EIFS
             "requestedAuthnContext": False,  # Needed by EIFS
+            "wantNameId": False,  # EIFS sometimes lacks NameID as a result of missing email addresses
         },
     }
 
