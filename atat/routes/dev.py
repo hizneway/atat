@@ -14,6 +14,8 @@ from atat.routes.saml_helpers import (
     saml_get,
     saml_post,
     unique_dod_id,
+    AzureAttributes,
+    get_or_create_dev_saml_user,
 )
 from atat.utils import pick
 
@@ -152,34 +154,11 @@ def login_dev():
         saml_auth = init_saml_auth_dev(request)
         session["login_method"] = "dev"
         saml_post(saml_auth)
-        query_string_parameters = session.get("query_string_parameters", {})
         if not (
             "username_param" in query_string_parameters
             or "dod_id_param" in query_string_parameters
         ):
-            # if username or dod_id param not passed in,
-            # we get or create user from SAML information
-            saml_user_details = {}
-            saml_user_details["first_name"] = saml_auth.get_attribute(
-                "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname"
-            )[0]
-            saml_user_details["last_name"] = saml_auth.get_attribute(
-                "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/surname"
-            )[0]
-            try:
-                # We check for an existing user by searching for any user with the
-                # same first and last name. This could possibly cause collisions
-                # of two users with the exact same first and last name.
-                # However, the Azure SAML token doesn't seem to currently provide
-                # more distinquishing detail than that that
-                user = Users.get_by_first_and_last_name(
-                    saml_user_details["first_name"], saml_user_details["last_name"]
-                )
-            except NotFoundError:
-                new_dod_id = unique_dod_id()
-
-                created_user = Users.create(new_dod_id, **saml_user_details)
-                user = created_user
+            user = get_or_create_dev_saml_user(saml_auth)
 
     if not user:
         user = get_or_create_non_saml_user(request, query_string_parameters)
@@ -204,6 +183,7 @@ def get_or_create_non_saml_user(request, query_string_parameters):
         user = get_or_create_persona(persona)
 
     return user
+
 
 def get_or_create_persona(persona):
     user_data = _DEV_USERS[persona]

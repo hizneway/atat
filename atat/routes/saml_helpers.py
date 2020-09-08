@@ -27,6 +27,11 @@ class EIFSAttributes:
     MOBILE = "mobile"
 
 
+class AzureAttributes:
+    GIVEN_NAME = "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname"
+    LAST_NAME = "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/surname"
+
+
 def saml_get(saml_auth, request):
     if "query_string_parameters" in session:
         del session["query_string_parameters"]
@@ -241,3 +246,30 @@ def _make_saml_config():
     )
     config["idp"] = idp_config["idp"]
     return config
+
+
+def get_or_create_dev_saml_user(saml_auth):
+    raw_saml_attributes = saml_auth.get_attributes()
+    parsed_saml_attributes = {k: v[0] for k, v in raw_saml_attributes.items()}
+    saml_user_details = {}
+    saml_user_details["first_name"] = parsed_saml_attributes.get(
+        AzureAttributes.GIVEN_NAME
+    )
+    saml_user_details["last_name"] = parsed_saml_attributes.get(
+        AzureAttributes.LAST_NAME
+    )
+    try:
+        # We check for an existing user by searching for any user with the
+        # same first and last name. This could possibly cause collisions
+        # of two users with the exact same first and last name.
+        # However, the Azure SAML token doesn't seem to currently provide
+        # more distinquishing detail than that that
+        user = Users.get_by_first_and_last_name(
+            saml_user_details["first_name"], saml_user_details["last_name"]
+        )
+    except NotFoundError:
+        new_dod_id = unique_dod_id()
+        created_user = Users.create(new_dod_id, **saml_user_details)
+        user = created_user
+
+    return user
