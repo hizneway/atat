@@ -147,7 +147,7 @@ commands:
             az aks get-credentials --name << pipeline.parameters.cluster_name >>  --resource-group << pipeline.parameters.resource_group >>
       - run:
           name: Build nginx image
-          command: docker build -t nginx:latest --build-arg IMAGE=<< parameters.container_registry >>.azurecr.io/rhelubi:8.2 - < nginx.Dockerfile
+          command: docker build -t nginx:latest --build-arg IMAGE=<< pipeline.parameters.container_registry >>.azurecr.io/rhelubi:8.2 - < nginx.Dockerfile
       - run:
           name: Tag images
           command: |
@@ -304,8 +304,8 @@ jobs:
     steps:
       - deploy:
           namespace: staging
-          atat-image-tag: << parameters.container_registry >>.azurecr.io/atat:staging-${CIRCLE_SHA1}
-          nginx-image-tag: << parameters.container_registry >>.azurecr.io/nginx:staging-${CIRCLE_SHA1}
+          atat-image-tag: << pipeline.parameters.container_registry >>.azurecr.io/atat:staging-${CIRCLE_SHA1}
+          nginx-image-tag: << pipeline.parameters.container_registry >>.azurecr.io/nginx:staging-${CIRCLE_SHA1}
 
   deploy-master:
     parameters:
