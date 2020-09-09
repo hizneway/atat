@@ -74,7 +74,6 @@ class Users(object):
         "service_branch",
         "citizenship",
         "designation",
-        "date_latest_training",
     }
 
     @classmethod

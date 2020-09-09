@@ -1,4 +1,4 @@
-from sqlalchemy import TIMESTAMP, Column, Date, ForeignKey, String, Table
+from sqlalchemy import TIMESTAMP, Column, ForeignKey, String, Table
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.event import listen
 from sqlalchemy.orm import relationship
@@ -62,7 +62,6 @@ class User(
     service_branch = Column(String)
     citizenship = Column(String)
     designation = Column(String)
-    date_latest_training = Column(Date)
     last_login = Column(TIMESTAMP(timezone=True), nullable=True)
     last_session_id = Column(UUID(as_uuid=True), nullable=True)
 
@@ -77,7 +76,6 @@ class User(
         "service_branch",
         "citizenship",
         "designation",
-        "date_latest_training",
     ]
 
     @property
