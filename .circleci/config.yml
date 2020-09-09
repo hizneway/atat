@@ -64,7 +64,7 @@ commands:
             az account set -s << pipeline.parameters.subscription_id >>
             echo "Successfully logged in to Azure CLI."
             az acr login --name << pipeline.parameters.container_registry >> | grep "Succeeded"
-  cache_docker_images :
+  cache_docker_images:
     steps:
       - run:
           name: Save the docker images to a cache
