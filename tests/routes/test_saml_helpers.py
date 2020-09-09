@@ -1,4 +1,4 @@
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 import pytest
 from flask import current_app, session
@@ -12,6 +12,8 @@ from atat.routes.saml_helpers import (
     _cache_params_in_session,
     saml_get,
     saml_post,
+    init_saml_auth,
+    init_saml_auth_dev,
 )
 
 
@@ -85,6 +87,83 @@ def test_saml_post_valid_with_errors(mock_logger):
 
     assert session["AuthNRequestID"] == "ABC123"
     mock_last_err.assert_called()
+
+
+@patch("atat.routes.saml_helpers.OneLogin_Saml2_Auth")
+@patch("atat.routes.saml_helpers._prepare_flask_request")
+@patch("atat.routes.saml_helpers._make_saml_config")
+def test_saml_init_success(mock_make_config, mock_prepare_request, mock_saml_auth):
+    request = Mock()
+    mock_auth = Mock(
+        get_settings=Mock(
+            return_value=Mock(
+                get_sp_metadata=Mock(return_value=Mock()),
+                validate_metadata=Mock(return_value=[]),
+            )
+        )
+    )
+
+    mock_saml_auth.return_value = mock_auth
+    assert init_saml_auth(request) == mock_auth
+
+
+@patch("atat.routes.saml_helpers.OneLogin_Saml2_Auth")
+@patch("atat.routes.saml_helpers._prepare_flask_request")
+@patch("atat.routes.saml_helpers._make_saml_config")
+def test_saml_init_errors(mock_make_config, mock_prepare_request, mock_saml_auth):
+    request = Mock()
+    mock_auth = Mock(
+        get_settings=Mock(
+            return_value=Mock(
+                get_sp_metadata=Mock(return_value=Mock()),
+                validate_metadata=Mock(return_value=["Invalid Configuration"]),
+            )
+        )
+    )
+
+    mock_saml_auth.return_value = mock_auth
+
+    with pytest.raises(UnauthenticatedError):
+        init_saml_auth(request)
+
+
+@patch("atat.routes.saml_helpers.OneLogin_Saml2_Auth")
+@patch("atat.routes.saml_helpers._prepare_flask_request")
+@patch("atat.routes.saml_helpers._make_dev_saml_config")
+def test_dev_saml_init_success(mock_make_config, mock_prepare_request, mock_saml_auth):
+    request = Mock()
+    mock_auth = Mock(
+        get_settings=Mock(
+            return_value=Mock(
+                get_sp_metadata=Mock(return_value=Mock()),
+                validate_metadata=Mock(return_value=[]),
+            )
+        )
+    )
+
+    mock_saml_auth.return_value = mock_auth
+    assert init_saml_auth_dev(request) == mock_auth
+
+
+@patch("atat.routes.saml_helpers.OneLogin_Saml2_Auth")
+@patch("atat.routes.saml_helpers._prepare_flask_request")
+@patch("atat.routes.saml_helpers._make_dev_saml_config")
+def test_dev_saml_init_errors(mock_make_config, mock_prepare_request, mock_saml_auth):
+    request = Mock()
+    mock_auth = Mock(
+        get_settings=Mock(
+            return_value=Mock(
+                get_sp_metadata=Mock(return_value=Mock()),
+                validate_metadata=Mock(return_value=["Invalid Configuration"]),
+            )
+        )
+    )
+
+    mock_saml_auth.return_value = mock_auth
+
+    with pytest.raises(UnauthenticatedError):
+        init_saml_auth_dev(request)
+
 
 def test_get_user_from_saml_attributes():
     expected_dod_id = "1234567890"
