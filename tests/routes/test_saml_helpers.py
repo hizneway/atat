@@ -1,7 +1,7 @@
 from unittest.mock import Mock, patch
 
 import pytest
-from flask import current_app, session
+from flask import session
 from onelogin.saml2.errors import OneLogin_Saml2_ValidationError
 from tests.factories import UserFactory
 
@@ -10,6 +10,7 @@ from atat.routes import get_user_from_saml_attributes
 from atat.routes.saml_helpers import (
     EIFSAttributes,
     _cache_params_in_session,
+    _get_idp_config,
     saml_get,
     saml_post,
     init_saml_auth,
@@ -163,6 +164,56 @@ def test_dev_saml_init_errors(mock_make_config, mock_prepare_request, mock_saml_
 
     with pytest.raises(UnauthenticatedError):
         init_saml_auth_dev(request)
+
+
+@patch("atat.routes.saml_helpers.OneLogin_Saml2_IdPMetadataParser")
+class TestGetIdPConfig:
+    @pytest.fixture(autouse=True)
+    def clear_cache(self):
+        _get_idp_config.cache_clear()
+
+    def test_get_idp_config_success(self, mock_parser):
+        idp_uri = "http://myidp.com/federationmetadata.xml"
+
+        mock_parser.parse_remote = Mock(return_value={"idp": "config"})
+
+        assert _get_idp_config(idp_uri) == "config"
+
+    def test_get_idp_config_retries(self, mock_parser):
+        idp_uri = "http://myidp.com/federationmetadata.xml"
+
+        mock_parser.parse_remote = Mock(
+            side_effect=[Exception("Connection Failed"), {"idp": "config"}]
+        )
+
+        assert _get_idp_config(idp_uri) == "config"
+        assert mock_parser.parse_remote.call_count == 2
+
+    def test_get_idp_config_retries_exceeded(self, mock_parser):
+        idp_uri = "http://myidp.com/federationmetadata.xml"
+
+        mock_parser.parse_remote = Mock(
+            side_effect=[
+                Exception("Connection Failed"),
+                Exception("Connection Failed"),
+                Exception("Connection Failed"),
+            ]
+        )
+
+        with pytest.raises(Exception):
+            _get_idp_config(idp_uri)
+
+        assert mock_parser.parse_remote.call_count == 3
+
+    def test_get_idp_config_success_cache(self, mock_parser):
+        idp_uri = "http://myidp.com/federationmetadata.xml"
+
+        mock_parser.parse_remote = Mock(return_value={"idp": "config"})
+
+        assert _get_idp_config(idp_uri) == "config"
+        _get_idp_config(idp_uri)
+
+        assert mock_parser.parse_remote.call_count == 1
 
 
 def test_get_user_from_saml_attributes():

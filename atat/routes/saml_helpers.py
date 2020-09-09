@@ -1,12 +1,13 @@
 from random import randint
 import re
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import urlparse
 
+import cachetools.func
 from flask import current_app as app, g, session
-
 from onelogin.saml2.auth import OneLogin_Saml2_Auth
 from onelogin.saml2.errors import OneLogin_Saml2_ValidationError
 from onelogin.saml2.idp_metadata_parser import OneLogin_Saml2_IdPMetadataParser
+
 from atat.domain.exceptions import NotFoundError, UnauthenticatedError
 from atat.domain.users import Users
 from atat.utils import first_or_none
@@ -213,10 +214,8 @@ def _make_dev_saml_config():
         },
     }
 
-    idp_config = OneLogin_Saml2_IdPMetadataParser.parse_remote(
-        app.config["SAML_DEV_IDP_URI"], validate_cert=False
-    )
-    config["idp"] = idp_config["idp"]
+    config["idp"] = _get_idp_config(app.config["SAML_DEV_IDP_URI"], validate_cert=False)
+
     return config
 
 
@@ -243,11 +242,26 @@ def _make_saml_config():
         },
     }
 
-    idp_config = OneLogin_Saml2_IdPMetadataParser.parse_remote(
-        app.config["SAML_IDP_URI"], validate_cert=False
-    )
-    config["idp"] = idp_config["idp"]
+    config["idp"] = _get_idp_config(app.config["SAML_IDP_URI"], validate_cert=False)
+
     return config
+
+
+@cachetools.func.ttl_cache(maxsize=2, ttl=3600)
+def _get_idp_config(idp_uri, validate_cert=True):
+    retries = 0
+    while retries < 3:
+        try:
+            remote_config = OneLogin_Saml2_IdPMetadataParser.parse_remote(
+                idp_uri, validate_cert=validate_cert
+            )
+            return remote_config["idp"]
+        except Exception as e:
+            app.logger.warning(f"Failed to load {idp_uri}: {e}")
+            retries = retries + 1
+
+    app.logger.error(f"Unable to load saml metadata from {idp_uri}")
+    raise Exception(f"Unable to load saml metadata from {idp_uri}")
 
 
 def get_or_create_dev_saml_user(saml_auth):
