@@ -2,6 +2,7 @@ from unittest.mock import Mock
 
 import pytest
 from flask import current_app, session
+from onelogin.saml2.errors import OneLogin_Saml2_ValidationError
 from tests.factories import UserFactory
 
 from atat.domain.exceptions import UnauthenticatedError
@@ -10,6 +11,7 @@ from atat.routes.saml_helpers import (
     EIFSAttributes,
     _cache_params_in_session,
     saml_get,
+    saml_post,
 )
 
 
@@ -51,6 +53,38 @@ def test_qp_cache_cleared():
     assert "query_string_parameters" not in session
 
 
+def test_saml_post_success():
+    saml_auth = Mock(process_response=Mock(), get_errors=Mock(return_value=[]))
+
+    session["AuthNRequestID"] = "ABC123"
+    saml_post(saml_auth)
+
+    assert "AuthNRequestID" not in session
+
+
+def test_saml_post_invalid_response():
+    saml_auth = Mock(
+        process_response=Mock(side_effect=[OneLogin_Saml2_ValidationError("Invalid")])
+    )
+
+    with pytest.raises(UnauthenticatedError):
+        saml_post(saml_auth)
+
+
+def test_saml_post_valid_with_errors(mock_logger):
+    mock_last_err = Mock(return_value="Error")
+    saml_auth = Mock(
+        process_response=Mock(),
+        get_errors=Mock(return_value=["Error"]),
+        get_last_error_reason=mock_last_err,
+    )
+
+    session["AuthNRequestID"] = "ABC123"
+    with pytest.raises(UnauthenticatedError):
+        saml_post(saml_auth)
+
+    assert session["AuthNRequestID"] == "ABC123"
+    mock_last_err.assert_called()
 
 def test_get_user_from_saml_attributes():
     expected_dod_id = "1234567890"

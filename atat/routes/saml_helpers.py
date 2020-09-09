@@ -63,19 +63,18 @@ def _cache_params_in_session(request):
 
 
 def saml_post(saml_auth):
-    request_id = None
-    if "AuthNRequestID" in session:
-        request_id = session["AuthNRequestID"]
+    request_id = session.get("AuthNRequestID")
 
     try:
         saml_auth.process_response(request_id=request_id)
+        app.logger.info(f"writing response {request_id}")
     except OneLogin_Saml2_ValidationError as error_message:
         app.logger.error(f"OneLogin_Saml2_ValidationError detected: {error_message}")
         raise UnauthenticatedError("SAML Validation Failed")
+
     errors = saml_auth.get_errors()
     if len(errors) == 0:
-        if "AuthNRequestID" in session:
-            del session["AuthNRequestID"]
+        session.pop("AuthNRequestID", None)
     else:
         app.logger.error(
             f"SAML response from IdP contained the following errors: {', '.join(errors)}"
