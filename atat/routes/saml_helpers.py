@@ -33,31 +33,33 @@ class AzureAttributes:
 
 
 def saml_get(saml_auth, request):
-    if "query_string_parameters" in session:
-        del session["query_string_parameters"]
     sso_built_url = saml_auth.login()
-    session["AuthNRequestID"] = saml_auth.get_last_request_id()
-    parsed_url = urlparse(request.url)
-    parsed_query_string = parse_qs(parsed_url.query)
-    next_param = first_or_none(lambda no_op: True, parsed_query_string.get("next", []))
-    username_param = first_or_none(
-        lambda no_op: True, parsed_query_string.get("username", [])
-    )
-    dod_id_param = first_or_none(
-        lambda no_op: True, parsed_query_string.get("dod_id", [])
-    )
-    query_string_parameters = {}
+    request_id = saml_auth.get_last_request_id()
+    session["AuthNRequestID"] = request_id
 
-    if next_param:
-        query_string_parameters["next_param"] = next_param
-    if username_param:
-        query_string_parameters["username_param"] = username_param
-    if dod_id_param:
-        query_string_parameters["dod_id_param"] = dod_id_param
-    if query_string_parameters:
-        session["query_string_parameters"] = query_string_parameters
+    _cache_params_in_session(request)
 
     return sso_built_url
+
+
+def _cache_params_in_session(request):
+    query_string_parameters = {}
+
+    next_param = request.args.get("next")
+    if next_param:
+        query_string_parameters["next_param"] = next_param
+
+    username_param = request.args.get("username")
+    if username_param:
+        query_string_parameters["username_param"] = username_param
+
+    dod_id_param = request.args.get("dod_id")
+    if dod_id_param:
+        query_string_parameters["dod_id_param"] = dod_id_param
+
+    session.pop("query_string_parameters", None)
+    if query_string_parameters:
+        session["query_string_parameters"] = query_string_parameters
 
 
 def saml_post(saml_auth):
