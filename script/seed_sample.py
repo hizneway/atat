@@ -293,7 +293,6 @@ def create_demo_portfolio(name, data):
                     "phone_number",
                     "citizenship",
                     "designation",
-                    "date_latest_training",
                 ],
                 DEV_USERS["amanda"],
             ),

@@ -1,8 +1,7 @@
 from copy import deepcopy
 
-import pendulum
 from wtforms.fields import RadioField, StringField
-from wtforms.fields.html5 import DateField, EmailField, TelField
+from wtforms.fields.html5 import EmailField, TelField
 from wtforms.validators import DataRequired, Email, Length, Optional
 
 from atat.forms.validators import Number
@@ -12,7 +11,7 @@ from atat.utils.localization import translate
 from .data import SERVICE_BRANCHES
 from .fields import SelectField
 from .forms import BaseForm
-from .validators import DateRange, Name, PhoneNumber
+from .validators import Name, PhoneNumber
 
 USER_FIELDS = {
     "first_name": StringField(
@@ -46,18 +45,6 @@ USER_FIELDS = {
             ("contractor", "Contractor"),
         ],
     ),
-    "date_latest_training": DateField(
-        translate("forms.edit_user.date_latest_training_label"),
-        description=translate("forms.edit_user.date_latest_training_description"),
-        validators=[
-            DateRange(
-                lower_bound=pendulum.duration(years=1),
-                upper_bound=pendulum.duration(days=0),
-                message="Must be a date within the last year.",
-            )
-        ],
-        format="%m/%d/%Y",
-    ),
 }
 
 
@@ -89,4 +76,3 @@ class EditUserForm(BaseForm):
     service_branch = inherit_user_field("service_branch")
     citizenship = inherit_user_field("citizenship")
     designation = inherit_user_field("designation")
-    date_latest_training = inherit_user_field("date_latest_training")

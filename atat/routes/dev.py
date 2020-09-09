@@ -1,6 +1,5 @@
 import random
 
-import pendulum
 from flask import Blueprint
 from flask import current_app as app
 from flask import redirect, render_template, request, session, url_for
@@ -48,7 +47,6 @@ _DEV_USERS = {
         "phone_number": "1234567890",
         "citizenship": "United States",
         "designation": "Military",
-        "date_latest_training": pendulum.date(2018, 1, 1),
     },
     "amanda": {
         "dod_id": "2345678901",
@@ -59,7 +57,6 @@ _DEV_USERS = {
         "phone_number": "1234567890",
         "citizenship": "United States",
         "designation": "Military",
-        "date_latest_training": pendulum.date(2018, 1, 1),
     },
     "brandon": {
         "dod_id": "3456789012",
@@ -70,7 +67,6 @@ _DEV_USERS = {
         "phone_number": "1234567890",
         "citizenship": "United States",
         "designation": "Military",
-        "date_latest_training": pendulum.date(2018, 1, 1),
     },
     "christina": {
         "dod_id": "4567890123",
@@ -81,7 +77,6 @@ _DEV_USERS = {
         "phone_number": "1234567890",
         "citizenship": "United States",
         "designation": "Military",
-        "date_latest_training": pendulum.date(2018, 1, 1),
     },
     "dominick": {
         "dod_id": "5678901234",
@@ -92,7 +87,6 @@ _DEV_USERS = {
         "phone_number": "1234567890",
         "citizenship": "United States",
         "designation": "Military",
-        "date_latest_training": pendulum.date(2018, 1, 1),
     },
     "erica": {
         "dod_id": "6789012345",
@@ -103,7 +97,6 @@ _DEV_USERS = {
         "phone_number": "1234567890",
         "citizenship": "United States",
         "designation": "Military",
-        "date_latest_training": pendulum.date(2018, 1, 1),
     },
 }
 
@@ -152,7 +145,6 @@ def login_dev():
                         "phone_number",
                         "citizenship",
                         "designation",
-                        "date_latest_training",
                     ],
                     user_data,
                 ),
