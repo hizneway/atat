@@ -3,7 +3,6 @@ from unittest.mock import Mock, patch
 import pytest
 from flask import session
 from onelogin.saml2.errors import OneLogin_Saml2_ValidationError
-from tests.factories import UserFactory
 
 from atat.domain.exceptions import UnauthenticatedError
 from atat.routes import get_user_from_saml_attributes
@@ -16,6 +15,7 @@ from atat.routes.saml_helpers import (
     init_saml_auth,
     init_saml_auth_dev,
 )
+from tests.factories import UserFactory
 
 
 def test_prepare_login_url_success():

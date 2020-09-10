@@ -10,15 +10,15 @@ from werkzeug.routing import RequestRedirect
 
 from atat.domain.auth import logout as _logout
 from atat.domain.authnid import AuthenticationContext
-from atat.domain.exceptions import UnauthenticatedError, NotFoundError
+from atat.domain.exceptions import NotFoundError, UnauthenticatedError
 from atat.domain.users import Users
-from atat.routes.saml_helpers import init_saml_auth
-from atat.utils.flash import formatted_flash as flash
 from atat.routes.saml_helpers import (
     get_user_from_saml_attributes,
+    init_saml_auth_dev,
     load_attributes_from_assertion,
     prepare_idp_url,
 )
+from atat.utils.flash import formatted_flash as flash
 
 bp = Blueprint("atat", __name__)
 
@@ -121,7 +121,7 @@ def logout():
 
     if login_method == "dev":
         app.logger.info("preparing dev logout")
-        saml_auth = init_saml_auth(request)
+        saml_auth = init_saml_auth_dev(request)
         logout_url = saml_auth.logout(return_to=logout_url)
         app.logger.info(f"update logout url to {logout_url}")
 

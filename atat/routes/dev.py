@@ -10,9 +10,9 @@ from atat.domain.users import Users
 from atat.forms.data import SERVICE_BRANCHES
 from atat.jobs import send_mail
 from atat.routes.saml_helpers import (
-    prepare_idp_dev_url,
-    load_attributes_from_dev_assertion,
     get_or_create_dev_saml_user,
+    load_attributes_from_dev_assertion,
+    prepare_idp_dev_url,
 )
 from atat.utils import pick
 
