@@ -186,8 +186,15 @@ def dev_new_user():
 
 @local_access_bp.route("/login-local")
 def local_access():
-    name = request.args.get("username", "amanda")
-    user = get_or_create_dev_user(name)
+    dod_id = request.args.get("dod_id")
+    user = None
+
+    if dod_id:
+        user = Users.get_by_dod_id(dod_id)
+    else:
+        name = request.args.get("username", "amanda")
+        user = get_or_create_dev_user(name)
+
     current_user_setup(user)
 
     return redirect(redirect_after_login_url())
