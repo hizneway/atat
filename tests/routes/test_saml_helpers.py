@@ -275,3 +275,38 @@ def test_get_user_from_saml_existing_user():
     expected_user = UserFactory.create(dod_id=expected_dod_id)
 
     assert expected_user == get_user_from_saml_attributes(saml_attributes)
+
+
+def test_get_user_from_saml_telephone_over_mobile():
+    expected_dod_id = "1234567890"
+    saml_attributes = {
+        EIFSAttributes.GIVEN_NAME: "",
+        EIFSAttributes.LAST_NAME: "",
+        EIFSAttributes.EMAIL: "",
+        EIFSAttributes.SAM_ACCOUNT_NAME: f"{expected_dod_id}.MIL",
+        EIFSAttributes.US_CITIZEN: "",
+        EIFSAttributes.AGENCY_CODE: "",
+        EIFSAttributes.MOBILE: "1234",
+        EIFSAttributes.TELEPHONE: "5678",
+    }
+
+    user = get_user_from_saml_attributes(saml_attributes)
+
+    assert user.phone_number == "5678"
+
+
+def test_get_user_from_saml_mobile_fallback():
+    expected_dod_id = "1234567890"
+    saml_attributes = {
+        EIFSAttributes.GIVEN_NAME: "",
+        EIFSAttributes.LAST_NAME: "",
+        EIFSAttributes.EMAIL: "",
+        EIFSAttributes.SAM_ACCOUNT_NAME: f"{expected_dod_id}.MIL",
+        EIFSAttributes.US_CITIZEN: "",
+        EIFSAttributes.AGENCY_CODE: "",
+        EIFSAttributes.MOBILE: "1234",
+    }
+
+    user = get_user_from_saml_attributes(saml_attributes)
+
+    assert user.phone_number == "1234"
