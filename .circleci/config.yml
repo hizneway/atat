@@ -322,12 +322,31 @@ jobs:
           namespace: master
           atat-image-tag: << parameters.container_registry >>.azurecr.io/atat:master-${CIRCLE_SHA1}
           nginx-image-tag: << parameters.container_registry >>.azurecr.io/nginx:master-${CIRCLE_SHA1}
+  
+  push-images:
+    docker:
+      - image: docker:18.06.0-ce-git
+    steps:
+      - run:
+          name: Build nginx image
+          command: docker build -t nginx:latest --build-arg IMAGE=<< pipeline.parameters.container_registry >>.azurecr.io/rhelubi:8.2 - < nginx.Dockerfile
+      - run:
+          name: Tag images
+          command: |
+            docker tag atat:latest << pipeline.parameters.atat-image-tag >>
+            docker tag nginx:latest << pipeline.parameters.nginx-image-tag >>
+      - run:
+          name: Push image
+          command: |
+            docker push << pipeline.parameters.atat-image-tag >>
+            docker push << pipeline.parameters.nginx-image-tag >>
 
 workflows:
   version: 2
   run-tests:
     jobs:
       - docker-build
+      - push-images
       - test:
           requires:
             - docker-build
