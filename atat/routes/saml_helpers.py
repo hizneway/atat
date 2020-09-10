@@ -10,10 +10,22 @@ from onelogin.saml2.idp_metadata_parser import OneLogin_Saml2_IdPMetadataParser
 
 from atat.domain.exceptions import NotFoundError, UnauthenticatedError
 from atat.domain.users import Users
-from atat.utils import first_or_none
 
 
 SAM_ACCOUNT_FORMAT = re.compile("(1\d{9})\.(MIL|CIV|CTR)")
+
+DESIGNATIONS = {
+    "MIL": "military",
+    "CIV": "civilian",
+    "CTR": "contractor",
+}
+
+AGENCY_CODES = {
+    "F": "air_force",
+    "N": "navy",
+    "M": "marine_corps",
+    "A": "army",
+}
 
 
 class EIFSAttributes:
@@ -26,6 +38,7 @@ class EIFSAttributes:
     US_CITIZEN = "extensionAttribute4"
     AGENCY_CODE = "extensionAttribute1"
     MOBILE = "mobile"
+    TELEPHONE = "telephoneNumber"
 
 
 class AzureAttributes:
@@ -33,7 +46,17 @@ class AzureAttributes:
     LAST_NAME = "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/surname"
 
 
-def saml_get(saml_auth, request):
+def prepare_idp_url(request):
+    saml_auth = init_saml_auth(request)
+    return _prepare_login_url(saml_auth, request)
+
+
+def prepare_idp_dev_url(request):
+    saml_auth = init_saml_auth_dev(request)
+    return _prepare_login_url(saml_auth, request)
+
+
+def _prepare_login_url(saml_auth, request):
     sso_built_url = saml_auth.login()
     request_id = saml_auth.get_last_request_id()
     session["AuthNRequestID"] = request_id
@@ -63,7 +86,25 @@ def _cache_params_in_session(request):
         session["query_string_parameters"] = query_string_parameters
 
 
-def saml_post(saml_auth):
+def load_attributes_from_assertion(request):
+    saml_auth = init_saml_auth(request)
+    return _process_assertion_into_attributes(saml_auth)
+
+
+def load_attributes_from_dev_assertion(request):
+    saml_auth = init_saml_auth_dev(request)
+    return _process_assertion_into_attributes(saml_auth)
+
+
+def _process_assertion_into_attributes(saml_auth):
+    _validate_saml_assertion(saml_auth)
+    # parsed attribute values are returned in array by default,
+    # but we only expect a single value for each attribute
+    saml_attributes = {k: v[0] for k, v in saml_auth.get_attributes().items()}
+    return saml_attributes
+
+
+def _validate_saml_assertion(saml_auth):
     request_id = session.get("AuthNRequestID")
 
     try:
@@ -93,10 +134,11 @@ def unique_dod_id():
     return unique_dod_id()
 
 
-def init_saml_auth(request):
+def init_saml_auth(request, saml_config=None):
+    if not saml_config:
+        saml_config = _make_saml_config()
     saml_request_config = _prepare_flask_request(request)
-    saml_auth_config = _make_saml_config()
-    auth = OneLogin_Saml2_Auth(saml_request_config, saml_auth_config)
+    auth = OneLogin_Saml2_Auth(saml_request_config, saml_config)
     saml_settings = auth.get_settings()
     metadata = saml_settings.get_sp_metadata()
     errors = saml_settings.validate_metadata(metadata)
@@ -108,72 +150,45 @@ def init_saml_auth(request):
 
 
 def init_saml_auth_dev(request):
-    saml_request_config = _prepare_flask_request(request)
-    saml_auth_config = _make_dev_saml_config()
-    auth = OneLogin_Saml2_Auth(saml_request_config, saml_auth_config)
-    saml_settings = auth.get_settings()
-    metadata = saml_settings.get_sp_metadata()
-    errors = saml_settings.validate_metadata(metadata)
-    if len(errors) != 0:
-        app.logger.error("Error found on Metadata: %s" % (", ".join(errors)))
-        raise UnauthenticatedError("SAML Metadata Validation Failed")
-    else:
-        return auth
+    saml_dev_config = _make_dev_saml_config()
+    return init_saml_auth(request, saml_config=saml_dev_config)
 
 
 def get_user_from_saml_attributes(saml_attributes):
     """Finds a user based on DoD ID in SAML attributes or creates a new user
-    with the info if one isn't found. saml_attributes are expected to be in
-    the format returned by OneLogin_Saml2_Auth.get_attributes(), dictionary
-    of string : list
+    with the info if one isn't found.
     """
-    saml_attributes = {k: v[0] for k, v in saml_attributes.items()}
-    saml_user_details = {}
-
-    saml_user_details["first_name"] = saml_attributes.get(EIFSAttributes.GIVEN_NAME)
-    saml_user_details["last_name"] = saml_attributes.get(EIFSAttributes.LAST_NAME)
-    saml_user_details["email"] = saml_attributes.get(EIFSAttributes.EMAIL)
-
     try:
         sam_account_name = saml_attributes.get(EIFSAttributes.SAM_ACCOUNT_NAME)
         dod_id, short_designation = SAM_ACCOUNT_FORMAT.match(sam_account_name).groups()
+        return Users.get_by_dod_id(dod_id)
     except TypeError:
         app.logger.error("SAML response missing SAM Account Name")
         raise Exception("SAML response missing SAM Account Name")
     except AttributeError:
         app.logger.error(f"Incorrect format of SAM account name {sam_account_name}")
         raise Exception(f"Incorrect format of SAM account name {sam_account_name}")
-
-    try:
-        return Users.get_by_dod_id(dod_id)
     except NotFoundError:
         app.logger.info(f"No user found for DoD ID {dod_id}, creating...")
 
-    if short_designation == "MIL":
-        saml_user_details["designation"] = "military"
-    elif short_designation == "CIV":
-        saml_user_details["designation"] = "civilian"
-    elif short_designation == "CTR":
-        saml_user_details["designation"] = "contractor"
+    saml_user_details = {}
+    saml_user_details["first_name"] = saml_attributes.get(EIFSAttributes.GIVEN_NAME)
+    saml_user_details["last_name"] = saml_attributes.get(EIFSAttributes.LAST_NAME)
+    saml_user_details["email"] = saml_attributes.get(EIFSAttributes.EMAIL)
+
+    saml_user_details["designation"] = DESIGNATIONS.get(short_designation)
 
     is_us_citizen = saml_attributes.get(EIFSAttributes.US_CITIZEN)
     if is_us_citizen == "Y":
         saml_user_details["citizenship"] = "United States"
 
     agency_code = saml_attributes.get(EIFSAttributes.AGENCY_CODE)
-    if agency_code == "F":
-        saml_user_details["service_branch"] = "air_force"
-    elif agency_code == "N":
-        saml_user_details["service_branch"] = "navy"
-    elif agency_code == "M":
-        saml_user_details["service_branch"] = "marine_corps"
-    elif agency_code == "A":
-        saml_user_details["service_branch"] = "army"
+    saml_user_details["service_branch"] = AGENCY_CODES.get(agency_code)
 
+    telephoneNumber = saml_attributes.get(EIFSAttributes.TELEPHONE)
     mobile = saml_attributes.get(EIFSAttributes.MOBILE)
 
-    # TODO catch multiple phone attributes
-    saml_user_details["phone_number"] = mobile
+    saml_user_details["phone_number"] = telephoneNumber or mobile
 
     return Users.get_or_create_by_dod_id(dod_id, **saml_user_details)
 
@@ -264,16 +279,10 @@ def _get_idp_config(idp_uri, validate_cert=True):
     raise Exception(f"Unable to load saml metadata from {idp_uri}")
 
 
-def get_or_create_dev_saml_user(saml_auth):
-    raw_saml_attributes = saml_auth.get_attributes()
-    parsed_saml_attributes = {k: v[0] for k, v in raw_saml_attributes.items()}
+def get_or_create_dev_saml_user(saml_attributes):
     saml_user_details = {}
-    saml_user_details["first_name"] = parsed_saml_attributes.get(
-        AzureAttributes.GIVEN_NAME
-    )
-    saml_user_details["last_name"] = parsed_saml_attributes.get(
-        AzureAttributes.LAST_NAME
-    )
+    saml_user_details["first_name"] = saml_attributes.get(AzureAttributes.GIVEN_NAME)
+    saml_user_details["last_name"] = saml_attributes.get(AzureAttributes.LAST_NAME)
     try:
         # We check for an existing user by searching for any user with the
         # same first and last name. This could possibly cause collisions

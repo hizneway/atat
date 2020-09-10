@@ -16,9 +16,8 @@ from atat.routes.saml_helpers import init_saml_auth
 from atat.utils.flash import formatted_flash as flash
 from atat.routes.saml_helpers import (
     get_user_from_saml_attributes,
-    init_saml_auth,
-    saml_get,
-    saml_post,
+    load_attributes_from_assertion,
+    prepare_idp_url,
 )
 
 bp = Blueprint("atat", __name__)
@@ -140,18 +139,13 @@ def about():
 @bp.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "GET":
-        saml_auth = init_saml_auth(request)
-        return redirect(saml_get(saml_auth, request))
+        saml_login_uri = prepare_idp_url(request)
+        return redirect(saml_login_uri)
 
     if "acs" in request.args and request.method == "POST":
-        saml_auth = init_saml_auth(request)
-        saml_post(saml_auth)
+        attributes = load_attributes_from_assertion(request)
+        user = get_user_from_saml_attributes(attributes)
 
-        user = get_user_from_saml_attributes(saml_auth.get_attributes())
-
-    query_string_parameters = session.get("query_string_parameters", {})
-    next_param = query_string_parameters.get("next_param", None)
-    if "query_string_parameters" in session:
-        del session["query_string_parameters"]
-    current_user_setup(user)
-    return redirect(redirect_after_login_url(next_param))
+        next_param = session.pop("query_string_parameters", {}).get("next_param", None)
+        current_user_setup(user)
+        return redirect(redirect_after_login_url(next_param))
