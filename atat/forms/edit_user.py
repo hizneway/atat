@@ -13,6 +13,10 @@ from .fields import SelectField
 from .forms import BaseForm
 from .validators import Name, PhoneNumber
 
+SERVICE_BRANCH_CHOICES = [
+    ("", translate("fragments.edit_user_form.service_choice"))
+] + SERVICE_BRANCHES
+
 USER_FIELDS = {
     "first_name": StringField(
         translate("forms.edit_user.first_name_label"),
@@ -28,7 +32,8 @@ USER_FIELDS = {
     ),
     "phone_ext": StringField("Extension", validators=[Number(), Length(max=10)]),
     "service_branch": SelectField(
-        translate("forms.edit_user.service_branch_label"), choices=SERVICE_BRANCHES
+        translate("forms.edit_user.service_branch_label"),
+        choices=SERVICE_BRANCH_CHOICES,
     ),
     "citizenship": RadioField(
         choices=[
