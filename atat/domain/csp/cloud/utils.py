@@ -56,6 +56,8 @@ def create_active_directory_user(
             "forceChangePasswordNextSignIn": password_reset,
             "password": payload.password,
         },
+        "givenName": payload.first_name,
+        "surname": payload.last_name,
     }
 
     url = f"{graph_resource}/v1.0/users"
