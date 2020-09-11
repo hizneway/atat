@@ -43,6 +43,8 @@ def create_user(token, tenant_id, tenant_host_name):
         tenant_host_name=tenant_host_name,
         email=email,
         password=password,
+        first_name=first_name,
+        last_name=last_name,
     )
     response = create_active_directory_user(
         token, GRAPH_RESOURCE, payload, password_reset=False

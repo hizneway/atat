@@ -657,6 +657,8 @@ class UserCSPPayload(BaseCSPPayload, UserMixin):
     display_name: str
     tenant_host_name: str
     email: str
+    first_name: Optional[str]
+    last_name: Optional[str]
 
 
 class UserCSPResult(AliasModel):
