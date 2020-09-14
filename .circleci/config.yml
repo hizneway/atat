@@ -4,16 +4,16 @@ commands:
   azlogin:
     parameters:
       container_registry:
-        type: string 
+        type: string
         default: ${AZURE_REGISTRY}
       tenant_id:
-        type: string 
+        type: string
         default: ${AZURE_SP_TENANT}
       sp_password:
-        type: string 
+        type: string
         default: ${AZURE_SP_PASSWORD}
       sp:
-        type: string 
+        type: string
         default: ${AZURE_SP}
     steps:
       - run:
@@ -35,7 +35,7 @@ commands:
               --service-principal \
               --tenant << parameters.tenant_id >> \
               --password << parameters.sp_password >> \
-              --username << parameters.sp >>  
+              --username << parameters.sp >>
             echo "Successfully logged in to Azure CLI."
             az acr login --name << parameters.container_registry >> | grep "Succeeded"
   cache_docker_images:
@@ -97,7 +97,7 @@ commands:
   deploy:
     parameters:
       azure_server_name:
-        type: string 
+        type: string
         default: ${AZURE_SERVER_NAME}
       container_registry:
         type: string
@@ -136,7 +136,7 @@ commands:
           name: Configure kubectl
           command: |
             apk add libssl1.0
-            az aks get-credentials --name << parameters.cluster_name >>  --resource-group << parameters.resource_group >> 
+            az aks get-credentials --name << parameters.cluster_name >>  --resource-group << parameters.resource_group >>
       - run:
           name: Build nginx image
           command: docker build -t nginx:latest --build-arg IMAGE=<< parameters.container_registry >>.azurecr.io/rhelubi:8.2 - < nginx.Dockerfile
@@ -238,6 +238,7 @@ jobs:
             /bin/sh -c "
               echo CLOUD_PROVIDER=mock > .env &&\
               yarn build &&\
+              pip3 install uwsgi &&\
               uwsgi \
               --callable app \
               --module app \
