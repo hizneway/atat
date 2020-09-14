@@ -9,7 +9,6 @@ from atat.domain.permission_sets import PermissionSets
 from atat.domain.users import Users
 from atat.forms.data import SERVICE_BRANCHES
 from atat.jobs import send_mail
-from atat.routes import flash
 from atat.routes.saml_helpers import init_saml_auth, saml_get, saml_post
 from atat.utils import pick
 
