@@ -62,6 +62,7 @@ $CONTAINER_IMAGE \
 /bin/sh -c "
   echo CLOUD_PROVIDER=mock > .env &&\
   yarn build &&\
+  pip3 install uwsgi &&\
   uwsgi \
   --callable app \
   --module app \
