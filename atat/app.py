@@ -25,7 +25,8 @@ from atat.queue import celery, update_celery
 from atat.routes import bp
 from atat.routes.applications import applications_bp
 from atat.routes.ccpo import bp as ccpo_routes
-from atat.routes.dev import bp as dev_routes
+from atat.routes.dev import dev_bp as dev_routes
+from atat.routes.dev import local_access_bp
 from atat.routes.errors import make_error_pages
 from atat.routes.portfolios import portfolios_bp as portfolio_routes
 from atat.routes.task_orders import task_orders_bp
@@ -86,6 +87,9 @@ def make_app(config):
 
     if ENV != "prod":
         app.register_blueprint(dev_routes)
+
+    if app.config.get("ALLOW_LOCAL_ACCESS"):
+        app.register_blueprint(local_access_bp)
 
     app.form_cache = FormCache(app.redis)
 
@@ -194,7 +198,7 @@ def map_config(config):
             config.get("default", "CONTRACT_END_DATE"), "YYYY-MM-DD"
         ).date(),
         "SESSION_COOKIE_SECURE": config.getboolean("default", "SESSION_COOKIE_SECURE"),
-        "SAML_LOGIN_DEV": config.getboolean("default", "SAML_LOGIN_DEV"),
+        "ALLOW_LOCAL_ACCESS": config.getboolean("default", "ALLOW_LOCAL_ACCESS"),
     }
 
 

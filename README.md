@@ -145,7 +145,7 @@ If starting the secure server fails, you may need to generate the local certific
 
 ### Users
 
-There are currently six mock users for development:
+When the ALLOW_LOCAL_ACCESS setting is enabled, there are six mock users for development:
 
 - Sam (a CCPO)
 - Amanda
@@ -154,16 +154,13 @@ There are currently six mock users for development:
 - Dominick
 - Erica
 
-To log in as one of them, navigate to `/login-dev?username=<lowercase name>`.
-For example `/login-dev?username=amanda`.
-
-In development mode, there is a `DEV Login` button available on the home page
-that will automatically log you in as Amanda.
+To log in as one of them, navigate to `/login-local?username=<lowercase name>`.
+For example `/login-local?username=amanda`.
 
 Additionally, this endpoint can be used to log into any real users in the dev environments by providing their DoD ID:
-`/login-dev?dod_id=1234567890123`
+`/login-local?dod_id=1234567890123`
 
-When in development mode, you can create new users by passing first name, last name, and DoD ID query parameters to `/dev-new-user` like so:
+With ALLOW_LOCAL_ACCESS enabled, you can create new users by passing first name, last name, and DoD ID query parameters to `/dev-new-user` like so:
 ```
 /dev-new-user?first_name=Harrold&last_name=Henderson&dod_id=1234567890123
 ```
@@ -173,9 +170,7 @@ Once this user is created, you can log in as them again the future using the DoD
 
 **Federated Authentication with Azure**
 
-Note that when `FLASK_ENV` is set to `master`, that the `/login-dev` routes will all require you to have a valid account in the Azure tenant and authenticate against it.
-Alternatively, you can include `saml` in your query string to force federate authentication, which may be useful when debugging.
-Example: `/login-dev?saml`
+The `/login-dev` routes require that you have a valid account in the Azure Active Directory tenant and authenticate against it.
 
 ### Seeding the database
 
@@ -276,6 +271,7 @@ All config settings must be declared in "config/base.ini", even if they are null
 
 #### General Config
 
+- `ALLOW_LOCAL_ACCESS`: Enables additional development routes that will allow developers working locally and automated tools (like functional end-user tests) to authenticate
 - `ASSETS_URL`: URL to host which serves static assets (such as a CDN).
 - `APP_SSL_CERT_PATH`: Path to the self-signed SSL certificate for running the app in secure mode.
 - `APP_SSL_KEY_PATH`: Path to the self-signed SSL certificate key for running the app in secure mode.
@@ -332,7 +328,6 @@ All config settings must be declared in "config/base.ini", even if they are null
 - `SAML_IDP_SLS`: URL that SAML logout requests will be sent to
 - `SAML_IDP_SSOS`: URL that SAML login requests will be sent to
 - `SAML_SLS`: Fully qualified URI that ATAT will invoke SAML logout from
-- `SAMl_LOGIN_DEV`: Boolean that defines if Azure Fed Auth will be require to log in using the developer login route. Defaults to `False`
 - `SECRET_KEY`: String key which will be used to sign the session cookie. Should be a long string of random bytes. https://flask.palletsprojects.com/en/1.1.x/config/#SECRET_KEY
 - `SERVER_NAME`: Hostname for ATAT. Only needs to be specified in contexts where the hostname cannot be inferred from the request, such as Celery workers. https://flask.palletsprojects.com/en/1.1.x/config/#SERVER_NAME
 - `SERVICE_DESK_URL`: The URL for the service desk.  This is the site that will be displayed when the Support button is pressed.
@@ -408,7 +403,7 @@ To run SonarScanner
 script/sonarqube <SonarQube user> <SonarQube password>
 ```
 
-Both user and password are in 1Password.  It is possible that the hostname for SonarQube will change from time to time.  In this case the value for the key `sonar.host.url` will have to be updated in the The `sonar-qube.properties` file.  
+Both user and password are in 1Password.  It is possible that the hostname for SonarQube will change from time to time.  In this case the value for the key `sonar.host.url` will have to be updated in the The `sonar-qube.properties` file.
 
 ## Notes
 
@@ -448,19 +443,20 @@ The build assumes that you have redis and postgres running on their usual ports 
 
 Note that the uWSGI config used for this build in the repo root is symlinked from deploy/azure/uwsgi.ini. See the Kubernetes README in deploy/README.md for details.
 
-### Dev login
+### Local login
 
-The `/login-dev` endpoint is protected by HTTP basic auth when deployed. This can be configured for NGINX following the instructions [here](https://docs.nginx.com/nginx/admin-guide/security-controls/configuring-http-basic-authentication/). The following config should added within the main server block for the site:
+The `/login-local` endpoint is protected by HTTP basic auth by uWSGI in the docker container (https://uwsgi-docs.readthedocs.io/en/latest/InternalRouting.html#basicauth).
 
-```nginx
-location /login-dev {
-    auth_basic "Developer Access";
-    auth_basic_user_file /etc/apache2/.htpasswd;
-    [proxy information should follow this]
-}
+To enable this in a deployed environment, you must set ALLOW_LOCAL_ACCESS to true and provide a password file to the container my mounting a volume or other means. The uWSGI configuration expects to find the password file at `/config/localpassword`.
+
+You can generate a password with the htpassword. In this example, the command will generate a "localpassword" file in the current directory for a user called "atat":
+
+```
+htpasswd -cd ./localpassword atat
 ```
 
-The location block will require the same proxy pass configuration as other location blocks for the app.
+It will prompt you to enter a password, then produce the password file. Note that the `-d` flag is necessary, per the uWSGI documentation linked above.
+
 
 ## Secrets Detection
 
