@@ -34,6 +34,7 @@ USER_FIELDS = {
     "service_branch": SelectField(
         translate("forms.edit_user.service_branch_label"),
         choices=SERVICE_BRANCH_CHOICES,
+        default="",
     ),
     "citizenship": RadioField(
         choices=[
