@@ -12,6 +12,7 @@ from atat.domain.auth import logout as _logout
 from atat.domain.authnid import AuthenticationContext
 from atat.domain.exceptions import UnauthenticatedError
 from atat.domain.users import Users
+from atat.routes.saml_helpers import init_saml_auth
 from atat.utils.flash import formatted_flash as flash
 
 bp = Blueprint("atat", __name__)
@@ -109,8 +110,17 @@ def login_redirect():
 
 @bp.route("/logout")
 def logout():
+    login_method = session.pop("login_method", "main")
     _logout()
-    response = make_response(redirect(url_for(".root")))
+    logout_url = url_for(".root")
+
+    if login_method == "dev":
+        app.logger.info("preparing dev logout")
+        saml_auth = init_saml_auth(request)
+        logout_url = saml_auth.logout(return_to=logout_url)
+        app.logger.info(f"update logout url to {logout_url}")
+
+    response = make_response(redirect(logout_url))
     response.set_cookie("expandSidenav", "", expires=0, httponly=True)
     flash("logged_out")
     return response

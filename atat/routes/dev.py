@@ -134,6 +134,9 @@ def login_dev():
     query_string_parameters = session.get("query_string_parameters", {})
     user = None
 
+    if "sls" in request.args and request.method == "GET":
+        return redirect(url_for("atat.root"))
+
     if request.method == "GET":
         saml_auth = init_saml_auth(request)
         return redirect(saml_get(saml_auth, request))
@@ -141,6 +144,7 @@ def login_dev():
     if "acs" in request.args and request.method == "POST":
         saml_auth = init_saml_auth(request)
         user = saml_post(saml_auth)
+        session["login_method"] = "dev"
 
     if not user:
         dod_id = query_string_parameters.get("dod_id_param", None) or request.args.get(
