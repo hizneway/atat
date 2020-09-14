@@ -3,7 +3,7 @@ import re
 from random import choice, choices, randrange
 from urllib.parse import urlparse
 
-from locust import HttpLocust, TaskSequence, seq_task
+from locust import HttpUser, SequentialTaskSet, task, between
 
 from pyquery import PyQuery as pq
 
@@ -55,26 +55,26 @@ def get_portfolios(l):
     if len(portfolio_links) == 0 or force_new_portfolio:
         portfolio_links += [create_portfolio(l)]
 
-    l.locust.portfolio_links = portfolio_links
+    l.portfolio_links = portfolio_links
 
 
 def get_portfolio(l):
-    portfolio_link = choice(l.locust.portfolio_links)
+    portfolio_link = choice(l.portfolio_links)
     response = l.client.get(portfolio_link)
     d = pq(response.text)
     application_links = [
         p.attr("href")
         for p in d(".portfolio-applications .accordion__header-text a").items()
     ]
-    if len(application_links) > 0:
+    if application_links:
         portfolio_id = extract_id(portfolio_link)
         update_app_registry(l, portfolio_id, application_links)
 
 
 def update_app_registry(l, portfolio_id, app_links):
-    if not hasattr(l.locust, "app_links"):
-        l.locust.app_links = {}
-    l.locust.app_links[portfolio_id] = app_links
+    if not hasattr(l, "app_links"):
+        l.app_links = {}
+    l.app_links[portfolio_id] = app_links
 
 
 def get_app(l):
@@ -83,13 +83,13 @@ def get_app(l):
     if app_link is not None and not force_new_app:
         l.client.get(app_link)
     else:
-        portfolio_id = extract_id(choice(l.locust.portfolio_links))
+        portfolio_id = extract_id(choice(l.portfolio_links))
         update_app_registry(l, portfolio_id, [create_new_app(l, portfolio_id)])
 
 
 def pick_app(l):
-    if hasattr(l.locust, "app_links") and len(l.locust.app_links.items()) > 0:
-        return choice(choice(list(l.locust.app_links.values())))
+    if hasattr(l, "app_links") and len(l.app_links.items()) > 0:
+        return choice(choice(list(l.app_links.values())))
 
 
 def create_new_app(l, portfolio_id):
@@ -146,31 +146,31 @@ def create_portfolio(l):
     return urlparse(response.url).path
 
 
-class UserBehavior(TaskSequence):
+class UserBehavior(SequentialTaskSet):
     def on_start(self):
         self.client.verify = not DISABLE_VERIFY
         login(self)
 
-    @seq_task(1)
-    def portfolios(l):
-        get_portfolios(l)
+    @task
+    def portfolios(self):
+        get_portfolios(self)
 
-    @seq_task(2)
-    def pick_a_portfolio(l):
-        get_portfolio(l)
+    @task
+    def pick_a_portfolio(self):
+        get_portfolio(self)
 
-    @seq_task(3)
-    def pick_an_app(l):
-        get_app(l)
+    @task
+    def pick_an_app(self):
+        get_app(self)
 
     def on_stop(self):
         logout(self)
 
 
-class WebsiteUser(HttpLocust):
-    task_set = UserBehavior
-    min_wait = 3000
-    max_wait = 9000
+class WebsiteUser(HttpUser):
+    tasks = [UserBehavior]
+    # wait_time = between(3,9)
+    wait_time = between(0, 1)
 
 
 if __name__ == "__main__":
