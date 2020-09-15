@@ -120,9 +120,7 @@ def login_dev():
     if "sls" in request.args and request.method == "GET":
         return redirect(url_for("atat.root"))
 
-    if (
-        "saml" in request.args or app.config.get("SAML_LOGIN_DEV", False)
-    ) and request.method == "GET":
+    if request.method == "GET":
         idp_dev_login_url = prepare_idp_dev_url(request)
         return redirect(idp_dev_login_url)
 
