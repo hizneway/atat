@@ -10,12 +10,18 @@ parameters:
   tenant_id:
     type: string
     default: ${AZURE_SP_TENANT}
-  sp_password:
-    type: string
-    default: ${AZURE_SP_PASSWORD}
   sp:
     type: string
     default: ${AZURE_SP}
+  sp_password:
+    type: string
+    default: ${AZURE_SP_PASSWORD}
+  sp_object_id:
+    type: string
+    default: "__NONE__"
+  operator_sp_url:
+    type: string
+    default: "__NONE__"
   container_env:
     type: string
     default: -e PGHOST=postgres -e REDIS_HOST=redis:6379
@@ -366,20 +372,22 @@ jobs:
             az acr login --name cloudzeroopsregistry | grep "Succeeded"
       - run:
           name: Build ops deployment image image
-          command: docker build -t nginx:latest --build-arg IMAGE=cloudzeroopsregistry.azurecr.io/rhelubi:8.2 - < nginx.Dockerfile
-      - run:
-          name: Tag images
           command: |
-            docker tag atat:latest << pipeline.parameters.atat_image_tag >>
-            docker tag nginx:latest << pipeline.parameters.nginx_image_tag >>
+            docker build -t ops:latest \
+            --build-arg IMAGE=cloudzeroopsregistry.azurecr.io/rhelubi:8.2 \
+            --build-arg operator_sp_client_id=<< pipeline.parameters.sp >> \
+            --build-arg operator_sp_object_id=<< pipeline.parameters.sp_object_id >> \
+            --build-arg operator_sp_secret=<< pipeline.parameters.sp_password >> \
+            --build-arg azure_tenant=<< pipeline.parameters.tenant_id >> \
+            --build-arg azure_subscription_id=<< pipeline.parameters.subscription_id >> \
+            --build-arg operator_sp_url=<< pipeline.parameters.operator_sp_url >> \
+            . < Dockerfile.ops
       - run:
-          name: Log into the target registry
-          command: az acr login --name << pipeline.parameters.container_registry >> | grep "Succeeded"
+          name: Tag ops image
+          command: docker tag ops:latest cloudzeroopsregistry.azurecr.io/ops:latest
       - run:
-          name: Push image
-          command: |
-            docker push << pipeline.parameters.atat_image_tag >>
-            docker push << pipeline.parameters.nginx_image_tag >>
+          name: Push ops image
+          command: docker push cloudzeroopsregistry.azurecr.io/ops:latest
 
 workflows:
   version: 2
