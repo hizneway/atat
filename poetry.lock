@@ -96,14 +96,6 @@ tests = ["coverage", "hypothesis", "pympler", "pytest (>=4.3.0)", "six", "zope.i
 
 [[package]]
 category = "main"
-description = "Microsoft Azure Client Library for Python (Common)"
-name = "azure-common"
-optional = false
-python-versions = "*"
-version = "1.1.25"
-
-[[package]]
-category = "main"
 description = "Microsoft Azure Core Library for Python"
 name = "azure-core"
 optional = false
@@ -113,29 +105,6 @@ version = "1.6.0"
 [package.dependencies]
 requests = ">=2.18.4"
 six = ">=1.6"
-
-[[package]]
-category = "main"
-description = "Microsoft Azure Namespace Package [Internal]"
-name = "azure-nspkg"
-optional = false
-python-versions = "*"
-version = "3.0.2"
-
-[[package]]
-category = "main"
-description = "Microsoft Azure Storage Client Library for Python"
-name = "azure-storage"
-optional = false
-python-versions = "*"
-version = "0.36.0"
-
-[package.dependencies]
-azure-common = ">=1.1.5"
-azure-nspkg = ">=2.0.0"
-cryptography = "*"
-python-dateutil = "*"
-requests = "*"
 
 [[package]]
 category = "main"
@@ -149,20 +118,6 @@ version = "12.5.0"
 azure-core = ">=1.6.0,<2.0.0"
 cryptography = ">=2.1.4"
 msrest = ">=0.6.10"
-
-[[package]]
-category = "main"
-description = "Microsoft Azure Storage Common Client Library for Python"
-name = "azure-storage-common"
-optional = false
-python-versions = "*"
-version = "2.1.0"
-
-[package.dependencies]
-azure-common = ">=1.1.5"
-cryptography = "*"
-python-dateutil = "*"
-requests = "*"
 
 [[package]]
 category = "dev"
@@ -1574,7 +1529,7 @@ docs = ["sphinx", "jaraco.packaging (>=3.2)", "rst.linker (>=1.9)"]
 testing = ["jaraco.itertools", "func-timeout"]
 
 [metadata]
-content-hash = "d9a4755102630cfac557c95f6041cab82d625fda5a66b088f75abd937805117a"
+content-hash = "e475094932906de30ca5ccca3120caef3fb3d033b3730be181ef3fc637c7884f"
 lock-version = "1.0"
 python-versions = "3.7.3"
 
@@ -1611,30 +1566,13 @@ attrs = [
     {file = "attrs-19.3.0-py2.py3-none-any.whl", hash = "sha256:08a96c641c3a74e44eb59afb61a24f2cb9f4d7188748e76ba4bb5edfa3cb7d1c"},
     {file = "attrs-19.3.0.tar.gz", hash = "sha256:f7b7ce16570fe9965acd6d30101a28f62fb4a7f9e926b3bbc9b61f8b04247e72"},
 ]
-azure-common = [
-    {file = "azure-common-1.1.25.zip", hash = "sha256:ce0f1013e6d0e9faebaf3188cc069f4892fc60a6ec552e3f817c1a2f92835054"},
-    {file = "azure_common-1.1.25-py2.py3-none-any.whl", hash = "sha256:fd02e4256dc9cdd2d4422bc795bdca2ef302f7a86148b154fbf4ea1f09da400a"},
-]
 azure-core = [
     {file = "azure-core-1.6.0.zip", hash = "sha256:d10b74e783cff90d56360e61162afdd22276d62dc9467e657ae866449eae7648"},
     {file = "azure_core-1.6.0-py2.py3-none-any.whl", hash = "sha256:7bf695b017acea3da28e0390a2dea5b7e15a9fa3ef1af50ff020bcfe7dacb6a4"},
 ]
-azure-nspkg = [
-    {file = "azure-nspkg-3.0.2.zip", hash = "sha256:e7d3cea6af63e667d87ba1ca4f8cd7cb4dfca678e4c55fc1cedb320760e39dd0"},
-    {file = "azure_nspkg-3.0.2-py2-none-any.whl", hash = "sha256:1d0bbb2157cf57b1bef6c8c8e5b41133957364456c43b0a43599890023cca0a8"},
-    {file = "azure_nspkg-3.0.2-py3-none-any.whl", hash = "sha256:31a060caca00ed1ebd369fc7fe01a56768c927e404ebc92268f4d9d636435e28"},
-]
-azure-storage = [
-    {file = "azure-storage-0.36.0.tar.gz", hash = "sha256:fb6212dcbed91b49d9637aa5e8888eafdfcd523b7e560c8044d2d838bbd3ca5f"},
-    {file = "azure_storage-0.36.0-py2.py3-none-any.whl", hash = "sha256:4c406422e3edd41920bb1f0c3930c34fee3eb0d55258ef7ec7308ccbb9385ad5"},
-]
 azure-storage-blob = [
     {file = "azure-storage-blob-12.5.0.zip", hash = "sha256:1469a5a0410296fb5ff96c326618d939c9cb0c0ea45eb931c89c98fa742d8daa"},
     {file = "azure_storage_blob-12.5.0-py2.py3-none-any.whl", hash = "sha256:6f2de5b60f16141731b7561c218a8455053bcdb9b3775a0e5364fb2b041bcf1e"},
-]
-azure-storage-common = [
-    {file = "azure-storage-common-2.1.0.tar.gz", hash = "sha256:ccedef5c67227bc4d6670ffd37cec18fb529a1b7c3a5e53e4096eb0cf23dc73f"},
-    {file = "azure_storage_common-2.1.0-py2.py3-none-any.whl", hash = "sha256:b01a491a18839b9d05a4fe3421458a0ddb5ab9443c14e487f40d16f9a1dc2fbe"},
 ]
 backcall = [
     {file = "backcall-0.1.0.tar.gz", hash = "sha256:38ecd85be2c1e78f77fd91700c76e14667dc21e2713b63876c0eb901196e01e4"},
