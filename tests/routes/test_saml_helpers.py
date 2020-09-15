@@ -90,20 +90,24 @@ def test_validate_saml_assertion_valid_with_errors(mock_logger):
     mock_last_err.assert_called()
 
 
+def create_saml_auth_mock(validation_result=None):
+    if validation_result is None:
+        validation_result = []
+
+    return Mock(
+        **{
+            "get_settings.return_value.get_sp_metadata.return_value": Mock(),
+            "get_settings.return_value.validate_metadata.return_value": validation_result,
+        }
+    )
+
+
 @patch("atat.routes.saml_helpers.OneLogin_Saml2_Auth")
 @patch("atat.routes.saml_helpers._prepare_flask_request")
 @patch("atat.routes.saml_helpers._make_saml_config")
 def test_saml_init_success(mock_make_config, mock_prepare_request, mock_saml_auth):
     request = Mock()
-    mock_auth = Mock(
-        get_settings=Mock(
-            return_value=Mock(
-                get_sp_metadata=Mock(return_value=Mock()),
-                validate_metadata=Mock(return_value=[]),
-            )
-        )
-    )
-
+    mock_auth = create_saml_auth_mock()
     mock_saml_auth.return_value = mock_auth
     assert init_saml_auth(request) == mock_auth
 
@@ -113,17 +117,9 @@ def test_saml_init_success(mock_make_config, mock_prepare_request, mock_saml_aut
 @patch("atat.routes.saml_helpers._make_saml_config")
 def test_saml_init_errors(mock_make_config, mock_prepare_request, mock_saml_auth):
     request = Mock()
-    mock_auth = Mock(
-        get_settings=Mock(
-            return_value=Mock(
-                get_sp_metadata=Mock(return_value=Mock()),
-                validate_metadata=Mock(return_value=["Invalid Configuration"]),
-            )
-        )
+    mock_saml_auth.return_value = create_saml_auth_mock(
+        validation_result=["Invalid Configuration"]
     )
-
-    mock_saml_auth.return_value = mock_auth
-
     with pytest.raises(UnauthenticatedError):
         init_saml_auth(request)
 
@@ -133,15 +129,7 @@ def test_saml_init_errors(mock_make_config, mock_prepare_request, mock_saml_auth
 @patch("atat.routes.saml_helpers._make_dev_saml_config")
 def test_dev_saml_init_success(mock_make_config, mock_prepare_request, mock_saml_auth):
     request = Mock()
-    mock_auth = Mock(
-        get_settings=Mock(
-            return_value=Mock(
-                get_sp_metadata=Mock(return_value=Mock()),
-                validate_metadata=Mock(return_value=[]),
-            )
-        )
-    )
-
+    mock_auth = create_saml_auth_mock()
     mock_saml_auth.return_value = mock_auth
     assert init_saml_auth_dev(request) == mock_auth
 
@@ -151,17 +139,9 @@ def test_dev_saml_init_success(mock_make_config, mock_prepare_request, mock_saml
 @patch("atat.routes.saml_helpers._make_dev_saml_config")
 def test_dev_saml_init_errors(mock_make_config, mock_prepare_request, mock_saml_auth):
     request = Mock()
-    mock_auth = Mock(
-        get_settings=Mock(
-            return_value=Mock(
-                get_sp_metadata=Mock(return_value=Mock()),
-                validate_metadata=Mock(return_value=["Invalid Configuration"]),
-            )
-        )
+    mock_saml_auth.return_value = create_saml_auth_mock(
+        validation_result=["Invalid Configuration"]
     )
-
-    mock_saml_auth.return_value = mock_auth
-
     with pytest.raises(UnauthenticatedError):
         init_saml_auth_dev(request)
 
