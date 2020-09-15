@@ -37,8 +37,12 @@ parameters:
   resource_group:
     type: string
     default: ${RESOURCE_GROUP}
-  build_and_push_images_only:
-    description: Causes a build with a single stage that creates and pushes docker images to a container registry only.
+  build_and_push_app_images:
+    description: Causes a build with a single stage that creates and pushes atat and docker images docker images to a container registry only.
+    type: boolean
+    default: false
+  build_and_push_ops_image:
+    description: Causes a build with a single stage that creates and pushes the ops deployment image to a container registry only.
     type: boolean
     default: false
 
@@ -275,8 +279,8 @@ jobs:
           namespace: master
           atat_image_tag: << pipeline.parameters.container_registry >>.azurecr.io/atat:master-${CIRCLE_SHA1}
           nginx_image_tag: << pipeline.parameters.container_registry >>.azurecr.io/nginx:master-${CIRCLE_SHA1}
-
-  push-images:
+  
+  push-app-images:
     docker:
       - image: docker:18.06.0-ce-git
     steps:
@@ -329,11 +333,62 @@ jobs:
             docker push << pipeline.parameters.atat_image_tag >>
             docker push << pipeline.parameters.nginx_image_tag >>
 
+  push-ops-image:
+    docker:
+      - image: docker:18.06.0-ce-git
+    steps:
+      - checkout
+      - setup_remote_docker:
+          docker_layer_caching: true
+          version: 18.06.0-ce
+      - run:
+          name: Install Azure CLI
+          command: |
+            apk update
+            apk add bash py3-pip
+            apk add --virtual=build \
+              linux-headers gcc libffi-dev musl-dev openssl-dev python3-dev make curl
+            pip3 --no-cache-dir install -U pip
+            pip3 --no-cache-dir install azure-cli
+            curl -L https://aka.ms/acr/installaad/bash | /bin/bash
+            apk del --purge build
+      - run:
+          name: Login to Azure CLI
+          shell: /bin/sh
+          command: |
+            az login \
+              --service-principal \
+              --tenant << pipeline.parameters.tenant_id >> \
+              --password << pipeline.parameters.sp_password >> \
+              --username << pipeline.parameters.sp >>
+            az account set -s << pipeline.parameters.subscription_id >>
+            echo "Successfully logged in to Azure CLI."
+            az acr login --name cloudzeroopsregistry | grep "Succeeded"
+      - run:
+          name: Build ops deployment image image
+          command: docker build -t nginx:latest --build-arg IMAGE=cloudzeroopsregistry.azurecr.io/rhelubi:8.2 - < nginx.Dockerfile
+      - run:
+          name: Tag images
+          command: |
+            docker tag atat:latest << pipeline.parameters.atat_image_tag >>
+            docker tag nginx:latest << pipeline.parameters.nginx_image_tag >>
+      - run:
+          name: Log into the target registry
+          command: az acr login --name << pipeline.parameters.container_registry >> | grep "Succeeded"
+      - run:
+          name: Push image
+          command: |
+            docker push << pipeline.parameters.atat_image_tag >>
+            docker push << pipeline.parameters.nginx_image_tag >>
+
 workflows:
   version: 2
   run-tests:
     when:
-      not: << pipeline.parameters.build_and_push_images_only >>
+      not: 
+        and: 
+          - << pipeline.parameters.build_and_push_app_images >>
+          - << pipeline.parameters.build_and_push_ops_image >>
     jobs:
       - docker-build
       - test:
@@ -363,8 +418,13 @@ workflows:
             branches:
               only:
                 - master
-
-  push-images:
-    when: << pipeline.parameters.build_and_push_images_only >>
+  
+  push-app-images:
+    when: << pipeline.parameters.build_and_push_app_images >>
     jobs:
-      - push-images
+      - push-app-images
+
+  push-ops-image:
+    when: << pipeline.parameters.build_and_push_ops_image >>
+    jobs:
+      - push-app-images
