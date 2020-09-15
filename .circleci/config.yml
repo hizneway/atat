@@ -1,20 +1,49 @@
 version: 2.1
 
+parameters:
+  subscription_id:
+    type: string
+    default: ${AZURE_SUBSCRIPTION}
+  container_registry:
+    type: string
+    default: ${AZURE_REGISTRY}
+  tenant_id:
+    type: string
+    default: ${AZURE_SP_TENANT}
+  sp_password:
+    type: string
+    default: ${AZURE_SP_PASSWORD}
+  sp:
+    type: string
+    default: ${AZURE_SP}
+  container_env:
+    type: string
+    default: -e PGHOST=postgres -e REDIS_HOST=redis:6379
+  azure_server_name:
+    type: string
+    default: ${AZURE_SERVER_NAME}
+  namespace:
+    type: string
+    default: atat
+  atat_image_tag: 
+    type: string
+    default: ${AZURE_REGISTRY}.azurecr.io/atat:latest
+  nginx_image_tag: 
+    type: string
+    default: ${AZURE_REGISTRY}.azurecr.io/nginx:latest
+  cluster_name:
+    type: string
+    default: ${CLUSTER_NAME}
+  resource_group:
+    type: string
+    default: ${RESOURCE_GROUP}
+  build_and_push_images_only:
+    description: Causes a build with a single stage that creates and pushes docker images to a container registry only.
+    type: boolean
+    default: false
+
 commands:
   azlogin:
-    parameters:
-      container_registry:
-        type: string
-        default: ${AZURE_REGISTRY}
-      tenant_id:
-        type: string
-        default: ${AZURE_SP_TENANT}
-      sp_password:
-        type: string
-        default: ${AZURE_SP_PASSWORD}
-      sp:
-        type: string
-        default: ${AZURE_SP}
     steps:
       - run:
           name: Install Azure CLI
@@ -33,11 +62,12 @@ commands:
           command: |
             az login \
               --service-principal \
-              --tenant << parameters.tenant_id >> \
-              --password << parameters.sp_password >> \
-              --username << parameters.sp >>
+              --tenant << pipeline.parameters.tenant_id >> \
+              --password << pipeline.parameters.sp_password >> \
+              --username << pipeline.parameters.sp >>
+            az account set -s << pipeline.parameters.subscription_id >>
             echo "Successfully logged in to Azure CLI."
-            az acr login --name << parameters.container_registry >> | grep "Succeeded"
+            az acr login --name << pipeline.parameters.container_registry >> | grep "Succeeded"
   cache_docker_images:
     steps:
       - run:
@@ -65,9 +95,6 @@ commands:
       pgdatabase:
         type: string
         default: atat_test
-      container_env:
-        type: string
-        default: -e PGHOST=postgres -e REDIS_HOST=redis:6379
     steps:
       - run:
           name: remove temp network if exists
@@ -89,87 +116,43 @@ commands:
           command: "docker exec postgres createdb -U postgres << parameters.pgdatabase >>"
       - run:
           name: Apply migrations
-          command: docker run --network atat -e PGDATABASE=<< parameters.pgdatabase >> << parameters.container_env >> atat:builder .venv/bin/python .venv/bin/alembic upgrade head
+          command: docker run --network atat -e PGDATABASE=<< parameters.pgdatabase >> << pipeline.parameters.container_env >> atat:builder .venv/bin/python .venv/bin/alembic upgrade head
       - run:
           name: Apply the default permission sets
-          command: docker run --network atat -e PGDATABASE=<< parameters.pgdatabase >> << parameters.container_env >> atat:builder .venv/bin/python script/seed_roles.py
+          command: docker run --network atat -e PGDATABASE=<< parameters.pgdatabase >> << pipeline.parameters.container_env >> atat:builder .venv/bin/python script/seed_roles.py
 
   deploy:
     parameters:
-      azure_server_name:
-        type: string
-        default: ${AZURE_SERVER_NAME}
-      container_registry:
-        type: string
-        default: ${AZURE_REGISTRY}
       namespace:
         type: string
-        default: atat
-      atat-image-tag:
+        default: << pipeline.parameters.namespace >>
+      atat_image_tag:
         type: string
-        default: << parameters.azure_server_name >>/atat:latest
-      nginx-image-tag:
+        default: << pipeline.parameters.atat_image_tag >>
+      nginx_image_tag:
         type: string
-        default: << parameters.azure_server_name >>/nginx:latest
-      cluster_name:
-        type: string
-        default: ${CLUSTER_NAME}
-      resource_group:
-        type: string
-        default: ${RESOURCE_GROUP}
+        default: << pipeline.parameters.nginx_image_tag >>
     steps:
       - checkout
       - setup_remote_docker:
           docker_layer_caching: true
           version: 18.06.0-ce
-      - restore_docker_image
       - azlogin
-      - run:
-          name: Install kubectl
-          command: |
-            apk add curl
-            export KUBECTL_VERSION=$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)
-            curl -LO https://storage.googleapis.com/kubernetes-release/release/$KUBECTL_VERSION/bin/linux/amd64/kubectl
-            chmod +x ./kubectl
-            mv ./kubectl /usr/local/bin
-      - run:
-          name: Configure kubectl
-          command: |
-            apk add libssl1.0
-            az aks get-credentials --name << parameters.cluster_name >>  --resource-group << parameters.resource_group >>
+      - restore_docker_image
       - run:
           name: Build nginx image
-          command: docker build -t nginx:latest --build-arg IMAGE=<< parameters.container_registry >>.azurecr.io/rhelubi:8.2 - < nginx.Dockerfile
+          command: docker build -t nginx:latest --build-arg IMAGE=<< pipeline.parameters.container_registry >>.azurecr.io/rhelubi:8.2 - < nginx.Dockerfile
       - run:
           name: Tag images
           command: |
-            docker tag atat:latest << parameters.atat-image-tag >>
-            docker tag nginx:latest << parameters.nginx-image-tag >>
+            docker tag atat:latest << pipeline.parameters.atat_image_tag >>
       - run:
           name: Push image
           command: |
-            docker push << parameters.atat-image-tag >>
-            docker push << parameters.nginx-image-tag >>
-      - run:
-          name: Add gettext package
-          command: apk add gettext
-      - run:
-          command: K8S_NAMESPACE=<< parameters.namespace >> CONTAINER_IMAGE=<< parameters.atat-image-tag >> /bin/sh ./script/cluster_migration
-          name: Apply Migrations and Seed Roles
-      - run:
-          name: Update Kubernetes cluster
-          command: |
-            kubectl set image deployment.apps/atst atst=<< parameters.atat-image-tag >> --namespace=<< parameters.namespace >>
-            kubectl set image deployment.apps/atst-worker atst-worker=<< parameters.atat-image-tag >> --namespace=<< parameters.namespace >>
-            kubectl set image deployment.apps/atst-beat atst-beat=<< parameters.atat-image-tag >> --namespace=<< parameters.namespace >>
-            kubectl set image cronjobs.batch/crls crls=<< parameters.atat-image-tag >> --namespace=<< parameters.namespace >>
+            docker push << pipeline.parameters.atat_image_tag >>
 
 jobs:
   docker-build:
-    parameters:
-      container_registry:
-        type: string
-        default: ${AZURE_REGISTRY}
     docker:
       - image: docker:18.06.0-ce-git
     steps:
@@ -181,8 +164,8 @@ jobs:
       - run:
           name: Build images
           command: |
-            docker build . --build-arg GIT_SHA=${CIRCLE_SHA1} --build-arg IMAGE=<< parameters.container_registry >>.azurecr.io/rhel-py -f ./Dockerfile -t atat:builder --target builder
-            docker build . --build-arg GIT_SHA=${CIRCLE_SHA1} --build-arg IMAGE=<< parameters.container_registry >>.azurecr.io/rhel-py -f ./Dockerfile -t atat:latest
+            docker build . --build-arg GIT_SHA=${CIRCLE_SHA1} --build-arg IMAGE=<< pipeline.parameters.container_registry >>.azurecr.io/rhel-py -f ./Dockerfile -t atat:builder --target builder
+            docker build . --build-arg GIT_SHA=${CIRCLE_SHA1} --build-arg IMAGE=<< pipeline.parameters.container_registry >>.azurecr.io/rhel-py -f ./Dockerfile -t atat:latest
       - cache_docker_images
 
   test:
@@ -295,17 +278,13 @@ jobs:
               /bin/sh -c "poetry install --no-root && /bin/sh script/sync-crls && poetry run pytest --no-cov tests/check_crl_parse.py"
 
   deploy-staging:
-    parameters:
-      container_registry:
-        type: string
-        default: ${AZURE_REGISTRY}
     docker:
       - image: docker:18.06.0-ce-git
     steps:
       - deploy:
           namespace: staging
-          atat-image-tag: << parameters.container_registry >>.azurecr.io/atat:staging-${CIRCLE_SHA1}
-          nginx-image-tag: << parameters.container_registry >>.azurecr.io/nginx:staging-${CIRCLE_SHA1}
+          atat_image_tag: << pipeline.parameters.container_registry >>.azurecr.io/atat:staging-${CIRCLE_SHA1}
+          nginx_image_tag: << pipeline.parameters.container_registry >>.azurecr.io/nginx:staging-${CIRCLE_SHA1}
 
   deploy-master:
     parameters:
@@ -317,12 +296,67 @@ jobs:
     steps:
       - deploy:
           namespace: master
-          atat-image-tag: << parameters.container_registry >>.azurecr.io/atat:master-${CIRCLE_SHA1}
-          nginx-image-tag: << parameters.container_registry >>.azurecr.io/nginx:master-${CIRCLE_SHA1}
+          atat_image_tag: << pipeline.parameters.container_registry >>.azurecr.io/atat:master-${CIRCLE_SHA1}
+          nginx_image_tag: << pipeline.parameters.container_registry >>.azurecr.io/nginx:master-${CIRCLE_SHA1}
+  
+  push-images:
+    docker:
+      - image: docker:18.06.0-ce-git
+    steps:
+      - checkout
+      - setup_remote_docker:
+          docker_layer_caching: true
+          version: 18.06.0-ce
+      - run:
+          name: Install Azure CLI
+          command: |
+            apk update
+            apk add bash py3-pip
+            apk add --virtual=build \
+              linux-headers gcc libffi-dev musl-dev openssl-dev python3-dev make curl
+            pip3 --no-cache-dir install -U pip
+            pip3 --no-cache-dir install azure-cli
+            curl -L https://aka.ms/acr/installaad/bash | /bin/bash
+            apk del --purge build
+      - run:
+          name: Login to Azure CLI
+          shell: /bin/sh
+          command: |
+            az login \
+              --service-principal \
+              --tenant << pipeline.parameters.tenant_id >> \
+              --password << pipeline.parameters.sp_password >> \
+              --username << pipeline.parameters.sp >>
+            az account set -s << pipeline.parameters.subscription_id >>
+            echo "Successfully logged in to Azure CLI."
+            az acr login --name cloudzeroopsregistry | grep "Succeeded"
+      - run:
+          name: Build images
+          command: |
+            docker build . --build-arg GIT_SHA=${CIRCLE_SHA1} --build-arg IMAGE=cloudzeroopsregistry.azurecr.io/rhel-py -f ./Dockerfile -t atat:builder --target builder
+            docker build . --build-arg GIT_SHA=${CIRCLE_SHA1} --build-arg IMAGE=cloudzeroopsregistry.azurecr.io/rhel-py -f ./Dockerfile -t atat:latest
+      - run:
+          name: Build nginx image
+          command: docker build -t nginx:latest --build-arg IMAGE=cloudzeroopsregistry.azurecr.io/rhelubi:8.2 - < nginx.Dockerfile
+      - run:
+          name: Tag images
+          command: |
+            docker tag atat:latest << pipeline.parameters.atat_image_tag >>
+            docker tag nginx:latest << pipeline.parameters.nginx_image_tag >>
+      - run:
+          name: Log into the target registry
+          command: az acr login --name << pipeline.parameters.container_registry >> | grep "Succeeded"
+      - run:
+          name: Push image
+          command: |
+            docker push << pipeline.parameters.atat_image_tag >>
+            docker push << pipeline.parameters.nginx_image_tag >>
 
 workflows:
   version: 2
   run-tests:
+    when:
+      not: << pipeline.parameters.build_and_push_images_only >>
     jobs:
       - docker-build
       - test:
@@ -336,14 +370,6 @@ workflows:
               only:
                 - staging
                 - master
-      - deploy-staging:
-          requires:
-            - test
-            - integration-tests
-          filters:
-            branches:
-              only:
-                - staging
       - deploy-master:
           requires:
             - test
@@ -352,8 +378,15 @@ workflows:
             branches:
               only:
                 - master
+  
+  push-images:
+    when: << pipeline.parameters.build_and_push_images_only >>
+    jobs:
+      - push-images
 
   test-crl-parser:
+    when:
+      not: << pipeline.parameters.build_and_push_images_only >>
     triggers:
       - schedule:
           cron: "0 4 * * *"
