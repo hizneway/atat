@@ -109,9 +109,9 @@ def _validate_saml_assertion(saml_auth):
 
     try:
         saml_auth.process_response(request_id=request_id)
-        app.logger.info(f"writing response {request_id}")
+        app.logger.info("writing response %s", request_id)
     except OneLogin_Saml2_ValidationError as error_message:
-        app.logger.error(f"OneLogin_Saml2_ValidationError detected: {error_message}")
+        app.logger.error("OneLogin_Saml2_ValidationError detected: %s", error_message)
         raise UnauthenticatedError("SAML Validation Failed")
 
     errors = saml_auth.get_errors()
@@ -119,7 +119,8 @@ def _validate_saml_assertion(saml_auth):
         session.pop("AuthNRequestID", None)
     else:
         app.logger.error(
-            f"SAML response from IdP contained the following errors: {', '.join(errors)}"
+            "SAML response from IdP contained the following errors: %s",
+            ", ".join(errors),
         )
         app.logger.error(saml_auth.get_last_error_reason())
         raise UnauthenticatedError("SAML Authentication Failed")
@@ -143,7 +144,7 @@ def init_saml_auth(request, saml_config=None):
     metadata = saml_settings.get_sp_metadata()
     errors = saml_settings.validate_metadata(metadata)
     if len(errors) != 0:
-        app.logger.error("Error found on Metadata: %s" % (", ".join(errors)))
+        app.logger.error("Error found on Metadata: %s", ", ".join(errors))
         raise UnauthenticatedError("SAML Metadata Validation Failed")
     else:
         return auth
@@ -166,10 +167,10 @@ def get_user_from_saml_attributes(saml_attributes):
         app.logger.error("SAML response missing SAM Account Name")
         raise Exception("SAML response missing SAM Account Name")
     except AttributeError:
-        app.logger.error(f"Incorrect format of SAM account name {sam_account_name}")
-        raise Exception(f"Incorrect format of SAM account name {sam_account_name}")
+        app.logger.error("Incorrect format of SAM Account Name %s", sam_account_name)
+        raise Exception("SAM Account Name Incorrectly Formatted")
     except NotFoundError:
-        app.logger.info(f"No user found for DoD ID {dod_id}, creating...")
+        app.logger.info("No user found for DoD ID %s, creating...", dod_id)
 
     saml_user_details = {}
     saml_user_details["first_name"] = saml_attributes.get(EIFSAttributes.GIVEN_NAME)
@@ -272,11 +273,11 @@ def _get_idp_config(idp_uri, validate_cert=True):
             )
             return remote_config["idp"]
         except Exception as e:
-            app.logger.warning(f"Failed to load {idp_uri}: {e}")
+            app.logger.warning("Failed to load %s: %s", idp_uri, e)
             retries = retries + 1
 
-    app.logger.error(f"Unable to load saml metadata from {idp_uri}")
-    raise Exception(f"Unable to load saml metadata from {idp_uri}")
+    app.logger.error("Unable to load SAML Metadata from %s", idp_uri)
+    raise Exception("Failed to load SAML Metadata")
 
 
 def get_or_create_dev_saml_user(saml_attributes):

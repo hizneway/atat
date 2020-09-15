@@ -120,10 +120,8 @@ def logout():
     logout_url = url_for(".root")
 
     if login_method == "dev":
-        app.logger.info("preparing dev logout")
         saml_auth = init_saml_auth_dev(request)
         logout_url = saml_auth.logout(return_to=logout_url)
-        app.logger.info(f"update logout url to {logout_url}")
 
     response = make_response(redirect(logout_url))
     response.set_cookie("expandSidenav", "", expires=0, httponly=True)
