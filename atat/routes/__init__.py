@@ -136,13 +136,15 @@ def about():
     return render_template("about.html")
 
 
-@bp.route("/login", methods=["GET", "POST"])
+@bp.route("/login", methods=["GET"])
 def login():
-    if request.method == "GET":
-        saml_login_uri = prepare_idp_url(request)
-        return redirect(saml_login_uri)
+    saml_login_uri = prepare_idp_url(request)
+    return redirect(saml_login_uri)
 
-    if "acs" in request.args and request.method == "POST":
+
+@bp.route("/login", methods=["POST"])
+def handle_login_response():
+    if "acs" in request.args:
         attributes = load_attributes_from_assertion(request)
         user = get_user_from_saml_attributes(attributes)
 

@@ -16,6 +16,7 @@ UNPROTECTED_ROUTES = [
     "static",
     "atat.about",
     "atat.login",
+    "atat.handle_login_response",
 ]
 
 
