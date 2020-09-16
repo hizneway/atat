@@ -410,4 +410,4 @@ workflows:
   push-ops-image:
     when: << pipeline.parameters.build_and_push_ops_image >>
     jobs:
-      - push-app-images
+      - push-ops-image
