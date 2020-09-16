@@ -316,7 +316,7 @@ jobs:
           name: Build images
           command: |
             docker build . --build-arg GIT_SHA=${CIRCLE_SHA1} --build-arg IMAGE=<< pipeline.parameters.ops_registry >>.azurecr.io/rhel-py -f ./Dockerfile -t atat:builder --target builder
-            docker build . --build-arg GIT_SHA=${CIRCLE_SHA1} --build-arg IMAGE=.azurecr.io/rhel-py -f ./Dockerfile -t atat:latest
+            docker build . --build-arg GIT_SHA=${CIRCLE_SHA1} --build-arg IMAGE=<< pipeline.parameters.ops_registry >>.azurecr.io/rhel-py -f ./Dockerfile -t atat:latest
       - run:
           name: Build nginx image
           command: docker build -t nginx:latest --build-arg IMAGE=<< pipeline.parameters.ops_registry >>.azurecr.io/rhelubi:8.2 - < nginx.Dockerfile
