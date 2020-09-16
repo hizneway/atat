@@ -58,6 +58,13 @@ parameters:
 
 commands:
   azlogin:
+    parameters:
+      registry:
+        description: The name of the registry (not including the azureacr suffix).
+        type: string
+      suscription_id:
+        description: Target subscription the registry exists under.
+        type: string
     steps:
       - run:
           name: Install Azure CLI
@@ -79,9 +86,9 @@ commands:
               --tenant << pipeline.parameters.tenant_id >> \
               --password << pipeline.parameters.sp_password >> \
               --username << pipeline.parameters.sp >>
-            az account set -s << pipeline.parameters.subscription_id >>
+            az account set -s << parameters.subscription_id >>
             echo "Successfully logged in to Azure CLI."
-            az acr login --name << pipeline.parameters.container_registry >> | grep "Succeeded"
+            az acr login --name << parameters.registry >> | grep "Succeeded"
   cache_docker_images:
     steps:
       - run:
@@ -151,7 +158,9 @@ commands:
       - setup_remote_docker:
           docker_layer_caching: true
           version: 18.06.0-ce
-      - azlogin
+      - azlogin:
+          subscription_id: << pipeline.parameters.subscription_id >>
+          registry: << pipeline.parameters.container_registry >>
       - restore_docker_image
       - run:
           name: Build nginx image
@@ -174,7 +183,9 @@ jobs:
       - setup_remote_docker:
           docker_layer_caching: true
           version: 18.06.0-ce
-      - azlogin
+      - azlogin:
+          subscription_id: << pipeline.parameters.subscription_id >>
+          registry: << pipeline.parameters.container_registry >>
       - run:
           name: Build images
           command: |
@@ -298,34 +309,14 @@ jobs:
       - setup_remote_docker:
           docker_layer_caching: true
           version: 18.06.0-ce
-      - run:
-          name: Install Azure CLI
-          command: |
-            apk update
-            apk add bash py3-pip
-            apk add --virtual=build \
-              linux-headers gcc libffi-dev musl-dev openssl-dev python3-dev make curl
-            pip3 --no-cache-dir install -U pip
-            pip3 --no-cache-dir install azure-cli
-            curl -L https://aka.ms/acr/installaad/bash | /bin/bash
-            apk del --purge build
-      - run:
-          name: Login to Azure CLI
-          shell: /bin/sh
-          command: |
-            az login \
-              --service-principal \
-              --tenant << pipeline.parameters.tenant_id >> \
-              --password << pipeline.parameters.sp_password >> \
-              --username << pipeline.parameters.sp >>
-            az account set -s << pipeline.parameters.subscription_id >>
-            echo "Successfully logged in to Azure CLI."
-            az acr login --name << pipeline.parameters.ops_registry >> | grep "Succeeded"
+      - azlogin:
+          subscription_id: << pipeline.parameters.ops_registry >>
+          registry: << pipeline.parameters.ops_registry >>
       - run:
           name: Build images
           command: |
             docker build . --build-arg GIT_SHA=${CIRCLE_SHA1} --build-arg IMAGE=<< pipeline.parameters.ops_registry >>.azurecr.io/rhel-py -f ./Dockerfile -t atat:builder --target builder
-            docker build . --build-arg GIT_SHA=${CIRCLE_SHA1} --build-arg IMAGE=<< pipeline.parameters.ops_registry >>.azurecr.io/rhel-py -f ./Dockerfile -t atat:latest
+            docker build . --build-arg GIT_SHA=${CIRCLE_SHA1} --build-arg IMAGE=.azurecr.io/rhel-py -f ./Dockerfile -t atat:latest
       - run:
           name: Build nginx image
           command: docker build -t nginx:latest --build-arg IMAGE=<< pipeline.parameters.ops_registry >>.azurecr.io/rhelubi:8.2 - < nginx.Dockerfile
@@ -351,29 +342,9 @@ jobs:
       - setup_remote_docker:
           docker_layer_caching: true
           version: 18.06.0-ce
-      - run:
-          name: Install Azure CLI
-          command: |
-            apk update
-            apk add bash py3-pip
-            apk add --virtual=build \
-              linux-headers gcc libffi-dev musl-dev openssl-dev python3-dev make curl
-            pip3 --no-cache-dir install -U pip
-            pip3 --no-cache-dir install azure-cli
-            curl -L https://aka.ms/acr/installaad/bash | /bin/bash
-            apk del --purge build
-      - run:
-          name: Login to Azure CLI
-          shell: /bin/sh
-          command: |
-            az login \
-              --service-principal \
-              --tenant << pipeline.parameters.tenant_id >> \
-              --password << pipeline.parameters.sp_password >> \
-              --username << pipeline.parameters.sp >>
-            az account set -s << pipeline.parameters.subscription_id >>
-            echo "Successfully logged in to Azure CLI."
-            az acr login --name << pipeline.parameters.ops_registry >> | grep "Succeeded"
+      - azlogin:
+          subscription_id: << pipeline.parameters.subscription_id >>
+          registry: << pipeline.parameters.ops_registry >>
       - run:
           name: Build ops deployment image image
           command: |
