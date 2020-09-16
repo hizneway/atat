@@ -51,6 +51,10 @@ parameters:
     description: Causes a build with a single stage that creates and pushes the ops deployment image to a container registry only.
     type: boolean
     default: false
+  ops_registry:
+    description: The name of the registry (not including the azureacr suffix).
+    type: string
+    default: "cloudzeroopsregistry"
 
 commands:
   azlogin:
@@ -316,15 +320,15 @@ jobs:
               --username << pipeline.parameters.sp >>
             az account set -s << pipeline.parameters.subscription_id >>
             echo "Successfully logged in to Azure CLI."
-            az acr login --name cloudzeroopsregistry | grep "Succeeded"
+            az acr login --name << pipeline.parameters.ops_registry >> | grep "Succeeded"
       - run:
           name: Build images
           command: |
-            docker build . --build-arg GIT_SHA=${CIRCLE_SHA1} --build-arg IMAGE=cloudzeroopsregistry.azurecr.io/rhel-py -f ./Dockerfile -t atat:builder --target builder
-            docker build . --build-arg GIT_SHA=${CIRCLE_SHA1} --build-arg IMAGE=cloudzeroopsregistry.azurecr.io/rhel-py -f ./Dockerfile -t atat:latest
+            docker build . --build-arg GIT_SHA=${CIRCLE_SHA1} --build-arg IMAGE=<< pipeline.parameters.ops_registry >>.azurecr.io/rhel-py -f ./Dockerfile -t atat:builder --target builder
+            docker build . --build-arg GIT_SHA=${CIRCLE_SHA1} --build-arg IMAGE=<< pipeline.parameters.ops_registry >>.azurecr.io/rhel-py -f ./Dockerfile -t atat:latest
       - run:
           name: Build nginx image
-          command: docker build -t nginx:latest --build-arg IMAGE=cloudzeroopsregistry.azurecr.io/rhelubi:8.2 - < nginx.Dockerfile
+          command: docker build -t nginx:latest --build-arg IMAGE=<< pipeline.parameters.ops_registry >>.azurecr.io/rhelubi:8.2 - < nginx.Dockerfile
       - run:
           name: Tag images
           command: |
@@ -369,12 +373,12 @@ jobs:
               --username << pipeline.parameters.sp >>
             az account set -s << pipeline.parameters.subscription_id >>
             echo "Successfully logged in to Azure CLI."
-            az acr login --name cloudzeroopsregistry | grep "Succeeded"
+            az acr login --name << pipeline.parameters.ops_registry >> | grep "Succeeded"
       - run:
           name: Build ops deployment image image
           command: |
             docker build -t ops:latest \
-            --build-arg IMAGE=cloudzeroopsregistry.azurecr.io/rhelubi:8.2 \
+            --build-arg IMAGE=<< pipeline.parameters.ops_registry >>.azurecr.io/rhelubi:8.2 \
             --build-arg operator_sp_client_id=<< pipeline.parameters.sp >> \
             --build-arg operator_sp_object_id=<< pipeline.parameters.sp_object_id >> \
             --build-arg operator_sp_secret=<< pipeline.parameters.sp_password >> \
@@ -384,10 +388,10 @@ jobs:
             . < Dockerfile.ops
       - run:
           name: Tag ops image
-          command: docker tag ops:latest cloudzeroopsregistry.azurecr.io/ops:latest
+          command: docker tag ops:latest << pipeline.parameters.ops_registry >>.azurecr.io/ops:latest
       - run:
           name: Push ops image
-          command: docker push cloudzeroopsregistry.azurecr.io/ops:latest
+          command: docker push << pipeline.parameters.ops_registry >>.azurecr.io/ops:latest
 
 workflows:
   version: 2
