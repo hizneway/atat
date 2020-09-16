@@ -310,7 +310,7 @@ jobs:
           docker_layer_caching: true
           version: 18.06.0-ce
       - azlogin:
-          subscription_id: << pipeline.parameters.ops_registry >>
+          subscription_id: << pipeline.parameters.subscription_id >>
           registry: << pipeline.parameters.ops_registry >>
       - run:
           name: Build images
