@@ -62,7 +62,7 @@ commands:
       registry:
         description: The name of the registry (not including the azureacr suffix).
         type: string
-      suscription_id:
+      subscription_id:
         description: Target subscription the registry exists under.
         type: string
     steps:
