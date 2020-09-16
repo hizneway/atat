@@ -7,7 +7,6 @@ metadata:
 data:
   AZURE_STORAGE_ACCOUNT_NAME: atat
   AZURE_TO_BUCKET_NAME: task-order-pdfs
-  CAC_URL: https://auth-staging.atat.dev/login-redirect
   CELERY_DEFAULT_QUEUE: celery-master
   DEBUG: "0"
   DISABLE_CRL_CHECK: "true"

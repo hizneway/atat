@@ -10,9 +10,14 @@ from werkzeug.routing import RequestRedirect
 
 from atat.domain.auth import logout as _logout
 from atat.domain.authnid import AuthenticationContext
-from atat.domain.exceptions import UnauthenticatedError
+from atat.domain.exceptions import NotFoundError, UnauthenticatedError
 from atat.domain.users import Users
-from atat.routes.saml_helpers import init_saml_auth
+from atat.routes.saml_helpers import (
+    get_user_from_saml_attributes,
+    init_saml_auth_dev,
+    load_attributes_from_assertion,
+    prepare_idp_url,
+)
 from atat.utils.flash import formatted_flash as flash
 
 bp = Blueprint("atat", __name__)
@@ -23,7 +28,7 @@ def root():
     if g.current_user:
         return redirect(url_for(".home"))
 
-    redirect_url = app.config.get("CAC_URL")
+    redirect_url = url_for(".login")
     if request.args.get("next"):
         redirect_url = url.urljoin(
             redirect_url,
@@ -115,10 +120,8 @@ def logout():
     logout_url = url_for(".root")
 
     if login_method == "dev":
-        app.logger.info("preparing dev logout")
-        saml_auth = init_saml_auth(request)
+        saml_auth = init_saml_auth_dev(request)
         logout_url = saml_auth.logout(return_to=logout_url)
-        app.logger.info(f"update logout url to {logout_url}")
 
     response = make_response(redirect(logout_url))
     response.set_cookie("expandSidenav", "", expires=0, httponly=True)
@@ -129,3 +132,20 @@ def logout():
 @bp.route("/about")
 def about():
     return render_template("about.html")
+
+
+@bp.route("/login", methods=["GET"])
+def login():
+    saml_login_uri = prepare_idp_url(request)
+    return redirect(saml_login_uri)
+
+
+@bp.route("/login", methods=["POST"])
+def handle_login_response():
+    if "acs" in request.args:
+        attributes = load_attributes_from_assertion(request)
+        user = get_user_from_saml_attributes(attributes)
+
+        next_param = session.pop("query_string_parameters", {}).get("next_param", None)
+        current_user_setup(user)
+        return redirect(redirect_after_login_url(next_param))

@@ -9,7 +9,11 @@ from atat.domain.permission_sets import PermissionSets
 from atat.domain.users import Users
 from atat.forms.data import SERVICE_BRANCHES
 from atat.jobs import send_mail
-from atat.routes.saml_helpers import init_saml_auth, saml_get, saml_post
+from atat.routes.saml_helpers import (
+    get_or_create_dev_saml_user,
+    load_attributes_from_dev_assertion,
+    prepare_idp_dev_url,
+)
 from atat.utils import pick
 
 from . import current_user_setup, redirect_after_login_url
@@ -108,9 +112,52 @@ class IncompleteInfoError(Exception):
         return "You must provide each of: first_name, last_name and dod_id"
 
 
-def get_or_create_dev_user(name):
-    user_data = _DEV_USERS[name]
-    return Users.get_or_create_by_dod_id(
+@dev_bp.route("/login-dev", methods=["GET", "POST"])
+def login_dev():
+    query_string_parameters = session.get("query_string_parameters", {})
+    user = None
+
+    if "sls" in request.args and request.method == "GET":
+        return redirect(url_for("atat.root"))
+
+    if request.method == "GET":
+        idp_dev_login_url = prepare_idp_dev_url(request)
+        return redirect(idp_dev_login_url)
+
+    if "acs" in request.args and request.method == "POST":
+        saml_attributes = load_attributes_from_dev_assertion(request)
+        session["login_method"] = "dev"
+        if not (
+            "username_param" in query_string_parameters
+            or "dod_id_param" in query_string_parameters
+        ):
+            user = get_or_create_dev_saml_user(saml_attributes)
+
+    if not user:
+        user = get_or_create_non_saml_user(request, query_string_parameters)
+
+    next_param = query_string_parameters.get("next_param")
+    session.pop("query_string_parameters", None)
+    current_user_setup(user)
+    return redirect(redirect_after_login_url(next_param))
+
+
+def get_or_create_non_saml_user(request, query_string_parameters):
+    dod_id = query_string_parameters.get("dod_id_param") or request.args.get("dod_id")
+    if dod_id is not None:
+        user = Users.get_by_dod_id(dod_id)
+    else:
+        persona = query_string_parameters.get("username_param") or request.args.get(
+            "username", "amanda"
+        )
+        user = get_or_create_dev_persona(persona)
+
+    return user
+
+
+def get_or_create_dev_persona(persona):
+    user_data = _DEV_USERS[persona]
+    user = Users.get_or_create_by_dod_id(
         user_data["dod_id"],
         **pick(
             [
@@ -127,42 +174,7 @@ def get_or_create_dev_user(name):
             user_data,
         ),
     )
-
-
-@dev_bp.route("/login-dev", methods=["GET", "POST"])
-def login_dev():
-    query_string_parameters = session.get("query_string_parameters", {})
-    user = None
-
-    if "sls" in request.args and request.method == "GET":
-        return redirect(url_for("atat.root"))
-
-    if request.method == "GET":
-        saml_auth = init_saml_auth(request)
-        return redirect(saml_get(saml_auth, request))
-
-    if "acs" in request.args and request.method == "POST":
-        saml_auth = init_saml_auth(request)
-        user = saml_post(saml_auth)
-        session["login_method"] = "dev"
-
-    if not user:
-        dod_id = query_string_parameters.get("dod_id_param", None) or request.args.get(
-            "dod_id", None
-        )
-        if dod_id is not None:
-            user = Users.get_by_dod_id(dod_id)
-        else:
-            role = query_string_parameters.get(
-                "username_param", None
-            ) or request.args.get("username", "amanda")
-            user = get_or_create_dev_user(role)
-
-    next_param = query_string_parameters.get("next_param", None)
-    if "query_string_parameters" in session:
-        del session["query_string_parameters"]
-    current_user_setup(user)
-    return redirect(redirect_after_login_url(next_param))
+    return user
 
 
 @local_access_bp.route("/dev-new-user")
@@ -197,7 +209,7 @@ def local_access():
         user = Users.get_by_dod_id(dod_id)
     else:
         name = request.args.get("username", "amanda")
-        user = get_or_create_dev_user(name)
+        user = get_or_create_dev_persona(name)
 
     current_user_setup(user)
 

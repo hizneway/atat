@@ -285,7 +285,6 @@ All config settings must be declared in "config/base.ini", even if they are null
 - `AZURE_STORAGE_KEY`: A valid secret key for the Azure blob storage account
 - `AZURE_TO_BUCKET_NAME`: The Azure blob storage container name for task order uploads
 - `BLOB_STORAGE_URL`: URL to Azure blob storage container.
-- `CAC_URL`: URL for the CAC authentication route.
 - `CA_CHAIN`: Path to the CA chain file.
 - `CDN_ORIGIN`: URL for the origin host for asset files.
 - `CELERY_DEFAULT_QUEUE`: String specifying the name of the queue that background tasks will be added to.
@@ -323,11 +322,13 @@ All config settings must be declared in "config/base.ini", even if they are null
 - `REDIS_USER`: String. The Redis username (generally blank).
 - `SAML_ACS`: Fully qualified URI for the URL that the SAML Identity Provider will redirect to after successful authentication
 - `SAML_ENTITY_ID`: Fully qualified URI that ATAT will invoke SAML authentication from
-- `SAML_IDP_CERT`: Public certificate provided by SAML Identity Provider encoded via base64
-- `SAML_IDP_ENTITY_ID`: Identifier endpoint of SAML Identity Provider.
-- `SAML_IDP_SLS`: URL that SAML logout requests will be sent to
-- `SAML_IDP_SSOS`: URL that SAML login requests will be sent to
+- `SAML_IDP_URI`: URI of the SAML IdP Metadata, will be fetched and used to configure SAML calls
 - `SAML_SLS`: Fully qualified URI that ATAT will invoke SAML logout from
+- `SAML_DEV_ACS`: Fully qualified URI for the URL that the SAML Identity Provider used for developer login (only used if `FLASK_ENV` isn't `prod`)
+- `SAML_DEV_ENTITY_ID`: Fully qualified URI that ATAT will invoke developer SAML authentication from (only used if `FLASK_ENV` isn't `prod`)
+- `SAML_DEV_SLS`: Fully qualified URI that ATAT will invoke developer SAML logout from (only used if `FLASK_ENV` isn't `prod`)
+- `SAML_DEV_IDP_URI`: URI of the developer SAML IdP Metadata, will be fetched and used to configure SAML calls (only used if `FLASK_ENV` isn't `prod`)
+- `SAMl_LOGIN_DEV`: Boolean that defines if Azure Fed Auth will be required to log in using the developer login route. Defaults to `False`  (only used if `FLASK_ENV` isn't `prod`)
 - `SECRET_KEY`: String key which will be used to sign the session cookie. Should be a long string of random bytes. https://flask.palletsprojects.com/en/1.1.x/config/#SECRET_KEY
 - `SERVER_NAME`: Hostname for ATAT. Only needs to be specified in contexts where the hostname cannot be inferred from the request, such as Celery workers. https://flask.palletsprojects.com/en/1.1.x/config/#SERVER_NAME
 - `SERVICE_DESK_URL`: The URL for the service desk.  This is the site that will be displayed when the Support button is pressed.

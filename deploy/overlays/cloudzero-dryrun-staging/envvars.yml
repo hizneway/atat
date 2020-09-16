@@ -28,7 +28,6 @@ data:
   AZURE_TENANT_ADMIN_USERNAME: hybrid.admin@atathybrid.onmicrosoft.com
   AZURE_VAULT_URL: "https://tenants-dryrun-keyvault.vault.azure.net/"
   BLOB_STORAGE_URL: https://dryruntasks.blob.core.windows.net/
-  CAC_URL: https://auth-staging.atat.dev/login-redirect
   CDN_ORIGIN: https://staging.atat.dev
   CELERY_DEFAULT_QUEUE: celery-staging
   CSP: hybrid
@@ -39,9 +38,12 @@ data:
   REDIS_HOST: cloudzero-dryrun-redis.redis.cache.windows.net:6380
   SESSION_COOKIE_DOMAIN: atat.dev
   STATIC_URL: "https://staging.atat.dev/static/"
-  SAML_ENTITY_ID: https://staging.atat.dev/login-dev?saml
-  SAML_ACS: https://staging.atat.dev/login-dev?acs
-  SAML_SLS: https://staging.atat.dev/login-dev?sls
-  SAML_IDP_ENTITY_ID: https://sts.windows.net/b5ab0e1e-09f8-4258-afb7-fb17654bc5b3/
-  SAML_IDP_SSOS: https://login.microsoftonline.com/b5ab0e1e-09f8-4258-afb7-fb17654bc5b3/saml2
-  SAML_IDP_SLS: https://login.microsoftonline.com/common/wsfederation?wa=wsignout1.0
+  SAML_ENTITY_ID: https://staging.atat.dev
+  SAML_ACS: https://staging.atat.dev/login?acs
+  SAML_SLS: https://staging.atat.dev/login?sls
+  SAML_IDP_URI: https://fs.disa.mil/federationmetadata/2007-06/federationmetadata.xml
+  SAML_DEV_ENTITY_ID: https://staging.atat.dev/login-dev?saml
+  SAML_DEV_ACS: https://staging.atat.dev/login-dev?acs
+  SAML_DEV_SLS: https://staging.atat.dev/login-dev?sls
+  SAML_DEV_IDP_URI: https://login.microsoftonline.com/b5ab0e1e-09f8-4258-afb7-fb17654bc5b3/federationmetadata/2007-06/federationmetadata.xml?appid=41b24b41-dad9-470a-94f2-10b11a71f8ea
+
