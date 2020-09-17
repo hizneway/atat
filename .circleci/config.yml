@@ -22,7 +22,7 @@ parameters:
       This is where we pull the rhelubi and rhel-py images from.
       It does not include the "azurecr.io" suffix.
     type: string
-    default: "cloudzeroopsregistry"
+    default: ${AZURE_REGISTRY_OPS}
   tenant_id:
     type: string
     default: ${AZURE_SP_TENANT}
