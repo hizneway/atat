@@ -6,7 +6,7 @@ metadata:
 data:
   CELERY_DEFAULT_QUEUE: celery-master
   FLASK_ENV: master
-  PGDATABASE: cloudzero_dryrun_master
+  PGDATABASE: cloudzero_bobcat_master
   SERVER_NAME: master.atat.dev
 ---
 apiVersion: v1
@@ -17,7 +17,7 @@ data:
   CDN_ORIGIN: https://master.atat.dev
   CELERY_DEFAULT_QUEUE: celery-master
   FLASK_ENV: master
-  PGDATABASE: cloudzero_dryrun_master
+  PGDATABASE: cloudzero_bobcat_master
   STATIC_URL: "https://master.atat.dev/static/"
   SAML_ENTITY_ID: https://master.atat.dev
   SAML_ACS: https://master.atat.dev/login?acs
