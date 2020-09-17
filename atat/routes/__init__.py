@@ -9,8 +9,6 @@ from werkzeug.exceptions import MethodNotAllowed, NotFound
 from werkzeug.routing import RequestRedirect
 
 from atat.domain.auth import logout as _logout
-from atat.domain.authnid import AuthenticationContext
-from atat.domain.exceptions import NotFoundError, UnauthenticatedError
 from atat.domain.users import Users
 from atat.routes.saml_helpers import (
     get_user_from_saml_attributes,
@@ -42,19 +40,6 @@ def root():
 @bp.route("/home")
 def home():
     return render_template("home.html")
-
-
-def _client_s_dn():
-    return request.environ.get("HTTP_X_SSL_CLIENT_S_DN")
-
-
-def _make_authentication_context():
-    return AuthenticationContext(
-        crl_cache=app.crl_cache,
-        auth_status=request.environ.get("HTTP_X_SSL_CLIENT_VERIFY"),
-        sdn=_client_s_dn(),
-        cert=request.environ.get("HTTP_X_SSL_CLIENT_CERT"),
-    )
 
 
 def redirect_after_login_url(next_param=None):
@@ -94,23 +79,6 @@ def current_user_setup(user):
     app.session_limiter.on_login(user)
     app.logger.info("authentication succeeded for user with EDIPI %s", user.dod_id)
     Users.update_last_login(user)
-
-
-@bp.route("/login-redirect")
-def login_redirect():
-    try:
-        auth_context = _make_authentication_context()
-        auth_context.authenticate()
-
-        user = auth_context.get_user()
-        current_user_setup(user)
-    except UnauthenticatedError as err:
-        app.logger.info(
-            "authentication failed for subject distinguished name %s", _client_s_dn()
-        )
-        raise err
-
-    return redirect(redirect_after_login_url())
 
 
 @bp.route("/logout")

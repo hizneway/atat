@@ -15,7 +15,6 @@ from unipath import Path
 from atat.assets import environment as assets_environment
 from atat.database import db
 from atat.domain.auth import apply_authentication
-from atat.domain.authnid.crl import CRLCache, NoOpCRLCache
 from atat.domain.authz import Authorization
 from atat.domain.csp import make_csp_provider
 from atat.domain.portfolios import Portfolios
@@ -68,7 +67,6 @@ def make_app(config):
     register_filters(app)
     register_jinja_globals(app)
     make_csp_provider(app, config.get("CSP", "mock"))
-    make_crl_validator(app)
     make_mailer(app)
     make_notification_sender(app)
 
@@ -180,8 +178,6 @@ def map_config(config):
         "PERMANENT_SESSION_LIFETIME": config.getint(
             "default", "PERMANENT_SESSION_LIFETIME"
         ),
-        "DISABLE_CRL_CHECK": config.getboolean("default", "DISABLE_CRL_CHECK"),
-        "CRL_FAIL_OPEN": config.getboolean("default", "CRL_FAIL_OPEN"),
         "LOG_JSON": config.getboolean("default", "LOG_JSON"),
         "LIMIT_CONCURRENT_SESSIONS": config.getboolean(
             "default", "LIMIT_CONCURRENT_SESSIONS"
@@ -322,17 +318,6 @@ def apply_config_from_environment(config, section="default"):
 def make_redis(app, config):
     r = redis.Redis.from_url(config["REDIS_URI"])
     app.redis = r
-
-
-def make_crl_validator(app):
-    if app.config.get("DISABLE_CRL_CHECK"):
-        app.crl_cache = NoOpCRLCache(logger=app.logger)
-    else:
-        crl_dir = app.config["CRL_STORAGE_CONTAINER"]
-        if not os.path.isdir(crl_dir):
-            os.makedirs(crl_dir, exist_ok=True)
-
-        app.crl_cache = CRLCache(app.config["CA_CHAIN"], crl_dir, logger=app.logger,)
 
 
 def make_mailer(app):
