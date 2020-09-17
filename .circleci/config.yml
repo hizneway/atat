@@ -2,11 +2,27 @@ version: 2.1
 
 parameters:
   subscription_id:
+    description: Subscription ID for the registry containing the application docker images.
     type: string
     default: ${AZURE_SUBSCRIPTION}
+  ops_subscription_id:
+    description: Subscription ID for the registry containing the operator docker images.
+    type: string
+    default: ${AZURE_SUBSCRIPTION_OPS}
   container_registry:
+    description: |
+      Container registry for built application images.
+      This is where we push the built atat and nginx image to.
+      It does not include the "azurecr.io" suffix.
     type: string
     default: ${AZURE_REGISTRY}
+  ops_registry:
+    description: |
+      Container registry for base operations images.
+      This is where we pull the rhelubi and rhel-py images from.
+      It does not include the "azurecr.io" suffix.
+    type: string
+    default: "cloudzeroopsregistry"
   tenant_id:
     type: string
     default: ${AZURE_SP_TENANT}
@@ -51,20 +67,9 @@ parameters:
     description: Causes a build with a single stage that creates and pushes the ops deployment image to a container registry only.
     type: boolean
     default: false
-  ops_registry:
-    description: The name of the registry (not including the azureacr suffix).
-    type: string
-    default: "cloudzeroopsregistry"
 
 commands:
-  azlogin:
-    parameters:
-      registry:
-        description: The name of the registry (not including the azureacr suffix).
-        type: string
-      subscription_id:
-        description: Target subscription the registry exists under.
-        type: string
+  install_azure_cli:
     steps:
       - run:
           name: Install Azure CLI
@@ -77,6 +82,8 @@ commands:
             pip3 --no-cache-dir install azure-cli
             curl -L https://aka.ms/acr/installaad/bash | /bin/bash
             apk del --purge build
+  log_into_app_registry:
+    steps:
       - run:
           name: Login to Azure CLI
           shell: /bin/sh
@@ -86,9 +93,23 @@ commands:
               --tenant << pipeline.parameters.tenant_id >> \
               --password << pipeline.parameters.sp_password >> \
               --username << pipeline.parameters.sp >>
-            az account set -s << parameters.subscription_id >>
+            az account set -s << pipeline.parameters.subscription_id >>
             echo "Successfully logged in to Azure CLI."
-            az acr login --name << parameters.registry >> | grep "Succeeded"
+            az acr login --name << pipeline.parameters.container_registry >> | grep "Succeeded"
+  log_into_ops_registry:
+    steps:
+      - run:
+          name: Login to Azure CLI
+          shell: /bin/sh
+          command: |
+            az login \
+              --service-principal \
+              --tenant << pipeline.parameters.tenant_id >> \
+              --password << pipeline.parameters.sp_password >> \
+              --username << pipeline.parameters.sp >>
+            az account set -s << pipeline.parameters.ops_subscription_id >>
+            echo "Successfully logged in to Azure CLI."
+            az acr login --name << pipeline.parameters.ops_registry >> | grep "Succeeded"
   cache_docker_images:
     steps:
       - run:
@@ -158,9 +179,8 @@ commands:
       - setup_remote_docker:
           docker_layer_caching: true
           version: 18.06.0-ce
-      - azlogin:
-          subscription_id: << pipeline.parameters.subscription_id >>
-          registry: << pipeline.parameters.ops_registry >>
+      - install_azure_cli
+      - log_into_ops_registry
       - restore_docker_image
       - run:
           name: Build nginx image
@@ -169,9 +189,7 @@ commands:
           name: Tag images
           command: |
             docker tag atat:latest << pipeline.parameters.atat_image_tag >>
-      - azlogin:
-          subscription_id: << pipeline.parameters.subscription_id >>
-          registry: << pipeline.parameters.container_registry >>
+      - log_into_app_registry
       - run:
           name: Push image
           command: |
@@ -186,9 +204,8 @@ jobs:
       - setup_remote_docker:
           docker_layer_caching: true
           version: 18.06.0-ce
-      - azlogin:
-          subscription_id: << pipeline.parameters.subscription_id >>
-          registry: << pipeline.parameters.container_registry >>
+      - install_azure_cli
+      - log_into_ops_registry
       - run:
           name: Build images
           command: |
@@ -312,9 +329,8 @@ jobs:
       - setup_remote_docker:
           docker_layer_caching: true
           version: 18.06.0-ce
-      - azlogin:
-          subscription_id: << pipeline.parameters.subscription_id >>
-          registry: << pipeline.parameters.ops_registry >>
+      - install_azure_cli
+      - log_into_ops_registry
       - run:
           name: Build images
           command: |
@@ -328,9 +344,7 @@ jobs:
           command: |
             docker tag atat:latest << pipeline.parameters.atat_image_tag >>
             docker tag nginx:latest << pipeline.parameters.nginx_image_tag >>
-      - run:
-          name: Log into the target registry
-          command: az acr login --name << pipeline.parameters.container_registry >>.azurecr.io | grep "Succeeded"
+      - log_into_app_registry
       - run:
           name: Push image
           command: |
@@ -345,9 +359,8 @@ jobs:
       - setup_remote_docker:
           docker_layer_caching: true
           version: 18.06.0-ce
-      - azlogin:
-          subscription_id: << pipeline.parameters.subscription_id >>
-          registry: << pipeline.parameters.ops_registry >>
+      - install_azure_cli
+      - log_into_ops_registry
       - run:
           name: Build ops deployment image image
           command: |
