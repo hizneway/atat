@@ -160,15 +160,18 @@ commands:
           version: 18.06.0-ce
       - azlogin:
           subscription_id: << pipeline.parameters.subscription_id >>
-          registry: << pipeline.parameters.container_registry >>
+          registry: << pipeline.parameters.ops_registry >>
       - restore_docker_image
       - run:
           name: Build nginx image
-          command: docker build -t nginx:latest --build-arg IMAGE=<< pipeline.parameters.container_registry >>.azurecr.io/rhelubi:8.2 - < nginx.Dockerfile
+          command: docker build -t nginx:latest --build-arg IMAGE=<< pipeline.parameters.ops_registry >>.azurecr.io/rhelubi:8.2 - < nginx.Dockerfile
       - run:
           name: Tag images
           command: |
             docker tag atat:latest << pipeline.parameters.atat_image_tag >>
+      - azlogin:
+          subscription_id: << pipeline.parameters.subscription_id >>
+          registry: << pipeline.parameters.container_registry >>
       - run:
           name: Push image
           command: |
@@ -185,12 +188,12 @@ jobs:
           version: 18.06.0-ce
       - azlogin:
           subscription_id: << pipeline.parameters.subscription_id >>
-          registry: << pipeline.parameters.container_registry >>
+          registry: << pipeline.parameters.ops_registry >>
       - run:
           name: Build images
           command: |
-            docker build . --build-arg GIT_SHA=${CIRCLE_SHA1} --build-arg IMAGE=<< pipeline.parameters.container_registry >>.azurecr.io/rhel-py -f ./Dockerfile -t atat:builder --target builder
-            docker build . --build-arg GIT_SHA=${CIRCLE_SHA1} --build-arg IMAGE=<< pipeline.parameters.container_registry >>.azurecr.io/rhel-py -f ./Dockerfile -t atat:latest
+            docker build . --build-arg GIT_SHA=${CIRCLE_SHA1} --build-arg IMAGE=<< pipeline.parameters.ops_registry >>.azurecr.io/rhel-py -f ./Dockerfile -t atat:builder --target builder
+            docker build . --build-arg GIT_SHA=${CIRCLE_SHA1} --build-arg IMAGE=<< pipeline.parameters.ops_registry >>.azurecr.io/rhel-py -f ./Dockerfile -t atat:latest
       - cache_docker_images
 
   test:
@@ -300,7 +303,7 @@ jobs:
           namespace: master
           atat_image_tag: << pipeline.parameters.container_registry >>.azurecr.io/atat:master-${CIRCLE_SHA1}
           nginx_image_tag: << pipeline.parameters.container_registry >>.azurecr.io/nginx:master-${CIRCLE_SHA1}
-  
+
   push-app-images:
     docker:
       - image: docker:18.06.0-ce-git
@@ -327,7 +330,7 @@ jobs:
             docker tag nginx:latest << pipeline.parameters.nginx_image_tag >>
       - run:
           name: Log into the target registry
-          command: az acr login --name << pipeline.parameters.container_registry >> | grep "Succeeded"
+          command: az acr login --name << pipeline.parameters.container_registry >>.azurecr.io | grep "Succeeded"
       - run:
           name: Push image
           command: |
@@ -368,8 +371,8 @@ workflows:
   version: 2
   run-tests:
     when:
-      not: 
-        and: 
+      not:
+        and:
           - << pipeline.parameters.build_and_push_app_images >>
           - << pipeline.parameters.build_and_push_ops_image >>
     jobs:
@@ -401,7 +404,7 @@ workflows:
             branches:
               only:
                 - master
-  
+
   push-app-images:
     when: << pipeline.parameters.build_and_push_app_images >>
     jobs:
