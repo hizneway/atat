@@ -42,9 +42,6 @@ spec:
             - configMapRef:
                 name: atst-envvars
           volumeMounts:
-            - name: nginx-client-ca-bundle
-              mountPath: "/opt/atat/atst/ssl/server-certs/ca-chain.pem"
-              subPath: client-ca-bundle.pem
             - name: uwsgi-socket-dir
               mountPath: "/var/run/uwsgi"
             - name: pgsslrootcert
@@ -76,9 +73,6 @@ spec:
               mountPath: "/etc/nginx/conf.d/"
             - name: uwsgi-socket-dir
               mountPath: "/var/run/uwsgi"
-            - name: nginx-client-ca-bundle
-              mountPath: "/etc/ssl/client-ca-bundle.pem"
-              subPath: "client-ca-bundle.pem"
             - name: acme
               mountPath: "/usr/share/nginx/html/.well-known/acme-challenge/"
             - name: snippets
@@ -93,13 +87,6 @@ spec:
               memory: 20Mi
               cpu: 25m
       volumes:
-        - name: nginx-client-ca-bundle
-          configMap:
-            name: nginx-client-ca-bundle
-            defaultMode: 0444
-            items:
-              - key: "client-ca-bundle.pem"
-                path: "client-ca-bundle.pem"
         - name: nginx-config
           configMap:
             name: atst-nginx
