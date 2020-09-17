@@ -6,3 +6,7 @@ output "name" {
   value = azurerm_container_registry.acr.name
 >>>>>>> Reference dynamic container registry names
 }
+
+ output "ops_container_registry_name" {
+   value = data.azurerm_container_registry.ops.name
+ }
