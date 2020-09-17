@@ -85,7 +85,7 @@ commands:
   log_into_app_registry:
     steps:
       - run:
-          name: Login to Azure CLI
+          name: Login to application registry
           shell: /bin/sh
           command: |
             az login \
@@ -99,7 +99,7 @@ commands:
   log_into_ops_registry:
     steps:
       - run:
-          name: Login to Azure CLI
+          name: Login to operations registry
           shell: /bin/sh
           command: |
             az login \
