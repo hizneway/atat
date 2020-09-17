@@ -1,13 +1,7 @@
-import pendulum
 import pytest
 
-from atat.domain.applications import Applications
-from atat.domain.environments import Environments
-from atat.domain.permission_sets import PermissionSets
-from atat.domain.portfolio_roles import PortfolioRoles
-from atat.domain.portfolios import Portfolios
-from atat.models import AuditEvent, CSPRole, InvitationStatus, PortfolioRoleStatus
 from tests.factories import *
+from tests.utils import lists_contain_same_members
 
 
 @pytest.mark.audit_log
@@ -269,7 +263,14 @@ def test_can_list_all_permissions():
     role_two = PermissionSets.get(PermissionSets.VIEW_PORTFOLIO_REPORTS)
     port_role = PortfolioRoleFactory.create(permission_sets=[role_one, role_two])
     expected_perms = role_one.permissions + role_two.permissions
-    assert expected_perms == expected_perms
+    assert lists_contain_same_members(
+        expected_perms,
+        [
+            perm
+            for perm_set in port_role.permission_sets
+            for perm in perm_set.permissions
+        ],
+    )
 
 
 def test_has_permission_set():
