@@ -347,6 +347,14 @@ workflows:
               only:
                 - staging
                 - master
+      - deploy-staging:
+          requires:
+            - test
+            - integration-tests
+          filters:
+            branches:
+              only:
+                - staging
       - deploy-master:
           requires:
             - test
