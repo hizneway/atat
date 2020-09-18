@@ -2,20 +2,42 @@ version: 2.1
 
 parameters:
   subscription_id:
+    description: Subscription ID for the registry containing the application docker images.
     type: string
     default: ${AZURE_SUBSCRIPTION}
+  ops_subscription_id:
+    description: Subscription ID for the registry containing the operator docker images.
+    type: string
+    default: ${AZURE_SUBSCRIPTION_OPS}
   container_registry:
+    description: |
+      Container registry for built application images.
+      This is where we push the built atat and nginx image to.
+      It does not include the "azurecr.io" suffix.
     type: string
     default: ${AZURE_REGISTRY}
+  ops_registry:
+    description: |
+      Container registry for base operations images.
+      This is where we pull the rhelubi and rhel-py images from.
+      It does not include the "azurecr.io" suffix.
+    type: string
+    default: ${AZURE_REGISTRY_OPS}
   tenant_id:
     type: string
     default: ${AZURE_SP_TENANT}
-  sp_password:
-    type: string
-    default: ${AZURE_SP_PASSWORD}
   sp:
     type: string
     default: ${AZURE_SP}
+  sp_password:
+    type: string
+    default: ${AZURE_SP_PASSWORD}
+  sp_object_id:
+    type: string
+    default: "__NONE__"
+  operator_sp_url:
+    type: string
+    default: "__NONE__"
   container_env:
     type: string
     default: -e PGHOST=postgres -e REDIS_HOST=redis:6379
@@ -37,13 +59,17 @@ parameters:
   resource_group:
     type: string
     default: ${RESOURCE_GROUP}
-  build_and_push_images_only:
-    description: Causes a build with a single stage that creates and pushes docker images to a container registry only.
+  build_and_push_app_images:
+    description: Causes a build with a single stage that creates and pushes atat and docker images docker images to a container registry only.
+    type: boolean
+    default: false
+  build_and_push_ops_image:
+    description: Causes a build with a single stage that creates and pushes the ops deployment image to a container registry only.
     type: boolean
     default: false
 
 commands:
-  azlogin:
+  install_azure_cli:
     steps:
       - run:
           name: Install Azure CLI
@@ -56,8 +82,10 @@ commands:
             pip3 --no-cache-dir install azure-cli
             curl -L https://aka.ms/acr/installaad/bash | /bin/bash
             apk del --purge build
+  log_into_app_registry:
+    steps:
       - run:
-          name: Login to Azure CLI
+          name: Login to application registry
           shell: /bin/sh
           command: |
             az login \
@@ -68,6 +96,20 @@ commands:
             az account set -s << pipeline.parameters.subscription_id >>
             echo "Successfully logged in to Azure CLI."
             az acr login --name << pipeline.parameters.container_registry >> | grep "Succeeded"
+  log_into_ops_registry:
+    steps:
+      - run:
+          name: Login to operations registry
+          shell: /bin/sh
+          command: |
+            az login \
+              --service-principal \
+              --tenant << pipeline.parameters.tenant_id >> \
+              --password << pipeline.parameters.sp_password >> \
+              --username << pipeline.parameters.sp >>
+            az account set -s << pipeline.parameters.ops_subscription_id >>
+            echo "Successfully logged in to Azure CLI."
+            az acr login --name << pipeline.parameters.ops_registry >> | grep "Succeeded"
   cache_docker_images:
     steps:
       - run:
@@ -137,15 +179,17 @@ commands:
       - setup_remote_docker:
           docker_layer_caching: true
           version: 18.06.0-ce
-      - azlogin
+      - install_azure_cli
+      - log_into_ops_registry
       - restore_docker_image
       - run:
           name: Build nginx image
-          command: docker build -t nginx:latest --build-arg IMAGE=<< pipeline.parameters.container_registry >>.azurecr.io/rhelubi:8.2 - < nginx.Dockerfile
+          command: docker build -t nginx:latest --build-arg IMAGE=<< pipeline.parameters.ops_registry >>.azurecr.io/rhelubi:8.2 - < nginx.Dockerfile
       - run:
           name: Tag images
           command: |
             docker tag atat:latest << pipeline.parameters.atat_image_tag >>
+      - log_into_app_registry
       - run:
           name: Push image
           command: |
@@ -160,12 +204,13 @@ jobs:
       - setup_remote_docker:
           docker_layer_caching: true
           version: 18.06.0-ce
-      - azlogin
+      - install_azure_cli
+      - log_into_ops_registry
       - run:
           name: Build images
           command: |
-            docker build . --build-arg GIT_SHA=${CIRCLE_SHA1} --build-arg IMAGE=<< pipeline.parameters.container_registry >>.azurecr.io/rhel-py -f ./Dockerfile -t atat:builder --target builder
-            docker build . --build-arg GIT_SHA=${CIRCLE_SHA1} --build-arg IMAGE=<< pipeline.parameters.container_registry >>.azurecr.io/rhel-py -f ./Dockerfile -t atat:latest
+            docker build . --build-arg GIT_SHA=${CIRCLE_SHA1} --build-arg IMAGE=<< pipeline.parameters.ops_registry >>.azurecr.io/rhel-py -f ./Dockerfile -t atat:builder --target builder
+            docker build . --build-arg GIT_SHA=${CIRCLE_SHA1} --build-arg IMAGE=<< pipeline.parameters.ops_registry >>.azurecr.io/rhel-py -f ./Dockerfile -t atat:latest
       - cache_docker_images
 
   test:
@@ -276,7 +321,7 @@ jobs:
           atat_image_tag: << pipeline.parameters.container_registry >>.azurecr.io/atat:master-${CIRCLE_SHA1}
           nginx_image_tag: << pipeline.parameters.container_registry >>.azurecr.io/nginx:master-${CIRCLE_SHA1}
 
-  push-images:
+  push-app-images:
     docker:
       - image: docker:18.06.0-ce-git
     steps:
@@ -284,56 +329,65 @@ jobs:
       - setup_remote_docker:
           docker_layer_caching: true
           version: 18.06.0-ce
-      - run:
-          name: Install Azure CLI
-          command: |
-            apk update
-            apk add bash py3-pip
-            apk add --virtual=build \
-              linux-headers gcc libffi-dev musl-dev openssl-dev python3-dev make curl
-            pip3 --no-cache-dir install -U pip
-            pip3 --no-cache-dir install azure-cli
-            curl -L https://aka.ms/acr/installaad/bash | /bin/bash
-            apk del --purge build
-      - run:
-          name: Login to Azure CLI
-          shell: /bin/sh
-          command: |
-            az login \
-              --service-principal \
-              --tenant << pipeline.parameters.tenant_id >> \
-              --password << pipeline.parameters.sp_password >> \
-              --username << pipeline.parameters.sp >>
-            az account set -s << pipeline.parameters.subscription_id >>
-            echo "Successfully logged in to Azure CLI."
-            az acr login --name cloudzeroopsregistry | grep "Succeeded"
+      - install_azure_cli
+      - log_into_ops_registry
       - run:
           name: Build images
           command: |
-            docker build . --build-arg GIT_SHA=${CIRCLE_SHA1} --build-arg IMAGE=cloudzeroopsregistry.azurecr.io/rhel-py -f ./Dockerfile -t atat:builder --target builder
-            docker build . --build-arg GIT_SHA=${CIRCLE_SHA1} --build-arg IMAGE=cloudzeroopsregistry.azurecr.io/rhel-py -f ./Dockerfile -t atat:latest
+            docker build . --build-arg GIT_SHA=${CIRCLE_SHA1} --build-arg IMAGE=<< pipeline.parameters.ops_registry >>.azurecr.io/rhel-py -f ./Dockerfile -t atat:builder --target builder
+            docker build . --build-arg GIT_SHA=${CIRCLE_SHA1} --build-arg IMAGE=<< pipeline.parameters.ops_registry >>.azurecr.io/rhel-py -f ./Dockerfile -t atat:latest
       - run:
           name: Build nginx image
-          command: docker build -t nginx:latest --build-arg IMAGE=cloudzeroopsregistry.azurecr.io/rhelubi:8.2 - < nginx.Dockerfile
+          command: docker build -t nginx:latest --build-arg IMAGE=<< pipeline.parameters.ops_registry >>.azurecr.io/rhelubi:8.2 - < nginx.Dockerfile
       - run:
           name: Tag images
           command: |
             docker tag atat:latest << pipeline.parameters.atat_image_tag >>
             docker tag nginx:latest << pipeline.parameters.nginx_image_tag >>
-      - run:
-          name: Log into the target registry
-          command: az acr login --name << pipeline.parameters.container_registry >> | grep "Succeeded"
+      - log_into_app_registry
       - run:
           name: Push image
           command: |
             docker push << pipeline.parameters.atat_image_tag >>
             docker push << pipeline.parameters.nginx_image_tag >>
 
+  push-ops-image:
+    docker:
+      - image: docker:18.06.0-ce-git
+    steps:
+      - checkout
+      - setup_remote_docker:
+          docker_layer_caching: true
+          version: 18.06.0-ce
+      - install_azure_cli
+      - log_into_ops_registry
+      - run:
+          name: Build ops deployment image image
+          command: |
+            docker build -t ops:latest \
+            --build-arg IMAGE=<< pipeline.parameters.ops_registry >>.azurecr.io/rhelubi:8.2 \
+            --build-arg operator_sp_client_id=<< pipeline.parameters.sp >> \
+            --build-arg operator_sp_object_id=<< pipeline.parameters.sp_object_id >> \
+            --build-arg operator_sp_secret=<< pipeline.parameters.sp_password >> \
+            --build-arg azure_tenant=<< pipeline.parameters.tenant_id >> \
+            --build-arg azure_subscription_id=<< pipeline.parameters.subscription_id >> \
+            --build-arg operator_sp_url=<< pipeline.parameters.operator_sp_url >> \
+            . < Dockerfile.ops
+      - run:
+          name: Tag ops image
+          command: docker tag ops:latest << pipeline.parameters.ops_registry >>.azurecr.io/ops:latest
+      - run:
+          name: Push ops image
+          command: docker push << pipeline.parameters.ops_registry >>.azurecr.io/ops:latest
+
 workflows:
   version: 2
   run-tests:
     when:
-      not: << pipeline.parameters.build_and_push_images_only >>
+      not:
+        and:
+          - << pipeline.parameters.build_and_push_app_images >>
+          - << pipeline.parameters.build_and_push_ops_image >>
     jobs:
       - docker-build
       - test:
@@ -364,7 +418,12 @@ workflows:
               only:
                 - master
 
-  push-images:
-    when: << pipeline.parameters.build_and_push_images_only >>
+  push-app-images:
+    when: << pipeline.parameters.build_and_push_app_images >>
     jobs:
-      - push-images
+      - push-app-images
+
+  push-ops-image:
+    when: << pipeline.parameters.build_and_push_ops_image >>
+    jobs:
+      - push-ops-image
