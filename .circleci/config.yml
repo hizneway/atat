@@ -188,12 +188,39 @@ commands:
       - run:
           name: Tag images
           command: |
-            docker tag atat:latest << pipeline.parameters.atat_image_tag >>
+            docker tag atat:latest << parameters.atat_image_tag >>
+            docker tag nginx:latest << parameters.nginx_image_tag >>
       - log_into_app_registry
       - run:
-          name: Push image
+          name: Push images
           command: |
-            docker push << pipeline.parameters.atat_image_tag >>
+            docker push << parameters.atat_image_tag >>
+            docker push << parameters.nginx_image_tag >>
+      - run:
+          name: Install kubectl
+          command: |
+            apk add curl
+            export KUBECTL_VERSION=$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)
+            curl -LO https://storage.googleapis.com/kubernetes-release/release/$KUBECTL_VERSION/bin/linux/amd64/kubectl
+            chmod +x ./kubectl
+            mv ./kubectl /usr/local/bin
+      - run:
+          name: Configure kubectl
+          command: |
+            apk add libssl1.0
+            az aks get-credentials --name << pipeline.parameters.cluster_name >>  --resource-group << pipeline.parameters.resource_group >>
+      - run:
+          name: Add gettext package
+          command: apk add gettext
+      - run:
+          command: K8S_NAMESPACE=<< parameters.namespace >> CONTAINER_IMAGE=<< parameters.atat_image_tag >> /bin/sh ./script/cluster_migration
+          name: Apply Migrations and Seed Roles
+      - run:
+          name: Update Kubernetes cluster
+          command: |
+            kubectl set image deployment.apps/atst atst=<< parameters.atat_image_tag >> nginx=<< parameters.nginx_image_tag >> --namespace=<< parameters.namespace >>
+            kubectl set image deployment.apps/atst-worker atst-worker=<< parameters.atat_image_tag >> --namespace=<< parameters.namespace >>
+            kubectl set image deployment.apps/atst-beat atst-beat=<< parameters.atat_image_tag >> --namespace=<< parameters.namespace >>
 
 jobs:
   docker-build:
