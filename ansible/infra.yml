@@ -2,8 +2,8 @@
   roles:
     - role: crypto
     - role: bootstrap
-    - role: circle_ci
     - role: terraform
+    - role: circle_ci
     - role: destroy_bootstrap
       when: teardown_bootstrap_env is defined
     - role: circle_ci
