@@ -30,7 +30,7 @@ resource "azurerm_virtual_network" "vpc" {
 
 resource "azurerm_subnet" "subnet" {
   for_each             = var.networks
-  name                 = "${ each.key == "AzureFirewallSubnet" ? "AzureFirewallSubnet" : "${var.name}-${each.key}-${var.environment}" }"
+  name                 = "${each.key == "AzureFirewallSubnet" ? "AzureFirewallSubnet" : "${var.name}-${each.key}-${var.environment}"}"
   resource_group_name  = azurerm_resource_group.vpc.name
   virtual_network_name = azurerm_virtual_network.vpc.name
   address_prefixes     = [element(split(",", each.value), 0)]
@@ -65,9 +65,9 @@ resource "azurerm_route" "custom_routes" {
   for_each            = var.custom_routes
   name                = "${var.name}-${element(split(",", each.value), 1)}-${var.environment}"
   resource_group_name = azurerm_resource_group.vpc.name
-  route_table_name = azurerm_route_table.route_table[each.key].name
-  address_prefix   = element(split(",", each.value), 2)
-  next_hop_type    = element(split(",", each.value), 3)
+  route_table_name    = azurerm_route_table.route_table[each.key].name
+  address_prefix      = element(split(",", each.value), 2)
+  next_hop_type       = element(split(",", each.value), 3)
 }
 
 resource "azurerm_route_table" "firewall_route_table" {
@@ -81,11 +81,11 @@ resource "azurerm_route_table" "firewall_route_table" {
 
 resource "azurerm_route" "firewall_routes" {
 
-  name                = "${var.name}-${element(split(",", var.virtual_appliance_routes), 0)}-${var.environment}"
-  resource_group_name = azurerm_resource_group.vpc.name
-  route_table_name = azurerm_route_table.firewall_route_table[element(split(",", var.virtual_appliance_routes), 0)].name
-  address_prefix   = chomp(element(split(",", var.virtual_appliance_routes), 2))
-  next_hop_type    = chomp(element(split(",", var.virtual_appliance_routes), 3))
+  name                   = "${var.name}-${element(split(",", var.virtual_appliance_routes), 0)}-${var.environment}"
+  resource_group_name    = azurerm_resource_group.vpc.name
+  route_table_name       = azurerm_route_table.firewall_route_table[element(split(",", var.virtual_appliance_routes), 0)].name
+  address_prefix         = chomp(element(split(",", var.virtual_appliance_routes), 2))
+  next_hop_type          = chomp(element(split(",", var.virtual_appliance_routes), 3))
   next_hop_in_ip_address = chomp(element(split(",", var.virtual_appliance_routes), 4))
 }
 
@@ -97,11 +97,11 @@ resource "azurerm_subnet_route_table_association" "firewall_route_table" {
 
 # Default Routes
 resource "azurerm_route" "fw_route" {
-  for_each            = var.virtual_appliance_route_tables
-  name                = "${var.name}-default-${var.environment}"
-  resource_group_name = azurerm_resource_group.vpc.name
-  route_table_name    = azurerm_route_table.firewall_route_table[each.key].name
-  address_prefix      = "0.0.0.0/0"
-  next_hop_type       = each.value
+  for_each               = var.virtual_appliance_route_tables
+  name                   = "${var.name}-default-${var.environment}"
+  resource_group_name    = azurerm_resource_group.vpc.name
+  route_table_name       = azurerm_route_table.firewall_route_table[each.key].name
+  address_prefix         = "0.0.0.0/0"
+  next_hop_type          = each.value
   next_hop_in_ip_address = chomp(element(split(",", var.virtual_appliance_routes), 4))
 }

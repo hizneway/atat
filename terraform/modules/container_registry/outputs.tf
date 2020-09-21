@@ -4,5 +4,5 @@ output "container_registry_name" {
 }
 
 output "ops_container_registry_name" {
-   value = data.azurerm_container_registry.ops.name
- }
+  value = data.azurerm_container_registry.ops.name
+}

@@ -23,19 +23,19 @@ module "private-k8s" {
   aks_subnet_id              = module.vpc.subnet_list["aks-private"].id
   vpc_address_space          = "10.1.0.0/16"
 
-  depends_on                 = [module.vpc,module.keyvault_reader_identity]
+  depends_on = [module.vpc, module.keyvault_reader_identity]
 
 
 }
 
 module "private-aks-firewall" {
 
-  source                     =  "../../modules/azure_firewall"
-  resource_group_name        = module.vpc.resource_group_name
-  location                   = var.region
-  name                       = var.name
-  environment                = local.environment
-  subnet_id                  = module.vpc.subnet_list["AzureFirewallSubnet"].id
+  source              = "../../modules/azure_firewall"
+  resource_group_name = module.vpc.resource_group_name
+  location            = var.region
+  name                = var.name
+  environment         = local.environment
+  subnet_id           = module.vpc.subnet_list["AzureFirewallSubnet"].id
 
 
 }

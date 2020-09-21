@@ -1,10 +1,10 @@
 variable "environment" {
-default = ""
+  default = ""
 }
 
 
 variable "lifecycle_env_name" {
-default = "staging"
+  default = "staging"
 }
 
 variable "region" {}
@@ -110,10 +110,10 @@ variable "tf_state_storage_container_name" {
 }
 
 variable "virtual_appliance_routes" {
-type = map
+  type = map
 }
 variable "virtual_appliance_route_tables" {
-type= map
+  type = map
 }
 
 variable "OPS_CID" {}

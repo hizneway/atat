@@ -71,15 +71,15 @@ output "ops_keyvault_sp_secret" {
 }
 
 output "application_keyvault_name" {
- value = module.keyvault.keyvault_name
+  value = module.keyvault.keyvault_name
 }
 
 output "application_keyvault_url" {
- value = module.keyvault.url
+  value = module.keyvault.url
 }
 
 output "operator_keyvault_name" {
- value = module.operator_keyvault.keyvault_name
+  value = module.operator_keyvault.keyvault_name
 }
 
 
@@ -89,16 +89,16 @@ output "subnets" {
 
 
 output "container_registry_name" {
-value= module.container_registry.container_registry_name
+  value = module.container_registry.container_registry_name
 }
 
 
 output "keyvault_reader_client_id" {
-value = module.keyvault_reader_identity.client_id
+  value = module.keyvault_reader_identity.client_id
 }
 
 output "keyvault_reader_id" {
-value = module.keyvault_reader_identity.id
+  value = module.keyvault_reader_identity.id
 }
 
 
@@ -116,11 +116,11 @@ output "redis_ssl_port" {
 }
 
 output "k8s_node_group" {
- value = module.k8s.k8s_resource_group_id
+  value = module.k8s.k8s_resource_group_id
 }
 
 output "private_k8s_node_group" {
- value = module.private-k8s.k8s_resource_group_id
+  value = module.private-k8s.k8s_resource_group_id
 }
 
 
@@ -132,48 +132,48 @@ output "vnet_id" {
 
 output "app_config_values" {
 
-   value = {
-    "AZURE-CLIENT-ID":  module.tenant_keyvault_app.application_id
-    "AZURE-SECRET-KEY": module.tenant_keyvault_app.application_password
-    "AZURE-TENANT-ID": var.tenant_id
-    "MAIL-PASSWORD": var.mailgun_api_key
-    "AZURE-STORAGE-KEY": module.task_order_bucket.primary_access_key
-    "REDIS-PASSWORD": module.redis.primary_key
-    "AZURE-HYBRID-TENANT-ID": var.azure_hybrid_tenant_id
-    "AZURE-USER-OBJECT-ID": var.azure_hybrid_user_object_id
-    "AZURE-TENANT-ADMIN-PASSWORD": var.azure_hybrid_tenant_admin_password
-    "REDIS-PASSWORD": module.redis.primary_key
-    "AZURE-BILLING-ACCOUNT-NAME": var.AZURE-BILLING-ACCOUNT-NAME
-    "AZURE-BILLING-PROFILE-ID": var.AZURE-BILLING-PROFILE-ID
-    "AZURE-INVOICE-SECTION-ID": var.AZURE-INVOICE-SECTION-ID
-    "SAML-IDP-CERT":""
-    "dhparam4096": var.dhparam4096
-    "PGPASSWORD": random_password.atat_user_password.result
-    "AZURE-VAULT-URL": module.tenant_keyvault.url
-    "AZURE-SUBSCRIPTION-CREATION-CLIENT-ID":var.AZURE_SUBSCRIPTION_CREATION_CLIENT_ID
-    "AZURE-SUBSCRIPTION-CREATIONSECRET": var.AZURE_SUBSCRIPTION_CREATION_SECRET
-    "AZURE-TENANT-ADMIN-USERNAME": var.AZURE_TENANT_ADMIN_USERNAME
-    "AZURE-TENANT-ID": var.AZURE_TENANT_ID
-    "AZURE-USER-OBJECT-ID": var.AZURE_USER_OBJECT_ID
-    "CSP": var.CSP
-    "AZURE-HYBRID-REPORTING-CLIENT-ID": var.AZURE_HYBRID_REPORTING_CLIENT_ID
-    "AZURE-HYBRID-REPORTING-SECRET": var.AZURE_HYBRID_REPORTING_SECRET
+  value = {
+    "AZURE-CLIENT-ID" : module.tenant_keyvault_app.application_id
+    "AZURE-SECRET-KEY" : module.tenant_keyvault_app.application_password
+    "AZURE-TENANT-ID" : var.tenant_id
+    "MAIL-PASSWORD" : var.mailgun_api_key
+    "AZURE-STORAGE-KEY" : module.task_order_bucket.primary_access_key
+    "REDIS-PASSWORD" : module.redis.primary_key
+    "AZURE-HYBRID-TENANT-ID" : var.azure_hybrid_tenant_id
+    "AZURE-USER-OBJECT-ID" : var.azure_hybrid_user_object_id
+    "AZURE-TENANT-ADMIN-PASSWORD" : var.azure_hybrid_tenant_admin_password
+    "REDIS-PASSWORD" : module.redis.primary_key
+    "AZURE-BILLING-ACCOUNT-NAME" : var.AZURE-BILLING-ACCOUNT-NAME
+    "AZURE-BILLING-PROFILE-ID" : var.AZURE-BILLING-PROFILE-ID
+    "AZURE-INVOICE-SECTION-ID" : var.AZURE-INVOICE-SECTION-ID
+    "SAML-IDP-CERT" : ""
+    "dhparam4096" : var.dhparam4096
+    "PGPASSWORD" : random_password.atat_user_password.result
+    "AZURE-VAULT-URL" : module.tenant_keyvault.url
+    "AZURE-SUBSCRIPTION-CREATION-CLIENT-ID" : var.AZURE_SUBSCRIPTION_CREATION_CLIENT_ID
+    "AZURE-SUBSCRIPTION-CREATIONSECRET" : var.AZURE_SUBSCRIPTION_CREATION_SECRET
+    "AZURE-TENANT-ADMIN-USERNAME" : var.AZURE_TENANT_ADMIN_USERNAME
+    "AZURE-TENANT-ID" : var.AZURE_TENANT_ID
+    "AZURE-USER-OBJECT-ID" : var.AZURE_USER_OBJECT_ID
+    "CSP" : var.CSP
+    "AZURE-HYBRID-REPORTING-CLIENT-ID" : var.AZURE_HYBRID_REPORTING_CLIENT_ID
+    "AZURE-HYBRID-REPORTING-SECRET" : var.AZURE_HYBRID_REPORTING_SECRET
 
 
 
 
-   }
+  }
 
 }
 
 output "circle_ci_api_key" {
- value = var.circle_ci_api_key
+  value = var.circle_ci_api_key
 }
 
 output "ops_container_registry_name" {
- value = module.container_registry.ops_container_registry_name
+  value = module.container_registry.ops_container_registry_name
 }
 
 output "environment" {
-value = local.environment
+  value = local.environment
 }
