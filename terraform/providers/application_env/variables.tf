@@ -109,6 +109,13 @@ variable "tf_state_storage_container_name" {
   default = "tfstate"
 }
 
+variable "virtual_appliance_routes" {
+type = map
+}
+variable "virtual_appliance_route_tables" {
+type= map
+}
+
 variable "OPS_CID" {}
 variable "OPS_SEC" {}
 variable "OPS_OID" {}

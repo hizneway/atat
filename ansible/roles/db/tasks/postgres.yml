@@ -71,8 +71,8 @@
     SERVER_NAME: "{{ tf_app_env_outputs.atat_database_instance_name.value }}"
     SERVER_GROUP: "{{ tf_app_env_outputs.postgres_resource_group_name.value }}"
     SERVER_ADMIN_NAME: "{{ tf_app_env_outputs.postgres_root_user_name.value }}"
-    PGUSER: "{{ tf_app_env_outputs.postgres_root_user_name.value }}"
-    PGPASSWORD: "{{ tf_app_env_outputs.postgres_root_password.value }}"
+    PGUSER: "{{ tf_app_env_outputs.atat_user_name.value }}"
+    PGPASSWORD: "{{ tf_app_env_outputs.atat_user_password.value }}"
     POSTGRES_ROOT_USER: "{{ tf_app_env_outputs.postgres_root_user_name.value  }}"
     POSTGRES_ROOT_PASS: "{{  tf_app_env_outputs.postgres_root_password.value  }}"
     PGSSLROOTCERT: /tmp/pgcaroot/pgcaroot.cert

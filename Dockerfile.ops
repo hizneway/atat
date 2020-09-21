@@ -1,4 +1,4 @@
-FROM cloudzerodryrunregistry.azurecr.io/rhelubi:8.2
+FROM cloudzeroopsregistry.azurecr.io/rhelubi:8.2
 
 ARG operator_sp_client_id
 ARG operator_sp_secret

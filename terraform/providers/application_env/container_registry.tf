@@ -16,4 +16,5 @@ module "container_registry" {
   subnet_list   = module.vpc.subnet_list
   depends_on    = [module.vpc]
   ops_container_registry_name = "${var.name}opscontainerregistry${local.environment}"
+  ops_resource_group_name = "${var.name}-ops-${local.environment}"
 }

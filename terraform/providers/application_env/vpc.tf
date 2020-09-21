@@ -1,3 +1,5 @@
+
+
 module "vpc" {
   source            = "../../modules/vpc/"
   environment       = local.environment
@@ -10,4 +12,7 @@ module "vpc" {
   dns_servers       = var.dns_servers
   service_endpoints = var.service_endpoints
   custom_routes     = var.routes
+  virtual_appliance_routes   = "${var.virtual_appliance_routes["aks-private"]},${module.private-aks-firewall.ip_config[0].private_ip_address}"
+  virtual_appliance_route_tables   = var.virtual_appliance_route_tables
+
 }

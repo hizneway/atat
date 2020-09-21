@@ -23,7 +23,9 @@ variable "storage_admin_whitelist" {
   type = map
 }
 
-
+variable "container_network_whitelist" {
+ type = map
+}
 
 
 
