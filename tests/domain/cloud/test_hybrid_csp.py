@@ -148,7 +148,7 @@ class TestIntegration:
             # create_initial_mgmt_group fails periodically. There must be some kind
             # of race condition on the Azure side we're not accounting for. This
             # sleep is temporary and we should solve the race condition.
-            sleep(1)
+            sleep(2)
             assert (
                 "created" in state_machine.state.value
                 or state_machine.state == PortfolioStates.COMPLETED
