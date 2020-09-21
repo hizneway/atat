@@ -51,4 +51,4 @@ Body:
 
 ## Notes
 
-* Please see circle ci default parameter values 
+* Please see circle ci default parameter values  (at the time of this document, these variables are in 'Project Settings/Enviornment Variables'
