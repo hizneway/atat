@@ -24,6 +24,9 @@ azure-storage-common = "*"
 packaging = "*"
 psycopg2="*"
 pyhcl = { git= "https://github.com/virtuald/pyhcl", tag="0.4.4" }
+kubernetes = "^11.0.0"
+ansible = "^2.9.11"
+openshift = "^0.11.2"
 
 
 
