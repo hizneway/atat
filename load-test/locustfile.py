@@ -1,7 +1,6 @@
 import os
 import re
 from random import choice, choices, randrange
-from urllib.parse import urlparse
 
 from locust import HttpUser, SequentialTaskSet, task, between
 
@@ -163,7 +162,7 @@ def create_task_order(client, parent, portfolio_id):
     # set TO number
     number = "".join(choices(string.digits, k=choice(range(13, 18))))
     set_task_order_number_url = f"/task_orders/{task_order_id}/form/step_2"
-    response = client.post(
+    client.post(
         set_task_order_number_url,
         {"number": number, "csrf_token": csrf_token},
         headers={"Referer": parent.host + set_task_order_number_url},
@@ -171,13 +170,12 @@ def create_task_order(client, parent, portfolio_id):
 
     # set TO parameters
     clins_number = "".join(choices(string.digits, k=4))
-    response = client.post(
+    client.post(
         f"/task_orders/{task_order_id}/form/step_3",
         {
             "csrf_token": csrf_token,
             "clins-0-number": clins_number,
             "clins-0-jedi_clin_type": "JEDI_CLIN_1",
-            "clins-0-total_amount": 1000000,
             "clins-0-total_amount": 100,
             "clins-0-obligated_amount": 50,
             "clins-0-start_date": "01/11/2020",
