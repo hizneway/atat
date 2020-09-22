@@ -5,7 +5,7 @@
 
 resource "azurerm_key_vault_certificate" "example" {
 
-  count = length(var.certificate_path) > 0 ? 1 : 0
+  count        = length(var.certificate_path) > 0 ? 1 : 0
   name         = "atatdev"
   key_vault_id = var.keyvault_id
 
