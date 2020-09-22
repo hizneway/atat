@@ -1,8 +1,24 @@
+---
 
 
-- name: provision keyvaults
-  terraform:
-    project_path: "{{tf_pw_bootstrap_proj_path}}"
-    state: "planned"
-    plan_file: "plan.tfplan"
-  register: tf_run
+# could move this out to top level or own role
+
+- name: fetch bootstrap state
+  import_tasks: pull_remote_state.yml
+  when: fetch_bootstrap_state == true
+
+
+- name: get vars
+  import_tasks: get_variables.yml
+
+- name: bootstrap env
+  import_tasks: setup.yml
+  when: deploy_bootstrap_env == true
+
+- name: show outputs from run
+  import_tasks: show_outputs.yml
+  when: show_bs_env == true
+
+- name: push local state to remote
+  import_tasks: push_state_remote.yml
+  when: deploy_bootstrap_env == true
