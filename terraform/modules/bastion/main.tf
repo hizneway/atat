@@ -15,7 +15,7 @@ resource "azurerm_subnet" "mgmt_subnet" {
 
   enforce_private_link_endpoint_network_policies = true
 
-  service_endpoints = ["Microsoft.KeyVault", "Microsoft.ContainerRegistry","Microsoft.Sql"]
+  service_endpoints = ["Microsoft.KeyVault", "Microsoft.ContainerRegistry", "Microsoft.Sql"]
 
   delegation {
     name = "delegation"
@@ -54,10 +54,10 @@ resource "azurerm_container_group" "bastion" {
   os_type             = "Linux"
 
   container {
-    name   = "bastion"
-    image  = "${var.container_registry}/${var.container_image}"
-    cpu    = "1"
-    memory = "2"
+    name     = "bastion"
+    image    = "${var.container_registry}/${var.container_image}"
+    cpu      = "1"
+    memory   = "2"
     commands = ["tail", "-f", "/dev/null"]
 
     ports {
@@ -68,9 +68,9 @@ resource "azurerm_container_group" "bastion" {
 
   image_registry_credential {
 
-  username = var.registry_username
-  password = var.registry_password
-  server= var.container_registry
+    username = var.registry_username
+    password = var.registry_password
+    server   = var.container_registry
 
   }
 

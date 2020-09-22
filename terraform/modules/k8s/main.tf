@@ -15,17 +15,17 @@ resource "azurerm_kubernetes_cluster" "k8s" {
 
   addon_profile {
     azure_policy {
-     enabled =true
+      enabled = true
     }
 
     oms_agent {
 
-    enabled = true
-    log_analytics_workspace_id = var.workspace_id
+      enabled                    = true
+      log_analytics_workspace_id = var.workspace_id
 
     }
 
-    
+
   }
 
   service_principal {

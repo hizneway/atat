@@ -22,9 +22,9 @@ variable "registry_username" {}
 variable "registry_password" {}
 
 variable "container_image" {
- default =  "bastion:latest"
+  default = "bastion:latest"
 }
 
 variable container_registry {
-default = "cloudzeroopsregistry.azurecr.io"
+  default = "cloudzeroopsregistry.azurecr.io"
 }

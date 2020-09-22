@@ -10,7 +10,7 @@ resource "azurerm_key_vault" "keyvault" {
   location            = azurerm_resource_group.keyvault.location
   resource_group_name = azurerm_resource_group.keyvault.name
   tenant_id           = data.azurerm_client_config.current.tenant_id
-  soft_delete_enabled         = true
+  soft_delete_enabled = true
 
   sku_name = "premium"
 
@@ -66,7 +66,7 @@ resource "azurerm_key_vault_access_policy" "keyvault_tenant_policy" {
   ]
 
   certificate_permissions = [
-  "get"
+    "get"
   ]
 }
 
@@ -109,7 +109,7 @@ resource "azurerm_key_vault_access_policy" "keyvault_admin_policy" {
 
 
 resource "azurerm_key_vault_key" "generated" {
-  count        = var.name == "cz" ? 1 :0
+  count        = var.name == "cz" ? 1 : 0
   name         = "SECRET-KEY"
   key_vault_id = azurerm_key_vault.keyvault.id
   key_type     = "RSA"
@@ -130,10 +130,10 @@ resource "azurerm_key_vault_key" "generated" {
 
 module "atatdev_cert" {
 
- source = "../keyvault_cert"
- keyvault_id = azurerm_key_vault.keyvault.id
- certificate_path = var.tls_cert_path
+  source           = "../keyvault_cert"
+  keyvault_id      = azurerm_key_vault.keyvault.id
+  certificate_path = var.tls_cert_path
 
- depends_on = [azurerm_key_vault_access_policy.keyvault_admin_policy]
+  depends_on = [azurerm_key_vault_access_policy.keyvault_admin_policy]
 
 }

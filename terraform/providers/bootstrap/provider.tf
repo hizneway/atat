@@ -17,7 +17,7 @@ resource "random_pet" "unique_id" {
 
 locals {
 
-   environment = length(var.environment) > 0 ? var.environment : random_pet.unique_id.id
+  environment = length(var.environment) > 0 ? var.environment : random_pet.unique_id.id
 
 
 

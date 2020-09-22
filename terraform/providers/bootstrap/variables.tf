@@ -1,6 +1,6 @@
 variable "environment" {
 
-default = ""
+  default = ""
 }
 
 variable "region" {}
@@ -24,7 +24,7 @@ variable "storage_admin_whitelist" {
 }
 
 variable "container_network_whitelist" {
- type = map
+  type = map
 }
 
 

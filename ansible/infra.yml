@@ -7,9 +7,9 @@
     - role: destroy_bootstrap
       when: teardown_bootstrap_env is defined
     - role: circle_ci
-    - role: azure_keyvault
-      vars:
-        ops_vault_url: "{{ tf_app_env_outputs.operator_keyvault_url.value }}"
-        ops_keyvault_name: "{{ tf_app_env_outputs.operator_keyvault_name.value }}"
-        app_vault_url: "{{ tf_app_env_outputs.application_keyvault_url.value }}"
-        app_keyvault_name: "{{ tf_app_env_outputs.application_keyvault_name.value }}"
+  #  - role: azure_keyvault
+  #    vars:
+  #      ops_vault_url: "{{ tf_app_env_outputs.operator_keyvault_url.value }}"
+  #      ops_keyvault_name: "{{ tf_app_env_outputs.operator_keyvault_name.value }}"
+  #      app_vault_url: "{{ tf_app_env_outputs.application_keyvault_url.value }}"
+  #      app_keyvault_name: "{{ tf_app_env_outputs.application_keyvault_name.value }}"

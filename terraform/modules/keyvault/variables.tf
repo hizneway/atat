@@ -70,5 +70,5 @@ variable "workspace_id" {
 
 
 variable "tls_cert_path" {
-default = ""
+  default = ""
 }

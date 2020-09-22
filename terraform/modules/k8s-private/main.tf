@@ -12,17 +12,17 @@ resource "azurerm_kubernetes_cluster" "k8s_private" {
   private_cluster_enabled = var.private_cluster_enabled
   node_resource_group     = "${var.rg}-private-aks-node-rgs"
 
-  
+
 
   addon_profile {
     azure_policy {
-     enabled =true
+      enabled = true
     }
 
     oms_agent {
 
-    enabled = true
-    log_analytics_workspace_id = var.log_analytics_workspace_id
+      enabled                    = true
+      log_analytics_workspace_id = var.log_analytics_workspace_id
 
     }
 
