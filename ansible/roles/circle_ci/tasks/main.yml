@@ -8,7 +8,7 @@
     headers:
       Circle-Token: "{{ tf_app_env_outputs.circle_ci_api_key.value }}"
     body:
-      branch: build-ops-container
+      branch: staging
       parameters:
         container_registry: "{{ tf_app_env_outputs.container_registry_name.value }}"
         build_and_push_app_images: true
