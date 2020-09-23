@@ -441,21 +441,6 @@ The build assumes that you have redis and postgres running on their usual ports 
 
 Note that the uWSGI config used for this build in the repo root is symlinked from deploy/azure/uwsgi.ini. See the Kubernetes README in deploy/README.md for details.
 
-### Local login
-
-The `/login-local` endpoint is protected by HTTP basic auth by uWSGI in the docker container (https://uwsgi-docs.readthedocs.io/en/latest/InternalRouting.html#basicauth).
-
-To enable this in a deployed environment, you must set ALLOW_LOCAL_ACCESS to true and provide a password file to the container my mounting a volume or other means. The uWSGI configuration expects to find the password file at `/config/localpassword`.
-
-You can generate a password with the htpassword. In this example, the command will generate a "localpassword" file in the current directory for a user called "atat":
-
-```
-htpasswd -cd ./localpassword atat
-```
-
-It will prompt you to enter a password, then produce the password file. Note that the `-d` flag is necessary, per the uWSGI documentation linked above.
-
-
 ## Secrets Detection
 
 This project uses [detect-secrets](https://github.com/Yelp/detect-secrets) to help prevent secrets from being checked into source control. Secret detection is run automatically as part of `script/test` and can be run separately with `script/detect_secrets`.
