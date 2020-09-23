@@ -39,7 +39,7 @@ data:
   PGUSER: {{ tf_app_env_outputs.atat_user_name.value }}@{{ tf_app_env_outputs.atat_database_instance_name.value }}
   PGSSLMODE: verify-full
   REDIS_HOST: {{ tf_app_env_outputs.redis_hostname.value }}:{{ tf_app_env_outputs.redis_ssl_port.value }}
-  REDIS_SSLMODE: required 
+  REDIS_SSLMODE: required
   SESSION_COOKIE_DOMAIN: atat.dev
   STATIC_URL: https://{{ namespace }}.atat.dev/static/
   SAML_ENTITY_ID: https://{{ namespace }}.atat.dev
