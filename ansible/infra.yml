@@ -14,4 +14,3 @@
         ops_keyvault_name: "{{ tf_app_env_outputs.operator_keyvault_name.value }}"
         app_vault_url: "{{ tf_app_env_outputs.application_keyvault_url.value }}"
         app_keyvault_name: "{{ tf_app_env_outputs.application_keyvault_name.value }}"
-      when: asdf is defined
