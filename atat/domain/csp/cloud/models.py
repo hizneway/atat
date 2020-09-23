@@ -639,6 +639,8 @@ class ProductPurchaseVerificationCSPResult(AliasModel):
 
 class UserMixin(BaseModel):
     password: Optional[str]
+    first_name: Optional[str]
+    last_name: Optional[str]
 
     @property
     def user_principal_name(self):
@@ -657,8 +659,6 @@ class UserCSPPayload(BaseCSPPayload, UserMixin):
     display_name: str
     tenant_host_name: str
     email: str
-    first_name: Optional[str]
-    last_name: Optional[str]
 
 
 class UserCSPResult(AliasModel):
