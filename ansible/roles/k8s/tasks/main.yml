@@ -1,4 +1,8 @@
 ---
+- name: create k8s overlays
+  import_tasks: generate_overlays.yml
+  when: private_cluster_deploy == false
+
 - name: push overlays to storage bucket
   import_tasks: push_overlays.yml
   when: private_cluster_deploy == false
