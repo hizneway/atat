@@ -44,7 +44,10 @@ def test_view_task_order_not_draft(client, user_session, task_order):
 
 def test_view_task_order_draft(client, user_session, task_order):
     TaskOrders.update(
-        task_order_id=task_order.id, number="1234567890", clins=[], pdf=None
+        task_order_id=task_order.id,
+        number="1234567890",
+        clins=[],
+        pdf={"filename": "sample.pdf", "object_name": "1234567"},
     )
     user_session(task_order.portfolio.owner)
     response = client.get(
