@@ -4,7 +4,7 @@
 
 resource "random_password" "pg_root_password" {
   length           = 16
-  min_numeric     = 1
+  min_numeric      = 1
   special          = false
   override_special = "!"
 }
@@ -12,7 +12,7 @@ resource "random_password" "pg_root_password" {
 
 resource "random_password" "atat_user_password" {
   length           = 16
-  min_numeric     = 1
+  min_numeric      = 1
   special          = false
   override_special = "!"
 }
