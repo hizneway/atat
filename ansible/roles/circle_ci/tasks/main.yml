@@ -4,6 +4,12 @@
 - name: get the circle ci api token
   import_tasks: source_api_token.yml
 
+- name: get tf outputs
+  include_role:
+    name: terraform
+  vars:
+    deploy_app_env: false
+
 
 - name: run circle ci build
   import_tasks: run_build.yml
