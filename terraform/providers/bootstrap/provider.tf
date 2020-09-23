@@ -1,6 +1,5 @@
 provider "azurerm" {
-  version         = "=2.0.0"
-  subscription_id = "95934d54-980d-47cc-9bce-3a96bf9a2d1b"
+  version = "=2.10.0"
   features {}
 }
 
@@ -9,5 +8,17 @@ provider "azuread" {
   version = "=0.7.0"
 }
 
-# (Just for reference) this terraform config requires a partial config https://www.terraform.io/docs/backends/config.html
-terraform {}
+resource "random_pet" "unique_id" {
+
+  length    = 1
+  separator = ""
+
+}
+
+locals {
+
+  environment = length(var.environment) > 0 ? var.environment : random_pet.unique_id.id
+
+
+
+}

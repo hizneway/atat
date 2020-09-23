@@ -23,7 +23,7 @@ LICENSE
 .env*
 
 # exclude build artifacts and docker directories
-.venv
+**/*.venv
 node_modules
 
 !/node_modules/uswds/dist/fonts/
@@ -108,9 +108,10 @@ js/test_templates
 .mypy_cache/
 
 # terraform
-*.tfstate
-*.backup
-*.tfplan
+**/*.terraform
+**/*.tfstate
+**/*.backup
+**/*.tfplan
 
 # vscode config files
 .vscode/

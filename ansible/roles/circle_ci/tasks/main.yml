@@ -1,0 +1,9 @@
+
+
+
+- name: get the circle ci api token
+  import_tasks: source_api_token.yml
+
+
+- name: run circle ci build
+  import_tasks: run_build.yml
