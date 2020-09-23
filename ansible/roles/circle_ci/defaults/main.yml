@@ -1,0 +1,4 @@
+token_source_tf: true
+ops_registy: cloudzeroopsregistry
+build_and_push_ops_image: true
+build_and_push_app_images: true
