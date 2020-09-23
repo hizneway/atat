@@ -1,9 +1,10 @@
 namespace: bugbounty
 bases:
-  - ../cloudzero-dryrun-staging
+  - ../../azure/
 resources:
   - namespace.yml
 patchesStrategicMerge:
   - envvars.yml
-  - autoscaling.yml
+  - ports.yml
   - flex_vol.yml
+  - autoscaling.yml
