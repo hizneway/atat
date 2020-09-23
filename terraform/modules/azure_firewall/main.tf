@@ -61,4 +61,6 @@ resource "azurerm_firewall_application_rule_collection" "fw_rule_collection" {
     }
   }
 
+  depends_on = [azurerm_firewall.fw]
+
 }

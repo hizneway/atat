@@ -6,11 +6,14 @@
       vars:
         token_source_tf: true
         build_and_push_app_images: false
+        build_and_push_ops_image: true
+
     - role: terraform
     - role: circle_ci
       vars:
         token_source_tf: true
         build_and_push_ops_image: false
+        build_and_push_app_images: true
     - role: destroy_bootstrap
       when: teardown_bootstrap_env is defined
     - role: azure_keyvault
