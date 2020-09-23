@@ -121,7 +121,7 @@
 
 - name: Show variable "nginx_images"
   debug:
-    msg: "{{ atat_images }}"
+    msg: "{{ nginx_images }}"
 
 - name: Show variable "latest_nginx_tag"
   debug:
