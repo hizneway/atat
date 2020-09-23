@@ -2,11 +2,12 @@
   roles:
     - role: crypto
     - role: bootstrap
-    - role: terraform
     - role: circle_ci
+      vars:
+        token_source_tf: true
+    - role: terraform
     - role: destroy_bootstrap
       when: teardown_bootstrap_env is defined
-    - role: circle_ci
     - role: azure_keyvault
       vars:
         ops_vault_url: "{{ tf_app_env_outputs.operator_keyvault_url.value }}"
