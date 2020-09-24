@@ -1,6 +1,3 @@
-
-
-
 - name: get the circle ci api token
   import_tasks: source_api_token.yml
 
@@ -9,7 +6,6 @@
     name: terraform
   vars:
     deploy_app_env: false
-
 
 - name: run circle ci ops build
   import_tasks: run_ops_build.yml

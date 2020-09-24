@@ -1,7 +1,6 @@
--  name: lets see outputs
-   debug:
-     msg: "{{tf_app_env_outputs}}"
-
+- name: lets see outputs
+  debug:
+    msg: "{{tf_app_env_outputs}}"
 
 - name: grab the root cert from yaml
   shell: cat "{{ postgres_root_cert }}"
@@ -24,7 +23,6 @@
     subscription_id: "{{ lookup('env','SUBSCRIPTION_ID') }}"
     tenant: "{{ lookup('env','SUBSCRIPTION_TENANT') }}"
 
-
 - name: Adds uuid-ossp extension to the database
   postgresql_ext:
     name: uuid-ossp
@@ -37,12 +35,6 @@
   environment:
     PGSSLROOTCERT: /tmp/pgcaroot/pgcaroot.cert
     PGSSLMODE: verify-full
-
-
-
-
-
-
 
 - name: Create database user
   shell:

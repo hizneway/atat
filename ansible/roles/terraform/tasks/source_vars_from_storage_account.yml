@@ -1,6 +1,4 @@
 ---
-
-
 - name: Download tfvars file
   azure_rm_storageblob:
     subscription_id: "{{ bootstrap_subscription_id }}"

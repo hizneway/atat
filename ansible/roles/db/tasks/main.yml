@@ -1,6 +1,4 @@
 ---
-
-
 - name: source ccpo users file
   import_tasks: source_ccpo_user_file.yml
   when: postgresql is defined

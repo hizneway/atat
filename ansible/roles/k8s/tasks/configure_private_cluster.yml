@@ -5,7 +5,7 @@
     storage_account_name: "{{ b_end.storage_account_name }}"
     container: "{{ b_end.container_name }}"
     blob: k8s.overlays
-    dest:  /tmp/private_k8s_overlays.tgz
+    dest: /tmp/private_k8s_overlays.tgz
 
 - name: Extract private cluster configs
   unarchive:
@@ -28,7 +28,6 @@
 - name: Assign Network Contributor role to the AKS Service Principal for the Virtual Network
   shell:
     cmd: az role assignment create --role "Network Contributor" --assignee {{ tf_app_env_outputs.aks_sp_id.value }} --scope {{tf_app_env_outputs.vnet_id.value }}
-
 
 - name: Get vmss
   shell:
