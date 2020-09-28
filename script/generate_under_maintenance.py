@@ -3,11 +3,11 @@ import sys
 sys.path.append("/Users/cj/Documents/atst")
 
 import os
+from os import path
 from atat.app import make_app, make_config
-from pathlib import Path
 from pyquery import PyQuery as pq
-from itertools import chain
-from shutil import copyfile
+import base64
+import re
 
 os.environ["SERVER_NAME"] = "localhost:8000"
 
@@ -15,20 +15,35 @@ if __name__ == "__main__":
     config = make_config()
     app = make_app(config)
 
+    # render template
     with app.app_context():
         template = app.jinja_env.get_template("under_maintenance.html")
-        html = template.render()
+        d = pq(template.render())
 
-        Path("/tmp/um/static/assets").mkdir(parents=True, exist_ok=True)
-        Path("/tmp/um/static/img").mkdir(parents=True, exist_ok=True)
+    # encode images
+    for img in d("img").items():
+        img_path = img.attr("src")[1:]
+        img_ext = path.splitext(img_path)[1][1:]
+        with open(img_path, "rb") as fh:
+            encoded_file = base64.b64encode(fh.read())
+        img.attr.src = f"data:image/{img_ext};base64,{encoded_file.decode()}"
 
-        with open("/tmp/um/index.html", "w") as fh:
-            fh.write(html)
+    # add css
+    for css in d("link").items():
+        if css.attr.href.endswith("css"):
+            with open(css.attr.href[1:]) as fh:
+                # remove all comments, including reference to css map file
+                css_str = re.sub(re.compile("/\*.*?\*/", re.DOTALL), "", fh.read())
+                d("head").after(f"<style>{css_str}</style>")
+            css.remove()
 
-        d = pq(html)
-        files = chain(
-            (l.attr("href") for l in d("link").items()),
-            (s.attr("src") for s in d("script, img").items()),
-        )
-        for f in files:
-            copyfile("." + f.strip(), "/tmp/um" + f)
+    # remove js
+    for js in d("script").items():
+        js.remove()
+
+    # write html to file
+    with open("/tmp/um/index.html", "w") as fh:
+        fh.write(d.html())
+
+    print(os.stat("/tmp/um/index.html").st_size / 1024)
+
