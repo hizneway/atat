@@ -24,11 +24,12 @@ mime_types = {
     ".woff": "font/woff",
     ".ttf": "font/ttf",
     ".svg": "image/svg+xml",
+    ".ico": "image/vnd.microsoft.icon",
 }
 
 
 def relative_path(file_path):
-    return urlparse(file_path).path[1:]
+    return urlparse(file_path.strip()).path[1:]
 
 
 def make_mime_type(file_path):
@@ -58,9 +59,9 @@ if __name__ == "__main__":
         img.attr.src = make_base64(img.attr.src)
 
     # add css to html
-    for css in d("link").items():
-        if css.attr.href.endswith("css"):
-            with open(relative_path(css.attr.href)) as fh:
+    for link in d("link").items():
+        if link.attr.href.endswith("css"):
+            with open(relative_path(link.attr.href)) as fh:
                 # remove all comments, including reference to css map file
                 css_str = re.sub(re.compile("/\*.*?\*/", re.DOTALL), "", fh.read())
 
@@ -70,10 +71,13 @@ if __name__ == "__main__":
                 css_str = css_str.replace(url, f"url({make_base64(url[4:-1])})")
 
             # inject css into head of html
-            d("head").after(f"<style>{css_str}</style>")
+            d("head").after(f"<style type='text/css'>{css_str}</style>")
 
-            # remove link element from html
-            css.remove()
+            # remove css element from html
+            link.remove()
+
+        else:
+            link.attr.href = make_base64(link.attr.href)
 
     # remove javascript
     for js in d("script").items():
