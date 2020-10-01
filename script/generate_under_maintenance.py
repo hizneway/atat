@@ -113,7 +113,7 @@ if __name__ == "__main__":
 
     # write html to file
     args.output.mkdir(parents=True, exist_ok=True)
-    html_file = args.output / "index.html"
+    html_file = path.join(args.output, "index.html")
     with open(html_file, "w") as fh:
         fh.write(d.html(method="html"))
 
