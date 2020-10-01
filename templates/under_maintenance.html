@@ -1,7 +1,22 @@
-{% extends "base_public.html" %}
+<!DOCTYPE html>
+<html>
 
-{% block content %}
-<div class='global-layout login-layout'>
+<head>
+  <!-- VERSION: {{ build_info }} -->
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Under Maintenance{% endblock %}</title>
+  {% assets "css" %}
+    <link rel="stylesheet" href="{{ ASSET_URL }}" type="text/css">
+  {% endassets %}
+  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='img/favicon.ico') }} " />
+</head>
+
+<body>
+
+<div id='app-root'>
+  <div class='global-layout login-layout'>
     <div class='global-panel-container login-container'>
       <div class='col'>
         <div class='login-banner'>
@@ -9,5 +24,9 @@
         </div>
       </div>
     </div>
-  </div>
-{% endblock %}
+  </div>  
+</div>
+
+</body>
+
+</html>

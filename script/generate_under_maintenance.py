@@ -2,16 +2,15 @@ import sys
 
 sys.path.append("./")
 
-from os import path, environ, stat
+from os import path, stat
 from atat.app import make_app, make_config
 from pyquery import PyQuery as pq
 import base64
 import re
 from pathlib import Path
 from urllib.parse import urlparse
+import argparse
 
-
-environ["SERVER_NAME"] = "localhost:8000"
 
 # how large the html file can be before showing a warning message
 html_file_limit_mb = 1
@@ -28,6 +27,13 @@ mime_types = {
     ".ico": "image/vnd.microsoft.icon",
 }
 
+font_whitelist = {
+    "sourcesanspro-regular-webfont.5ed4e384.woff2",
+    "sourcesanspro-light-webfont.56d1854d.woff2",
+    "sourcesanspro-bold-webfont.29062047.woff2",
+    "sourcesanspro-italic-webfont.e4ce6dc4.woff2",
+}
+
 
 def relative_path(file_path):
     return urlparse(file_path.strip()).path[1:]
@@ -37,13 +43,9 @@ def file_ext(file_path):
     return path.splitext(file_path)[1]
 
 
-def make_mime_type(file_path):
-    return mime_types[file_ext(file_path)]
-
-
 def make_base64(file_path):
     file_path = relative_path(file_path)
-    mime_type = make_mime_type(file_path)
+    mime_type = mime_types[file_ext(file_path)]
 
     with open(file_path, "rb") as fh:
         data = fh.read()
@@ -58,6 +60,16 @@ def make_base64(file_path):
 
 
 if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser(description="Generate Under Maintenance Page")
+    parser.add_argument(
+        "--output",
+        help="Directory where file will be written. (default: ./)",
+        type=Path,
+        default="./",
+    )
+    args = parser.parse_args()
+
     config = make_config()
     app = make_app(config)
 
@@ -70,17 +82,20 @@ if __name__ == "__main__":
     for img in d("img").items():
         img.attr.src = make_base64(img.attr.src)
 
-    # add css to html
+    # link elements
     for link in d("link").items():
+        # add css to html
         if file_ext(link.attr.href) == ".css":
             with open(relative_path(link.attr.href)) as fh:
                 # remove all comments, including reference to css map file
                 css_str = re.sub(r"/\*.*?\*/", "", fh.read().strip())
 
-            # encode all assets from css
+            # encode all fonts found in css that have been whitelisted
             urls = re.findall(r"url\([A-Za-z0-9/.\-#?]*\)", css_str)
+            urls = (u[4:-1] for u in urls)
             for url in urls:
-                css_str = css_str.replace(url, f"url({make_base64(url[4:-1])})")
+                if path.basename(url) in font_whitelist:
+                    css_str = css_str.replace(url, f"url({make_base64(url)})")
 
             # inject css into head of html
             d("head").after(f"<style type='text/css'>{css_str}</style>")
@@ -92,22 +107,14 @@ if __name__ == "__main__":
             # this is usually the ico file...
             link.attr.href = make_base64(link.attr.href)
 
-    # add javascript to html
-    for js in d("script").items():
-        with open(relative_path(js.attr.src)) as fh:
-            # remove source map file reference
-            js_str = re.sub(r"//# sourceMappingURL=.+?map", "", fh.read().strip())
-            d("body").after(f"<script>{js_str}</script>")
-        js.remove()
-
     # write html to file
-    Path("/tmp/um").mkdir(parents=True, exist_ok=True)
-    with open("/tmp/um/index.html", "w") as fh:
+    args.output.mkdir(parents=True, exist_ok=True)
+    html_file = args.output / "index.html"
+    with open(html_file, "w") as fh:
         fh.write(d.html(method="html"))
 
-    if stat("/tmp/um/index.html").st_size / (1024 * 1024) > html_file_limit_mb:
+    if stat(html_file).st_size / (1024 * 1024) > html_file_limit_mb:
         print(
             f"Warning: Under Maintenance HTML file is larger then {html_file_limit_mb} MB.",
             file=sys.stderr,
         )
-
