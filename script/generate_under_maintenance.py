@@ -17,7 +17,7 @@ import argparse
 
 
 # how large the html file can be before showing a warning message
-html_file_limit_mb = 1
+html_file_size_limit = 1024 * 1024
 
 # refer to https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types
 # for additional mime types
@@ -117,8 +117,8 @@ if __name__ == "__main__":
     with open(html_file, "w") as fh:
         fh.write(d.html(method="html"))
 
-    if stat(html_file).st_size / (1024 * 1024) > html_file_limit_mb:
+    if stat(html_file).st_size > html_file_size_limit:
         print(
-            f"Warning: Under Maintenance HTML file is larger then {html_file_limit_mb} MB.",
+            f"Warning: Under Maintenance HTML file is larger then {html_file_size_limit} Bytes.",
             file=sys.stderr,
         )
