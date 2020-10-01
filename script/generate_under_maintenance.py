@@ -102,7 +102,7 @@ if __name__ == "__main__":
                     css_str = css_str.replace(url, f"url({make_base64(url)})")
 
             # inject css into head of html
-            d("head").after(f"<style type='text/css'>{css_str}</style>")
+            d("head").append(f"<style type='text/css'>{css_str}</style>")
 
             # remove css element from html
             link.remove()
