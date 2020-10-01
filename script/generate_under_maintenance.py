@@ -1,6 +1,10 @@
+import os
 import sys
 
-sys.path.append("./")
+script_directory = os.path.dirname(__file__)
+project_directory = os.path.join(script_directory, "../")
+parent_dir = os.path.abspath(project_directory)
+sys.path.append(parent_dir)
 
 from os import path, stat
 from atat.app import make_app, make_config
