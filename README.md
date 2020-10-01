@@ -522,3 +522,14 @@ Then push!
 ```
 docker push cloudzerodryrunregistry.azurecr.io/rhel-py
 ```
+
+## How to generate the Under Maintenance page
+
+The script uses the existing templating system. This means that you'll need to have a functioning local install with
+the redis and postres running. Additionally, this script will need to ran from the project's root directory.
+
+General usage for the UM script would include a location for the output.
+
+```
+poetry run python script/generate_under_maintenance.py --output ./
+```
