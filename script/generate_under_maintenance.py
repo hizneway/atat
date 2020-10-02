@@ -31,12 +31,12 @@ mime_types = {
     ".ico": "image/vnd.microsoft.icon",
 }
 
-font_whitelist = {
-    "sourcesanspro-regular-webfont.5ed4e384.woff2",
-    "sourcesanspro-light-webfont.56d1854d.woff2",
-    "sourcesanspro-bold-webfont.29062047.woff2",
-    "sourcesanspro-italic-webfont.e4ce6dc4.woff2",
-}
+css_asset_whitelist = [
+    "sourcesanspro-bold-webfont.*woff2",
+    "sourcesanspro-regular-webfont.*woff2",
+    "sourcesanspro-light-webfont.*woff2",
+    "sourcesanspro-italic-webfont.*woff2",
+]
 
 
 def relative_path(file_path):
@@ -48,6 +48,8 @@ def file_ext(file_path):
 
 
 def make_base64(file_path):
+    print(f"  {file_path}")
+
     file_path = relative_path(file_path)
     mime_type = mime_types[file_ext(file_path)]
 
@@ -77,39 +79,49 @@ if __name__ == "__main__":
     config = make_config()
     app = make_app(config)
 
+    css_whitelist_pattern = "|".join(css_asset_whitelist)
+
     # render template
     with app.app_context():
         template = app.jinja_env.get_template("under_maintenance.html")
         d = pq(template.render())
 
     # encode images
+    print("Encoding img assets...")
     for img in d("img").items():
         img.attr.src = make_base64(img.attr.src)
 
-    # link elements
-    for link in d("link").items():
-        # add css to html
-        if file_ext(link.attr.href) == ".css":
-            with open(relative_path(link.attr.href)) as fh:
-                # remove all comments, including reference to css map file
-                css_str = re.sub(r"/\*.*?\*/", "", fh.read().strip())
+    # filtered link elements
+    css_link_elements = filter(
+        lambda l: file_ext(l.attr.href) == ".css", d("link").items()
+    )
+    non_css_link_elements = filter(
+        lambda l: file_ext(l.attr.href) != ".css", d("link").items()
+    )
 
-            # encode all fonts found in css that have been whitelisted
-            urls = re.findall(r"url\([A-Za-z0-9/.\-#?]*\)", css_str)
-            urls = (u[4:-1] for u in urls)
-            for url in urls:
-                if path.basename(url) in font_whitelist:
-                    css_str = css_str.replace(url, f"url({make_base64(url)})")
+    # add css to html
+    print("Encoding css assets...")
+    for link in css_link_elements:
+        with open(relative_path(link.attr.href)) as fh:
+            # remove all comments, including reference to css map file
+            css_str = re.sub(r"/\*.*?\*/", "", fh.read().strip())
 
-            # inject css into head of html
-            d("head").append(f"<style type='text/css'>{css_str}</style>")
+        # encode all css assets that have been whitelisted
+        urls = re.findall(r"url\(\"*([A-Za-z0-9/.\-#?]+)\"*\)", css_str)
+        for url in urls:
+            if re.search(css_whitelist_pattern, url):
+                css_str = css_str.replace(url, f"url({make_base64(url)})")
 
-            # remove css element from html
-            link.remove()
+        # inject css into head of html
+        d("head").append(f"<style type='text/css'>{css_str}</style>")
 
-        else:
-            # this is usually the ico file...
-            link.attr.href = make_base64(link.attr.href)
+        # remove css element from html
+        link.remove()
+
+    # this is usually the ico file...
+    print("Encoding other link assets...")
+    for link in non_css_link_elements:
+        link.attr.href = make_base64(link.attr.href)
 
     # write html to file
     args.output.mkdir(parents=True, exist_ok=True)
