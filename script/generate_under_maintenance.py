@@ -104,7 +104,7 @@ if __name__ == "__main__":
     for link in css_link_elements:
         with open(relative_path(link.attr.href)) as fh:
             # remove all comments, including reference to css map file
-            css_str = re.sub(r"/\*.*?\*/", "", fh.read().strip())
+            css_str = re.sub(r"/\*.*?\*/", "", fh.read().strip(), flags=re.S)
 
         # encode all css assets that have been whitelisted
         urls = re.findall(r"url\(\"*([A-Za-z0-9/.\-#?]+)\"*\)", css_str)
