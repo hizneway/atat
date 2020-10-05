@@ -79,4 +79,4 @@ Layouts and behaviors for specific row/col use cases should be handled on a case
 }
 ```
 
-Page templates that inherit from the `base.html` template should render `.col` elements at their top level, with no other wrapping elements.
+Page templates that inherit from the `base_private.html` template should render `.col` elements at their top level, with no other wrapping elements.
