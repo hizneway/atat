@@ -6,12 +6,9 @@ project_directory = os.path.join(script_directory, "../")
 parent_dir = os.path.abspath(project_directory)
 sys.path.append(parent_dir)
 
-from os import path, stat
 from atat.app import make_app, make_config
-
 import base64
 import re
-from pathlib import Path
 from urllib.parse import urlparse
 import argparse
 from bs4 import BeautifulSoup
@@ -23,11 +20,7 @@ html_file_size_limit = 1024 * 1024
 # refer to https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types
 # for additional mime types
 mime_types = {
-    ".png": "image/png",
-    ".eot": "application/vnd.ms-fontobject",
     ".woff2": "font/woff2",
-    ".woff": "font/woff",
-    ".ttf": "font/ttf",
     ".svg": "image/svg+xml",
     ".ico": "image/vnd.microsoft.icon",
 }
@@ -45,14 +38,14 @@ def relative_path(file_path):
 
 
 def file_ext(file_path):
-    return path.splitext(file_path)[1]
+    return os.path.splitext(file_path)[1]
 
 
 def make_base64(file_path):
-    print(f"  {file_path}")
-
     file_path = relative_path(file_path)
     mime_type = mime_types[file_ext(file_path)]
+
+    print(f"  {file_path}")
 
     with open(file_path, "rb") as fh:
         data = fh.read()
@@ -69,11 +62,11 @@ def make_base64(file_path):
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="Generate Under Maintenance Page")
+    default_output = "./"
     parser.add_argument(
         "--output",
-        help="Directory where file will be written. (default: ./)",
-        type=Path,
-        default="./",
+        help=f"Directory where file will be written. (default: {default_output})",
+        default=default_output,
     )
     args = parser.parse_args()
 
@@ -125,12 +118,11 @@ if __name__ == "__main__":
         link["href"] = make_base64(link["href"])
 
     # write html to file
-    args.output.mkdir(parents=True, exist_ok=True)
-    html_file = path.join(args.output, "index.html")
+    html_file = os.path.join(args.output, "index.html")
     with open(html_file, "w") as fh:
         fh.write(str(soup))
 
-    if stat(html_file).st_size > html_file_size_limit:
+    if os.stat(html_file).st_size > html_file_size_limit:
         print(
             f"Warning: Under Maintenance HTML file is larger then {html_file_size_limit} Bytes.",
             file=sys.stderr,
