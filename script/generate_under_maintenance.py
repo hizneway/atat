@@ -23,6 +23,7 @@ mime_types = {
     ".woff2": "font/woff2",
     ".svg": "image/svg+xml",
     ".ico": "image/vnd.microsoft.icon",
+    ".eot": "application/vnd.ms-fontobject",
 }
 
 css_asset_whitelist = [
@@ -30,6 +31,10 @@ css_asset_whitelist = [
     "sourcesanspro-regular-webfont.*woff2",
     "sourcesanspro-light-webfont.*woff2",
     "sourcesanspro-italic-webfont.*woff2",
+    "merriweather-light-webfont.*eot",
+    "merriweather-italic-webfont.*eot",
+    "merriweather-bold-webfont.*eot",
+    "merriweather-regular-webfont.*eot",
 ]
 
 
