@@ -8,12 +8,13 @@ sys.path.append(parent_dir)
 
 from os import path, stat
 from atat.app import make_app, make_config
-from pyquery import PyQuery as pq
+
 import base64
 import re
 from pathlib import Path
 from urllib.parse import urlparse
 import argparse
+from bs4 import BeautifulSoup
 
 
 # how large the html file can be before showing a warning message
@@ -84,25 +85,20 @@ if __name__ == "__main__":
     # render template
     with app.app_context():
         template = app.jinja_env.get_template("under_maintenance.html")
-        d = pq(template.render())
+        soup = BeautifulSoup(template.render(), "html.parser")
 
     # encode images
     print("Encoding img assets...")
-    for img in d("img").items():
-        img.attr.src = make_base64(img.attr.src)
-
-    # filtered link elements
-    css_link_elements = filter(
-        lambda l: file_ext(l.attr.href) == ".css", d("link").items()
-    )
-    non_css_link_elements = filter(
-        lambda l: file_ext(l.attr.href) != ".css", d("link").items()
-    )
+    for img in soup.find_all("img"):
+        img["src"] = make_base64(img["src"])
 
     # add css to html
     print("Encoding css assets...")
+    css_link_elements = filter(
+        lambda l: file_ext(l["href"]) == ".css", soup.find_all("link")
+    )
     for link in css_link_elements:
-        with open(relative_path(link.attr.href)) as fh:
+        with open(relative_path(link["href"])) as fh:
             # remove all comments, including reference to css map file
             css_str = re.sub(r"/\*.*?\*/", "", fh.read().strip(), flags=re.S)
 
@@ -113,21 +109,26 @@ if __name__ == "__main__":
                 css_str = css_str.replace(url, f"url({make_base64(url)})")
 
         # inject css into head of html
-        d("head").append(f"<style type='text/css'>{css_str}</style>")
+        style = soup.new_tag("style")
+        style.string = css_str
+        soup.head.append(style)
 
         # remove css element from html
-        link.remove()
+        link.decompose()
 
     # this is usually the ico file...
     print("Encoding other link assets...")
+    non_css_link_elements = filter(
+        lambda l: file_ext(l["href"]) != ".css", soup.find_all("link")
+    )
     for link in non_css_link_elements:
-        link.attr.href = make_base64(link.attr.href)
+        link["href"] = make_base64(link["href"])
 
     # write html to file
     args.output.mkdir(parents=True, exist_ok=True)
     html_file = path.join(args.output, "index.html")
     with open(html_file, "w") as fh:
-        fh.write(d.html(method="html"))
+        fh.write(str(soup))
 
     if stat(html_file).st_size > html_file_size_limit:
         print(
