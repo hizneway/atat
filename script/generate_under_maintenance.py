@@ -17,7 +17,7 @@ from bs4 import BeautifulSoup
 
 
 # how large the html file can be before showing a warning message
-html_file_size_limit = 1024 * 1024
+HTML_FILE_SIZE_LIMIT = 1024 * 1024
 
 # refer to https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types
 # for additional mime types
@@ -144,7 +144,7 @@ def main(output):
     # print warning if html file is too large
     if file_is_too_large(html_file):
         print(
-            f"Warning: Under Maintenance HTML file is larger then {html_file_size_limit} Bytes.",
+            f"Warning: Under Maintenance HTML file is larger then {HTML_FILE_SIZE_LIMIT} Bytes.",
             file=sys.stderr,
         )
 
