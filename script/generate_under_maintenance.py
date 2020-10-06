@@ -124,6 +124,10 @@ if __name__ == "__main__":
     for link in non_css_link_elements:
         link["href"] = make_base64(link["href"])
 
+    # remove javascript
+    for script in soup.find_all("script"):
+        script.decompose()
+
     # write html to file
     html_file = os.path.join(args.output, "index.html")
     with open(html_file, "w") as fh:
