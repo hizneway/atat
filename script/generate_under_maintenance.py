@@ -84,8 +84,8 @@ def encode_css(soup):
     print("Encoding css assets...")
     css_whitelist_pattern = "|".join(css_asset_whitelist)
     url_pattern = re.compile(r"url\(\"*([a-z0-9/.\-#?]+)\"*\)")
-    css_link_elements = filter(
-        lambda l: file_ext(l["href"]) == ".css", soup.find_all("link")
+    css_link_elements = (
+        l for l in soup.find_all("link") if file_ext(l["href"]) == ".css"
     )
 
     for link in css_link_elements:
@@ -112,8 +112,8 @@ def encode_css(soup):
 def encode_other_link_elements(soup):
     # this is usually the ico file...
     print("Encoding other link assets...")
-    non_css_link_elements = filter(
-        lambda l: file_ext(l["href"]) != ".css", soup.find_all("link")
+    non_css_link_elements = (
+        l for l in soup.find_all("link") if file_ext(l["href"]) != ".css"
     )
     for link in non_css_link_elements:
         link["href"] = make_base64(link["href"])
