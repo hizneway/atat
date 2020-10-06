@@ -66,47 +66,39 @@ def make_base64(file_path):
     return f"data:{mime_type};{encoding},{data.decode('utf-8')}"
 
 
-if __name__ == "__main__":
-
-    parser = argparse.ArgumentParser(description="Generate Under Maintenance Page")
-    default_output = "./"
-    parser.add_argument(
-        "--output",
-        help=f"Directory where file will be written. (default: {default_output})",
-        default=default_output,
-    )
-    args = parser.parse_args()
-
+def render_template():
     config = make_config()
     app = make_app(config)
-
-    css_whitelist_pattern = "|".join(css_asset_whitelist)
-
-    # render template
     with app.app_context():
         template = app.jinja_env.get_template("under_maintenance.html")
-        soup = BeautifulSoup(template.render(), "html.parser")
+        return BeautifulSoup(template.render(), "html.parser")
 
-    # encode images
+
+def encode_images(soup):
     print("Encoding img assets...")
     for img in soup.find_all("img"):
         img["src"] = make_base64(img["src"])
 
-    # add css to html
+
+def encode_css(soup):
     print("Encoding css assets...")
+    css_whitelist_pattern = "|".join(css_asset_whitelist)
+    url_pattern = re.compile(r"url\(\"*([a-z0-9/.\-#?]+)\"*\)")
     css_link_elements = filter(
         lambda l: file_ext(l["href"]) == ".css", soup.find_all("link")
     )
+
     for link in css_link_elements:
         with open(relative_path(link["href"])) as fh:
             # remove all comments, including reference to css map file
             css_str = re.sub(r"/\*.*?\*/", "", fh.read().strip(), flags=re.S)
 
         # encode all css assets that have been whitelisted
-        urls = re.findall(r"url\(\"*([A-Za-z0-9/.\-#?]+)\"*\)", css_str)
-        for url in urls:
-            if re.search(css_whitelist_pattern, url):
-                css_str = css_str.replace(url, f"url({make_base64(url)})")
+        for url_match in url_pattern.finditer(css_str):
+            if re.search(css_whitelist_pattern, url_match.group(1)):
+                css_str = css_str.replace(
+                    url_match.group(0), f"url({make_base64(url_match.group(1))})"
+                )
 
         # inject css into head of html
         style = soup.new_tag("style")
@@ -116,6 +108,8 @@ if __name__ == "__main__":
         # remove css element from html
         link.decompose()
 
+
+def encode_other_link_elements(soup):
     # this is usually the ico file...
     print("Encoding other link assets...")
     non_css_link_elements = filter(
@@ -124,17 +118,44 @@ if __name__ == "__main__":
     for link in non_css_link_elements:
         link["href"] = make_base64(link["href"])
 
-    # remove javascript
+
+def remove_javascript(soup):
     for script in soup.find_all("script"):
         script.decompose()
 
+
+def file_is_too_large(html_file):
+    return os.stat(html_file).st_size > HTML_FILE_SIZE_LIMIT
+
+
+def main(output):
+    soup = render_template()
+
+    encode_images(soup)
+    encode_css(soup)
+    encode_other_link_elements(soup)
+    remove_javascript(soup)
+
     # write html to file
-    html_file = os.path.join(args.output, "index.html")
+    html_file = os.path.join(output, "index.html")
     with open(html_file, "w") as fh:
         fh.write(str(soup))
 
-    if os.stat(html_file).st_size > html_file_size_limit:
+    # print warning if html file is too large
+    if file_is_too_large(html_file):
         print(
             f"Warning: Under Maintenance HTML file is larger then {html_file_size_limit} Bytes.",
             file=sys.stderr,
         )
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Generate Under Maintenance Page")
+    default_output = "./"
+    parser.add_argument(
+        "--output",
+        help=f"Directory where file will be written. (default: {default_output})",
+        default=default_output,
+    )
+    args = parser.parse_args()
+    main(args.output)
