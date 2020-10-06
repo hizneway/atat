@@ -144,13 +144,13 @@ describe('PopDateRange Test', () => {
     var endDateField = wrapper.find('fieldset[name="end_date"]')
 
     // set valid date range
-    await startDateField.find('input[name="date-month"]').setValue('01')
-    await startDateField.find('input[name="date-day"]').setValue('01')
-    await startDateField.find('input[name="date-year"]').setValue('2020')
-
     await endDateField.find('input[name="date-month"]').setValue('01')
     await endDateField.find('input[name="date-day"]').setValue('01')
     await endDateField.find('input[name="date-year"]').setValue('2020')
+
+    await startDateField.find('input[name="date-month"]').setValue('01')
+    await startDateField.find('input[name="date-day"]').setValue('01')
+    await startDateField.find('input[name="date-year"]').setValue('2020')
 
     // manually trigger the change event in the hidden fields
     await endDateField.find('input[name="end_date"]').trigger('change')
