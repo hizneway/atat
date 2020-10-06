@@ -106,10 +106,10 @@ commands:
           command: |
             az login \
               --service-principal \
-              --tenant << pipeline.parameters.tenant_id >> \
-              --password << pipeline.parameters.sp_password >> \
-              --username << pipeline.parameters.sp >>
-            az account set -s << pipeline.parameters.subscription_id >>
+              --tenant ${AZURE_SP_TENANT} \
+              --password ${AZURE_SP_PASSWORD} \
+              --username ${AZURE_SP}
+            az account set -s ${AZURE_SUBSCRIPTION}
             echo "Successfully logged in to Azure CLI."
             az acr login --name << pipeline.parameters.container_registry >> | grep "Succeeded"
   log_into_ops_registry:
@@ -120,10 +120,10 @@ commands:
           command: |
             az login \
               --service-principal \
-              --tenant << pipeline.parameters.tenant_id >> \
-              --password << pipeline.parameters.sp_password >> \
-              --username << pipeline.parameters.sp >>
-            az account set -s << pipeline.parameters.ops_subscription_id >>
+              --tenant ${AZURE_SP_TENANT} \
+              --password ${AZURE_SP_PASSWORD} \
+              --username ${AZURE_SP}
+            az account set -s ${AZURE_SUBSCRIPTION_OPS}
             echo "Successfully logged in to Azure CLI."
             az acr login --name << pipeline.parameters.ops_registry >> | grep "Succeeded"
   cache_docker_images:
@@ -412,12 +412,12 @@ jobs:
             docker build \
             --cache-from <<pipeline.parameters.ops_registry >>.azurecr.io/ops-cache:latest \
             -t ops:latest \
-            --build-arg operator_sp_client_id=<< pipeline.parameters.sp >> \
-            --build-arg operator_sp_object_id=<< pipeline.parameters.sp_object_id >> \
-            --build-arg operator_sp_secret=<< pipeline.parameters.sp_password >> \
-            --build-arg azure_tenant=<< pipeline.parameters.tenant_id >> \
-            --build-arg azure_subscription_id=<< pipeline.parameters.subscription_id >> \
-            --build-arg operator_sp_url=<< pipeline.parameters.operator_sp_url >> \
+            --build-arg operator_sp_client_id=${AZURE_SP} \
+            --build-arg operator_sp_object_id=${OPERATOR_SP_OBJECT_ID} \
+            --build-arg operator_sp_secret=${AZURE_SP_PASSWORD} \
+            --build-arg azure_tenant=${AZURE_SP_TENANT} \
+            --build-arg azure_subscription_id=${AZURE_SUBSCRIPTION} \
+            --build-arg operator_sp_url=${OPERATOR_SP_URL} \
             -f Dockerfile.ops .
       - log_into_app_registry
       - run:
@@ -445,15 +445,15 @@ jobs:
              docker build \
              --cache-from <<pipeline.parameters.ops_registry >>.azurecr.io/ops-cache:latest \
              -t ops:latest \
-             --build-arg operator_sp_client_id=<< pipeline.parameters.sp >> \
-             --build-arg operator_sp_object_id=<< pipeline.parameters.sp_object_id >> \
-             --build-arg operator_sp_secret=<< pipeline.parameters.sp_password >> \
-             --build-arg azure_tenant=<< pipeline.parameters.tenant_id >> \
-             --build-arg azure_subscription_id=<< pipeline.parameters.subscription_id >> \
-             --build-arg operator_sp_url=<< pipeline.parameters.operator_sp_url >> \
-             --build-arg circle_api_token=<< pipeline.parameters.circle_api_token >> \
-             --build-arg build_branch=<< pipeline.parameters.build_branch >> \
-             --build-arg az_environment=<< pipeline.parameters.az_environment >> \
+             --build-arg operator_sp_client_id=${AZURE_SP} \
+             --build-arg operator_sp_object_id=${OPERATOR_SP_OBJECT_ID} \
+             --build-arg operator_sp_secret=${AZURE_SP_PASSWORD} \
+             --build-arg azure_tenant=${AZURE_SP_TENANT} \
+             --build-arg azure_subscription_id=${AZURE_SUBSCRIPTION} \
+             --build-arg operator_sp_url=${OPERATOR_SP_URL} \
+             --build-arg circle_api_token=${CIRCLE_API_TOKEN} \
+             --build-arg build_branch=${CIRCLE_BRANCH} \
+             --build-arg az_environment=${DEPLOYMENT_AZ_ENVIRONMENT} \
               -f Dockerfile.ops .
        - run:
            name: Tag ops image
@@ -464,8 +464,8 @@ jobs:
        - run:
            name: run container image
            command: |
-             az account set -s << pipeline.parameters.subscription_id >>
-             az container create -g cloudzero-ops --name deploy-build-${CIRCLE_BUILD_NUM} --ip-address Private --vnet cloudzero-ops-network --subnet deployment-subnet --image  <<pipeline.parameters.ops_registry >>.azurecr.io/ops:${CIRCLE_BUILD_NUM}  --registry-password <<pipeline.parameters.sp_password >> --registry-username << pipeline.parameters.sp >> --command-line "ansible-playbook site.yml --extra-vars deploy_tag=v0.1.0" --cpu 4 --memory 4 --restart-policy Never
+             az account set -s ${AZURE_SUBSCRIPTION}
+             az container create -g cloudzero-ops --name deploy-build-${CIRCLE_BUILD_NUM} --ip-address Private --vnet cloudzero-ops-network --subnet deployment-subnet --image  <<pipeline.parameters.ops_registry >>.azurecr.io/ops:${CIRCLE_BUILD_NUM}  --registry-password ${AZURE_SP_PASSWORD} --registry-username ${AZURE_SP} --command-line "ansible-playbook site.yml --extra-vars deploy_tag=v0.1.0" --cpu 4 --memory 4 --restart-policy Never
 
 workflows:
   version: 2
