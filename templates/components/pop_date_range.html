@@ -73,7 +73,7 @@
                     type="number"
                     v-bind:class="{ 'usa-input-error': (month && !isMonthValid) }"
                     v-model="month"
-                    v-on:change="onInput"
+                    v-on:input="onInput"
                   />
                 </div>
 
@@ -87,7 +87,7 @@
                     v-bind:class="{ 'usa-input-error': (day && !isDayValid) }"
                     v-bind:max="daysMaxCalculation"
                     v-model="day"
-                    v-on:change="onInput"
+                    v-on:input="onInput"
                   />
                 </div>
 
@@ -100,7 +100,7 @@
                     v-model="year"
                     {% if maxdate %}max="{{ maxdate.year }}"{% endif %}
                     {% if mindate %}min="{{ mindate.year }}"{% endif %}
-                    v-on:change="onInput"
+                    v-on:input="onInput"
                   />
 
                 </div>
@@ -172,7 +172,7 @@
                       type="number"
                       v-bind:class="{ 'usa-input-error': (month && !isMonthValid) }"
                       v-model="month"
-                      v-on:change="onInput"
+                      v-on:input="onInput"
                       />
                   </div>
 
@@ -186,7 +186,7 @@
                       v-bind:class="{ 'usa-input-error': (day && !isDayValid) }"
                       v-bind:max="daysMaxCalculation"
                       v-model="day"
-                      v-on:change="onInput"
+                      v-on:input="onInput"
                       />
                   </div>
 
@@ -197,7 +197,7 @@
                       maxlength="4"
                       type="number"
                       v-model="year"
-                      v-on:change="onInput"
+                      v-on:input="onInput"
                       />
                   </div>
 
