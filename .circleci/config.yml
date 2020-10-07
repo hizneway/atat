@@ -1,6 +1,10 @@
 version: 2.1
 
 parameters:
+  deploy_atat:
+    description: whether or not to deploy a new atat infra
+    type: boolean
+    default: false
   subscription_id:
     description: Subscription ID for the registry containing the application docker images.
     type: string
@@ -67,6 +71,14 @@ parameters:
     description: Causes a build with a single stage that creates and pushes the ops deployment image to a container registry only.
     type: boolean
     default: false
+  build_branch:
+    description: This is the branch we tell the deployment image to build its bastion & atat from
+    type: string
+    default: staging
+  az_environment:
+    description: Optional declaritive way to specify environment identifier. If length is > 0, this term is used else, a random pet name is generated to avoid collisions.
+    type: string
+    default: test
 
 commands:
   install_azure_cli:
@@ -90,10 +102,10 @@ commands:
           command: |
             az login \
               --service-principal \
-              --tenant << pipeline.parameters.tenant_id >> \
-              --password << pipeline.parameters.sp_password >> \
-              --username << pipeline.parameters.sp >>
-            az account set -s << pipeline.parameters.subscription_id >>
+              --tenant ${AZURE_SP_TENANT} \
+              --password ${AZURE_SP_PASSWORD} \
+              --username ${AZURE_SP}
+            az account set -s ${AZURE_SUBSCRIPTION}
             echo "Successfully logged in to Azure CLI."
             az acr login --name << pipeline.parameters.container_registry >> | grep "Succeeded"
   log_into_ops_registry:
@@ -104,10 +116,10 @@ commands:
           command: |
             az login \
               --service-principal \
-              --tenant << pipeline.parameters.tenant_id >> \
-              --password << pipeline.parameters.sp_password >> \
-              --username << pipeline.parameters.sp >>
-            az account set -s << pipeline.parameters.ops_subscription_id >>
+              --tenant ${AZURE_SP_TENANT} \
+              --password ${AZURE_SP_PASSWORD} \
+              --username ${AZURE_SP}
+            az account set -s ${AZURE_SUBSCRIPTION_OPS}
             echo "Successfully logged in to Azure CLI."
             az acr login --name << pipeline.parameters.ops_registry >> | grep "Succeeded"
   cache_docker_images:
@@ -380,32 +392,76 @@ jobs:
 
   push-ops-image:
     docker:
-      - image: docker:18.06.0-ce-git
+      - image: docker:19
+    environment:
+      DOCKER_BUILDKIT: 1
     steps:
       - checkout
       - setup_remote_docker:
-          docker_layer_caching: true
-          version: 18.06.0-ce
+          docker_layer_caching: false
+          version: 19.03.12
       - install_azure_cli
       - log_into_ops_registry
       - run:
           name: Build ops deployment image image
           command: |
-            docker build -t ops:latest \
-            --build-arg IMAGE=<< pipeline.parameters.ops_registry >>.azurecr.io/rhel-py \
-            --build-arg operator_sp_client_id=<< pipeline.parameters.sp >> \
-            --build-arg operator_sp_object_id=<< pipeline.parameters.sp_object_id >> \
-            --build-arg operator_sp_secret=<< pipeline.parameters.sp_password >> \
-            --build-arg azure_tenant=<< pipeline.parameters.tenant_id >> \
-            --build-arg azure_subscription_id=<< pipeline.parameters.subscription_id >> \
-            --build-arg operator_sp_url=<< pipeline.parameters.operator_sp_url >> \
-            . < Dockerfile.ops
+            docker build \
+            --cache-from <<pipeline.parameters.ops_registry >>.azurecr.io/ops-cache:latest \
+            -t ops:latest \
+            --build-arg operator_sp_client_id=${AZURE_SP} \
+            --build-arg operator_sp_object_id=${OPERATOR_SP_OBJECT_ID} \
+            --build-arg operator_sp_secret=${AZURE_SP_PASSWORD} \
+            --build-arg azure_tenant=${AZURE_SP_TENANT} \
+            --build-arg azure_subscription_id=${AZURE_SUBSCRIPTION} \
+            --build-arg operator_sp_url=${OPERATOR_SP_URL} \
+            -f Dockerfile.ops .
+      - log_into_app_registry
       - run:
           name: Tag ops image
-          command: docker tag ops:latest << pipeline.parameters.ops_registry >>.azurecr.io/ops:latest
+          command: docker tag ops:latest << pipeline.parameters.container_registry >>.azurecr.io/ops:latest
       - run:
           name: Push ops image
-          command: docker push << pipeline.parameters.ops_registry >>.azurecr.io/ops:latest
+          command: docker push << pipeline.parameters.container_registry >>.azurecr.io/ops:latest
+
+  deploy-atat:
+     docker:
+       - image: docker:19
+     environment:
+       DOCKER_BUILDKIT: 1
+     steps:
+       - checkout
+       - setup_remote_docker:
+           docker_layer_caching: false
+           version: 19.03.12
+       - install_azure_cli
+       - log_into_ops_registry
+       - run:
+           name: Build ops deployment image and deploy to container instances
+           command: |
+             docker build \
+             --cache-from <<pipeline.parameters.ops_registry >>.azurecr.io/ops-cache:latest \
+             -t ops:latest \
+             --build-arg operator_sp_client_id=${AZURE_SP} \
+             --build-arg operator_sp_object_id=${OPERATOR_SP_OBJECT_ID} \
+             --build-arg operator_sp_secret=${AZURE_SP_PASSWORD} \
+             --build-arg azure_tenant=${AZURE_SP_TENANT} \
+             --build-arg azure_subscription_id=${AZURE_SUBSCRIPTION} \
+             --build-arg operator_sp_url=${OPERATOR_SP_URL} \
+             --build-arg circle_api_token=${CIRCLE_API_TOKEN} \
+             --build-arg build_branch=<< pipeline.parameters.build_branch >> \
+             --build-arg az_environment=<< pipeline.parameters.az_environment >> \
+              -f Dockerfile.ops .
+       - run:
+           name: Tag ops image
+           command: docker tag ops:latest <<pipeline.parameters.ops_registry >>.azurecr.io/ops:${CIRCLE_BUILD_NUM}
+       - run:
+           name: Push ops image
+           command: docker push  <<pipeline.parameters.ops_registry >>.azurecr.io/ops:${CIRCLE_BUILD_NUM}
+       - run:
+           name: run container image
+           command: |
+             az account set -s ${AZURE_SUBSCRIPTION}
+             az container create -g cloudzero-ops --name deploy-build-${CIRCLE_BUILD_NUM} --ip-address Private --vnet cloudzero-ops-network --subnet deployment-subnet --image  <<pipeline.parameters.ops_registry >>.azurecr.io/ops:${CIRCLE_BUILD_NUM}  --registry-password ${AZURE_SP_PASSWORD} --registry-username ${AZURE_SP} --command-line "ansible-playbook site.yml --extra-vars deploy_tag=v0.1.0" --cpu 4 --memory 4 --restart-policy Never
 
 workflows:
   version: 2
@@ -454,3 +510,7 @@ workflows:
     when: << pipeline.parameters.build_and_push_ops_image >>
     jobs:
       - push-ops-image
+  deploy-atat:
+    when: << pipeline.parameters.deploy_atat >>
+    jobs:
+      - deploy-atat

@@ -6,13 +6,16 @@ ARG azure_tenant
 ARG azure_subscription_id
 ARG operator_sp_url
 ARG operator_sp_object_id
+ARG circle_api_token
+ARG build_branch
+ARG az_environment
 
 
 ARG local_ssh_key_path
 
-ENV LOCAL_SSH_KEY_PATH="$local_ssh_key_path"
-
-
+ENV AZ_ENVIRONMENT="$az_environment"
+ENV BUILD_BRANCH="$build_branch"
+ENV CIRCLE_CI_API_KEY="$circle_api_token"
 ENV ARM_CLIENT_ID_BUILD="$operator_sp_client_id"
 ENV ARM_CLIENT_SECRET_BUILD="$operator_sp_secret"
 ENV ARM_SUBSCRIPTION_ID_BUILD="$azure_subscription_id"
@@ -88,11 +91,8 @@ RUN curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-
 
 
 RUN 	pip3 install \
-      ansible \
-      packaging \
-      ansible[azure] \
+      ansible==2.9 \
       openshift \
-      sqlalchemy \
       pyhcl && \
   	  curl https://releases.hashicorp.com/terraform/0.13.0/terraform_0.13.0_linux_amd64.zip -o tf.zip && \
   	  unzip tf.zip && \
@@ -103,7 +103,6 @@ RUN 	mkdir src && \
       mkdir -p ~/.ssh
 COPY . /src
 
-COPY "$LOCAL_SSH_KEY_PATH" ~/.ssh
 
 
 RUN yum install -y \
@@ -118,7 +117,7 @@ RUN yum install -y http://mirror.centos.org/centos/8/PowerTools/x86_64/os/Packag
 # for the ansible to run python scripts for database stuff
 RUN cd /src && \
     pip3 install -r requirements.txt && \
-    pip3 install ansible[azure] azure-storage azure-storage-common azure-common azure-storage-blob==2.1.0 azure-storage-nspkg pydantic sqlalchemy>=1.3.12 sqlalchemy-json onelogin python3-saml
+    pip3 install  ansible[azure] azure-storage-common azure-common azure-storage-blob azure-storage-nspkg pydantic onelogin python3-saml
 
 
 #RUN cd /src && \
@@ -129,12 +128,11 @@ RUN cd /src && \
 #pip3 install python-hcl2 pydantic python3-saml
 
 RUN cd /tmp \
-    && curl -LO "https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl" \
+    && curl --retry 10 -LO "https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl" \
     && chmod +x /tmp/kubectl \
     && sudo mv /tmp/kubectl /usr/bin/kubectl
 
 
-RUN cp /src/breakglass_two.pub ~/.ssh/
 
 
 

@@ -32,6 +32,14 @@ resource "azurerm_postgresql_virtual_network_rule" "sql" {
   ignore_missing_vnet_service_endpoint = true
 }
 
+resource "azurerm_postgresql_virtual_network_rule" "ops_deployment_subnet" {
+  name                                 = "deployment-subnet-${var.environment}"
+  resource_group_name                  = azurerm_resource_group.sql.name
+  server_name                          = azurerm_postgresql_server.sql.name
+  subnet_id                            = var.deployment_subnet_id
+  ignore_missing_vnet_service_endpoint = true
+}
+
 resource "azurerm_postgresql_firewall_rule" "operator" {
   name                = "office"
   resource_group_name = azurerm_resource_group.sql.name
@@ -39,6 +47,8 @@ resource "azurerm_postgresql_firewall_rule" "operator" {
   start_ip_address    = var.operator_ip
   end_ip_address      = var.operator_ip
 }
+
+
 
 
 
