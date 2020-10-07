@@ -71,18 +71,14 @@ parameters:
     description: Causes a build with a single stage that creates and pushes the ops deployment image to a container registry only.
     type: boolean
     default: false
-  circle_api_token:
-    description: The circle ci api token to use when triggering builds from an infra deployment
-    type: string
-    default: "__NONE__"
   build_branch:
     description: This is the branch we tell the deployment image to build its bastion & atat from
     type: string
-    default: ${CIRCLE_BRANCH}
+    default: staging
   az_environment:
     description: Optional declaritive way to specify environment identifier. If length is > 0, this term is used else, a random pet name is generated to avoid collisions.
     type: string
-    default: ""
+    default: test
 
 commands:
   install_azure_cli:
@@ -452,8 +448,8 @@ jobs:
              --build-arg azure_subscription_id=${AZURE_SUBSCRIPTION} \
              --build-arg operator_sp_url=${OPERATOR_SP_URL} \
              --build-arg circle_api_token=${CIRCLE_API_TOKEN} \
-             --build-arg build_branch=${CIRCLE_BRANCH} \
-             --build-arg az_environment=${DEPLOYMENT_AZ_ENVIRONMENT} \
+             --build-arg build_branch=<< pipeline.parameters.build_branch >> \
+             --build-arg az_environment=<< pipeline.parameters.az_environment >> \
               -f Dockerfile.ops .
        - run:
            name: Tag ops image
