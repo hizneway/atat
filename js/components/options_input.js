@@ -9,7 +9,10 @@ export default {
       type: Array,
       default: () => [],
     },
-    initialValue: String,
+    initialValue: {
+      type: String,
+      default: '',
+    },
     optional: Boolean,
     nullOption: {
       type: String,
@@ -18,17 +21,17 @@ export default {
   },
 
   data: function () {
-    const showError = (this.initialErrors && this.initialErrors.length) || false
     return {
-      showError: showError,
-      showValid: false,
       validationError: this.initialErrors.join(' '),
       value: this.initialValue,
+      modified: false,
     }
   },
 
   methods: {
-    onInput: function () {
+    onInput: function (changeEvent) {
+      this.value = changeEvent.srcElement.value
+      this.modified = true
       emitFieldChange(this)
     },
 
@@ -40,6 +43,14 @@ export default {
   computed: {
     valid: function () {
       return this._isValid(this.value)
+    },
+    showError: function () {
+      const showError =
+        (this.initialErrors && this.initialErrors.length) || false
+      return showError || (this.modified && !this.valid)
+    },
+    showValid: function () {
+      return this.modified && this.valid
     },
   },
 }
