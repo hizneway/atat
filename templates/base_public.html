@@ -1,35 +1,11 @@
-{% from "components/icon.html" import Icon %}
+{% extends "base.html" %}
 
-<!DOCTYPE html>
-<html>
-<head>
-  <!-- VERSION: {{ build_info }} -->
-  <meta charset="utf-8">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{% block title %}{{ "base_public.title_tag" | translate }}{% endblock %}</title>
-  {% assets "css" %}
-    <link rel="stylesheet" href="{{ ASSET_URL }}" type="text/css">
-  {% endassets %}
-  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='img/favicon.ico') }} " />
-</head>
-<body>
+{% block title %}{{ "base_public.title_tag" | translate }}{% endblock %}
 
-<div id='app-root'>
+{% block body %}
+{% block header %}
   {% include 'components/usa_header.html' %}
-
-  <div class='login-topbar'>{% include 'navigation/topbar.html' %}</div>
-
-  {% block content %}{% endblock %}
-
-  {% include 'footer.html' %}
-</div>
-
-{% assets "js_all" %}
-  <script src="{{ ASSET_URL }}"></script>
-{% endassets %}
-
-</body>
-</html>
-
-
+<div class='login-topbar'>{% include 'navigation/topbar.html' %}</div>
+{% endblock %}
+{% block content %}{% endblock %}
+{% endblock %}

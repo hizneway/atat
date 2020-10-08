@@ -45,7 +45,7 @@ def test_build_info(client, user_session):
     response = client.get("/")
     assert re.search(pattern, response.data.decode("utf-8")) is not None
 
-    # checks if base.html has version comment
+    # checks if base_private.html has version comment
     user_session(UserFactory.create())
     response = client.get("/home")
     assert re.search(pattern, response.data.decode("utf-8")) is not None

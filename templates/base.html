@@ -1,49 +1,35 @@
+{% from "components/icon.html" import Icon %}
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
   <!-- VERSION: {{ build_info }} -->
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{% block title %}JEDI Cloud{% endblock %}</title>
+  <title>{% block title %}{% endblock %}</title>
   {% assets "css" %}
     <link rel="stylesheet" href="{{ ASSET_URL }}" type="text/css">
   {% endassets %}
   <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='img/favicon.ico') }} " />
 </head>
-<body>
 
-  <div id='app-root'>
+<body class="{% if g.modalOpen %} modalOpen{% endif %}">
+<div id='app-root'>
+{% block template_vars %}{% endblock %}
 
-    {% block template_vars %}{% endblock %}
+{% block header %}
+  {% include 'components/usa_header.html' %}
+  <div>{% include 'navigation/topbar.html' %}</div>
+{% endblock %}
 
-    {% include 'components/usa_header.html' %}
+{% block body %}{% endblock %}
+{% block footer %}{% include 'footer.html' %}{% endblock %}
+</div>
 
-    {% include 'navigation/topbar.html' %}
+{% block modal %}{% endblock %}
+{% assets "js_all" %}
+  <script src="{{ ASSET_URL }}"></script>
+{% endassets %}
 
-    <div class='global-layout'>
-      {% include 'navigation/global_sidenav.html' %}
-
-      <div class='global-panel-container'>
-        {% block sidenav %}{% endblock %}
-
-        {% block content %}
-          these are not the droids you are looking for
-        {% endblock %}
-      </div>
-    </div>
-
-    {% include 'footer.html' %}
-    {% block modal %}{% endblock %}
-
-    {% if g.modal %}
-      <div data-modal="{{ g.modal }}" id="modalOpen">
-      </div>
-    {% endif %}
-  </div>
-
-  {% assets "js_all" %}
-    <script src="{{ ASSET_URL }}"></script>
-  {% endassets %}
 </body>
 </html>
