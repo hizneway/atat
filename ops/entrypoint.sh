@@ -12,6 +12,8 @@
 # $operator_sp_secret
 # $operator_sp_url
 
+set -x
+
 export ARM_CLIENT_ID_BUILD="$operator_sp_client_id"
 export ARM_CLIENT_ID="$operator_sp_client_id"
 export ARM_CLIENT_SECRET_BUILD="$operator_sp_secret"
@@ -49,15 +51,5 @@ az provider register --namespace Microsoft.ContainerService
 
 ansible-playbook site.yml \
     -vvv \
-    --extra-vars \
-        app_name=atat \
-        scripts_dir=/src/script \
-        az_environment=dryrun3 \
-        show_bs_env=yes \
-        show_app_env_outputs=yes \
-        tfvars_file_path=/src/terraform/providers/bootstrap/dryrun.tfvars \
-        tf_base_dir=/src/terraform/providers \
-        show_app_env_outputs=true \
-        bootstrap_subscription_id=$SUBSCRIPTION_ID \
-        application_subscription_id=$SUBSCRIPTION_ID
+    --extra-vars "app_name=atat scripts_dir=/src/script az_environment=dryrun3 show_bs_env=yes show_app_env_outputs=yes tfvars_file_path=/src/terraform/providers/bootstrap/dryrun.tfvars tf_base_dir=/src/terraform/providers show_app_env_outputs=true bootstrap_subscription_id=$SUBSCRIPTION_ID application_subscription_id=$SUBSCRIPTION_ID"
         
