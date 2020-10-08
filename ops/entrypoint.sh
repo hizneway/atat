@@ -1,7 +1,7 @@
 #! /bin/bash
 
-# Required arguments
-# ------------------
+# Required environment variables
+# ------------------------------
 # $az_environment
 # $azure_subscription_id
 # $azure_tenant
