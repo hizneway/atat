@@ -6,18 +6,14 @@ FILES_TO_SORT="atat tests"
 if [ "$1" == "check" ]; then
   poetry run black --check ${FILES_TO_FORMAT}
   poetry run isort --check ${FILES_TO_SORT}
-  yarn run prettier --list-different "js/**/*.js" --config ./prettier.config.json
-  yarn run prettier --list-different "styles/**/*.scss"
-  yarn run prettier --list-different "ansible/**/*.yml"
+  yarn run prettier --list-different --config ./prettier.config.json "js/**/*.js" "styles/**/*.scss" "ansible/**/*.yml" 
   if [ -x "$(command -v terraform)" ]; then
     terraform fmt -recursive -check terraform/
   fi
 else
   poetry run black ${FILES_TO_FORMAT}
   poetry run isort ${FILES_TO_SORT}
-  yarn run prettier --list-different --write "js/**/*.js" --config ./prettier.config.json
-  yarn run prettier --list-different --write "styles/**/*.scss"
-  yarn run prettier --list-different --write "ansible/**/*.yml"
+  yarn run prettier --list-different --write --config ./prettier.config.json "js/**/*.js" "styles/**/*.scss" "ansible/**/*.yml" 
   if [ -x "$(command -v terraform)" ]; then
     terraform fmt -recursive terraform/
   fi
