@@ -13,16 +13,15 @@
         sp_object_id: "{{ lookup('env','TF_VAR_OPS_OID') }}"
         sp_password: "{{ lookup('env', 'ARM_CLIENT_SECRET_BUILD' ) }}"
         operator_sp_url: "{{ lookup('env','AZ_CLI_SP') }}"
-        ops_registry:  "{{ ops_registy }}"
+        ops_registry: "{{ ops_registy }}"
         ops_subscription_id: "{{ lookup('env','SUBSCRIPTION_ID') }}"
         build_and_push_ops_image: "{{ build_and_push_ops_image }}"
         build_and_push_app_images: "{{ build_and_push_app_images }}"
-        tenant_id:  "{{ lookup('env','SUBSCRIPTION_TENANT') }}"
+        tenant_id: "{{ lookup('env','SUBSCRIPTION_TENANT') }}"
     body_format: json
     status_code:
       - 201
   register: _result
-
 
 - name: Fetch latest `ops` image from {{ tf_bootstrap_backend_outputs.ops_container_registry_name.value }}
   shell: az acr repository show-tags --top 1 --orderby time_desc --repository ops --name {{ tf_bootstrap_backend_outputs.ops_container_registry_name.value }}
