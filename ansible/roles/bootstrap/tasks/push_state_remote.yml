@@ -1,6 +1,3 @@
-
-
-
 - name: push bootstrap tf state to storage account
   azure_rm_storageblob:
     resource_group: "{{ bootstrap_resource_group_name }}"
@@ -8,4 +5,4 @@
     container: "{{bootstrap_container_name}}"
     blob: "{{tf_bootstrap_backend_outputs.environment.value}}.bootstrap.terraform.tfstate"
     src: "{{tf_dir}}/terraform.tfstate"
-    content_type: 'application/json'
+    content_type: "application/json"

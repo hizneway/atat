@@ -17,7 +17,6 @@
     - target_modules is not defined
     - az_environment is defined
 
-
 - name: plan  (modules)
   terraform:
     force_init: "{{ bootstrap_init_tf }}"
@@ -32,8 +31,6 @@
   when:
     - target_modules is defined
     - az_environment is not defined
-
-
 
 - name: tf apply (no modules)
   terraform:

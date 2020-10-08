@@ -1,6 +1,5 @@
 # just get it from the tfvars json instead of running an expensive terraform output cmd
 ---
-
 - name: get from tfvars file
   set_fact:
     circle_ci_api_key: "{{ (lookup('file','/src/terraform/providers/application_env/app.tfvars.json') | from_json).get('circle_ci_api_key') }}"
