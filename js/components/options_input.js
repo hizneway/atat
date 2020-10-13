@@ -45,8 +45,7 @@ export default {
       return this._isValid(this.value)
     },
     showError: function () {
-      const showError =
-        (this.initialErrors && this.initialErrors.length) || false
+      const showError = this.initialErrors && this.initialErrors.length
       return showError || (this.modified && !this.valid)
     },
     showValid: function () {
