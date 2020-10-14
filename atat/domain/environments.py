@@ -101,40 +101,32 @@ class Environments(object):
         return environment
 
     @classmethod
-    def base_provision_query(cls, now):
-        return (
-            db.session.query(Environment.id)
-            .join(Application)
-            .join(Portfolio)
-            .join(TaskOrder)
-            .join(CLIN)
-            .filter(CLIN.start_date <= now)
-            .filter(CLIN.end_date > now)
-            .filter(Environment.deleted == False)
-            .filter(
-                or_(
-                    Environment.claimed_until == None,
-                    Environment.claimed_until <= func.now(),
-                )
-            )
-        )
-
-    @classmethod
     def get_environments_pending_creation(cls, now) -> List[UUID]:
         """
         Any environment with an active CLIN that doesn't yet have a `cloud_id`.
         """
-        results = (
-            cls.base_provision_query(now)
+
+        active_clin_and_provisioned_app = (
+            db.session.query(Environment)
+            .join(Application)
+            .join(Portfolio)
+            .join(TaskOrder)
+            .join(CLIN)
             .filter(
-                and_(
-                    Application.cloud_id != None,
-                    Environment.cloud_id.is_(None),
-                    or_(
-                        Environment.claimed_until.is_(None),
-                        Environment.claimed_until <= func.now(),
-                    ),
-                )
+                and_(CLIN.start_date <= now, CLIN.end_date > now),
+                Application.cloud_id != None,
+            )
+        )
+        results = (
+            db.session.query(Environment.id)
+            .filter(
+                active_clin_and_provisioned_app.exists(),
+                or_(
+                    Environment.claimed_until == None,
+                    Environment.claimed_until <= func.now(),
+                ),
+                Environment.deleted == False,
+                Environment.cloud_id.is_(None),
             )
             .all()
         )
