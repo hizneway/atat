@@ -121,7 +121,6 @@ variable "OPS_SEC" {}
 variable "OPS_OID" {}
 variable "OPS_SP_URL" {}
 
-variable "mailgun_api_key" {}
 variable "mailgun_smtp_password" {}
 
 variable "azure_subscription_id" {}
