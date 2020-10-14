@@ -5,13 +5,12 @@ import pytest
 from atat.domain.environment_roles import EnvironmentRoles
 from atat.domain.environments import Environments
 from atat.domain.exceptions import AlreadyExistsError, DisabledError, NotFoundError
-from atat.models.environment_role import CSPRole, EnvironmentRole
+from atat.models.environment_role import CSPRole
 from tests.factories import (
     ApplicationFactory,
     ApplicationRoleFactory,
     EnvironmentFactory,
     EnvironmentRoleFactory,
-    PortfolioFactory,
 )
 from tests.utils import EnvQueryTest
 
@@ -123,13 +122,13 @@ class TestGetEnvironmentsPendingCreate(EnvQueryTest):
         self.create_portfolio_with_clins([(self.YESTERDAY, self.YESTERDAY)])
         assert len(Environments.get_environments_pending_creation(self.NOW)) == 0
 
-    def test_with_active_clins(self, session):
+    def test_with_active_clin(self, session):
         portfolio = self.create_portfolio_with_clins([(self.YESTERDAY, self.TOMORROW)])
         Environments.get_environments_pending_creation(self.NOW) == [
             portfolio.applications[0].environments[0].id
         ]
 
-    def test_with_future_clins(self, session):
+    def test_with_future_clin(self, session):
         self.create_portfolio_with_clins([(self.TOMORROW, self.TOMORROW)])
         assert len(Environments.get_environments_pending_creation(self.NOW)) == 0
 
@@ -145,15 +144,27 @@ class TestGetEnvironmentsPendingCreate(EnvQueryTest):
             env_data={"cloud_id": uuid4().hex},
             app_data={"cloud_id": uuid4().hex},
         )
-        assert len(Environments.get_environments_pending_creation(self.NOW)) == 0
+
+    def test_with_multiple_active_CLINs(self, session):
+        self.create_portfolio_with_clins(
+            [
+                (self.YESTERDAY, self.TOMORROW),
+                (self.YESTERDAY, self.TOMORROW),
+                (self.YESTERDAY, self.TOMORROW),
+            ],
+            app_data={"cloud_id": uuid4().hex},
+            env_data={"cloud_id": None},
+        )
+        envs_pending_creation = Environments.get_environments_pending_creation(self.NOW)
+        assert len(envs_pending_creation) == 1
 
 
 def test_create_many_environments_will_skip_already_created_names():
     application = ApplicationFactory.create()
-    environments_first_run = Environments.create_many(
+    Environments.create_many(
         application.portfolio.owner, application, ["Staging", "Production"]
     )
-    environments_second_run = Environments.create_many(
+    Environments.create_many(
         application.portfolio.owner,
         application,
         ["Staging", "Production", "Development"],
