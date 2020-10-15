@@ -1,5 +1,6 @@
 ---
-- name: Download bootstrap state
+
+- name: Download tfvars
   azure_rm_storageblob:
     subscription_id: "{{ bootstrap_subscription_id }}"
     secret: "{{ bs_secret }}"
@@ -9,4 +10,4 @@
     storage_account_name: "{{ bootstrap_storage_account_name }}"
     container: "{{ bootstrap_container_name}}"
     blob: bootstrap.tfvars
-    dest: /src/terraform/providers/bootstrap/bootstrap.tfvars
+    dest:  /src/terraform/providers/bootstrap/bootstrap.tfvars
