@@ -28,6 +28,21 @@ export default {
     }
   },
 
+  mounted: function () {
+    const selectEl = this.$el.querySelector('select')
+    if (selectEl) {
+      selectEl.value = this.value
+    }
+
+    const radios = this.$el.querySelectorAll('input[type="radio"]')
+    if (radios && radios.length) {
+      const initialValue = this.value
+      radios.forEach(function (radio) {
+        radio.checked = radio.value == initialValue
+      })
+    }
+  },
+
   methods: {
     onInput: function (changeEvent) {
       this.value = changeEvent.srcElement.value
