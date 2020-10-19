@@ -41,6 +41,42 @@ describe('SelectInput Renders Correctly', () => {
     })
     expect(wrapper.find('.usa-input select').element.value).toBe('')
   })
+
+  it('Should be considered invalid if default is re-selected', async () => {
+    const wrapper = mount(SelectWrapperComponent, {
+      propsData: {
+        name: 'testCheck',
+        initialData: {
+          initialvalue: '',
+          optional: false,
+        },
+      },
+    })
+
+    await wrapper.find('select#selectfield').trigger('change')
+
+    expect(wrapper.contains('.usa-input--error')).toBe(true)
+    expect(wrapper.contains('.usa-input--success')).toBe(false)
+  })
+
+  it('Should be considered valid if value is selected', async () => {
+    const wrapper = mount(SelectWrapperComponent, {
+      propsData: {
+        name: 'testCheck',
+        initialData: {
+          initialvalue: '',
+          optional: false,
+        },
+      },
+    })
+
+    const selectField = wrapper.find('select#selectfield')
+    await wrapper.find('option[value="a"]').setSelected()
+    await selectField.trigger('change')
+
+    expect(wrapper.contains('.usa-input--error')).toBe(false)
+    expect(wrapper.contains('.usa-input--success')).toBe(true)
+  })
 })
 
 const RadioWrapperComponent = makeTestWrapper({
@@ -84,5 +120,36 @@ describe('RadioInput Renders Correctly', () => {
       },
     })
     expect(wrapper.find('.usa-input input').element.checked).toBe(false)
+  })
+
+  it('Should be considered invalid if default is re-selected', async () => {
+    const wrapper = mount(RadioWrapperComponent, {
+      propsData: {
+        name: 'testCheck',
+        initialData: {
+          initialvalue: '',
+          optional: false,
+        },
+      },
+    })
+
+    expect(wrapper.vm.$children[0].valid).toBe(false)
+  })
+
+  it('Should be considered valid if value is selected', async () => {
+    const wrapper = mount(RadioWrapperComponent, {
+      propsData: {
+        name: 'testCheck',
+        initialData: {
+          initialvalue: '',
+          optional: false,
+        },
+      },
+    })
+
+    await wrapper.findAll('input[type="radio"]').at(0).setChecked()
+
+    expect(wrapper.contains('.usa-input--error')).toBe(false)
+    expect(wrapper.contains('.usa-input--success')).toBe(true)
   })
 })
