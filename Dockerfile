@@ -14,8 +14,7 @@ ENV TZ UTC
 
 WORKDIR /install
 
-RUN yum updateinfo && \
-      yum install -y \
+RUN yum install -y \
       curl \
       ca-certificates \
       git \
