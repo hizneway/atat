@@ -219,7 +219,7 @@ commands:
       - run:
           name: Configure kubectl
           command: |
-            apk add libssl1.0
+            apk add libssl1.1
             az aks get-credentials --name << pipeline.parameters.cluster_name >>  --resource-group << pipeline.parameters.resource_group >>
       - run:
           name: Add gettext package
