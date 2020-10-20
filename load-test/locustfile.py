@@ -4,6 +4,7 @@ from random import choice, choices, randrange
 
 from locust import HttpUser, SequentialTaskSet, task, between
 
+import names
 from pyquery import PyQuery as pq
 from uuid import uuid4
 import string
@@ -25,6 +26,8 @@ ENTITY_ID_MATCHER = re.compile(
 NEW_PORTFOLIO_CHANCE = 10
 NEW_APPLICATION_CHANCE = 10
 NEW_TASK_ORDER_CHANCE = 10
+
+dod_ids = set()
 
 
 def update_user_profile(client, parent):
@@ -50,6 +53,10 @@ def update_user_profile(client, parent):
         {
             "csrf_token": csrf_token,
             "phone_number": "".join(choices(string.digits, k=10)),
+            "email": client.email,
+            "citizenship": client.citizenship,
+            "service_branch": client.service_branch,
+            "designation": client.designation,
         }
     )
 
@@ -230,10 +237,51 @@ def extract_id(path):
         return entity_id_match.group(1)
 
 
+def get_new_dod_id():
+    while True:
+        dod_id = "1" + "".join(choice(string.digits) for _ in range(9))
+        if dod_id not in dod_ids:
+            dod_ids.add(dod_id)
+            return dod_id
+
+
+def get_new_name():
+    return names.get_full_name().split(" ")
+
+
+def login_as(client):
+    dod_id = get_new_dod_id()
+    first_name, last_name = get_new_name()
+
+    client.dod_id = dod_id
+    client.first_name = first_name
+    client.last_name = last_name
+    client.email = "".join([first_name.lower(), last_name.lower(), "@loadtest.atat"])
+    client.service_branch = choice(
+        [
+            "air_force",
+            "army",
+            "marine_corps",
+            "navy",
+            "space_force",
+            "ccmd_js",
+            "dafa",
+            "osd_psas",
+            "other",
+        ]
+    )
+    client.citizenship = choice(["United States", "Foreign National", "Other"])
+    client.designation = choice(["military", "civilian", "contractor"])
+
+    client.get(
+        f"/dev-new-user?first_name={first_name}&last_name={last_name}&dod_id={dod_id}"
+    )
+
+
 class UserBehavior(SequentialTaskSet):
     def on_start(self):
         self.client.verify = not DISABLE_VERIFY
-        self.client.get("/login-local", auth=(USERNAME, PASSWORD))
+        login_as(self.client)
 
     @task
     def user_profile(self):
