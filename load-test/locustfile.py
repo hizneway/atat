@@ -1,6 +1,7 @@
 import os
 import re
 from random import choice, choices, randrange
+from functools import wraps
 
 from locust import HttpUser, SequentialTaskSet, task, between
 
@@ -26,6 +27,7 @@ ENTITY_ID_MATCHER = re.compile(
 NEW_PORTFOLIO_CHANCE = 10
 NEW_APPLICATION_CHANCE = 10
 NEW_TASK_ORDER_CHANCE = 10
+NEW_LOGOUT_CHANCE = 10
 
 dod_ids = set()
 
@@ -273,9 +275,33 @@ def login_as(client):
     client.citizenship = choice(["United States", "Foreign National", "Other"])
     client.designation = choice(["military", "civilian", "contractor"])
 
-    client.get(
+    result = client.get(
         f"/dev-new-user?first_name={first_name}&last_name={last_name}&dod_id={dod_id}"
     )
+
+    client.logged_in = result.ok
+
+
+def log_out(client):
+    client.get("/logout")
+    client.logged_in = False
+
+
+def user_status(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        client = args[0].client
+
+        if not client.logged_in:
+            result = client.get(f"/login-local?dod_id={client.dod_id}")
+            client.logged_in = result.ok
+
+        f(*args, **kwargs)
+
+        if randrange(0, 100) < NEW_LOGOUT_CHANCE:
+            log_out(client)
+
+    return decorated_function
 
 
 class UserBehavior(SequentialTaskSet):
@@ -283,10 +309,12 @@ class UserBehavior(SequentialTaskSet):
         self.client.verify = not DISABLE_VERIFY
         login_as(self.client)
 
+    @user_status
     @task
     def user_profile(self):
         update_user_profile(self.client, self.parent)
 
+    @user_status
     @task
     def portfolio(self):
         client = self.client
@@ -297,6 +325,7 @@ class UserBehavior(SequentialTaskSet):
         else:
             self.portfolio_id = extract_id(choice(portfolio_links))
 
+    @user_status
     @task
     def application(self):
         client = self.client
@@ -306,6 +335,7 @@ class UserBehavior(SequentialTaskSet):
         if not application_links or randrange(0, 100) < NEW_APPLICATION_CHANCE:
             create_application(client, self.parent, portfolio_id)
 
+    @user_status
     @task
     def task_order(self):
         if (
@@ -315,7 +345,7 @@ class UserBehavior(SequentialTaskSet):
             create_task_order(self.client, self.parent, self.portfolio_id)
 
     def on_stop(self):
-        self.client.get("/logout")
+        log_out(self.client)
 
 
 class WebsiteUser(HttpUser):
