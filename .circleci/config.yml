@@ -190,7 +190,7 @@ commands:
       - checkout
       - setup_remote_docker:
           docker_layer_caching: true
-          version: 18.06.0-ce
+          version: 19.03.13
       - install_azure_cli
       - log_into_ops_registry
       - restore_docker_image
@@ -219,7 +219,7 @@ commands:
       - run:
           name: Configure kubectl
           command: |
-            apk add libssl1.0
+            apk add libssl1.1
             az aks get-credentials --name << pipeline.parameters.cluster_name >>  --resource-group << pipeline.parameters.resource_group >>
       - run:
           name: Add gettext package
@@ -237,12 +237,12 @@ commands:
 jobs:
   docker-build:
     docker:
-      - image: docker:18.06.0-ce-git
+      - image: docker:19
     steps:
       - checkout
       - setup_remote_docker:
           docker_layer_caching: true
-          version: 18.06.0-ce
+          version: 19.03.13
       - install_azure_cli
       - log_into_ops_registry
       - run:
@@ -254,7 +254,7 @@ jobs:
 
   test:
     docker:
-      - image: docker:18.06.0-ce-git
+      - image: docker:19
       - image: circleci/postgres:10-alpine-ram
       - image: circleci/redis:4-alpine3.8
     environment:
@@ -262,7 +262,7 @@ jobs:
     steps:
       - setup_remote_docker:
           docker_layer_caching: true
-          version: 18.06.0-ce
+          version: 19.03.13
       - restore_docker_image
       - setup_datastores:
           pgdatabase: atat_test
@@ -281,13 +281,13 @@ jobs:
 
   integration-tests:
     docker:
-      - image: docker:18.06.0-ce-git
+      - image: docker:19
       - image: circleci/postgres:10-alpine-ram
       - image: circleci/redis:4-alpine3.8
     steps:
       - setup_remote_docker:
           docker_layer_caching: true
-          version: 18.06.0-ce
+          version: 19.03.13
       - restore_docker_image
       - setup_datastores:
           pgdatabase: atat
@@ -340,7 +340,7 @@ jobs:
 
   deploy-staging:
     docker:
-      - image: docker:18.06.0-ce-git
+      - image: docker:19
     steps:
       - deploy:
           namespace: staging
@@ -353,7 +353,7 @@ jobs:
         type: string
         default: ${AZURE_REGISTRY}
     docker:
-      - image: docker:18.06.0-ce-git
+      - image: docker:19
     steps:
       - deploy:
           namespace: master
@@ -362,12 +362,12 @@ jobs:
 
   push-app-images:
     docker:
-      - image: docker:18.06.0-ce-git
+      - image: docker:19
     steps:
       - checkout
       - setup_remote_docker:
           docker_layer_caching: true
-          version: 18.06.0-ce
+          version: 19.03.13
       - install_azure_cli
       - log_into_ops_registry
       - run:
@@ -399,7 +399,7 @@ jobs:
       - checkout
       - setup_remote_docker:
           docker_layer_caching: false
-          version: 19.03.12
+          version: 19.03.13
       - install_azure_cli
       - log_into_ops_registry
       - run:
@@ -432,7 +432,7 @@ jobs:
        - checkout
        - setup_remote_docker:
            docker_layer_caching: false
-           version: 19.03.12
+           version: 19.03.13
        - install_azure_cli
        - log_into_ops_registry
        - run:
