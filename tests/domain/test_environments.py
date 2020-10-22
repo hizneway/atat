@@ -138,6 +138,21 @@ class TestGetEnvironmentsPendingCreate(EnvQueryTest):
         )
         assert len(Environments.get_environments_pending_creation(self.NOW)) == 1
 
+    def test_apps_and_envs_with_and_without_cloud_id(self, session):
+        """This test creates a variety of applications and environments, but for
+        each combination, they are created such that no environment ids should
+        be returned by the query."""
+
+        self.create_portfolio_with_clins(
+            [(self.YESTERDAY, self.TOMORROW), (self.YESTERDAY, self.TOMORROW)],
+            app_data={"cloud_id": uuid4().hex},
+            env_data={"cloud_id": uuid4().hex},
+        )
+        self.create_portfolio_with_clins(
+            [(self.YESTERDAY, self.TOMORROW), (self.YESTERDAY, self.TOMORROW)],
+        )
+        assert len(Environments.get_environments_pending_creation(self.NOW)) == 0
+
     def test_with_already_provisioned_env(self, session):
         self.create_portfolio_with_clins(
             [(self.YESTERDAY, self.TOMORROW)],
