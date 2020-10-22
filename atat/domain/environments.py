@@ -1,7 +1,7 @@
 from typing import List
 from uuid import UUID
 
-from sqlalchemy import and_, func, or_
+from sqlalchemy import func, or_
 from sqlalchemy.orm.exc import NoResultFound
 
 from atat.database import db
@@ -103,30 +103,26 @@ class Environments(object):
     @classmethod
     def get_environments_pending_creation(cls, now) -> List[UUID]:
         """
-        Any environment with an active CLIN that doesn't yet have a `cloud_id`.
+        Query for any environment with an active CLIN and provisioned 
+        application that doesn't yet have a `cloud_id`.
         """
-
-        active_clin_and_provisioned_app = (
-            db.session.query(Environment)
+        results = (
+            db.session.query(Environment.id)
+            .distinct(Environment.id)
             .join(Application)
             .join(Portfolio)
             .join(TaskOrder)
             .join(CLIN)
             .filter(
-                and_(CLIN.start_date <= now, CLIN.end_date > now),
+                CLIN.start_date <= now,
+                CLIN.end_date > now,
                 Application.cloud_id != None,
-            )
-        )
-        results = (
-            db.session.query(Environment.id)
-            .filter(
-                active_clin_and_provisioned_app.exists(),
+                Environment.deleted == False,
+                Environment.cloud_id.is_(None),
                 or_(
                     Environment.claimed_until == None,
                     Environment.claimed_until <= func.now(),
                 ),
-                Environment.deleted == False,
-                Environment.cloud_id.is_(None),
             )
             .all()
         )
