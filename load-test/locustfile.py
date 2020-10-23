@@ -69,8 +69,8 @@ def update_user_profile(client, parent):
 def create_application(client, parent, portfolio_id):
     # get new application page for csrf token
     create_app_url = f"/portfolios/{portfolio_id}/applications/new"
-    new_app_form = client.get(create_app_url)
-    csrf_token = get_csrf_token(new_app_form)
+    response = client.get(create_app_url)
+    csrf_token = get_csrf_token(response)
 
     # create new application
     response = client.post(
@@ -82,11 +82,14 @@ def create_application(client, parent, portfolio_id):
         },
         headers={"Referer": parent.host + create_app_url},
     )
+    csrf_token = get_csrf_token(response)
+
+    # get application id
     application_id = extract_id(response.url)
 
     # set up application environments
     create_environments_url = f"/applications/{application_id}/new/step_2"
-    client.post(
+    response = client.post(
         create_environments_url + f"?portfolio_id={portfolio_id}",
         {
             "environment_names-0": "Development",
@@ -100,8 +103,9 @@ def create_application(client, parent, portfolio_id):
 
     # get environments' ids from step 3 of application creation
     create_team_members_url = f"/applications/{application_id}/new/step_3"
-    create_team_members_response = client.get(create_team_members_url)
-    d = pq(create_team_members_response.text)
+    response = client.get(create_team_members_url)
+    csrf_token = get_csrf_token(response)
+    d = pq(response.text)
     env_0_id = d("#environment_roles-0-environment_id").val()
     env_1_id = d("#environment_roles-1-environment_id").val()
 
