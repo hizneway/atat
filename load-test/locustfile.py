@@ -164,6 +164,7 @@ def create_task_order(client, parent, portfolio_id):
         },
         headers={"Referer": parent.host + upload_task_order_pdf_url},
     )
+    csrf_token = get_csrf_token(response)
 
     # get TO ID
     task_order_id = extract_id(response.url)
@@ -171,16 +172,18 @@ def create_task_order(client, parent, portfolio_id):
     # set TO number
     number = "".join(choices(string.digits, k=choice(range(13, 18))))
     set_task_order_number_url = f"/task_orders/{task_order_id}/form/step_2"
-    client.post(
+    response = client.post(
         set_task_order_number_url,
         {"number": number, "csrf_token": csrf_token},
         headers={"Referer": parent.host + set_task_order_number_url},
     )
+    csrf_token = get_csrf_token(response)
 
     # set TO parameters
     clins_number = "".join(choices(string.digits, k=4))
-    client.post(
-        f"/task_orders/{task_order_id}/form/step_3",
+    task_orders_step_3 = f"/task_orders/{task_order_id}/form/step_3"
+    response = client.post(
+        task_orders_step_3,
         {
             "csrf_token": csrf_token,
             "clins-0-number": clins_number,
@@ -190,7 +193,9 @@ def create_task_order(client, parent, portfolio_id):
             "clins-0-start_date": "01/11/2020",
             "clins-0-end_date": "01/11/2021",
         },
+        headers={"Referer": parent.host + task_orders_step_3},
     )
+    csrf_token = get_csrf_token(response)
 
     # submit TO
     submit_task_order_url = f"/task_orders/{task_order_id}/submit"
