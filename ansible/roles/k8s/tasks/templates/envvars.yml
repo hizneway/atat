@@ -13,7 +13,7 @@ data:
   FLASK_ENV: {{ namespace }}
   PGDATABASE: {{ tf_app_env_outputs.atat_database_name.value }}
   PGHOST: {{ tf_app_env_outputs.pg_host.value }}
-  PGUSER: {{ tf_app_env_outputs.atat_user_name.value }}@{{ tf_app_env_outputs.atat_database_instance_name.value }}
+  PGUSER: {{ tf_app_env_outputs.atat_user_name.value }}
   PGSSLMODE: verify-full
   REDIS_HOST: {{ tf_app_env_outputs.redis_hostname.value }}:{{ tf_app_env_outputs.redis_ssl_port.value }}
   REDIS_SSLMODE: required
@@ -36,7 +36,7 @@ data:
   FLASK_ENV: {{ namespace }}
   PGDATABASE: {{ tf_app_env_outputs.atat_database_name.value }}
   PGHOST: {{ tf_app_env_outputs.pg_host.value }}
-  PGUSER: {{ tf_app_env_outputs.atat_user_name.value }}@{{ tf_app_env_outputs.atat_database_instance_name.value }}
+  PGUSER: {{ tf_app_env_outputs.atat_user_name.value }}
   PGSSLMODE: verify-full
   REDIS_HOST: {{ tf_app_env_outputs.redis_hostname.value }}:{{ tf_app_env_outputs.redis_ssl_port.value }}
   REDIS_SSLMODE: required
@@ -46,7 +46,7 @@ data:
   SAML_ACS: https://{{ namespace }}.atat.dev/login?acs
   SAML_SLS: https://{{ namespace }}.atat.dev/login?sls
   SAML_IDP_URI: https://fs.disa.mil/federationmetadata/2007-06/federationmetadata.xml
-  SAML_DEV_ENTITY_ID: https://{{ namespace }}.atat.dev/login-dev?saml
+  SAML_DEV_ENTITY_ID: https://{{ namespace }}.atat.dev/login-dev
   SAML_DEV_ACS: https://{{ namespace }}.atat.dev/login-dev?acs
   SAML_DEV_SLS: https://{{ namespace }}.atat.dev/login-dev?sls
   SAML_DEV_IDP_URI: https://login.microsoftonline.com/b5ab0e1e-09f8-4258-afb7-fb17654bc5b3/federationmetadata/2007-06/federationmetadata.xml?appid=41b24b41-dad9-470a-94f2-10b11a71f8ea
