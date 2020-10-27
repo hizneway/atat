@@ -101,7 +101,7 @@ def main(tenant_id: str, application_id: str, object_id: str, password: str) -> 
 
     # Register login URL with the new service principal.
 
-    url = f"https://graph.microsoft.com/v1.0/servicePrincpal/{sp_object_id}"
+    url = f"https://graph.microsoft.com/beta/servicePrincipals/{sp_object_id}"
     data = '{ "loginUrl": "https://localhost:8000/login" }'
     headers = {
         "Authorization": f"Bearer {access_token}",
