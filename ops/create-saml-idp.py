@@ -5,11 +5,7 @@ import time
 import requests
 import os
 
-from pprint import pprint
 from typing import NoReturn
-
-
-# TODO(jesse) Clean up all the "ATAT SAML Auth" service principles
 
 
 @click.command()
@@ -46,10 +42,30 @@ def main(tenant_id: str, application_id: str, object_id: str, password: str) -> 
 
     response = requests.post(url, data=data, headers=headers)
     response.raise_for_status()
+
+    sp_object_id = response.json()["servicePrincipal"]["objectId"]
+
+    # Poll for the existence of the newly created service princple
+
+    sp_exists = False
+    while not sp_exists:
+        print(f"Polling for {sp_object_id}...")
+        headers = {
+            "Authorization": f"Bearer {access_token}",
+            "Content-Type": "application/json"
+        }
+        poll_response = requests.get(f"https://graph.microsoft.com/beta/servicePrincipals/{sp_object_id}", headers=headers)
+
+        try:
+            poll_response.raise_for_status()
+            sp_exists = True
+        except:
+            print(poll_response.reason)
+            time.sleep(2)
+            continue
     
     # Configure the service principal to allow SAML sign-on.
 
-    sp_object_id = response.json()["servicePrincipal"]["objectId"]
     url = f"https://graph.microsoft.com/beta/servicePrincipals/{sp_object_id}"
     data = '{ "preferredSingleSignOnMode": "saml" }'
 
@@ -57,9 +73,6 @@ def main(tenant_id: str, application_id: str, object_id: str, password: str) -> 
         "Authorization": f"Bearer {access_token}",
         "Content-Type": "application/json"
     }
-
-    # TODO(jesse) Instead of this, poll until completion.
-    time.sleep(12)
 
     requests.patch(url, data=data, headers=headers).raise_for_status()
     
@@ -75,7 +88,7 @@ def main(tenant_id: str, application_id: str, object_id: str, password: str) -> 
         "logoutUrl": "https://localhost:8000/login?sls"
     },
     "identifierUris": [
-        "https://localhost:8000"
+        "https://localhost:8123"
     ]
     }'''
     headers = {
@@ -86,13 +99,9 @@ def main(tenant_id: str, application_id: str, object_id: str, password: str) -> 
     response = requests.patch(url, data=data, headers=headers)
     response.raise_for_status()
 
-    pprint(response.json())
-
     # Register login URL with the new service principal.
 
-    # TODO(jesse) This is causing a 404
-    # object_id = response.json()["servicePrincipal"]["objectId"]
-    url = f"https://graph.microsoft.com/v1.0/servicePrincpals/{object_id}"
+    url = f"https://graph.microsoft.com/v1.0/servicePrincpal/{sp_object_id}"
     data = '{ "loginUrl": "https://localhost:8000/login" }'
     headers = {
         "Authorization": f"Bearer {access_token}",
