@@ -1,14 +1,13 @@
 import os
 import re
-from random import choice, choices, randrange
+import string
 from functools import wraps
-
-from locust import HttpUser, SequentialTaskSet, task, between
+from random import choice, choices, randrange
+from uuid import uuid4
 
 import names
+from locust import HttpUser, SequentialTaskSet, between, task
 from pyquery import PyQuery as pq
-from uuid import uuid4
-import string
 
 # Provide username/password for basic auth
 USERNAME = os.getenv("ATAT_BA_USERNAME", "")
@@ -32,7 +31,7 @@ NEW_LOGOUT_CHANCE = 10
 dod_ids = set()
 
 
-def update_user_profile(client, parent):
+def update_user_profile(user, client, parent):
     # get csrf token
     user_url = "/user"
     response = client.get(user_url)
@@ -55,10 +54,10 @@ def update_user_profile(client, parent):
         {
             "csrf_token": csrf_token,
             "phone_number": "".join(choices(string.digits, k=10)),
-            "email": client.email,
-            "citizenship": client.citizenship,
-            "service_branch": client.service_branch,
-            "designation": client.designation,
+            "email": user.email,
+            "citizenship": user.citizenship,
+            "service_branch": user.service_branch,
+            "designation": user.designation,
         }
     )
 
@@ -260,55 +259,34 @@ def get_new_name():
     return names.get_full_name().split(" ")
 
 
-def login_as(client):
-    dod_id = get_new_dod_id()
-    first_name, last_name = get_new_name()
-
-    client.dod_id = dod_id
-    client.first_name = first_name
-    client.last_name = last_name
-    client.email = "".join([first_name.lower(), last_name.lower(), "@loadtest.atat"])
-    client.service_branch = choice(
-        [
-            "air_force",
-            "army",
-            "marine_corps",
-            "navy",
-            "space_force",
-            "ccmd_js",
-            "dafa",
-            "osd_psas",
-            "other",
-        ]
-    )
-    client.citizenship = choice(["United States", "Foreign National", "Other"])
-    client.designation = choice(["military", "civilian", "contractor"])
-
+def login_as(user, client):
     result = client.get(
-        f"/dev-new-user?first_name={first_name}&last_name={last_name}&dod_id={dod_id}"
+        f"/dev-new-user?first_name={user.first_name}&last_name={user.last_name}&dod_id={user.dod_id}"
     )
 
-    client.logged_in = result.ok
+    user.logged_in = result.ok
 
 
-def log_out(client):
+def log_out(user, client):
     client.get("/logout")
-    client.logged_in = False
+    user.logged_in = False
 
 
 def user_status(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        client = args[0].client
+        task_set = args[0]
+        client = task_set.client
+        user = task_set.user
 
-        if not client.logged_in:
-            result = client.get(f"/login-local?dod_id={client.dod_id}")
-            client.logged_in = result.ok
+        if not user.logged_in:
+            result = client.get(f"/login-local?dod_id={user.dod_id}")
+            user.logged_in = result.ok
 
         f(*args, **kwargs)
 
         if randrange(0, 100) < NEW_LOGOUT_CHANCE:
-            log_out(client)
+            log_out(user, client)
 
     return decorated_function
 
@@ -316,12 +294,12 @@ def user_status(f):
 class UserBehavior(SequentialTaskSet):
     def on_start(self):
         self.client.verify = not DISABLE_VERIFY
-        login_as(self.client)
+        login_as(self.user, self.client)
 
     @user_status
     @task
     def user_profile(self):
-        update_user_profile(self.client, self.parent)
+        update_user_profile(self.user, self.client, self.parent)
 
     @user_status
     @task
@@ -330,15 +308,15 @@ class UserBehavior(SequentialTaskSet):
         portfolio_links = get_portfolios(client)
 
         if not portfolio_links or randrange(0, 100) < NEW_PORTFOLIO_CHANCE:
-            self.portfolio_id = create_portfolio(client, self.parent)
+            self.user.portfolio_id = create_portfolio(client, self.parent)
         else:
-            self.portfolio_id = extract_id(choice(portfolio_links))
+            self.user.portfolio_id = extract_id(choice(portfolio_links))
 
     @user_status
     @task
     def application(self):
         client = self.client
-        portfolio_id = self.portfolio_id
+        portfolio_id = self.user.portfolio_id
 
         application_links = get_applications(client, portfolio_id)
         if not application_links or randrange(0, 100) < NEW_APPLICATION_CHANCE:
@@ -348,20 +326,51 @@ class UserBehavior(SequentialTaskSet):
     @task
     def task_order(self):
         if (
-            not has_task_orders(self.client, self.portfolio_id)
+            not has_task_orders(self.client, self.user.portfolio_id)
             or randrange(0, 100) < NEW_TASK_ORDER_CHANCE
         ):
-            create_task_order(self.client, self.parent, self.portfolio_id)
+            create_task_order(self.client, self.parent, self.user.portfolio_id)
 
     def on_stop(self):
-        log_out(self.client)
+        log_out(self.user, self.client)
 
 
-class WebsiteUser(HttpUser):
+class ATATUser(HttpUser):
     tasks = [UserBehavior]
     wait_time = between(3, 9)
+
+    def on_start(self):
+        dod_id = get_new_dod_id()
+        first_name, last_name = get_new_name()
+
+        self.dod_id = dod_id
+        self.first_name = first_name
+        self.last_name = last_name
+        self.email = "".join([first_name.lower(), last_name.lower(), "@loadtest.atat"])
+        self.service_branch = choice(
+            [
+                "air_force",
+                "army",
+                "marine_corps",
+                "navy",
+                "space_force",
+                "ccmd_js",
+                "dafa",
+                "osd_psas",
+                "other",
+            ]
+        )
+        self.citizenship = choice(["United States", "Foreign National", "Other"])
+        self.designation = choice(["military", "civilian", "contractor"])
+
+        self.logged_in = False
+        self.portfolio_id = None
+
+
+    def on_stop(self):
+        dod_ids.remove(self.dod_id)
 
 
 if __name__ == "__main__":
     # if run as the main file, will spin up a single locust
-    WebsiteUser().run()
+    ATATUser().run()
