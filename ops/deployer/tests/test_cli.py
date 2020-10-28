@@ -1,8 +1,10 @@
 import shutil
+import time
 import subprocess
 import uuid
+import logging
 from os import path
-
+import os
 import pytest
 from click.testing import CliRunner
 from deployer.cli import (
@@ -12,23 +14,25 @@ from deployer.cli import (
     cli,
     clone_repo,
     create_workspace,
+    diffie_helman,
+    download_application_env_config,
+    download_bootstrap_config,
     download_file,
     download_pem,
-    download_bootstrap_config,
-    download_application_env_config,
     import_rhel,
-    diffie_helman,
-    terraform_bootstrap,
-    terraform_application_env,
+    load_bootstrap_output,
+    login_registry,
     pause_until_complete,
+    terraform_application_env,
+    terraform_bootstrap,
 )
 
+@pytest.fixture(autouse=True)
+def clear_workspace():
+    if path.exists("./workspace_test"):
+        shutil.rmtree("./workspace_test")
 
-# @pytest.fixture(autouse=True)
-# def clear_workspace():
-#     if path.exists("./workspace_test"):
-#         shutil.rmtree("./workspace_test")
-
+logger = logging.getLogger(__name__)
 
 @pytest.fixture()
 def workspace():
@@ -137,9 +141,29 @@ def registry():
 
 
 def test_terraform_bootstrap(workspace):
-    # clone_repo(workspace)
-    download_pem(workspace)
+    clone_repo(workspace)
+    # workspace = path.abspath( path.join(os.getcwd(), "../../"))
+    workspace = "./workspace_test"
+
+    download_pem(workspace=workspace)
+    download_bootstrap_config(workspace=workspace)
+    terraform_bootstrap(workspace=workspace)
+    bootstrap_outputs = load_bootstrap_output(workspace)
     download_application_env_config(workspace=workspace)
+
+    login_registry("cloudzeroopsregistry.azurecr.io")
+    import_rhel(
+        src_registry="cloudzeroopsregistry.azurecr.io",
+        dest_registry=bootstrap_outputs["ops_container_registry_name"],
+    )
+    time.sleep(5)
+    # login_registry(bootstrap_outputs["ops_container_registry_name"])
+
+    # nginx_proc = build_nginx(workspace=workspace, registry=bootstrap_outputs["ops_container_registry_name"])
+    # atat_proc = build_atat(workspace=workspace, registry=bootstrap_outputs["ops_container_registry_name"])
+
+    # pause_until_complete(nginx_proc)
+    # pause_until_complete(atat_proc)
     terraform_application_env(workspace)
     assert path.exists(
         path.join(

@@ -7,8 +7,6 @@ authors = ["Jeff Deville <jeff@promptworks.com>"]
 [tool.poetry.dependencies]
 python = "^3.7"
 Click = "^7"
-azure-storage-blob = "^12.5.0"
-azure-identity = "^1.4.1"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.1.1"
