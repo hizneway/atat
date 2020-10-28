@@ -6,7 +6,8 @@ from random import choice, choices, randrange
 from uuid import uuid4
 
 import names
-from locust import HttpUser, SequentialTaskSet, between, task
+from locust import SequentialTaskSet, between, task
+from locust.contrib.fasthttp import FastHttpUser
 from pyquery import PyQuery as pq
 
 # Provide username/password for basic auth
@@ -84,7 +85,7 @@ def create_application(client, parent, portfolio_id):
     csrf_token = get_csrf_token(response)
 
     # get application id
-    application_id = extract_id(response.url)
+    application_id = extract_id(response._request.get_full_url())
 
     # set up application environments
     create_environments_url = f"/applications/{application_id}/new/step_2"
@@ -148,7 +149,7 @@ def create_portfolio(client, parent):
         headers={"Referer": parent.host + portfolios_url},
     )
 
-    return extract_id(response.url)
+    return extract_id(response._request.get_full_url())
 
 
 def create_task_order(client, parent, portfolio_id):
@@ -170,7 +171,7 @@ def create_task_order(client, parent, portfolio_id):
     csrf_token = get_csrf_token(response)
 
     # get TO ID
-    task_order_id = extract_id(response.url)
+    task_order_id = extract_id(response._request.get_full_url())
 
     # set TO number
     number = "".join(choices(string.digits, k=choice(range(13, 18))))
@@ -264,7 +265,7 @@ def login_as(user, client):
         f"/dev-new-user?first_name={user.first_name}&last_name={user.last_name}&dod_id={user.dod_id}"
     )
 
-    user.logged_in = result.ok
+    user.logged_in = result.status == "200"
 
 
 def log_out(user, client):
@@ -281,7 +282,7 @@ def user_status(f):
 
         if not user.logged_in:
             result = client.get(f"/login-local?dod_id={user.dod_id}")
-            user.logged_in = result.ok
+            user.logged_in = result.status == "200"
 
         f(*args, **kwargs)
 
@@ -335,7 +336,7 @@ class UserBehavior(SequentialTaskSet):
         log_out(self.user, self.client)
 
 
-class ATATUser(HttpUser):
+class ATATUser(FastHttpUser):
     tasks = [UserBehavior]
     wait_time = between(3, 9)
 
