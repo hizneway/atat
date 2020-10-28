@@ -19,7 +19,7 @@ RUN set -x \
     && yum updateinfo \
     # Upgrade all packages with their latest security updates.
     # http://man7.org/linux/man-pages/man8/yum.8.html
-    && yum upgrade --security \ 
+    && yum upgrade --security -y \
     # Install nginx!
     # https://docs.nginx.com/nginx/admin-guide/installing-nginx/installing-nginx-open-source/#prebuilt_redhat
     && yum install nginx -y
