@@ -56,3 +56,8 @@ az role assignment create --assignee $appId --role "User Access Administrator" -
 echo "APPID: $appId"
 echo "OBJECTID:$(az ad sp show --id $appId | jq .objectId)"
 echo "PASSWORD: $(echo $sp | jq .password)"
+
+export SERVICE_PRINCIPLE_APPID=$(echo $sp | jq .appId)
+export SERVICE_PRINCIPLE_OBJECT_ID=$(az ad sp show --id $appId | jq .objectId)
+export SERVICE_PRINCIPLE_SECRET=$(echo $sp | jq .password)
+export SERVICE_PRINCIPLE_URL=$(echo $sp | jq .name)
