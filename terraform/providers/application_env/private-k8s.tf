@@ -19,7 +19,6 @@ module "private-k8s" {
   subnet_cidr                = var.private_k8s_subnet_cidr
   vnet_id                    = module.vpc.id
   vpc_name                   = module.vpc.vpc_name
-  aks_ssh_pub_key_path       = var.aks_ssh_pub_key_path
   aks_subnet_id              = module.vpc.subnet_list["aks-private"].id
   vpc_address_space          = "10.1.0.0/16"
 

@@ -28,7 +28,6 @@ variable "aks_subnet_id" {}
 
 variable "subnet_cidr" {}
 
-variable "aks_ssh_pub_key_path" {}
 
 variable "service_dns" {}
 
