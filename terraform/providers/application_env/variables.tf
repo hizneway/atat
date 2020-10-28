@@ -14,7 +14,6 @@ variable "backup_region" {}
 variable "bastion_resource_group" {}
 variable "bastion_aks_sp_secret" {}
 variable "bastion_aks_sp_id" {}
-variable "bastion_ssh_pub_key_path" {}
 
 variable "owner" {}
 
@@ -86,7 +85,6 @@ variable "private_aks_service_cidr" {}
 
 variable "private_aks_docker_bridge_cidr" {}
 
-variable "aks_ssh_pub_key_path" {}
 
 variable "private_aks_sp_secret" {}
 
