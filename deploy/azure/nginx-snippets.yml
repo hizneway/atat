@@ -19,4 +19,4 @@ data:
     # OCSP Stapling
     ssl_stapling on;
     ssl_stapling_verify on;
-    resolver 8.8.8.8 8.8.4.4;
+    resolver 214.16.26.1 214.27.166.1 214.71.0.1;
