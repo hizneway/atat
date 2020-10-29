@@ -4,6 +4,12 @@
     state: directory
     mode: "0755"
 
-- name: Generate Diffie-Hellman parameters with the default size (4096 bits)
-  openssl_dhparam:
+# - name: Generate Diffie-Hellman parameters with the default size (4096 bits)
+#   openssl_dhparam:
+#     path: /src/ansible/dh/dhparams.pem
+
+- name: Fake DH
+  file:
     path: /src/ansible/dh/dhparams.pem
+    state: touch
+    mode: u=rw,g=r,o=r
