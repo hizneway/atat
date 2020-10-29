@@ -84,9 +84,6 @@ RUN set -x ; mkdir -p ${APP_DIR}
 # Set working dir
 WORKDIR ${APP_DIR}
 
-# Run as the unprivileged APP user
-USER atst
-
 COPY --from=builder /install/.venv/ ./.venv/
 COPY --from=builder /install/alembic/ ./alembic/
 COPY --from=builder /install/alembic.ini .
@@ -112,6 +109,9 @@ RUN mkdir /var/run/uwsgi \
     && chown -R atst:atat /var/run/uwsgi \
     && chown -R atst:atat "${APP_DIR}" \
     && update-ca-trust
+
+# Run as the unprivileged APP user
+USER atst
 
 # Use dumb-init for proper signal handling
 ENTRYPOINT ["dumb-init", "--"]
