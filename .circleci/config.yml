@@ -301,6 +301,9 @@ jobs:
       - setup_datastores:
           pgdatabase: atat
       - run:
+          name: Log into Dockerhub
+          command: echo "$DOCKERHUB_PASSWORD" | docker login --username $DOCKERHUB_USERNAME --password-stdin
+      - run:
           name: Start application container
           command: |
             docker run -d \
