@@ -5,8 +5,8 @@ deploy_bootstrap_env: true
 fetch_bootstrap_state: false
 tf_base_dir: /src/terraform/providers/
 tf_subdir: bootstrap
-bootstrap_resource_group_name: cloudzero-ops
-bootstrap_storage_account_name: czopsstorageaccount
+bootstrap_resource_group_name: "{{ lookup('env','BOOTSTRAP_RESOURCE_GROUP_NAME') }}"
+bootstrap_storage_account_name: "{{ lookup('env','BOOTSTRAP_STORAGE_ACCOUNT_NAME') }}"
 bootstrap_container_name: tf-configs
 bootstrap_subscription_id: "{{ lookup('env','SUBSCRIPTION_ID') }}"
 tfvars_file_path: /src/terraform/providers/bootstrap/bootstrap.tfvars
