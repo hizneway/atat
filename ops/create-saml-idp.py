@@ -45,7 +45,7 @@ def main(
     # Create a new app registration from a template.
 
     url = "https://graph.microsoft.com/beta/applicationTemplates/8adf8e6e-67b2-4cf2-a259-e3dc5476c621/instantiate"
-    data = '{ "displayName": "ATAT SAML Auth (Jesse)" }'
+    data = '{ "displayName": "ATAT SAML Auth" }'
 
     headers = {
         "Authorization": f"Bearer {access_token}",
