@@ -445,47 +445,47 @@ jobs:
           command: docker push << pipeline.parameters.container_registry >>.azurecr.io/ops:latest
 
   deploy-atat:
-     docker:
-       - image: docker:19
-         auth:
+    docker:
+      - image: docker:19
+        auth:
           username: $DOCKERHUB_USERNAME
           password: $DOCKERHUB_PASSWORD
-     environment:
-       DOCKER_BUILDKIT: 1
-     steps:
-       - checkout
-       - setup_remote_docker:
-           docker_layer_caching: false
-           version: 19.03.13
-       - install_azure_cli
-       - log_into_ops_registry
-       - run:
-           name: Build ops deployment image and deploy to container instances
-           command: |
-             docker build \
-             --cache-from <<pipeline.parameters.ops_registry >>.azurecr.io/ops-cache:latest \
-             -t ops:latest \
-             --build-arg operator_sp_client_id=${AZURE_SP} \
-             --build-arg operator_sp_object_id=${OPERATOR_SP_OBJECT_ID} \
-             --build-arg operator_sp_secret=${AZURE_SP_PASSWORD} \
-             --build-arg azure_tenant=${AZURE_SP_TENANT} \
-             --build-arg azure_subscription_id=${AZURE_SUBSCRIPTION} \
-             --build-arg operator_sp_url=${OPERATOR_SP_URL} \
-             --build-arg circle_api_token=${CIRCLE_API_TOKEN} \
-             --build-arg build_branch=<< pipeline.parameters.build_branch >> \
-             --build-arg az_environment=<< pipeline.parameters.az_environment >> \
-              -f Dockerfile.ops .
-       - run:
-           name: Tag ops image
-           command: docker tag ops:latest <<pipeline.parameters.ops_registry >>.azurecr.io/ops:${CIRCLE_BUILD_NUM}
-       - run:
-           name: Push ops image
-           command: docker push  <<pipeline.parameters.ops_registry >>.azurecr.io/ops:${CIRCLE_BUILD_NUM}
-       - run:
-           name: run container image
-           command: |
-             az account set -s ${AZURE_SUBSCRIPTION}
-             az container create -g cloudzero-ops --name deploy-build-${CIRCLE_BUILD_NUM} --ip-address Private --vnet cloudzero-ops-network --subnet deployment-subnet --image  <<pipeline.parameters.ops_registry >>.azurecr.io/ops:${CIRCLE_BUILD_NUM}  --registry-password ${AZURE_SP_PASSWORD} --registry-username ${AZURE_SP} --command-line "ansible-playbook site.yml --extra-vars deploy_tag=v0.1.0" --cpu 4 --memory 4 --restart-policy Never
+    environment:
+      DOCKER_BUILDKIT: 1
+    steps:
+      - checkout
+      - setup_remote_docker:
+          docker_layer_caching: false
+          version: 19.03.13
+      - install_azure_cli
+      - log_into_ops_registry
+      - run:
+          name: Build ops deployment image and deploy to container instances
+          command: |
+            docker build \
+            --cache-from <<pipeline.parameters.ops_registry >>.azurecr.io/ops-cache:latest \
+            -t ops:latest \
+            --build-arg operator_sp_client_id=${AZURE_SP} \
+            --build-arg operator_sp_object_id=${OPERATOR_SP_OBJECT_ID} \
+            --build-arg operator_sp_secret=${AZURE_SP_PASSWORD} \
+            --build-arg azure_tenant=${AZURE_SP_TENANT} \
+            --build-arg azure_subscription_id=${AZURE_SUBSCRIPTION} \
+            --build-arg operator_sp_url=${OPERATOR_SP_URL} \
+            --build-arg circle_api_token=${CIRCLE_API_TOKEN} \
+            --build-arg build_branch=<< pipeline.parameters.build_branch >> \
+            --build-arg az_environment=<< pipeline.parameters.az_environment >> \
+             -f Dockerfile.ops .
+      - run:
+          name: Tag ops image
+          command: docker tag ops:latest <<pipeline.parameters.ops_registry >>.azurecr.io/ops:${CIRCLE_BUILD_NUM}
+      - run:
+          name: Push ops image
+          command: docker push  <<pipeline.parameters.ops_registry >>.azurecr.io/ops:${CIRCLE_BUILD_NUM}
+      - run:
+          name: run container image
+          command: |
+            az account set -s ${AZURE_SUBSCRIPTION}
+            az container create -g cloudzero-ops --name deploy-build-${CIRCLE_BUILD_NUM} --ip-address Private --vnet cloudzero-ops-network --subnet deployment-subnet --image  <<pipeline.parameters.ops_registry >>.azurecr.io/ops:${CIRCLE_BUILD_NUM}  --registry-password ${AZURE_SP_PASSWORD} --registry-username ${AZURE_SP} --command-line "ansible-playbook site.yml --extra-vars deploy_tag=v0.1.0" --cpu 4 --memory 4 --restart-policy Never
 
 workflows:
   version: 2
