@@ -12,8 +12,8 @@ variable "region" {}
 variable "backup_region" {}
 
 variable "bastion_resource_group" {}
-variable "bastion_aks_sp_secret" {}
-variable "bastion_aks_sp_id" {}
+# variable "bastion_aks_sp_secret" {}
+# variable "bastion_aks_sp_id" {}
 
 variable "owner" {}
 
@@ -133,7 +133,7 @@ variable "dhparam4096" {}
 variable "AZURE_SUBSCRIPTION_CREATION_CLIENT_ID" {}
 variable "AZURE_SUBSCRIPTION_CREATION_SECRET" {}
 variable "AZURE_POWERSHELL_CLIENT_ID" {}
-variable "AZURE_ROOT_MGMT_GROUP_ID" {}
+# variable "AZURE_ROOT_MGMT_GROUP_ID" {}
 variable "AZURE_TENANT_ADMIN_USERNAME" {}
 variable "AZURE_TENANT_ID" {}
 variable "AZURE_USER_OBJECT_ID" {}

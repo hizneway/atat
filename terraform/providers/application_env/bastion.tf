@@ -8,8 +8,8 @@ module "bastion" {
   bastion_subnet_vpc_name    = module.vpc.vpc_name
   mgmt_subnet_cidr           = "10.1.250.0/24"
   bastion_subnet_cidr        = "10.1.4.0/24"
-  bastion_aks_sp_secret      = module.bastion_sp.application_password
-  bastion_aks_sp_id          = module.bastion_sp.application_id
+  # bastion_aks_sp_secret      = module.bastion_sp.application_password
+  # bastion_aks_sp_id          = module.bastion_sp.application_id
   environment                = local.environment
   owner                      = var.owner
   name                       = var.name
