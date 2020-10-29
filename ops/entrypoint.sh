@@ -39,6 +39,7 @@ export TF_VAR_OPS_OID="$operator_sp_object_id"
 export TF_VAR_OPS_SEC="$operator_sp_secret"
 export TF_VAR_OPS_SP_URL="$operator_sp_url"
 
+
 az login \
     --service-principal \
     --username "$operator_sp_client_id" \
@@ -51,5 +52,4 @@ az provider register --namespace Microsoft.ContainerService
 
 ansible-playbook site.yml \
     -vvv \
-    --extra-vars "app_name=atat scripts_dir=/src/script az_environment=dryrun3 show_bs_env=yes show_app_env_outputs=yes tfvars_file_path=/src/terraform/providers/bootstrap/dryrun.tfvars tf_base_dir=/src/terraform/providers show_app_env_outputs=true bootstrap_subscription_id=$SUBSCRIPTION_ID application_subscription_id=$SUBSCRIPTION_ID"
-        
+    --extra-vars "'deploy_tag=v0.1.0'"
