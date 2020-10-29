@@ -113,8 +113,8 @@ RUN mkdir /var/run/uwsgi \
     && chown -R atst:atat "${APP_DIR}" \
     && update-ca-trust
 
-# Default command is to launch the server
-CMD ["uwsgi", "--ini", "uwsgi.ini"]
-
 # Use dumb-init for proper signal handling
 ENTRYPOINT ["dumb-init", "--"]
+
+# Default command is to launch the server
+CMD ["uwsgi", "--ini", "uwsgi.ini"]
