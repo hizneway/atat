@@ -84,20 +84,6 @@ RUN set -x ; mkdir -p ${APP_DIR}
 # Set working dir
 WORKDIR ${APP_DIR}
 
-RUN mkdir /var/run/uwsgi \
-    # Create a system group `atat`.
-    # https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/6/html/deployment_guide/s2-groups-cl-tools
-    && groupadd --system -g 101 atat \
-    # Create a system user `atst` and add them to the `atat` group.
-    # https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/6/html/deployment_guide/s2-users-cl-tools
-    && useradd --system atst -g atat \
-    && chown -R atst:atat /var/run/uwsgi \
-    && chown -R atst:atat "${APP_DIR}" \
-    && update-ca-trust
-
-# Run as the unprivileged APP user
-USER atst
-
 COPY --from=builder /install/.venv/ ./.venv/
 COPY --from=builder /install/alembic/ ./alembic/
 COPY --from=builder /install/alembic.ini .
@@ -113,8 +99,22 @@ COPY --from=builder /install/static/ ./static/
 COPY --from=builder /install/fixtures/ ./fixtures
 COPY --from=builder /install/uwsgi.ini .
 
-# Default command is to launch the server
-CMD ["uwsgi", "--ini", "uwsgi.ini"]
+RUN mkdir /var/run/uwsgi \
+    # Create a system group `atat`.
+    # https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/6/html/deployment_guide/s2-groups-cl-tools
+    && groupadd --system -g 101 atat \
+    # Create a system user `atst` and add them to the `atat` group.
+    # https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/6/html/deployment_guide/s2-users-cl-tools
+    && useradd --system atst -g atat \
+    && chown -R atst:atat /var/run/uwsgi \
+    && chown -R atst:atat "${APP_DIR}" \
+    && update-ca-trust
+
+# Run as the unprivileged APP user
+USER atst
 
 # Use dumb-init for proper signal handling
 ENTRYPOINT ["dumb-init", "--"]
+
+# Default command is to launch the server
+CMD ["uwsgi", "--ini", "uwsgi.ini"]
