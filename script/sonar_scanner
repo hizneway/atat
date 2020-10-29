@@ -2,6 +2,15 @@
 
 # script/sonarqube: Scan code base with sonarQube.
 
+source ./script/include/helper_functions.inc.sh
+source ./script/include/test_functions.inc.sh
+
+if [ -z "$SONAR_TOKEN" ];
+then
+    echo "Please set the environment variable SONAR_TOKEN.  If you don't have a token, goto https://sonarcloud.io/account/security/."
+    exit 1
+fi
+
 # script variables
 SONAR_SCANNER_IMAGE="sonarsource/sonar-scanner-cli:4.5"
 
@@ -9,6 +18,7 @@ SONAR_SCANNER_IMAGE="sonarsource/sonar-scanner-cli:4.5"
 set -e
 
 # generate coverage reports
+run_python_render_vue_component
 poetry run pytest --cov-report=xml
 yarn jest --coverage
 
@@ -21,3 +31,4 @@ docker run --rm \
     -e SONAR_TOKEN=$SONAR_TOKEN \
     -v $(pwd):/usr/src \
     $SONAR_SCANNER_IMAGE \
+    
