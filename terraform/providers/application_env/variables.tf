@@ -10,7 +10,6 @@ variable "lifecycle_env_name" {
 variable "region" {}
 
 variable "backup_region" {}
-variable "bastion_ssh_pub_key_path" {}
 variable "bastion_resource_group" {}
 variable "bastion_aks_sp_secret" {}
 variable "bastion_aks_sp_id" {}
@@ -128,7 +127,6 @@ variable "azure_hybrid_user_object_id" {}
 variable "azure_hybrid_tenant_admin_password" {}
 variable "AZURE-BILLING-ACCOUNT-NAME" {}
 variable "AZURE-INVOICE-SECTION-ID" {}
-variable "SAML-IDP-CERT" {}
 variable "AZURE-BILLING-PROFILE-ID" {}
 variable "dhparam4096" {}
 variable "AZURE_SUBSCRIPTION_CREATION_CLIENT_ID" {}

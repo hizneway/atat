@@ -131,7 +131,6 @@ output "vnet_id" {
 }
 
 output "app_config_values" {
-
   value = {
     "AZURE-CLIENT-ID" : module.tenant_keyvault_app.application_id
     "AZURE-SECRET-KEY" : module.tenant_keyvault_app.application_password
@@ -146,7 +145,6 @@ output "app_config_values" {
     "AZURE-BILLING-ACCOUNT-NAME" : var.AZURE-BILLING-ACCOUNT-NAME
     "AZURE-BILLING-PROFILE-ID" : var.AZURE-BILLING-PROFILE-ID
     "AZURE-INVOICE-SECTION-ID" : var.AZURE-INVOICE-SECTION-ID
-    "SAML-IDP-CERT" : ""
     "dhparam4096" : var.dhparam4096
     "PGPASSWORD" : random_password.atat_user_password.result
     "AZURE-VAULT-URL" : module.tenant_keyvault.url
@@ -158,12 +156,7 @@ output "app_config_values" {
     "CSP" : var.CSP
     "AZURE-HYBRID-REPORTING-CLIENT-ID" : var.AZURE_HYBRID_REPORTING_CLIENT_ID
     "AZURE-HYBRID-REPORTING-SECRET" : var.AZURE_HYBRID_REPORTING_SECRET
-
-
-
-
   }
-
 }
 
 output "circle_ci_api_key" {
