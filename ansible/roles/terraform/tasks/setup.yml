@@ -11,6 +11,14 @@
   set_fact:
     tf_dir: "{{ tf_base_dir }}"
 
+- name: Wait for Diffie-Hellman algorithm to finish running
+  async_status:
+    jid: "{{ diffie_hellman_job_handle.ansible_job_id }}"
+  register: job_result
+  until: job_result.finished
+  retries: 1000
+  delay: 5
+
 - name: tf apply (modules)
   terraform:
     project_path: "{{ tf_base_dir }}/{{ tf_subdir }}"
