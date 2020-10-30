@@ -74,7 +74,5 @@ variable "ops_resource_group_name" {
 variable "ops_container_registry_name" {
   type        = string
   description = "The name of a prexisting container registry with a hardened base image used to build our application images."
-  default     = "cloudzeroopsregistry"
+  default     = "cloudzeroopsregistry2"
 }
-
-

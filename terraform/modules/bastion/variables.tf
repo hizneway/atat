@@ -25,5 +25,5 @@ variable "container_image" {
 }
 
 variable container_registry {
-  default = "cloudzeroopsregistry.azurecr.io"
+  default = "cloudzeroopsregistry2.azurecr.io"
 }
