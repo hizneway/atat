@@ -21,8 +21,8 @@ logger = logging.getLogger(__name__)
 @click.argument("tenant_id",envvar='AZURE_TENANT_ID')
 @click.argument("client_id",envvar='AZURE_CLIENT_ID')
 @click.argument("client_secret",envvar='AZURE_CLIENT_SECRET')
-@click.argyment("config_directory" default=None)
-def cli(subscription_id, tenant_id, client_id, client_secret, config_directory) -> NoReturn:
+@click.argument("config_directory" default=None)
+def cli(subscription_id, tenant_id, client_id, client_secret, config_directory) -> None:
     os.environ["AZURE_SUBSCRIPTION_ID"=subscription_id
     os.environ["AZURE_TENANT_ID"=tenant_id
     os.environ["AZURE_CLIENT_ID"=client_id
