@@ -21,7 +21,33 @@ provider "azurerm" {
   features {}
 }
 
+locals {
+  environment = "jesse"
+  location    = "East US"
+}
+
 resource "azurerm_resource_group" "bootstrap_resource_group" {
-  name     = "cloudzero-ops"
-  location = "East US"
+  name     = "cloudzero-ops-${local.environment}"
+  location = local.location
+}
+
+resource "azurerm_virtual_network" "bootstrap_virtual_network" {
+  name                = "cloudzero-ops-network-${local.environment}"
+  location            = local.location
+  resource_group_name = azurerm_resource_group.bootstrap_resource_group.name
+  address_space       = ["10.0.0.0/16"]
+}
+
+resource "azurerm_subnet" "deployment_subnet" {
+  name                 = "deployment-subnet-${local.environment}"
+  address_prefixes     = ["10.0.1.0/24"]
+  resource_group_name  = azurerm_resource_group.bootstrap_resource_group.name
+  virtual_network_name = azurerm_virtual_network.bootstrap_virtual_network.name
+
+  service_endpoints = [
+    "Microsoft.ContainerRegistry",
+    "Microsoft.KeyVault",
+    "Microsoft.Sql",
+    "Microsoft.Storage"
+  ]
 }
