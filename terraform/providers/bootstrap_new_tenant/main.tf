@@ -22,13 +22,13 @@ provider "azurerm" {
 }
 
 variable "namespace" {
-  type        = "string"
-  default     = "dryrun"
+  type        = string
+  default     = "dev"
   description = "Namespace of provisioned resources."
 }
 
 variable "location" {
-  type        = "string"
+  type        = string
   default     = "East US"
   description = "Azure region in which resources are provisioned."
 }
