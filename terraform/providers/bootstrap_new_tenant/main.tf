@@ -21,23 +21,23 @@ provider "azurerm" {
   features {}
 }
 
-resource "azurerm_resource_group" "bootstrap_resource_group" {
-  name     = "cloudzero-ops-${var.namespace}"
+resource "azurerm_resource_group" "operations_resource_group" {
+  name     = "cloudzero-ops-${var.operations_namespace}"
   location = var.location
 }
 
-resource "azurerm_virtual_network" "bootstrap_virtual_network" {
-  name                = "cloudzero-ops-network-${var.namespace}"
+resource "azurerm_virtual_network" "operations_virtual_network" {
+  name                = "cloudzero-ops-network-${var.operations_namespace}"
   location            = var.location
-  resource_group_name = azurerm_resource_group.bootstrap_resource_group.name
+  resource_group_name = azurerm_resource_group.operations_resource_group.name
   address_space       = ["10.0.0.0/16"]
 }
 
 resource "azurerm_subnet" "deployment_subnet" {
-  name                 = "deployment-subnet-${var.namespace}"
+  name                 = "deployment-subnet-${var.operations_namespace}"
   address_prefixes     = ["10.0.1.0/24"]
-  resource_group_name  = azurerm_resource_group.bootstrap_resource_group.name
-  virtual_network_name = azurerm_virtual_network.bootstrap_virtual_network.name
+  resource_group_name  = azurerm_resource_group.operations_resource_group.name
+  virtual_network_name = azurerm_virtual_network.operations_virtual_network.name
 
   service_endpoints = [
     "Microsoft.ContainerRegistry",
@@ -47,9 +47,9 @@ resource "azurerm_subnet" "deployment_subnet" {
   ]
 }
 
-resource "azurerm_storage_account" "bootstrap_storage_account" {
-  name                     = "czopsstorageaccount${var.namespace}"
-  resource_group_name      = azurerm_resource_group.bootstrap_resource_group.name
+resource "azurerm_storage_account" "operations_storage_account" {
+  name                     = "czopsstorageaccount${var.operations_namespace}"
+  resource_group_name      = azurerm_resource_group.operations_resource_group.name
   location                 = var.location
   account_tier             = "Standard"
   account_replication_type = "LRS"
@@ -60,9 +60,9 @@ resource "azurerm_storage_account" "bootstrap_storage_account" {
   }
 }
 
-resource "azurerm_container_registry" "bootstrap_container_registry" {
-  name                = "cloudzeroopsregistry${var.namespace}"
-  resource_group_name = azurerm_resource_group.bootstrap_resource_group.name
+resource "azurerm_container_registry" "operations_container_registry" {
+  name                = "cloudzeroopsregistry${var.operations_namespace}"
+  resource_group_name = azurerm_resource_group.operations_resource_group.name
   location            = var.location
   sku                 = "Premium"
 }

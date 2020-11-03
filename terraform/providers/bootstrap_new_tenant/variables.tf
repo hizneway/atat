@@ -1,11 +1,11 @@
-variable "namespace" {
+variable "operations_namespace" {
   type        = string
   default     = "dev"
-  description = "Namespace of provisioned resources."
+  description = "Namespace of provisioned operations resources."
 }
 
 variable "location" {
   type        = string
   default     = "East US"
-  description = "Azure region in which resources are provisioned."
+  description = "Azure region in which operations resources are provisioned."
 }
