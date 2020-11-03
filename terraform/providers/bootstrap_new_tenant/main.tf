@@ -1,34 +1,11 @@
-terraform {
-  required_providers {
-    azuread = {
-      source  = "hashicorp/azuread"
-      version = "= 1.0.0"
-    }
-
-    azurerm = {
-      source  = "hashicorp/azurerm"
-      version = "= 2.34.0"
-    }
-  }
-}
-
-# Specifying a `provider` this way is deprecated. It is necessary in this 
-# situation due to an issue with the `azurerm` provider. 
-#
-# https://www.terraform.io/docs/configuration/providers.html#version-an-older-way-to-manage-provider-versions
-# https://github.com/terraform-providers/terraform-provider-azurerm/issues/7359
-provider "azurerm" {
-  features {}
-}
-
 resource "azurerm_resource_group" "operations_resource_group" {
   name     = "cloudzero-ops-${var.operations_namespace}"
-  location = var.location
+  location = var.operations_location
 }
 
 resource "azurerm_virtual_network" "operations_virtual_network" {
   name                = "cloudzero-ops-network-${var.operations_namespace}"
-  location            = var.location
+  location            = var.operations_location
   resource_group_name = azurerm_resource_group.operations_resource_group.name
   address_space       = ["10.0.0.0/16"]
 }
@@ -50,7 +27,7 @@ resource "azurerm_subnet" "deployment_subnet" {
 resource "azurerm_storage_account" "operations_storage_account" {
   name                     = "czopsstorageaccount${var.operations_namespace}"
   resource_group_name      = azurerm_resource_group.operations_resource_group.name
-  location                 = var.location
+  location                 = var.operations_location
   account_tier             = "Standard"
   account_replication_type = "LRS"
 
@@ -63,6 +40,6 @@ resource "azurerm_storage_account" "operations_storage_account" {
 resource "azurerm_container_registry" "operations_container_registry" {
   name                = "cloudzeroopsregistry${var.operations_namespace}"
   resource_group_name = azurerm_resource_group.operations_resource_group.name
-  location            = var.location
+  location            = var.operations_location
   sku                 = "Premium"
 }
