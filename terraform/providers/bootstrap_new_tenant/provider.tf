@@ -51,3 +51,16 @@ resource "azurerm_subnet" "deployment_subnet" {
     "Microsoft.Storage"
   ]
 }
+
+resource "azurerm_storage_account" "bootstrap_storage_account" {
+  name                     = "czopsstorageaccount${local.environment}"
+  resource_group_name      = azurerm_resource_group.bootstrap_resource_group.name
+  location                 = local.location
+  account_tier             = "Standard"
+  account_replication_type = "LRS"
+
+  network_rules {
+    default_action             = "Deny"
+    virtual_network_subnet_ids = [azurerm_subnet.deployment_subnet.id]
+  }
+}
