@@ -23,25 +23,32 @@ provider "azurerm" {
   features {}
 }
 
-locals {
-  environment = "jesse"
-  location    = "East US"
+variable "namespace" {
+  type        = "string"
+  default     = "dryrun"
+  description = "Namespace of provisioned resources."
+}
+
+variable "location" {
+  type        = "string"
+  default     = "East US"
+  description = "Azure region in which resources are provisioned."
 }
 
 resource "azurerm_resource_group" "bootstrap_resource_group" {
-  name     = "cloudzero-ops-${local.environment}"
-  location = local.location
+  name     = "cloudzero-ops-${var.namespace}"
+  location = var.location
 }
 
 resource "azurerm_virtual_network" "bootstrap_virtual_network" {
-  name                = "cloudzero-ops-network-${local.environment}"
-  location            = local.location
+  name                = "cloudzero-ops-network-${var.namespace}"
+  location            = var.location
   resource_group_name = azurerm_resource_group.bootstrap_resource_group.name
   address_space       = ["10.0.0.0/16"]
 }
 
 resource "azurerm_subnet" "deployment_subnet" {
-  name                 = "deployment-subnet-${local.environment}"
+  name                 = "deployment-subnet-${var.namespace}"
   address_prefixes     = ["10.0.1.0/24"]
   resource_group_name  = azurerm_resource_group.bootstrap_resource_group.name
   virtual_network_name = azurerm_virtual_network.bootstrap_virtual_network.name
@@ -55,9 +62,9 @@ resource "azurerm_subnet" "deployment_subnet" {
 }
 
 resource "azurerm_storage_account" "bootstrap_storage_account" {
-  name                     = "czopsstorageaccount${local.environment}"
+  name                     = "czopsstorageaccount${var.namespace}"
   resource_group_name      = azurerm_resource_group.bootstrap_resource_group.name
-  location                 = local.location
+  location                 = var.location
   account_tier             = "Standard"
   account_replication_type = "LRS"
 
@@ -68,8 +75,8 @@ resource "azurerm_storage_account" "bootstrap_storage_account" {
 }
 
 resource "azurerm_container_registry" "bootstrap_container_registry" {
-  name                = "cloudzeroopsregistry${local.environment}"
+  name                = "cloudzeroopsregistry${var.namespace}"
   resource_group_name = azurerm_resource_group.bootstrap_resource_group.name
-  location            = local.location
+  location            = var.location
   sku                 = "Premium"
 }
