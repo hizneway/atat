@@ -14,10 +14,10 @@ terraform {
 
 locals {
   environment = "jesse"
-  location = "East US"
+  location    = "East US"
 }
 
 resource "azurerm_resource_group" "bootstrap_resource_group" {
-  name = "bootstrap_resource_group_${locals.environment}"
-  location = locals.location 
+  name     = "bootstrap_resource_group_${locals.environment}"
+  location = locals.location
 }
