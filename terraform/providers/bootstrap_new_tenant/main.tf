@@ -21,18 +21,6 @@ provider "azurerm" {
   features {}
 }
 
-variable "namespace" {
-  type        = string
-  default     = "dev"
-  description = "Namespace of provisioned resources."
-}
-
-variable "location" {
-  type        = string
-  default     = "East US"
-  description = "Azure region in which resources are provisioned."
-}
-
 resource "azurerm_resource_group" "bootstrap_resource_group" {
   name     = "cloudzero-ops-${var.namespace}"
   location = var.location
