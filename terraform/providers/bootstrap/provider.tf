@@ -1,11 +1,15 @@
-provider "azurerm" {
-  version = "=2.10.0"
-  features {}
-}
+terraform {
+  required_providers {
+    azuread = {
+      source = "hashicorp/azuread"
+      version = "= 1.0.0"
+    }
 
-provider "azuread" {
-  # Whilst version is optional, we /strongly recommend/ using it to pin the version of the Provider being used
-  version = "=0.7.0"
+    azurerm = {
+      source = "hashicorp/azurerm"
+      version = "= 2.34.0"
+    }
+  }
 }
 
 resource "random_pet" "unique_id" {
