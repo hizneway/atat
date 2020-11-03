@@ -64,3 +64,10 @@ resource "azurerm_storage_account" "bootstrap_storage_account" {
     virtual_network_subnet_ids = [azurerm_subnet.deployment_subnet.id]
   }
 }
+
+resource "azurerm_container_registry" "bootstrap_container_registry" {
+  name                = "cloudzeroopsregistry${local.environment}"
+  resource_group_name = azurerm_resource_group.bootstrap_resource_group.name
+  location            = local.location
+  sku                 = "Premium"
+}
