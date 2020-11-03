@@ -21,12 +21,7 @@ provider "azurerm" {
   features {}
 }
 
-locals {
-  environment = "jesse"
-  location    = "East US"
-}
-
 resource "azurerm_resource_group" "bootstrap_resource_group" {
-  name     = "bootstrap_resource_group_${local.environment}"
-  location = local.location
+  name     = "cloudzero-ops"
+  location = "East US"
 }
