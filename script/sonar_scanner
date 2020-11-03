@@ -13,12 +13,32 @@ fi
 
 # script variables
 SONAR_SCANNER_IMAGE="sonarsource/sonar-scanner-cli:4.5"
+BRANCH=$(git rev-parse --abbrev-ref HEAD)
+GIT_CLEAN=$(git diff --no-ext-diff)
+TARGET_BRANCH="staging"
+
+# check if user is on appropriate branch
+if [ $BRANCH != $TARGET_BRANCH ];
+then
+    echo "You are not on $TARGET_BRANCH."
+    exit 1
+fi
+
+# verify there's no extra code laying around
+if [[ -n $GIT_CLEAN ]];
+then
+    echo "$TARGET_BRANCH is not clean."
+    exit 1
+fi
 
 # exit when any command fails
 set -e
 
-# generate coverage reports
+# run update script
+script/update
 run_python_render_vue_component
+
+# generate coverage reports
 poetry run pytest --cov-report=xml
 yarn jest --coverage
 
@@ -31,4 +51,3 @@ docker run --rm \
     -e SONAR_TOKEN=$SONAR_TOKEN \
     -v $(pwd):/usr/src \
     $SONAR_SCANNER_IMAGE \
-    
