@@ -9,16 +9,10 @@ provider "azuread" {
 }
 
 resource "random_pet" "unique_id" {
-
   length    = 1
   separator = ""
-
 }
 
 locals {
-
   environment = length(var.environment) > 0 ? var.environment : random_pet.unique_id.id
-
-
-
 }
