@@ -140,37 +140,37 @@ def registry():
 #     )
 
 
-def test_terraform_bootstrap(workspace):
-    clone_repo(workspace)
-    # workspace = path.abspath( path.join(os.getcwd(), "../../"))
-    workspace = "./workspace_test"
+# def test_terraform_bootstrap(workspace):
+#     clone_repo(workspace)
+#     # workspace = path.abspath( path.join(os.getcwd(), "../../"))
+#     workspace = "./workspace_test"
 
-    download_pem(workspace=workspace)
-    download_bootstrap_config(workspace=workspace)
-    terraform_bootstrap(workspace=workspace)
-    bootstrap_outputs = load_bootstrap_output(workspace)
-    download_application_env_config(workspace=workspace)
+#     download_pem(workspace=workspace)
+#     download_bootstrap_config(workspace=workspace)
+#     terraform_bootstrap(workspace=workspace)
+#     bootstrap_outputs = load_bootstrap_output(workspace)
+#     download_application_env_config(workspace=workspace)
 
-    login_registry("cloudzeroopsregistry.azurecr.io")
-    import_rhel(
-        src_registry="cloudzeroopsregistry.azurecr.io",
-        dest_registry=bootstrap_outputs["ops_container_registry_name"],
-    )
-    time.sleep(5)
-    # login_registry(bootstrap_outputs["ops_container_registry_name"])
+#     login_registry("cloudzeroopsregistry.azurecr.io")
+#     import_rhel(
+#         src_registry="cloudzeroopsregistry.azurecr.io",
+#         dest_registry=bootstrap_outputs["ops_container_registry_name"],
+#     )
+#     time.sleep(5)
+#     # login_registry(bootstrap_outputs["ops_container_registry_name"])
 
-    # nginx_proc = build_nginx(workspace=workspace, registry=bootstrap_outputs["ops_container_registry_name"])
-    # atat_proc = build_atat(workspace=workspace, registry=bootstrap_outputs["ops_container_registry_name"])
+#     # nginx_proc = build_nginx(workspace=workspace, registry=bootstrap_outputs["ops_container_registry_name"])
+#     # atat_proc = build_atat(workspace=workspace, registry=bootstrap_outputs["ops_container_registry_name"])
 
-    # pause_until_complete(nginx_proc)
-    # pause_until_complete(atat_proc)
-    terraform_application_env(workspace)
-    assert path.exists(
-        path.join(
-            workspace,
-            "terraform",
-            "providers",
-            "application_env",
-            "bootstrap_output.tfvars",
-        )
-    )
+#     # pause_until_complete(nginx_proc)
+#     # pause_until_complete(atat_proc)
+#     terraform_application_env(workspace)
+#     assert path.exists(
+#         path.join(
+#             workspace,
+#             "terraform",
+#             "providers",
+#             "application_env",
+#             "bootstrap_output.tfvars",
+#         )
+#     )
