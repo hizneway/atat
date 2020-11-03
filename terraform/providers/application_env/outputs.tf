@@ -136,7 +136,7 @@ output "app_config_values" {
     "AZURE-CLIENT-ID" : module.tenant_keyvault_app.application_id
     "AZURE-SECRET-KEY" : module.tenant_keyvault_app.application_password
     "AZURE-TENANT-ID" : var.tenant_id
-    "MAIL-PASSWORD" : var.mailgun_api_key
+    "MAIL-PASSWORD" : var.mailgun_smtp_password
     "AZURE-STORAGE-KEY" : module.task_order_bucket.primary_access_key
     "REDIS-PASSWORD" : module.redis.primary_key
     "AZURE-HYBRID-TENANT-ID" : var.azure_hybrid_tenant_id

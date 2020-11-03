@@ -4,6 +4,7 @@
 
 resource "random_password" "pg_root_password" {
   length           = 16
+  min_numeric      = 1
   special          = false
   override_special = "!"
 }
@@ -11,6 +12,7 @@ resource "random_password" "pg_root_password" {
 
 resource "random_password" "atat_user_password" {
   length           = 16
+  min_numeric      = 1
   special          = false
   override_special = "!"
 }
@@ -28,4 +30,5 @@ module "sql" {
   administrator_login_password = random_password.pg_root_password.result
   workspace_id                 = module.logs.workspace_id
   operator_ip                  = chomp(data.http.myip.body)
+  deployment_subnet_id         = var.deployment_subnet_id
 }

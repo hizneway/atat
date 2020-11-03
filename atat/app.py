@@ -138,7 +138,7 @@ def set_default_headers(app):  # pragma: no cover
     def _set_security_headers(response):
         response.headers[
             "Strict-Transport-Security"
-        ] = "max-age=31536000; includeSubDomains"
+        ] = "max-age=31536000; includeSubDomains; always"
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "SAMEORIGIN"
         response.headers["X-XSS-Protection"] = "1; mode=block"
@@ -189,6 +189,9 @@ def map_config(config):
         # with a Beat job once a day)
         "CELERY_RESULT_EXPIRES": 0,
         "CELERY_RESULT_EXTENDED": True,
+        "CELERYBEAT_SCHEDULE_VALUE": config.getint(
+            "default", "CELERYBEAT_SCHEDULE_VALUE"
+        ),
         "CONTRACT_START_DATE": pendulum.from_format(
             config.get("default", "CONTRACT_START_DATE"), "YYYY-MM-DD"
         ).date(),

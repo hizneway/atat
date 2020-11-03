@@ -288,6 +288,7 @@ All config settings must be declared in "config/base.ini", even if they are null
 - `CA_CHAIN`: Path to the CA chain file.
 - `CDN_ORIGIN`: URL for the origin host for asset files.
 - `CELERY_DEFAULT_QUEUE`: String specifying the name of the queue that background tasks will be added to.
+- `CELERYBEAT_SCHEDULE_VALUE`: Integer specifying a default value of how many seconds wait between scheduled celery beat tasks. All celery beat tasks use this value.
 - `CONTRACT_END_DATE`: String specifying the end date of the JEDI contract. Used for task order validation. Example: 2019-09-14
 - `CONTRACT_START_DATE`: String specifying the start date of the JEDI contract. Used for task order validation. Example: 2019-09-14.
 - `CSP`: String specifying the cloud service provider to use. Acceptable values: "azure", "mock", "mock-csp".
@@ -455,7 +456,6 @@ htpasswd -cd ./localpassword atat
 
 It will prompt you to enter a password, then produce the password file. Note that the `-d` flag is necessary, per the uWSGI documentation linked above.
 
-
 ## Secrets Detection
 
 This project uses [detect-secrets](https://github.com/Yelp/detect-secrets) to help prevent secrets from being checked into source control. Secret detection is run automatically as part of `script/test` and can be run separately with `script/detect_secrets`.
@@ -521,4 +521,15 @@ Then push!
 
 ```
 docker push cloudzerodryrunregistry.azurecr.io/rhel-py
+```
+
+## How to generate the Under Maintenance page
+
+The script uses the existing templating system. This means that you'll need to have a functioning local install with
+the redis and postres running. Additionally, this script will need to ran from the project's root directory.
+
+General usage for the UM script would include a location for the output.
+
+```
+poetry run python script/generate_under_maintenance.py --output ./
 ```

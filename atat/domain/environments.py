@@ -1,7 +1,7 @@
 from typing import List
 from uuid import UUID
 
-from sqlalchemy import and_, func, or_
+from sqlalchemy import func, or_
 from sqlalchemy.orm.exc import NoResultFound
 
 from atat.database import db
@@ -101,40 +101,28 @@ class Environments(object):
         return environment
 
     @classmethod
-    def base_provision_query(cls, now):
-        return (
+    def get_environments_pending_creation(cls, now) -> List[UUID]:
+        """
+        Query for any environment with an active CLIN and provisioned 
+        application that doesn't yet have a `cloud_id`.
+        """
+        results = (
             db.session.query(Environment.id)
+            .distinct(Environment.id)
             .join(Application)
             .join(Portfolio)
             .join(TaskOrder)
             .join(CLIN)
-            .filter(CLIN.start_date <= now)
-            .filter(CLIN.end_date > now)
-            .filter(Environment.deleted == False)
             .filter(
+                CLIN.start_date <= now,
+                CLIN.end_date > now,
+                Application.cloud_id != None,
+                Environment.deleted == False,
+                Environment.cloud_id.is_(None),
                 or_(
                     Environment.claimed_until == None,
                     Environment.claimed_until <= func.now(),
-                )
-            )
-        )
-
-    @classmethod
-    def get_environments_pending_creation(cls, now) -> List[UUID]:
-        """
-        Any environment with an active CLIN that doesn't yet have a `cloud_id`.
-        """
-        results = (
-            cls.base_provision_query(now)
-            .filter(
-                and_(
-                    Application.cloud_id != None,
-                    Environment.cloud_id.is_(None),
-                    or_(
-                        Environment.claimed_until.is_(None),
-                        Environment.claimed_until <= func.now(),
-                    ),
-                )
+                ),
             )
             .all()
         )

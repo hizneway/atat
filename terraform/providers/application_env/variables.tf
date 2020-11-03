@@ -121,7 +121,7 @@ variable "OPS_SEC" {}
 variable "OPS_OID" {}
 variable "OPS_SP_URL" {}
 
-variable "mailgun_api_key" {}
+variable "mailgun_smtp_password" {}
 
 variable "azure_subscription_id" {}
 variable "azure_hybrid_tenant_id" {}
@@ -144,3 +144,4 @@ variable "AZURE_HYBRID_REPORTING_CLIENT_ID" {}
 variable "AZURE_HYBRID_REPORTING_SECRET" {}
 variable "tls_cert_path" {}
 variable "circle_ci_api_key" {}
+variable "deployment_subnet_id" {}

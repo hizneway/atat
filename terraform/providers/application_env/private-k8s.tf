@@ -36,6 +36,7 @@ module "private-aks-firewall" {
   name                = var.name
   environment         = local.environment
   subnet_id           = module.vpc.subnet_list["AzureFirewallSubnet"].id
+  az_fw_ip            = module.vpc.fw_ip_address_id
 
 
 }

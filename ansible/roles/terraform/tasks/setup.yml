@@ -4,7 +4,6 @@
   debug:
     msg: "{{ app_kv_tf | to_nice_json }}"
 
-
 - debug:
     msg: "{{ lookup('env','TF_VAR_OPS_OID') }} {{ lookup('env','TF_VAR_OPS_SEC') }}"
 
