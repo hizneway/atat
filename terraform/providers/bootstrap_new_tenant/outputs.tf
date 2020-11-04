@@ -4,8 +4,8 @@ output "operations_container_registry_name" {
 }
 
 output "operations_deployment_subnet_id" {
-    value = azurerm_subnet.deployment_subnet.id
-    description = "ID of the subnet all subsequent resources are deployed into."
+  value       = azurerm_subnet.deployment_subnet.id
+  description = "ID of the subnet all subsequent resources are deployed into."
 }
 
 output "operations_storage_account_name" {
