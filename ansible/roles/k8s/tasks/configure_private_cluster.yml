@@ -7,10 +7,31 @@
     blob: k8s.overlays
     dest: /tmp/private_k8s_overlays.tgz
 
+- name: create .out dir
+  file:
+    path: "/src/deploy/overlays/cloudzero-{{ namespace }}-staging"
+    state: directory
+    mode: "0755"
+
 - name: Extract private cluster configs
   unarchive:
     src: /tmp/private_k8s_overlays.tgz
-    dest: "{{ playbook_dir + '/.out' }}"
+    dest: /tmp
+
+- name: move overlay files
+  copy:
+    src: /tmp/.out/
+    dest: "/src/deploy/overlays/cloudzero-{{ namespace }}-staging"
+
+- name: show overlay files
+  shell: ls -la "/src/deploy/overlays/cloudzero-{{ namespace }}-staging"
+  register: ls_overlays
+
+- name: output overlay file location
+  debug:
+    msg:  "{{ ls_overlays }}"
+
+
 
 - name: Connect to the {{ namespace }} kubernetes cluster
   shell: "az aks get-credentials -g cloudzero-vpc-{{ namespace }} -n cloudzero-private-k8s-{{ namespace }}"
@@ -96,12 +117,9 @@
   debug:
     msg: "{{ latest_nginx_tag }}"
 
-- name: Show output directory
-  debug:
-    msg: "{{ playbook_dir + '/.out.' + namespace }}"
 
 - name: Apply the rest of the Kubernetes config for the site
-  shell: /src/script/k8s_config {{ playbook_dir + '/.out' }} | kubectl apply -f -
+  shell: /src/script/k8s_config /src/deploy/overlays/cloudzero-{{ namespace }}-staging | kubectl apply -f -
   environment:
     CONTAINER_IMAGE: "{{ tf_app_env_outputs.container_registry_name.value }}.azurecr.io/atat:{{ latest_tag }}"
     NGINX_CONTAINER_IMAGE: "{{ tf_app_env_outputs.container_registry_name.value }}.azurecr.io/nginx:{{ latest_nginx_tag }}"
