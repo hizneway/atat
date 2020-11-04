@@ -1,5 +1,5 @@
 from flask import current_app as app
-from flask import g, jsonify, redirect, render_template
+from flask import escape, g, jsonify, redirect, render_template
 from flask import request as http_request
 from flask import url_for
 
@@ -131,8 +131,8 @@ def upload_token(portfolio_id):
 @task_orders_bp.route("/task_orders/<portfolio_id>/download_link")
 @user_can(Permissions.VIEW_TASK_ORDER_DETAILS, message="view task order download link")
 def download_link(portfolio_id):
-    filename = http_request.args.get("filename")
-    object_name = http_request.args.get("objectName")
+    filename = str(escape(http_request.args.get("filename")))
+    object_name = str(escape(http_request.args.get("objectName")))
     render_args = {
         "downloadLink": app.csp.files.generate_download_link(object_name, filename)
     }
