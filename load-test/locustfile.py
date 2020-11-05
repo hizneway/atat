@@ -265,7 +265,7 @@ def login_as(user, client):
         f"/dev-new-user?first_name={user.first_name}&last_name={user.last_name}&dod_id={user.dod_id}"
     )
 
-    user.logged_in = result.status == "200"
+    user.logged_in = result.status == "200" or result.status == "302"
 
 
 def log_out(user, client):
@@ -282,7 +282,7 @@ def user_status(f):
 
         if not user.logged_in:
             result = client.get(f"/login-local?dod_id={user.dod_id}")
-            user.logged_in = result.status == "200"
+            user.logged_in = result.status == "200" or result.status == "302"
 
         f(*args, **kwargs)
 
@@ -366,7 +366,6 @@ class ATATUser(FastHttpUser):
 
         self.logged_in = False
         self.portfolio_id = None
-
 
     def on_stop(self):
         dod_ids.remove(self.dod_id)
