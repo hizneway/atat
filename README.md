@@ -394,16 +394,6 @@ regularly and archive them with the AT-AT codebase in the `uitests` directory.
 For further information about Ghost Inspector and its use in AT-AT, check out [its README](./uitests/README.md)
 in the `uitests` directory.
 
-## SonarQube
-
-To run SonarScanner
-
-```
-script/sonarqube <SonarQube user> <SonarQube password>
-```
-
-Both user and password are in 1Password.  It is possible that the hostname for SonarQube will change from time to time.  In this case the value for the key `sonar.host.url` will have to be updated in the The `sonar-qube.properties` file.
-
 ## Notes
 
 Jinja templates are like mustache templates -- add the
@@ -533,3 +523,19 @@ General usage for the UM script would include a location for the output.
 ```
 poetry run python script/generate_under_maintenance.py --output ./
 ```
+
+## SonarCloud
+
+To manually run sonar-scanner you will need a token.  On [The SonarCloud Account Security](https://sonarcloud.io/account/security/) page create a token and export it to the environment variable `SONAR_TOKEN`.  
+
+```
+export SONAR_TOKEN=< sonar token >
+```
+
+Now you will be able to run the scanner script.
+
+```
+script/sonar_scanner
+````
+
+The sonar-scanner script will generate a coverage report for Python and JavaScript files.  Any value that might need to be updated (i.e. code exception or coverage exceptions) can be done in the `sonar-project.properties` file
