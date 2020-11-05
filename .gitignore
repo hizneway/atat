@@ -55,6 +55,7 @@ ssl/local.key
 
 # python coverage output
 .coverage
+coverage.xml
 
 # je coverage output
 coverage
@@ -92,8 +93,9 @@ js/test_templates
 # mac indexing
 **/*.DS_Store
 
-# sonar cube files
+# sonar files
 .scannerwork
+.sonar
 
 # Filter out secret files used when we build RHEL images
 *.secret
@@ -103,5 +105,4 @@ js/test_templates
 **/*.out.*
 
 # remove any pems
-
 **/*.pem
