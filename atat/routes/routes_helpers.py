@@ -17,6 +17,7 @@ def match_url_pattern(url, method="GET"):
         return match_url_pattern(e.new_url, method)
     except (MethodNotAllowed, NotFound):
         # no match
+        app.logger.warning(f"URL didn't match pattern: {method} {url}")
         return None
 
     if match[0] in app.view_functions:
