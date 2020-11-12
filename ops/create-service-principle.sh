@@ -1,5 +1,6 @@
 #! /bin/bash
 
+
 # How do you find these GUIDs?
 #
 # Coutesy of Jeff Deville, you can watch your `Network` tab for whichever
@@ -8,9 +9,7 @@
 # wil be he `--api-permissions values`.
 sp=$(az ad sp create-for-rbac)
 appId=$(echo $sp | jq .appId | tr -d '"')
-echo $sp
-
-sleep 15
+subscription_id=$(az account show --query id --output tsv)
 
 ## Azure Active Directory
 # Application Application.ReadWrite.All
@@ -52,9 +51,6 @@ az ad app permission add --id $appId --api $appId --api-permissions 9fb74d30-bc3
 # Grant all permissions
 az ad app permission admin-consent --id $appId
 
+az role assignment create --assignee $appId --role "User Access Administrator" --subscription $subscription_id
 
-az role assignment create --assignee $appId --role "User Access Administrator" --subscription "$(az account show --query id --output tsv)"
-
-echo "APPID: $appId"
-echo "OBJECTID: $(az ad sp show --id $appId | jq .objectId)"
-echo "PASSWORD: $(echo $sp | jq .password)"
+echo $sp | jq '.'
