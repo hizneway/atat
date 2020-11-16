@@ -9,14 +9,6 @@ terraform {
       source  = "hashicorp/azurerm"
       version = "= 2.34.0"
     }
-
-    http = {
-      source = "hashicorp/http"
-    }
-
-    random = {
-      source = "hashicorp/random"
-    }
   }
 }
 
@@ -27,13 +19,4 @@ terraform {
 # https://github.com/terraform-providers/terraform-provider-azurerm/issues/7359
 provider "azurerm" {
   features {}
-}
-
-resource "random_pet" "unique_id" {
-  length    = 1
-  separator = ""
-}
-
-locals {
-  environment = length(var.environment) > 0 ? var.environment : random_pet.unique_id.id
 }
