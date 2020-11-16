@@ -54,3 +54,4 @@ az ad app permission admin-consent --id $appId
 az role assignment create --assignee $appId --role "User Access Administrator" --subscription $subscription_id
 
 echo $sp | jq '.'
+echo $sp  > service_principal.json
