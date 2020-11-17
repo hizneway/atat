@@ -36,7 +36,7 @@ logger = logging.getLogger(__name__)
     help="Full URI of the container registry that after bootstrapping, should have rhel, rhel-py, and ops images",
     prompt="Domain of container registry eg:cloudzeroopsregistry${var.namespace}.azurecr.io",
 )
-# @click.option("--ops_resource_group", help="Resource group created to hold all the resources for operations only", prompt="Name of operations resource group")
+@click.option("--ops_resource_group", help="Resource group created to hold all the resources for operations only", prompt="Name of operations resource group")
 @click.option(
     "--ops_storage_account",
     help="Name of Storage Account that holds the terraform state and inputs for this process",
@@ -63,6 +63,7 @@ def provision(
     subscription_id,
     tenant_id,
     ops_registry,
+    ops_resource_group,
     ops_storage_account,
     ops_tf_bootstrap_container,
     ops_tf_application_container,
@@ -73,7 +74,7 @@ def provision(
     download_file(
         ops_storage_account, ops_certs_container, "atatdev.pem", "atatdev.pem"
     )
-    terraform_application_env()
+    terraform_application_env(backend_resource_group_name=ops_resource_group, backend_storage_account_name=ops_storage_account, backend_container_name=ops_tf_application_container)
 
     pause_until_complete(ssl_process)
 
@@ -112,7 +113,8 @@ def download_file(
     return result.returncode
 
 
-def terraform_application_env():
+def terraform_application_env(sp_client_id, sp_client_secret, subscription_id, tenant_id, backend_resource_group_name, backend_storage_account_name, backend_container_name, backend_key="terraform.tfstate", bootrap_container_name="tf-bootstrap"):
+
     logger.info("terraform_application_env")
     cwd = path.join("../", "../", "terraform", "providers", "application_env")
     # bootstrap_output = load_bootstrap_output(workspace)
@@ -120,19 +122,27 @@ def terraform_application_env():
     default_args = {"cwd": cwd, "capture_output": True}
 
     backend_configs = [
-        f"-backend-config={key}={bootstrap_output[key]}"
-        for key in [
-            "key",
-            "container_name",
-            "resource_group_name",
-            "storage_account_name",
-        ]
+        f"-backend-config=resource_group_name={backend_resource_group_name}",
+        f"-backend-config=storage_account_name={backend_storage_account_name}",
+        f"-backend-config=container_name={backend_container_name}",
+        f"-backend-config=key={backend_key}",
     ]
     try:
         init_cmd = ["terraform", "init", *backend_configs, "."]
-        # import pdb; pdb.set_trace()
+
         subprocess.run(init_cmd, **default_args).check_returncode()
         if not path.exists(path.join(cwd, "plan.tf")):
+            tfvars = [
+                f"-var=operator_subscription_id={sp_client_id}",
+                f"-var=operator_client_id={sp_client_secret}",
+                f"-var=operator_client_secret={subscription_id}",
+                f"-var=operator_tenant_id={tenant_id}",
+                f"-var=ops_resource_group={backend_resource_group_name}",
+                f"-var=ops_storage_account={backend_storage_account_name}",
+                f"-var=tf_bootstrap_container={bootrap_container_name}",
+                f"-var=dhparam4096=../../../CONFIGS_GO_HERE_OR_SUMMIN",
+                f"-var=tls_cert_path=../../../CONFIGS_GO_HERE_OR_SUMMIN"
+            ]
             subprocess.run(
                 [
                     "terraform",
@@ -140,10 +150,7 @@ def terraform_application_env():
                     "-input=false",
                     "-out=plan.tfplan",
                     "-var-file=app.tfvars.json",
-                    "-var",
-                    "dhparam4096=dhparams.pem",
-                    "-var",
-                    "tls_cert_path=atatdev.pem",
+                    *tfvars,
                     ".",
                 ],
                 **default_args,
