@@ -11,6 +11,7 @@ from onelogin.saml2.idp_metadata_parser import OneLogin_Saml2_IdPMetadataParser
 
 from atat.domain.exceptions import NotFoundError, UnauthenticatedError
 from atat.domain.users import Users
+from atat.routes.routes_helpers import match_url_pattern
 
 SAM_ACCOUNT_FORMAT = re.compile("(1\d{9})\.(MIL|CIV|CTR)")
 
@@ -69,7 +70,7 @@ def _prepare_login_url(saml_auth, request):
 def _cache_params_in_session(request):
     query_string_parameters = {}
 
-    next_param = request.args.get("next")
+    next_param = match_url_pattern(request.args.get("next"))
     if next_param:
         query_string_parameters["next_param"] = next_param
 
