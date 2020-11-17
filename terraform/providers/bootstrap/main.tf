@@ -31,13 +31,17 @@ resource "azurerm_storage_account" "operations_storage_account" {
   account_tier             = "Standard"
   account_replication_type = "LRS"
 }
-
 resource "azurerm_storage_container" "tf_bootstrap" {
   name                 = "tf-bootstrap"
   storage_account_name = azurerm_storage_account.operations_storage_account.name
 }
 resource "azurerm_storage_container" "tf_application" {
   name                 = "tf-application"
+  storage_account_name = azurerm_storage_account.operations_storage_account.name
+}
+
+resource "azurerm_storage_container" "certs" {
+  name                 = "certs"
   storage_account_name = azurerm_storage_account.operations_storage_account.name
 }
 
