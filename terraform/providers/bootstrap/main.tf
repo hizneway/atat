@@ -58,5 +58,3 @@ resource "local_file" "self_remote_backend" {
 
   filename = "versions.override.tf"
 }
-
-
