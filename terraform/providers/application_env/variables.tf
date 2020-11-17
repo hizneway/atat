@@ -7,7 +7,6 @@ variable "deployment_location" {
 variable "deployment_namespace" {
   type        = string
   description = "Namespace of provisioned deployment resources."
-  default     = "dev"
 }
 
 variable "lifecycle_env_name" {
@@ -198,9 +197,13 @@ variable "operator_tenant_id" {
   type = string
 }
 
-variable "previous_stage_resource_group" {
+variable "ops_resource_group" {
   type = string
 }
-variable "previous_stage_storage_account" {
+variable "ops_storage_account" {
+  type = string
+}
+
+variable "tf_bootstrap_container" {
   type = string
 }

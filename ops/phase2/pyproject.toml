@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "provisioner"
+name = "phase2"
 version = "0.1.0"
 description = "Provisions atat"
 authors = ["Jeff Deville <jeff@promptworks.com>"]
@@ -14,7 +14,7 @@ black = {version = "^20.8b1", allow-prereleases = true}
 ipython = "^7.18.1"
 
 [tool.poetry.scripts]
-provision = "phase2.provision:cli"
+provision = "phase2.provisioner:provision"
 # cli = "deployer.cli:cli"
 # deploy = "deployer.deploy:deploy"
 

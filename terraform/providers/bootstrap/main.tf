@@ -52,6 +52,15 @@ resource "azurerm_container_registry" "operations_container_registry" {
   sku                 = "Premium"
 }
 
+module "logs" {
+  source            = "../../modules/log_analytics"
+  owner             = var.owner
+  environment       = var.deployment_namespace
+  region            = var.deployment_location
+  name              = var.name
+  retention_in_days = 365
+}
+
 resource "local_file" "self_remote_backend" {
   content = templatefile("templates/versions.override.tf.tmpl", {
     backend_resource_group_name  = azurerm_resource_group.operations_resource_group.name
