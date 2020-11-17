@@ -43,6 +43,7 @@ export TF_VAR_resource_group_name=$(terraform output operations_resource_group_n
 export TF_VAR_storage_account_name=$(terraform output operations_storage_account_name)
 export SUBNET_ID=$(terraform output operations_deployment_subnet_id)
 export OPERATIONS_VIRTUAL_NETWORK=$(terraform output operations_virtual_network)
+export LOGGING_WORKSPACE=$(terraform output logging_workspace)
 # Now, need to lock that folder down to just the subnet that was created.
 az storage account update --resource-group ${TF_VAR_resource_group_name} --name ${TF_VAR_storage_account_name} --default-action Deny
 az storage account network-rule add --resource-group ${TF_VAR_resource_group_name} --account-name ${TF_VAR_storage_account_name} --subnet ${SUBNET_ID}
@@ -83,4 +84,14 @@ az container create \
   --memory 4 \
   --cpu 4 \
   --secure-environment-variables "TF_VAR_resource_group_name=$TF_VAR_resource_group_name" "TF_VAR_storage_account_name=$TF_VAR_storage_account_name" "TF_VAR_operator_subscription_id=$TF_VAR_operator_subscription_id" "TF_VAR_operator_client_id=$TF_VAR_operator_client_id" "TF_VAR_operator_client_secret=$TF_VAR_operator_client_secret" "TF_VAR_operator_tenant_id=$TF_VAR_operator_tenant_id" \
+  --command-line "/bin/bash -c while true; do sleep 30; done;" \
+  --log-analytics-workspace $LOGGING_WORKSPACE \
   --restart-policy Never
+
+echo "============================="
+echo "============================="
+echo "============================="
+echo "You must put an app.tfvars.json and atatdev.pem file in the config container before running the next file"
+echo "============================="
+echo "============================="
+echo "============================="

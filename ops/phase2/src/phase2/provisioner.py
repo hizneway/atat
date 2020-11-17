@@ -70,9 +70,9 @@ logger = logging.getLogger(__name__)
     envvar="OPS_TF_APPLICATION_CONTAINER",
 )
 @click.option(
-    "--ops_certs_container",
-    default="certs",
-    help="Name of the container (folder) in the ops_storage_account that holds the certs that will be needed by the application - envvar: OPS_CERTS_CONTAINER",
+    "--ops_config_container",
+    default="config",
+    help="Name of the container (folder) in the ops_storage_account that holds the config that will be needed by the application - envvar: OPS_CONFIG_CONTAINER",
     envvar="OPS_CERTS_CONTAINER",
 )
 def provision(
@@ -93,6 +93,12 @@ def provision(
     download_file(
         ops_storage_account, ops_certs_container, "atatdev.pem", "/tmp/atatdev.pem"
     )
+
+    download_file(
+        ops_storage_account, ops_certs_container, "app.tfvars.json", "/tmp/app.tfvars.json"
+    )
+    pause_until_complete(ssl_process)
+
     terraform_application(
         sp_client_id=sp_client_id,
         sp_client_secret=sp_client_secret,
@@ -121,8 +127,8 @@ def terraform_application(
 ):
 
     logger.info("terraform_application")
+
     cwd = path.join("../", "../", "terraform", "providers", "application_env")
-    # bootstrap_output = load_bootstrap_output(workspace)
 
     default_args = {"cwd": cwd, "capture_output": True}
 
@@ -152,7 +158,7 @@ def terraform_application(
                 "plan",
                 "-input=false",
                 "-out=plan.tfplan",
-                "-var-file=app.tfvars.json",
+                "-var-file=/tmp/app.tfvars.json",
                 *tfvars,
                 ".",
             ]

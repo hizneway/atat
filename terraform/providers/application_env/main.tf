@@ -6,7 +6,6 @@ data "azurerm_client_config" "azure_client" {
 }
 
 locals {
-  ops_sp_url_to_name                         = replace(var.OPS_SP_URL, "http://", "")
   private_aks_appliance_routes               = var.virtual_appliance_routes["aks-private"]
   deployment_subnet_id                       = data.terraform_remote_state.previous_stage.outputs.operations_deployment_subnet_id
   operations_container_registry_name         = data.terraform_remote_state.previous_stage.outputs.operations_container_registry_name
@@ -36,28 +35,28 @@ module "ops_keyvault_app" {
   name   = "ops-keyvault-sp"
 }
 
-module "bastion" {
-  source                     = "../../modules/bastion"
-  rg                         = "${var.deployment_namespace}-bastion-jump"
-  region                     = var.deployment_location
-  mgmt_subnet_rg             = module.vpc.resource_group_name
-  mgmt_subnet_vpc_name       = module.vpc.vpc_name
-  bastion_subnet_rg          = module.vpc.resource_group_name
-  bastion_subnet_vpc_name    = module.vpc.vpc_name
-  mgmt_subnet_cidr           = "10.1.250.0/24"
-  bastion_subnet_cidr        = "10.1.4.0/24"
-  bastion_aks_sp_secret      = module.bastion_sp.application_password
-  bastion_aks_sp_id          = module.bastion_sp.application_id
-  environment                = var.deployment_namespace
-  owner                      = var.owner
-  name                       = var.name
-  bastion_ssh_pub_key_path   = "" # TODO(jesse) Unused.
-  log_analytics_workspace_id = local.log_analytics_workspace_id
-  registry_password          = var.OPS_SEC
-  registry_username          = var.OPS_CID
-  depends_on                 = [module.vpc]
-  container_registry         = local.operations_container_registry_login_server
-}
+# module "bastion" {
+#   source                     = "../../modules/bastion"
+#   rg                         = "${var.deployment_namespace}-bastion-jump"
+#   region                     = var.deployment_location
+#   mgmt_subnet_rg             = module.vpc.resource_group_name
+#   mgmt_subnet_vpc_name       = module.vpc.vpc_name
+#   bastion_subnet_rg          = module.vpc.resource_group_name
+#   bastion_subnet_vpc_name    = module.vpc.vpc_name
+#   mgmt_subnet_cidr           = "10.1.250.0/24"
+#   bastion_subnet_cidr        = "10.1.4.0/24"
+#   bastion_aks_sp_secret      = module.bastion_sp.application_password
+#   bastion_aks_sp_id          = module.bastion_sp.application_id
+#   environment                = var.deployment_namespace
+#   owner                      = var.owner
+#   name                       = var.name
+#   bastion_ssh_pub_key_path   = "" # TODO(jesse) Unused.
+#   log_analytics_workspace_id = local.log_analytics_workspace_id
+#   registry_password          = var.OPS_SEC
+#   registry_username          = var.OPS_CID
+#   depends_on                 = [module.vpc]
+#   container_registry         = local.operations_container_registry_login_server
+# }
 
 # Task order bucket is required to be accessible publicly by the users.
 # which is why the policy here is "Allow"
@@ -156,7 +155,6 @@ resource "azurerm_key_vault_secret" "secret" {
     "REDIS-PASSWORD"    = module.redis.primary_key
     "REDIS-PASSWORD"    = module.redis.primary_key
     "SAML-IDP-CERT"     = ""
-    "dhparam4096"       = ""
     "PGPASSWORD"        = random_password.atat_user_password.result
     "AZURE-VAULT-URL"   = module.tenant_keyvault.url
   })

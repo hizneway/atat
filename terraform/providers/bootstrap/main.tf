@@ -40,8 +40,8 @@ resource "azurerm_storage_container" "tf_application" {
   storage_account_name = azurerm_storage_account.operations_storage_account.name
 }
 
-resource "azurerm_storage_container" "certs" {
-  name                 = "certs"
+resource "azurerm_storage_container" "config" {
+  name                 = "config"
   storage_account_name = azurerm_storage_account.operations_storage_account.name
 }
 

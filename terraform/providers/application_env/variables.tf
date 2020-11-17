@@ -152,21 +152,27 @@ variable "tls_cert_path" {
   default     = "/tmp/atatdev.pem"
 }
 
-variable "OPS_CID" {
-  default = "asfads"
+variable "dhparams_path" {
+  type        = string
+  description = "Long-lived certificate for hyper-securing our session encryption"
+  default     = "/tmp/dhparams.pem"
 }
 
-variable "OPS_SEC" {
-  default = "adsfasd"
-}
+# variable "OPS_CID" {
+#   default = "asfads"
+# }
 
-variable "OPS_OID" {
-  default = "adsfadsf"
-}
+# variable "OPS_SEC" {
+#   default = "adsfasd"
+# }
 
-variable "OPS_SP_URL" {
-  default = "asdfasd"
-}
+# variable "OPS_OID" {
+#   default = "adsfadsf"
+# }
+
+# variable "OPS_SP_URL" {
+#   default = "asdfasd"
+# }
 
 variable "keyvault_secrets" {
   type        = map
