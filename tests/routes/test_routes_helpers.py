@@ -20,4 +20,3 @@ def test_match_url_patter():
             match_url_pattern("/home", "POST"),
         )
     )
-

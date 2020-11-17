@@ -1,5 +1,5 @@
 from wtforms.fields import FieldList, StringField, TextAreaField
-from wtforms.validators import Length, Optional, DataRequired
+from wtforms.validators import DataRequired, Length, Optional
 
 from atat.forms.validators import AlphaNumeric, ListItemRequired, ListItemsUnique, Name
 from atat.utils.localization import translate

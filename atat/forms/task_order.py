@@ -12,10 +12,10 @@ from wtforms.fields import (
 )
 from wtforms.fields.html5 import DateField
 from wtforms.validators import (
+    DataRequired,
     Length,
     NumberRange,
     Optional,
-    DataRequired,
     ValidationError,
 )
 

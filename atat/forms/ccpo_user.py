@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
 from wtforms.fields import StringField
-from wtforms.validators import Length, DataRequired
+from wtforms.validators import DataRequired, Length
 
 from atat.forms.validators import Number
 from atat.utils.localization import translate
