@@ -19,7 +19,7 @@ output "atat_database_instance_name" {
 }
 
 output "atat_database_name" {
-  value = "${var.name}_${var.deployment_namespace}_${var.lifecycle_env_name}"
+  value = "${var.name}_${var.deployment_namespace}"
 }
 
 output "postgres_resource_group_name" {

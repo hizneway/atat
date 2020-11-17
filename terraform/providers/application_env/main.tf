@@ -13,6 +13,7 @@ locals {
   operations_container_registry_login_server = data.terraform_remote_state.previous_stage.outputs.operations_container_registry_login_server
   operations_resource_group_name             = data.terraform_remote_state.previous_stage.outputs.operations_resource_group_name
   operator_ip                                = chomp(data.http.myip.body)
+  log_analytics_workspace_id                 = data.data.terraform_remote_state.previous_stage.outputs.workspace_id
 }
 
 module "tenant_keyvault_app" {
@@ -51,7 +52,7 @@ module "bastion" {
   owner                      = var.owner
   name                       = var.name
   bastion_ssh_pub_key_path   = "" # TODO(jesse) Unused.
-  log_analytics_workspace_id = module.logs.workspace_id
+  log_analytics_workspace_id = local.log_analytics_workspace_id
   registry_password          = var.OPS_SEC
   registry_username          = var.OPS_CID
   depends_on                 = [module.vpc]
@@ -85,7 +86,7 @@ module "container_registry" {
   policy                      = "Allow"
   subnet_ids                  = [module.vpc.subnet_list["aks"].id]
   whitelist                   = { "operator" = local.operator_ip }
-  workspace_id                = module.logs.workspace_id
+  workspace_id                = local.log_analytics_workspace_id
   pet_name                    = var.deployment_namespace
   subnet_list                 = module.vpc.subnet_list
   depends_on                  = [module.vpc]
@@ -118,7 +119,7 @@ module "k8s" {
   client_id                = module.aks_sp.application_id
   client_secret            = module.aks_sp.application_password
   client_object_id         = module.aks_sp.object_id
-  workspace_id             = module.logs.workspace_id
+  workspace_id             = local.log_analytics_workspace_id
   vnet_id                  = module.vpc.id
   node_resource_group      = "${var.name}-node-rg-${var.deployment_namespace}"
   virtual_network          = var.virtual_network
@@ -142,7 +143,7 @@ module "keyvault" {
   policy             = "Deny"
   subnet_ids         = [module.vpc.subnet_list["aks"].id, module.bastion.mgmt_subnet_id, local.deployment_subnet_id]
   whitelist          = { "operator" = local.operator_ip }
-  workspace_id       = module.logs.workspace_id
+  workspace_id       = local.log_analytics_workspace_id
   tls_cert_path      = var.tls_cert_path
 }
 
@@ -178,7 +179,7 @@ module "tenant_keyvault" {
   policy            = "Deny"
   subnet_ids        = [module.vpc.subnet_list["aks"].id]
   whitelist         = { "operator" = local.operator_ip }
-  workspace_id      = module.logs.workspace_id
+  workspace_id      = local.log_analytics_workspace_id
 }
 
 module "operator_keyvault" {
@@ -194,7 +195,7 @@ module "operator_keyvault" {
   policy            = "Deny"
   subnet_ids        = [module.vpc.subnet_list["aks"].id, module.bastion.mgmt_subnet_id, local.deployment_subnet_id]
   whitelist         = { "operator" = local.operator_ip }
-  workspace_id      = module.logs.workspace_id
+  workspace_id      = local.log_analytics_workspace_id
 }
 
 module "logs" {
@@ -229,7 +230,7 @@ module "sql" {
   subnet_id                    = module.vpc.subnet_list["aks"].id
   administrator_login          = var.postgres_admin_login
   administrator_login_password = random_password.pg_root_password.result
-  workspace_id                 = module.logs.workspace_id
+  workspace_id                 = local.log_analytics_workspace_id
   operator_ip                  = chomp(data.http.myip.body)
   deployment_subnet_id         = local.deployment_subnet_id
 }
@@ -248,7 +249,7 @@ module "private-k8s" {
   min_count                  = 3
   private_aks_sp_id          = var.private_aks_sp_id
   private_aks_sp_secret      = var.private_aks_sp_secret
-  log_analytics_workspace_id = module.logs.workspace_id
+  log_analytics_workspace_id = local.log_analytics_workspace_id
   service_dns                = var.private_aks_service_dns
   docker_bridge_cidr         = var.private_aks_docker_bridge_cidr
   service_cidr               = var.private_aks_service_cidr
@@ -281,7 +282,7 @@ module "redis" {
   subnet_id    = module.vpc.subnet_list["redis"].id
   sku_name     = "Premium"
   family       = "P"
-  workspace_id = module.logs.workspace_id
+  workspace_id = local.log_analytics_workspace_id
   pet_name     = var.deployment_namespace
 }
 

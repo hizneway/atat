@@ -9,22 +9,14 @@ variable "deployment_namespace" {
   description = "Namespace of provisioned deployment resources."
 }
 
-variable "lifecycle_env_name" {
-  type        = string
-  description = "TODO(jesse) I don't think this needs to be used."
-  default     = "staging"
-}
-
 variable "owner" {
   type        = string
   description = "TODO(jesse) Is this a required property in all those modules?"
-  default     = "pw"
 }
 
 variable "name" {
   type        = string
   description = "TODO(jesse) Is this a required property in all those modules?"
-  default     = "testname"
 }
 
 variable "virtual_network" {

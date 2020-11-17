@@ -54,10 +54,10 @@ resource "azurerm_container_registry" "operations_container_registry" {
 
 module "logs" {
   source            = "../../modules/log_analytics"
-  owner             = var.owner
-  environment       = var.deployment_namespace
-  region            = var.deployment_location
-  name              = var.name
+  owner             = var.operator_client_id
+  environment       = var.namespace
+  region            = var.operations_location
+  name              = var.namespace
   retention_in_days = 365
 }
 
