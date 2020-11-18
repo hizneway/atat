@@ -115,9 +115,6 @@ output "redis_ssl_port" {
   value = module.redis.ssl_port
 }
 
-output "k8s_node_group" {
-  value = module.k8s.k8s_resource_group_id
-}
 
 output "private_k8s_node_group" {
   value = module.private-k8s.k8s_resource_group_id
@@ -176,4 +173,8 @@ output "ops_container_registry_name" {
 
 output "environment" {
   value = local.environment
+}
+
+output "fw_nat_ips" {
+  value = module.private-aks-firewall.nat_rule_ips
 }

@@ -18,3 +18,4 @@
     - role: k8s
       vars:
         namespace: "{{ tf_app_env_outputs.environment.value }}"
+        k8s_internal_lb_ip: "{{ tf_app_env_outputs.fw_nat_ips.value }}"

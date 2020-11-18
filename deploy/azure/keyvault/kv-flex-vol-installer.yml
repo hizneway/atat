@@ -21,7 +21,6 @@ spec:
       labels:
         app: keyvault-flexvolume
     spec:
-      tolerations:
       containers:
         - name: flexvol-driver-installer
           image: "mcr.microsoft.com/k8s/flexvolume/keyvault-flexvolume:v0.0.17"
@@ -50,4 +49,9 @@ spec:
             path: "/etc/kubernetes/volumeplugins"
           name: volplugins
       nodeSelector:
+        kubernetes.io/role: agent
         beta.kubernetes.io/os: linux
+        type: virtual-kubelet
+      tolerations:
+      - key: virtual-kubelet.io/provider
+        operator: Exists

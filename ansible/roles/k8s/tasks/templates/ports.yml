@@ -5,3 +5,12 @@ metadata:
   name: atst-main
   annotations:
     service.beta.kubernetes.io/azure-load-balancer-internal-subnet: "cloudzero-{{ namespace }}-public"
+    service.beta.kubernetes.io/azure-load-balancer-internal: "true"
+spec:
+  type: LoadBalancer
+  loadBalancerIP: "{{ k8s_internal_lb_ip }}"
+  ports:
+  - port: 443
+  - port: 80
+  selector:
+    app: atat-endpoint

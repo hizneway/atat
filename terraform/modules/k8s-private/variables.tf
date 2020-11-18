@@ -88,3 +88,6 @@ variable "private_cluster_enabled" {
   default     = true
   type        = bool
 }
+
+
+variable "subnet_name" {}

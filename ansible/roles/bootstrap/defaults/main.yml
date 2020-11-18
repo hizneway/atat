@@ -2,7 +2,7 @@
 show_bs_env: true
 bootstrap_init_tf: true
 deploy_bootstrap_env: true
-fetch_bootstrap_state: false
+fetch_bootstrap_state: "{{ true if (az_environment|length) > 0 else false }}"
 tf_base_dir: /src/terraform/providers/
 tf_subdir: bootstrap
 bootstrap_resource_group_name: cloudzero-ops

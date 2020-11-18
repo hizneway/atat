@@ -123,3 +123,5 @@ js/test_templates
 .scannerwork
 
 *.secret
+
+**/*.tfvars.json

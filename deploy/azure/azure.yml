@@ -135,6 +135,13 @@ spec:
               keyvaultobjectaliases: "AZURE_STORAGE_KEY;MAIL_PASSWORD;PGPASSWORD;REDIS_PASSWORD;SECRET_KEY"
               keyvaultobjecttypes: "secret;secret;secret;secret;key"
               tenantid: $TENANT_ID
+      nodeSelector:
+        kubernetes.io/role: agent
+        beta.kubernetes.io/os: linux
+        type: virtual-kubelet
+      tolerations:
+      - key: virtual-kubelet.io/provider
+        operator: Exists  
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -208,6 +215,13 @@ spec:
               keyvaultobjectaliases: "AZURE_STORAGE_KEY;MAIL_PASSWORD;PGPASSWORD;REDIS_PASSWORD;SECRET_KEY"
               keyvaultobjecttypes: "secret;secret;secret;secret;key"
               tenantid: $TENANT_ID
+      nodeSelector:
+        kubernetes.io/role: agent
+        beta.kubernetes.io/os: linux
+        type: virtual-kubelet
+      tolerations:
+      - key: virtual-kubelet.io/provider
+        operator: Exists
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -282,6 +296,13 @@ spec:
               keyvaultobjectaliases: "AZURE_STORAGE_KEY;MAIL_PASSWORD;PGPASSWORD;REDIS_PASSWORD;SECRET_KEY"
               keyvaultobjecttypes: "secret;secret;secret;secret;key"
               tenantid: $TENANT_ID
+      nodeSelector:
+        kubernetes.io/role: agent
+        beta.kubernetes.io/os: linux
+        type: virtual-kubelet
+      tolerations:
+      - key: virtual-kubelet.io/provider
+        operator: Exists
 ---
 apiVersion: v1
 kind: Service

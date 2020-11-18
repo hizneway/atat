@@ -14,6 +14,8 @@ resource "azurerm_kubernetes_cluster" "k8s_private" {
 
 
 
+
+
   addon_profile {
     azure_policy {
       enabled = true
@@ -24,6 +26,11 @@ resource "azurerm_kubernetes_cluster" "k8s_private" {
       enabled                    = true
       log_analytics_workspace_id = var.log_analytics_workspace_id
 
+    }
+
+    aci_connector_linux {
+      enabled     = true
+      subnet_name = "${var.name}-${var.subnet_name}-${var.environment}"
     }
 
 

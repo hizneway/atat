@@ -51,7 +51,3 @@ variable "custom_routes" {
   type        = map
   description = "A map of custom routes"
 }
-
-variable "virtual_appliance_routes" {}
-
-variable "virtual_appliance_route_tables" {}

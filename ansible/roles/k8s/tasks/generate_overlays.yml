@@ -2,7 +2,10 @@
 - name: Create template output directory
   file:
     state: directory
-    path: "{{ playbook_dir }}/.out"
+    path: "{{ playbook_dir }}/"
+
+- debug:
+    msg: "{{ playbook_dir }}/.out"
 
 - name: Interpolate the templates
   template:

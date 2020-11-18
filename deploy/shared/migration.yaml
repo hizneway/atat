@@ -24,10 +24,12 @@ spec:
         ]
         args:
           - |
+
               /opt/atat/atst/.venv/bin/python \
               /opt/atat/atst/.venv/bin/alembic \
               upgrade head \
               && \
+              
               /opt/atat/atst/.venv/bin/python \
               /opt/atat/atst/script/seed_roles.py
         envFrom:

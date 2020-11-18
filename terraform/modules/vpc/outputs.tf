@@ -25,3 +25,7 @@ output "resource_group_name" {
 output "fw_ip_address_id" {
   value = azurerm_public_ip.az_fw_ip.id
 }
+
+output "fw_ip_address" {
+  value = azurerm_public_ip.az_fw_ip.ip_address
+}

@@ -2,6 +2,8 @@
   set_fact:
     tf_vars_file_path: "{{ tf_base_dir }}/{{ tf_subdir }}/{{ tfvars_file_name }}"
 
+
+
 - name: pull in tfvars values
   set_fact:
     vars_vals: "{{ lookup('to_hcl', tf_vars_file_path )   }}"

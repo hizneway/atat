@@ -10,7 +10,7 @@ resource "azurerm_container_registry" "ops" {
   resource_group_name = azurerm_resource_group.ops.name
   location            = azurerm_resource_group.ops.location
   sku                 = "Premium"
-  admin_enabled       = false
+  admin_enabled       = true
   #georeplication_locations = [azurerm_resource_group.ops.location, var.backup_region]
 
 
@@ -24,6 +24,12 @@ resource "azurerm_container_registry" "ops" {
         ip_range = cidr_val
       }
     ]
+
+
+
+
+
+
 
 
 
