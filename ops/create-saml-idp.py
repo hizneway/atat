@@ -70,7 +70,8 @@ def wait_for_sp_creation(sp_object_id: str, access_token: str):
             break
         except requests.HTTPError:
             print(poll_response.reason)
-            time.sleep(2)
+            # add back-off style polling
+            time.sleep(1 + attempts)
             attempts = attempts + 1
     else:
         raise Exception(
