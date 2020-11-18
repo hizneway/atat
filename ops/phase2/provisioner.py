@@ -75,6 +75,11 @@ logger = logging.getLogger(__name__)
     help="Name of the container (folder) in the ops_storage_account that holds the config that will be needed by the application - envvar: OPS_CONFIG_CONTAINER",
     envvar="OPS_CERTS_CONTAINER",
 )
+@click.option(
+    "--config-azcli/--no-config-azcli",
+    default=True,
+    help="Whether to try and run the az login w/ the service principle so we can install the aks plugins"
+)
 def provision(
     sp_client_id,
     sp_client_secret,
@@ -87,30 +92,60 @@ def provision(
     namespace,
     ops_tf_application_container,
     ops_config_container,
+    config_azcli,
 ):
+    if config_azcli:
+        configure_azcli(
+            sp_client_id=sp_client_id,
+            sp_client_secret=sp_client_secret,
+            tenant_id=tenant_id,
+        )
+    # ssl_process = diffie_helman(encryption=4096)
+    # download_file(
+    #     ops_storage_account, ops_config_container, "atatdev.pem", "/tmp/atatdev.pem"
+    # )
 
-    ssl_process = diffie_helman(encryption=4096)
-    download_file(
-        ops_storage_account, ops_config_container, "atatdev.pem", "/tmp/atatdev.pem"
-    )
+    # download_file(
+    #     ops_storage_account,
+    #     ops_config_container,
+    #     "app.tfvars.json",
+    #     "/tmp/app.tfvars.json",
+    # )
+    # pause_until_complete(ssl_process)
 
-    download_file(
-        ops_storage_account, ops_config_container, "app.tfvars.json", "/tmp/app.tfvars.json"
-    )
-    pause_until_complete(ssl_process)
+    # terraform_application(
+    #     sp_client_id=sp_client_id,
+    #     sp_client_secret=sp_client_secret,
+    #     subscription_id=subscription_id,
+    #     tenant_id=tenant_id,
+    #     backend_resource_group_name=ops_resource_group,
+    #     backend_storage_account_name=ops_storage_account,
+    #     backend_container_name=ops_tf_application_container,
+    #     namespace=namespace,
+    # )
 
-    terraform_application(
-        sp_client_id=sp_client_id,
-        sp_client_secret=sp_client_secret,
-        subscription_id=subscription_id,
-        tenant_id=tenant_id,
-        backend_resource_group_name=ops_resource_group,
-        backend_storage_account_name=ops_storage_account,
-        backend_container_name=ops_tf_application_container,
-        namespace=namespace,
-    )
+    # pause_until_complete(ssl_process)
 
-    pause_until_complete(ssl_process)
+
+def configure_azcli(sp_client_id, sp_client_secret, tenant_id):
+    cmd = [
+        "az",
+        "login",
+        "--service-principal",
+        "--username", sp_client_id,
+        "--password", sp_client_secret,
+        "--tenant", tenant_id,
+    ]
+    print(cmd)
+    subprocess.run(cmd).check_returncode()
+    subprocess.run("az extension add --name aks-preview".split()).check_returncode()
+    subprocess.run("az extension update --name aks-preview".split()).check_returncode()
+    subprocess.run(
+        "az feature register --name AKS-AzurePolicyAutoApprove --namespace Microsoft.ContainerService".split()
+    ).check_returncode()
+    subprocess.run(
+        "az provider register --namespace Microsoft.ContainerService".split()
+    ).check_returncode()
 
 
 def terraform_application(
