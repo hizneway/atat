@@ -40,11 +40,10 @@ def create_templated_app_registration(access_token: str):
     # application template id is prescribed for SSO SAML providers
     # https://docs.microsoft.com/en-us/graph/application-saml-sso-configure-api?tabs=http#create-the-gallery-application
     url = "https://graph.microsoft.com/beta/applicationTemplates/8adf8e6e-67b2-4cf2-a259-e3dc5476c621/instantiate"
-    data = '{ "displayName": "ATAT SAML Auth" }'
+    data = {"displayName": "ATAT SAML Auth"}
 
     headers = {
         "Authorization": f"Bearer {access_token}",
-        "Content-Type": "application/json",
     }
 
     response = requests.post(url, data=data, headers=headers)
@@ -60,10 +59,7 @@ def wait_for_sp_creation(sp_object_id: str, access_token: str):
     attempts = 0
     while attempts < 5:
         print(f"Polling for {sp_object_id}...")
-        headers = {
-            "Authorization": f"Bearer {access_token}",
-            "Content-Type": "application/json",
-        }
+        headers = {"Authorization": f"Bearer {access_token}"}
         poll_response = requests.get(
             f"https://graph.microsoft.com/beta/servicePrincipals/{sp_object_id}",
             headers=headers,
@@ -84,11 +80,10 @@ def wait_for_sp_creation(sp_object_id: str, access_token: str):
 
 def enable_saml(sp_object_id: str, access_token: str):
     url = f"https://graph.microsoft.com/beta/servicePrincipals/{sp_object_id}"
-    data = '{ "preferredSingleSignOnMode": "saml" }'
+    data = {"preferredSingleSignOnMode": "saml"}
 
     headers = {
         "Authorization": f"Bearer {access_token}",
-        "Content-Type": "application/json",
     }
 
     requests.patch(url, data=data, headers=headers).raise_for_status()
@@ -98,21 +93,15 @@ def register_urls_with_application(
     application_object_id: str, base_uri: str, access_token: str
 ):
     url = f"https://graph.microsoft.com/v1.0/applications/{application_object_id}"
-    data = """{
-    "web": {
-        "redirectUris": [
-            f"{base_uri}/login?acs"
-        ],
-        "logoutUrl": f"{base_uri}/login?sls"
-    },
-    "identifierUris": [
-        base_uri
-    ]
-    }"""
-    headers = {
-        "Authorization": f"Bearer {access_token}",
-        "Content-Type": "application/json",
+    data = {
+        "web": {
+            "redirectUris": [f"{base_uri}/login?acs"],
+            "logoutUrl": f"{base_uri}/login?sls",
+        },
+        "identifierUris": [base_uri],
     }
+
+    headers = {"Authorization": f"Bearer {access_token}"}
 
     response = requests.patch(url, data=data, headers=headers)
     response.raise_for_status()
@@ -122,11 +111,8 @@ def register_urls_with_service_principle(
     sp_object_id: str, base_uri: str, access_token: str
 ):
     url = f"https://graph.microsoft.com/beta/servicePrincipals/{sp_object_id}"
-    data = '{ "loginUrl": "https://localhost:8000/login" }'
-    headers = {
-        "Authorization": f"Bearer {access_token}",
-        "Content-Type": "application/json",
-    }
+    data = {"loginUrl": "https://localhost:8000/login"}
+    headers = {"Authorization": f"Bearer {access_token}"}
 
     response = requests.patch(url, data=data, headers=headers)
     response.raise_for_status()
