@@ -8,6 +8,7 @@ resources:
   - acme-challenges.yml
   - nginx-snippets.yml
   - autoscaling.yml
+  - pod-security.yml
 configMapGenerator:
 - name: uwsgi-config
   namespace: atat
