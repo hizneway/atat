@@ -3,36 +3,21 @@
 
 
 resource "azurerm_kubernetes_cluster" "k8s_private" {
-
-
   name                    = "${var.name}-private-k8s-${var.environment}"
   location                = var.region
   resource_group_name     = var.rg
   dns_prefix              = "atat-aks-private"
   private_cluster_enabled = var.private_cluster_enabled
   node_resource_group     = "${var.rg}-private-aks-node-rgs"
-
-
-
   addon_profile {
     azure_policy {
       enabled = true
     }
-
     oms_agent {
-
       enabled                    = true
       log_analytics_workspace_id = var.log_analytics_workspace_id
-
     }
-
-
-
   }
-
-
-
-
   network_profile {
 
     network_plugin     = "azure"

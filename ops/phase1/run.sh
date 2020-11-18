@@ -19,21 +19,25 @@ export TF_VAR_operator_client_id=$ARM_CLIENT_ID
 export TF_VAR_operator_client_secret=$ARM_CLIENT_SECRET
 export TF_VAR_operator_tenant_id=$ARM_TENANT_ID
 
-echo "ARM_CLIENT_ID=$ARM_CLIENT_ID"
-echo "ARM_CLIENT_SECRET=$ARM_CLIENT_SECRET"
-echo "ARM_SUBSCRIPTION_ID=$ARM_SUBSCRIPTION_ID"
-echo "ARM_TENANT_ID=$ARM_TENANT_ID"
-echo "-----------"
-echo $TF_VAR_operator_subscription_id
-echo $TF_VAR_operator_client_id
-echo $TF_VAR_operator_client_secret
-echo $TF_VAR_operator_tenant_id
+# echo "ARM_CLIENT_ID=$ARM_CLIENT_ID"
+# echo "ARM_CLIENT_SECRET=$ARM_CLIENT_SECRET"
+# echo "ARM_SUBSCRIPTION_ID=$ARM_SUBSCRIPTION_ID"
+# echo "ARM_TENANT_ID=$ARM_TENANT_ID"
+# echo "-----------"
+# echo $TF_VAR_operator_subscription_id
+# echo $TF_VAR_operator_client_id
+# echo $TF_VAR_operator_client_secret
+# echo $TF_VAR_operator_tenant_id
 
 echo "Terraform Bootstrap New Tenant"
 cd ../../terraform/providers/bootstrap
 terraform init
 terraform plan -var "namespace=$1" -out out.plan .
 terraform apply out.plan
+
+echo "Now copying this state to the remote"
+terraform init -force-copy
+terraform refresh -var "namespace=$1"
 
 export REGISTRY_NAME=$(terraform output operations_container_registry_login_server)
 export TF_VAR_resource_group_name=$(terraform output operations_resource_group_name)
@@ -42,9 +46,6 @@ export SUBNET_ID=$(terraform output operations_deployment_subnet_id)
 export OPERATIONS_VIRTUAL_NETWORK=$(terraform output operations_virtual_network)
 export LOGGING_WORKSPACE=$(terraform output logging_workspace_name)
 
-echo "Now copying this state to the remote"
-terraform init -force-copy
-terraform refresh -var "namespace=$1"
 
 # Now, need to lock that folder down to just the subnet that was created.
 az storage account update --resource-group ${TF_VAR_resource_group_name} --name ${TF_VAR_storage_account_name} --default-action Deny

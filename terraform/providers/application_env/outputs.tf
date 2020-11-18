@@ -102,12 +102,14 @@ output "azure_storage_account_name" {
   value = module.task_order_bucket.storage_account_name
 }
 
+
+
 output "redis_hostname" {
-  value = module.redis.hostname
+  value = azurerm_redis_cache.redis.hostname
 }
 
 output "redis_ssl_port" {
-  value = module.redis.ssl_port
+  value = azurerm_redis_cache.redis.ssl_port
 }
 
 output "vnet_id" {

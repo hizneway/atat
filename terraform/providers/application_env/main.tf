@@ -153,12 +153,11 @@ resource "azurerm_key_vault_secret" "secret" {
     "AZURE-SECRET-KEY"  = module.tenant_keyvault_app.application_password
     "AZURE-TENANT-ID"   = data.azurerm_client_config.azure_client.tenant_id
     "AZURE-STORAGE-KEY" = module.task_order_bucket.primary_access_key
-    "REDIS-PASSWORD"    = module.redis.primary_key
-    "REDIS-PASSWORD"    = module.redis.primary_key
+    "REDIS-PASSWORD"    = azurerm_redis_cache.redis.primary_access_key
     "SAML-IDP-CERT"     = ""
     "PGPASSWORD"        = random_password.atat_user_password.result
     "AZURE-VAULT-URL"   = module.tenant_keyvault.url
-    "DHPARAMS"          = filebase64("${var.dhparams_path}")
+    "DHPARAMS"          = filebase64(var.dhparams_path)
   })
 
   name         = each.key
@@ -168,9 +167,9 @@ resource "azurerm_key_vault_secret" "secret" {
 
 resource "azurerm_key_vault_certificate" "atatdev" {
   name         = "atatdev"
-  key_vault_id = azurerm_key_vault.keyvault.id
+  key_vault_id = module.keyvault.id
   certificate {
-    contents = filebase64("${var.tls_cert_path}")
+    contents = filebase64(var.tls_cert_path)
     password = ""
   }
   certificate_policy {
@@ -188,9 +187,8 @@ resource "azurerm_key_vault_certificate" "atatdev" {
       content_type = "application/x-pem-file"
     }
   }
-  depends_on = [azurerm_key_vault_access_policy.keyvault_admin_policy]
+  depends_on = [module.keyvault]
 }
-
 
 module "tenant_keyvault" {
   source            = "../../modules/keyvault"
@@ -224,14 +222,14 @@ module "operator_keyvault" {
   workspace_id      = local.log_analytics_workspace_id
 }
 
-module "logs" {
-  source            = "../../modules/log_analytics"
-  owner             = var.owner
-  environment       = var.deployment_namespace
-  region            = var.deployment_location
-  name              = var.name
-  retention_in_days = 365
-}
+# module "logs" {
+#   source            = "../../modules/log_analytics"
+#   owner             = var.owner
+#   environment       = var.deployment_namespace
+#   region            = var.deployment_location
+#   name              = var.name
+#   retention_in_days = 365
+# }
 
 resource "random_password" "pg_root_password" {
   length           = 16
@@ -261,32 +259,89 @@ module "sql" {
   deployment_subnet_id         = local.deployment_subnet_id
 }
 
-module "private-k8s" {
-  source                     = "../../modules/k8s-private"
-  rg                         = module.vpc.resource_group_name
-  region                     = var.deployment_location
-  name                       = var.name
-  environment                = var.deployment_namespace
-  owner                      = var.owner
-  k8s_dns_prefix             = var.k8s_dns_prefix
-  k8s_node_size              = "Standard_D2_v3"
-  enable_auto_scaling        = true
-  max_count                  = 3
-  min_count                  = 3
-  private_aks_sp_id          = var.private_aks_sp_id
-  private_aks_sp_secret      = var.private_aks_sp_secret
-  log_analytics_workspace_id = local.log_analytics_workspace_id
-  service_dns                = var.private_aks_service_dns
-  docker_bridge_cidr         = var.private_aks_docker_bridge_cidr
-  service_cidr               = var.private_aks_service_cidr
-  subnet_cidr                = var.private_k8s_subnet_cidr
-  vnet_id                    = module.vpc.id
-  vpc_name                   = module.vpc.vpc_name
-  aks_subnet_id              = module.vpc.subnet_list["aks-private"].id
-  vpc_address_space          = "10.1.0.0/16"
+resource "azurerm_kubernetes_cluster" "k8s_private" {
+  name                    = "${var.name}-private-k8s-${var.deployment_namespace}"
+  location                = var.deployment_location
+  resource_group_name     = module.vpc.resource_group_name
+  dns_prefix              = "atat-aks-private"
+  private_cluster_enabled = true
+  node_resource_group     = "${module.vpc.resource_group_name}-private-aks-node-rgs"
+  addon_profile {
+    azure_policy {
+      enabled = true
+    }
+    oms_agent {
+      enabled                    = true
+      log_analytics_workspace_id = local.log_analytics_workspace_id
+    }
+  }
+  network_profile {
 
+    network_plugin     = "azure"
+    dns_service_ip     = var.private_aks_service_dns
+    docker_bridge_cidr = var.private_aks_docker_bridge_cidr
+    outbound_type      = "userDefinedRouting"
+    service_cidr       = var.private_aks_service_cidr
+    load_balancer_sku  = "Standard"
+  }
+  identity {
+    type = "SystemAssigned"
+  }
+  # service_principal {
+  #   client_id     = var.private_aks_sp_id
+  #   client_secret = var.private_aks_sp_secret
+  # }
+
+  default_node_pool {
+    name                  = "default"
+    vm_size               = "Standard_B2s"
+    os_disk_size_gb       = 30
+    vnet_subnet_id        = module.vpc.subnet_list["aks-private"].id
+    enable_node_public_ip = false
+    enable_auto_scaling   = false
+    node_count            = 1
+  }
+
+  lifecycle {
+    ignore_changes = [
+      default_node_pool.0.node_count
+    ]
+  }
+
+  tags = {
+    Name        = "private-aks-atat"
+    environment = var.deployment_namespace
+    owner       = var.owner
+  }
   depends_on = [module.vpc, module.keyvault_reader_identity]
 }
+
+# module "private-k8s" {
+#   source                     = "../../modules/k8s-private"
+#   rg                         = module.vpc.resource_group_name
+#   region                     = var.deployment_location
+#   name                       = var.name
+#   environment                = var.deployment_namespace
+#   owner                      = var.owner
+#   k8s_dns_prefix             = var.k8s_dns_prefix
+#   k8s_node_size              = "Standard_D2_v3"
+#   enable_auto_scaling        = true
+#   max_count                  = 3
+#   min_count                  = 3
+#   private_aks_sp_id          = var.private_aks_sp_id
+#   private_aks_sp_secret      = var.private_aks_sp_secret
+#   log_analytics_workspace_id = local.log_analytics_workspace_id
+#   service_dns                = var.private_aks_service_dns
+#   docker_bridge_cidr         = var.private_aks_docker_bridge_cidr
+#   service_cidr               = var.private_aks_service_cidr
+#   subnet_cidr                = var.private_k8s_subnet_cidr
+#   vnet_id                    = module.vpc.id
+#   vpc_name                   = module.vpc.vpc_name
+#   aks_subnet_id              = module.vpc.subnet_list["aks-private"].id
+#   vpc_address_space          = "10.1.0.0/16"
+
+#   depends_on = [module.vpc, module.keyvault_reader_identity]
+# }
 
 module "private-aks-firewall" {
 
@@ -299,18 +354,32 @@ module "private-aks-firewall" {
   az_fw_ip            = module.vpc.fw_ip_address_id
 }
 
-module "redis" {
-  source       = "../../modules/redis"
-  owner        = var.owner
-  environment  = var.deployment_namespace
-  region       = var.deployment_location
-  name         = var.name
-  subnet_id    = module.vpc.subnet_list["redis"].id
-  sku_name     = "Premium"
-  family       = "P"
-  workspace_id = local.log_analytics_workspace_id
-  pet_name     = var.deployment_namespace
+resource "azurerm_resource_group" "redis" {
+  name     = "${var.name}-redis-${var.deployment_namespace}"
+  location = var.deployment_location
 }
+
+# NOTE: the Name used for Redis needs to be globally unique
+resource "azurerm_redis_cache" "redis" {
+  name                = "${var.name}-redis-${var.deployment_namespace}"
+  location            = azurerm_resource_group.redis.location
+  resource_group_name = azurerm_resource_group.redis.name
+  capacity            = 1
+  family              = "P"
+  sku_name            = "Premium"
+  enable_non_ssl_port = false
+  minimum_tls_version = "1.2"
+  subnet_id           = module.vpc.subnet_list["redis"].id
+
+  redis_configuration {
+    enable_authentication = true
+  }
+  tags = {
+    environment = var.deployment_namespace
+    owner       = var.owner
+  }
+}
+
 
 module "vpc" {
   source                         = "../../modules/vpc/"

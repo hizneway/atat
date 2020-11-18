@@ -130,7 +130,7 @@ def terraform_application(
 
     cwd = path.join("../", "../", "terraform", "providers", "application_env")
 
-    default_args = {"cwd": cwd, "stdout": subprocess.PIPE, "stderr": subprocess.PIPE }
+    default_args = {"cwd": cwd}
 
     backend_configs = [
         f"-backend-config=resource_group_name={backend_resource_group_name}",
@@ -164,7 +164,7 @@ def terraform_application(
         ]
         print(cmd)
         subprocess.run(cmd, **default_args).check_returncode()
-
+        print("terraform apply plan.tfplan")
         subprocess.run(
             "terraform apply plan.tfplan".split(), **default_args
         ).check_returncode()
