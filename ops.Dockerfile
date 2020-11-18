@@ -15,7 +15,8 @@ RUN yum -y update && \
   curl --retry 10 -LO "https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl" && \
   chmod +x /tmp/kubectl && \
   sudo mv /tmp/kubectl /usr/bin/kubectl && \
-  pip3 install --upgrade pip
+  pip3 install --upgrade pip && \
+  pip3 install poetry
 
 COPY ./ops/requirements.txt /src/ops/requirements.txt
 
@@ -25,6 +26,11 @@ RUN pip3 install -r /src/ops/requirements.txt && \
   pyhcl && \
   pip3 install ansible[azure] azure-storage-common azure-common azure-storage-blob azure-storage-nspkg pydantic onelogin python3-saml
 
+COPY ./ops/phase2/pyproject.toml ./ops/phase2/poetry.lock ops/phase2/
+WORKDIR /src/ops/phase2
+RUN poetry install --no-root --no-dev
+
+WORKDIR /src
 
 COPY . /src
 
