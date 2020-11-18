@@ -49,6 +49,6 @@ output "namespace" {
 }
 
 output "logging_workspace" {
-  value = module.logging.workspace_id
+  value = module.logs.workspace_id
   description = "Name of the Log Analytics Workspace"
 }
