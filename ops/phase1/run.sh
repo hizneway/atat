@@ -25,6 +25,21 @@ echo $TF_VAR_operator_client_id
 echo $TF_VAR_operator_client_secret
 echo $TF_VAR_operator_tenant_id
 
+# If we previously ran this script and a storage account was created,
+# temporarily allow connections from outside the subnet so that we can access
+# terraform state
+if [[ -z "${TF_VAR_resource_group_name}" ]] && [[ -z "${TF_VAR_storage_account_name}" ]]; then
+  groups=$(az group list)
+  deployment_group=$(echo $groups | jq -r -c '.[] | select(.name | endswith("$1"))'.name)
+  accounts=$(az storage account list)
+  deployment_storage_account=$(echo "$accounts" | jq -r -c '.[] | select(.name | endswith("$1"))'.name)
+  if [[ ! -z "${deployment_group}" ]] && [[ ! -z "${deployment_storage_account}" ]]; then
+    az storage account update --resource-group ${deployment_group} --name ${deployment_storage_account} --default-action Allow
+  fi
+else
+  az storage account update --resource-group ${TF_VAR_resource_group_name} --name ${TF_VAR_storage_account_name} --default-action Allow
+fi
+
 echo "Terraform Bootstrap New Tenant"
 cd ../../terraform/providers/bootstrap
 terraform init
@@ -38,7 +53,12 @@ export TF_VAR_resource_group_name=$(terraform output operations_resource_group_n
 export TF_VAR_storage_account_name=$(terraform output operations_storage_account_name)
 export SUBNET_ID=$(terraform output operations_deployment_subnet_id)
 export OPERATIONS_VIRTUAL_NETWORK=$(terraform output operations_virtual_network)
-# Now, need to lock that folder down to just the subnet that was created.
+
+# Lock the storage account to just the subnet that was created. We can't do
+# this in Terraform. Since we don't want to whitelist an IP addresses and we
+# want to limit the access of the storage account to a private subnet, if we
+# set these options in terraform, we wouldn't be able to provision storage
+# containers under the storage account.
 az storage account update --resource-group ${TF_VAR_resource_group_name} --name ${TF_VAR_storage_account_name} --default-action Deny
 az storage account network-rule add --resource-group ${TF_VAR_resource_group_name} --account-name ${TF_VAR_storage_account_name} --subnet ${SUBNET_ID}
 
