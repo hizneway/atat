@@ -3,5 +3,5 @@ output "workspace_id" {
 }
 
 output "workspace_name" {
-  value = azurerm_log_analytics_workspace.name
+  value = azurerm_log_analytics_workspace.log_workspace.name
 }

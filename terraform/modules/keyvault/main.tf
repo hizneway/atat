@@ -144,7 +144,7 @@ module "diffiehelman_cert" {
 
   source           = "../keyvault_cert"
   keyvault_id      = azurerm_key_vault.keyvault.id
-  certificate_path = var.dhparams_path
+  certificate_path = var.dhparam_path
   name             = "dhparam4096"
 
   depends_on = [azurerm_key_vault_access_policy.keyvault_admin_policy]

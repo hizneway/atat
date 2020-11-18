@@ -40,7 +40,7 @@ export TF_VAR_resource_group_name=$(terraform output operations_resource_group_n
 export TF_VAR_storage_account_name=$(terraform output operations_storage_account_name)
 export SUBNET_ID=$(terraform output operations_deployment_subnet_id)
 export OPERATIONS_VIRTUAL_NETWORK=$(terraform output operations_virtual_network)
-export LOGGING_WORKSPACE=$(terraform output logging_workspace)
+export LOGGING_WORKSPACE=$(terraform output logging_workspace_name)
 
 echo "Now copying this state to the remote"
 terraform init -force-copy

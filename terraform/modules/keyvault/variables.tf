@@ -68,7 +68,5 @@ variable "workspace_id" {
 
 }
 
-
-variable "tls_cert_path" {
-  default = ""
-}
+variable "tls_cert_path" { default="" }
+variable "dhparam_path" { default="" }

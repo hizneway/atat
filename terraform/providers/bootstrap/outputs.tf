@@ -48,7 +48,12 @@ output "namespace" {
   description = "Namespace for this deployment - Less than 5 characters, lower case"
 }
 
-output "logging_workspace" {
+output "logging_workspace_name" {
   value = module.logs.workspace_name
   description = "Name of the Log Analytics Workspace"
+}
+
+output "logging_workspace_id" {
+  value = module.logs.workspace_id
+  description = "Id of the Log Analytics Workspace"
 }
