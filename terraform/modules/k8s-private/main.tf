@@ -28,11 +28,7 @@ resource "azurerm_kubernetes_cluster" "k8s_private" {
 
     }
 
-    aci_connector_linux {
-      enabled     = true
-      subnet_name = "${var.name}-${var.subnet_name}-${var.environment}"
-    }
-
+    
 
 
   }
