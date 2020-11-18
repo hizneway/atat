@@ -83,8 +83,8 @@ az container create \
   --registry-username ${TF_VAR_operator_client_id} \
   --memory 4 \
   --cpu 4 \
-  --secure-environment-variables "TF_VAR_resource_group_name=$TF_VAR_resource_group_name" "TF_VAR_storage_account_name=$TF_VAR_storage_account_name" "TF_VAR_operator_subscription_id=$TF_VAR_operator_subscription_id" "TF_VAR_operator_client_id=$TF_VAR_operator_client_id" "TF_VAR_operator_client_secret=$TF_VAR_operator_client_secret" "TF_VAR_operator_tenant_id=$TF_VAR_operator_tenant_id" \
-  --command-line "/bin/bash -c while true; do sleep 30; done;" \
+  --secure-environment-variables "OPS_RESOURCE_GROUP=$TF_VAR_resource_group_name" "OPS_STORAGE_ACCOUNT=$TF_VAR_storage_account_name" "SUBSCRIPTION_ID=$TF_VAR_operator_subscription_id" "SP_CLIENT_ID=$TF_VAR_operator_client_id" "SP_CLIENT_SECRET=$TF_VAR_operator_client_secret" "TENANT_ID=$TF_VAR_operator_tenant_id" "OPS_REGISTRY=$REGISTRY_NAME" "NAMESPACE=$1" \
+  --command-line "/bin/bash -c 'while true; do sleep 30; done'" \
   --log-analytics-workspace $LOGGING_WORKSPACE \
   --restart-policy Never
 

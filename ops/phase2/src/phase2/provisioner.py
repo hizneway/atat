@@ -86,16 +86,16 @@ def provision(
     ops_tf_bootstrap_container,
     namespace,
     ops_tf_application_container,
-    ops_certs_container,
+    ops_config_container,
 ):
 
     ssl_process = diffie_helman(encryption=4096)
     download_file(
-        ops_storage_account, ops_certs_container, "atatdev.pem", "/tmp/atatdev.pem"
+        ops_storage_account, ops_config_container, "atatdev.pem", "/tmp/atatdev.pem"
     )
 
     download_file(
-        ops_storage_account, ops_certs_container, "app.tfvars.json", "/tmp/app.tfvars.json"
+        ops_storage_account, ops_config_container, "app.tfvars.json", "/tmp/app.tfvars.json"
     )
     pause_until_complete(ssl_process)
 
