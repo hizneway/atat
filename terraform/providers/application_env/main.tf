@@ -12,7 +12,7 @@ locals {
   operations_container_registry_login_server = data.terraform_remote_state.previous_stage.outputs.operations_container_registry_login_server
   operations_resource_group_name             = data.terraform_remote_state.previous_stage.outputs.operations_resource_group_name
   operator_ip                                = chomp(data.http.myip.body)
-  log_analytics_workspace_id                 = data.terraform_remote_state.previous_stage.outputs.workspace_id
+  log_analytics_workspace_id                 = data.terraform_remote_state.previous_stage.outputs.logging_workspace_id
 }
 
 module "tenant_keyvault_app" {
@@ -158,12 +158,39 @@ resource "azurerm_key_vault_secret" "secret" {
     "SAML-IDP-CERT"     = ""
     "PGPASSWORD"        = random_password.atat_user_password.result
     "AZURE-VAULT-URL"   = module.tenant_keyvault.url
+    "DHPARAMS"          = filebase64("${var.dhparams_path}")
   })
 
   name         = each.key
   value        = each.value
   key_vault_id = module.keyvault.id
 }
+
+resource "azurerm_key_vault_certificate" "atatdev" {
+  name         = "atatdev"
+  key_vault_id = azurerm_key_vault.keyvault.id
+  certificate {
+    contents = filebase64("${var.tls_cert_path}")
+    password = ""
+  }
+  certificate_policy {
+    issuer_parameters {
+      name = "Unknown"
+    }
+
+    key_properties {
+      exportable = true
+      key_size   = 2048
+      key_type   = "RSA"
+      reuse_key  = false
+    }
+    secret_properties {
+      content_type = "application/x-pem-file"
+    }
+  }
+  depends_on = [azurerm_key_vault_access_policy.keyvault_admin_policy]
+}
+
 
 module "tenant_keyvault" {
   source            = "../../modules/keyvault"

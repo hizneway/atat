@@ -130,7 +130,7 @@ def terraform_application(
 
     cwd = path.join("../", "../", "terraform", "providers", "application_env")
 
-    default_args = {"cwd": cwd, "capture_output": True}
+    default_args = {"cwd": cwd, "stdout": subprocess.PIPE, "stderr": subprocess.PIPE }
 
     backend_configs = [
         f"-backend-config=resource_group_name={backend_resource_group_name}",
@@ -142,28 +142,28 @@ def terraform_application(
         init_cmd = ["terraform", "init", *backend_configs, "."]
         print(init_cmd)
         subprocess.run(init_cmd, **default_args).check_returncode()
-        if not path.exists(path.join(cwd, "plan.tf")):
-            tfvars = [
-                f"-var=operator_subscription_id={subscription_id}",
-                f"-var=operator_client_id={sp_client_id}",
-                f"-var=operator_client_secret={sp_client_secret}",
-                f"-var=operator_tenant_id={tenant_id}",
-                f"-var=ops_resource_group={backend_resource_group_name}",
-                f"-var=ops_storage_account={backend_storage_account_name}",
-                f"-var=tf_bootstrap_container={bootrap_container_name}",
-                f"-var=deployment_namespace={namespace}",
-            ]
-            cmd = [
-                "terraform",
-                "plan",
-                "-input=false",
-                "-out=plan.tfplan",
-                "-var-file=/tmp/app.tfvars.json",
-                *tfvars,
-                ".",
-            ]
-            print(cmd)
-            subprocess.run(cmd, **default_args).check_returncode()
+
+        tfvars = [
+            f"-var=operator_subscription_id={subscription_id}",
+            f"-var=operator_client_id={sp_client_id}",
+            f"-var=operator_client_secret={sp_client_secret}",
+            f"-var=operator_tenant_id={tenant_id}",
+            f"-var=ops_resource_group={backend_resource_group_name}",
+            f"-var=ops_storage_account={backend_storage_account_name}",
+            f"-var=tf_bootstrap_container={bootrap_container_name}",
+            f"-var=deployment_namespace={namespace}",
+        ]
+        cmd = [
+            "terraform",
+            "plan",
+            "-input=false",
+            "-out=plan.tfplan",
+            "-var-file=/tmp/app.tfvars.json",
+            *tfvars,
+            ".",
+        ]
+        print(cmd)
+        subprocess.run(cmd, **default_args).check_returncode()
 
         subprocess.run(
             "terraform apply plan.tfplan".split(), **default_args

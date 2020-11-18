@@ -72,6 +72,7 @@ az acr build --registry ${REGISTRY_NAME} \
   --file ops.Dockerfile \
   .
 
+#
 az container create \
   --resource-group ${TF_VAR_resource_group_name} \
   --name "$1-provisioner" \
