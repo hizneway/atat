@@ -44,7 +44,7 @@ export LOGGING_WORKSPACE=$(terraform output logging_workspace)
 
 echo "Now copying this state to the remote"
 terraform init -force-copy
-terraform refresh
+terraform refresh -var "namespace=$1"
 
 # Now, need to lock that folder down to just the subnet that was created.
 az storage account update --resource-group ${TF_VAR_resource_group_name} --name ${TF_VAR_storage_account_name} --default-action Deny

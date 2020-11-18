@@ -26,8 +26,8 @@ RUN pip3 install -r /src/ops/requirements.txt && \
   pyhcl && \
   pip3 install ansible[azure] azure-storage-common azure-common azure-storage-blob azure-storage-nspkg pydantic onelogin python3-saml
 
-COPY ./ops/phase2/pyproject.toml ./ops/phase2/poetry.lock ops/phase2/
 WORKDIR /src/ops/phase2
+COPY ./ops/phase2/pyproject.toml ./ops/phase2/poetry.lock ./
 RUN poetry install --no-root --no-dev
 
 WORKDIR /src
