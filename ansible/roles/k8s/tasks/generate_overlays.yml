@@ -2,9 +2,11 @@
 - name: Create template output directory
   file:
     state: directory
-    path: "{{ playbook_dir }}/"
+    path: "{{ playbook_dir }}/../deploy/overlays/{{ az_environment}}"
 
-
+- name: show output dir
+  debug:
+    msg: "{{ playbook_dir }}/../deploy/overlays/{{ az_environment}}"
 
 - name: Interpolate the templates
   template:

@@ -48,10 +48,3 @@ spec:
             # below is Azure default
             path: "/etc/kubernetes/volumeplugins"
           name: volplugins
-      nodeSelector:
-        kubernetes.io/role: agent
-        beta.kubernetes.io/os: linux
-        type: virtual-kubelet
-      tolerations:
-      - key: virtual-kubelet.io/provider
-        operator: Exists

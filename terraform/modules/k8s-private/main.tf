@@ -28,7 +28,7 @@ resource "azurerm_kubernetes_cluster" "k8s_private" {
 
     }
 
-    
+
 
 
   }
@@ -61,7 +61,7 @@ resource "azurerm_kubernetes_cluster" "k8s_private" {
     vnet_subnet_id        = var.aks_subnet_id
     enable_node_public_ip = false
     enable_auto_scaling   = false
-    node_count            = 1
+    node_count            = 3
   }
 
   lifecycle {

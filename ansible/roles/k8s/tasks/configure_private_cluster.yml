@@ -20,7 +20,7 @@
 
 - name: move configs to right location
   copy:
-    src: /tmp/.out/
+    src: /tmp/ladybug/
     dest: "{{ playbook_dir }}/../deploy/overlays/{{namespace}}/"
 
 - name: Connect to the {{ namespace }} kubernetes cluster
