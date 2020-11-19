@@ -28,7 +28,7 @@ spec:
         fsGroup: 101
       initContainers:
         - name: change-file-access
-          image: busybox
+          image: $CONTAINER_IMAGE
           command: ['sh', '-c', 'find /etc/ssl -type f -exec chmod 640 {} \;']
           volumeMounts:
           - name: nginx-secret
