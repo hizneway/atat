@@ -75,11 +75,6 @@ logger = logging.getLogger(__name__)
     help="Name of the container (folder) in the ops_storage_account that holds the config that will be needed by the application - envvar: OPS_CONFIG_CONTAINER",
     envvar="OPS_CERTS_CONTAINER",
 )
-@click.option(
-    "--config-azcli/--no-config-azcli",
-    default=True,
-    help="Whether to try and run the az login w/ the service principle so we can install the aks plugins"
-)
 def provision(
     sp_client_id,
     sp_client_secret,
@@ -92,26 +87,23 @@ def provision(
     namespace,
     ops_tf_application_container,
     ops_config_container,
-    config_azcli,
 ):
-    if config_azcli:
-        configure_azcli(
-            sp_client_id=sp_client_id,
-            sp_client_secret=sp_client_secret,
-            tenant_id=tenant_id,
-        )
-    # ssl_process = diffie_helman(encryption=4096)
-    # download_file(
-    #     ops_storage_account, ops_config_container, "atatdev.pem", "/tmp/atatdev.pem"
-    # )
+    ssl_process = diffie_helman(encryption=4096)
+    download_file(
+        ops_storage_account, ops_config_container, "atatdev.pem", "/tmp/atatdev.pem"
+    )
+    download_file(
+        ops_storage_account, ops_config_container, "ccpo_users.yml", "/tmp/ccpo_users.yml"
+    )
 
-    # download_file(
-    #     ops_storage_account,
-    #     ops_config_container,
-    #     "app.tfvars.json",
-    #     "/tmp/app.tfvars.json",
-    # )
-    # pause_until_complete(ssl_process)
+    download_file(
+        ops_storage_account,
+        ops_config_container,
+        "app.tfvars.json",
+        "/tmp/app.tfvars.json",
+    )
+
+    pause_until_complete(ssl_process)
 
     # terraform_application(
     #     sp_client_id=sp_client_id,
@@ -124,28 +116,32 @@ def provision(
     #     namespace=namespace,
     # )
 
-    # pause_until_complete(ssl_process)
+    tf_output_dict = collect_terraform_outputs()
+
+    ansible(tf_output_dict=tf_output_dict, addl_args={"sp_client_id": sp_client_id,
+        "sp_client_secret": sp_client_secret,
+        "subscription_id": subscription_id,
+        "tenant_id": tenant_id,
+        "backend_resource_group_name": ops_resource_group,
+        "backend_storage_account_name": ops_storage_account,
+        "ops_config_container": ops_config_container})
+
+    # deploy
 
 
-def configure_azcli(sp_client_id, sp_client_secret, tenant_id):
-    cmd = [
-        "az",
-        "login",
-        "--service-principal",
-        "--username", sp_client_id,
-        "--password", sp_client_secret,
-        "--tenant", tenant_id,
-    ]
-    print(cmd)
-    subprocess.run(cmd).check_returncode()
-    subprocess.run("az extension add --name aks-preview".split()).check_returncode()
-    subprocess.run("az extension update --name aks-preview".split()).check_returncode()
-    subprocess.run(
-        "az feature register --name AKS-AzurePolicyAutoApprove --namespace Microsoft.ContainerService".split()
-    ).check_returncode()
-    subprocess.run(
-        "az provider register --namespace Microsoft.ContainerService".split()
-    ).check_returncode()
+def collect_terraform_outputs():
+    '''Collects terraform output into name/value dict to pass as json to ansible'''
+    logger.info("collect_terraform_outputs")
+
+    cwd = path.join("../", "../", "terraform", "providers", "application_env")
+
+    result = subprocess.run(
+        "terraform output -json".split(), cwd=cwd, capture_output=True
+    )
+    result.check_returncode()
+    output = json.loads(result.stdout.decode("utf-8"))
+
+    return {k: v["value"] for k, v in output.items() if type(v["value"]) is str }
 
 
 def terraform_application(
@@ -263,6 +259,15 @@ def pause_until_complete(open_process: Optional[subprocess.Popen]):
             click.echo(f"Return Code {return_code}")
             click.echo(open_process.stdout.read())
             return return_code == 0
+
+
+def ansible(tf_output_dict, addl_args):
+    extra_vars = { **tf_output_dict, **addl_args}
+    extra_vars["postgres_root_cert"] = "../deploy/azure/pgsslrootcert.yml"
+    cwd = path.join("../", "../", "ansible")
+    print(extra_vars)
+    cmd = ["ansible-playbook", "provision.yml", "-vvv", "--extra-vars", json.dumps(extra_vars)]
+    subprocess.run(cmd, cwd=cwd).check_returncode()
 
 
 if __name__ == "__main__":

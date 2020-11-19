@@ -1,4 +1,18 @@
 - hosts: localhost
+  pre_tasks:
+    - name: Generate the terraform `application_env` output
+      shell: terraform output -json
+      args:
+        chdir: "../terraform/providers/application_env"
+      register: terraform_output
+
+    - name: Store the output as a fact
+      set_fact:
+        tf_app_env_outputs: "{{ terraform_output.stdout | from_json }}"
+
+    - debug:
+        msg: "{{ tf_app_env_outputs }}"
+
   roles:
     - role: db
       vars:
