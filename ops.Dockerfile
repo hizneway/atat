@@ -27,4 +27,4 @@ COPY . /src
 
 WORKDIR /src/ansible
 
-ENTRYPOINT ["../ops/entrypoint.sh"]
+ENTRYPOINT "/bin/bash"
