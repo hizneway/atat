@@ -39,7 +39,7 @@
     ARM_SUBSCRIPTION_ID: "{{ application_subscription_id }}"
     TF_VAR_OPS_OID: "{{ lookup('env','TF_VAR_OPS_OID') }}"
     TF_VAR_OPS_SEC: "{{ lookup('env','TF_VAR_OPS_SEC') }}"
-    TF_VAR_dhparam4096: "{{ lookup('file','/src/ansible/dh/dhparams.pem')}}"
+    TF_VAR_dhparam4096: "{{ lookup('file','{{playbook_dir}}/dh/dhparams.pem')}}"
     TF_VAR_environment: "{{ tf_bootstrap_backend_outputs.environment.value }}"
   when:
     - target_modules is not defined

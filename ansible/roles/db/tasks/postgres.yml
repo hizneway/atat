@@ -39,7 +39,7 @@
 - name: Create database user
   shell:
     cmd: python3.7 script/create_database_user.py "{{ tf_app_env_outputs.atat_user_name.value | trim }}" "{{  tf_app_env_outputs.atat_user_password.value | trim }}"
-    chdir: /src
+    chdir: "{{playbook_dir}}/.."
   environment:
     PGHOST: "{{ tf_app_env_outputs.pg_host.value }}"
     SERVER_NAME: "{{ tf_app_env_outputs.atat_database_instance_name.value }}"
@@ -58,7 +58,7 @@
 - name: Create database user
   shell:
     cmd: python3.7 script/create_database_user.py "{{ tf_app_env_outputs.atat_user_name.value | trim | regex_replace('@.*','') }}" "{{  tf_app_env_outputs.atat_user_password.value | trim }}"
-    chdir: /src
+    chdir: "{{playbook_dir}}/.."
   environment:
     PGHOST: "{{ tf_app_env_outputs.pg_host.value }}"
     SERVER_NAME: "{{ tf_app_env_outputs.atat_database_instance_name.value }}"
@@ -77,7 +77,7 @@
 - name: Initialize database
   shell:
     cmd: python3.7 script/reset_database.py
-    chdir: /src
+    chdir: "{{playbook_dir}}/.."
   environment:
     PGHOST: "{{ tf_app_env_outputs.pg_host.value }}"
     SERVER_NAME: "{{ tf_app_env_outputs.atat_database_instance_name.value }}"
@@ -96,7 +96,7 @@
 - name: Add CCPO users
   shell:
     cmd: python3.7 /src/script/add_ccpo_users.py /src/script/ccpo_users.yml
-    chdir: /src
+    chdir: "{{playbook_dir}}/.."
   environment:
     PGDATABASE: "{{ tf_app_env_outputs.atat_database_name.value }}"
     SERVER_NAME: "{{ tf_app_env_outputs.atat_database_instance_name.value }}"

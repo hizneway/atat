@@ -9,4 +9,4 @@
     storage_account_name: "{{ bootstrap_storage_account_name }}"
     container: "{{ bootstrap_container_name}}"
     blob: ccpo_users.yml
-    dest: /src/script/ccpo_users.yml
+    dest: "{{ playbook_dir }}/../script/ccpo_users.yml"

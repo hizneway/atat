@@ -2,7 +2,7 @@
 init_tf: yes
 deploy_app_env: true
 show_app_env_outputs: true
-tf_base_dir: /src/terraform/providers
+tf_base_dir: "{{playbook_dir}}/../terraform/providers"
 tf_subdir: application_env
 tfvars_file_name: app.tfvars.json
 application_subscription_id: "{{ lookup('env','SUBSCRIPTION_ID') }}"

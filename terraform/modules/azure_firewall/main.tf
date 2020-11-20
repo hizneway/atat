@@ -117,13 +117,7 @@ resource "azurerm_firewall_application_rule_collection" "fw_rule_collection" {
   }
 
 
-  rule {
-    name             = "allow k8s"
-    source_addresses = ["*"]
 
-    fqdn_tags= ["AzureKubernetesService"]
-
-  }
 
 
 
@@ -180,12 +174,12 @@ resource "azurerm_firewall_nat_rule_collection" "tolb" {
     ]
 
     destination_addresses = [
-      var.maintenance_page_ip
+      var.az_fw_ip
     ]
 
     translated_port = 443
 
-    translated_address = "${var.nat_rules_translated_ips}"
+    translated_address = "${var.maintenance_page_ip}"
 
     protocols = [
       "TCP"

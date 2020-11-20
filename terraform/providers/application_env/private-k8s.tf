@@ -42,6 +42,7 @@ module "private-aks-firewall" {
   subnet_id           = module.vpc.subnet_list["AzureFirewallSubnet"].id
   az_fw_ip            = module.vpc.fw_ip_address
   az_fw_ip_id         = module.vpc.fw_ip_address_id
+  maintenance_page_ip = "10.1.5.254"
   nat_rules_translated_ips  = cidrhost("${var.private_k8s_subnet_cidr}",254)
   virtual_appliance_routes       = var.virtual_appliance_routes
   virtual_appliance_route_tables = var.virtual_appliance_route_tables

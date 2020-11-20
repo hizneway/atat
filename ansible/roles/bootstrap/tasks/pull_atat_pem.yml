@@ -9,4 +9,4 @@
     storage_account_name: "{{ bootstrap_storage_account_name }}"
     container: certs
     blob: atatdev.pem
-    dest: /src/atatdev.pem
+    dest: "{{playbook_dir}}/../atatdev.pem"

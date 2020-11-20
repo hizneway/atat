@@ -9,4 +9,4 @@
     storage_account_name: "{{ bootstrap_storage_account_name }}"
     container: "{{ bootstrap_container_name }}"
     blob: "{{ az_environment }}.bootstrap.terraform.tfstate"
-    dest: /src/terraform/providers/bootstrap/terraform.tfstate
+    dest: "{{playbook_dir}}/../terraform/providers/bootstrap/terraform.tfstate"

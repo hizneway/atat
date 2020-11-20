@@ -1,4 +1,4 @@
-postgres_root_cert: /src/deploy/azure/pgsslrootcert.yml
+postgres_root_cert: "{{playbook_dir}}/../deploy/azure/pgsslrootcert.yml"
 bootstrap_resource_group_name: cloudzero-ops
 bootstrap_storage_account_name: czopsstorageaccount
 bootstrap_container_name: tf-configs
