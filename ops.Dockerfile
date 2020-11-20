@@ -7,7 +7,7 @@ COPY ./azure-cli.repo /etc/yum.repos.d/azure-cli.repo
 RUN yum -y update && \
   rpm --import https://packages.microsoft.com/keys/microsoft.asc &&  \
   yum install -y azure-cli bzip2-devel gettext git jq openssl-devel postgresql-devel unzip && \
-  curl https://releases.hashicorp.com/terraform/0.13.0/terraform_0.13.0_linux_amd64.zip -o tf.zip && \
+  curl https://releases.hashicorp.com/terraform/0.13.5/terraform_0.13.5_linux_amd64.zip -o tf.zip && \
   unzip tf.zip && \
   sudo mv terraform /usr/local/bin && \
   ln -s /usr/bin/python /usr/bin/python3.7 && \
@@ -25,6 +25,6 @@ WORKDIR /src
 
 COPY . /src
 
-WORKDIR /src/ansible
+WORKDIR /src/ops/phase2
 
 ENTRYPOINT "/bin/bash"
