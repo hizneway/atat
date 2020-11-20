@@ -48,10 +48,6 @@ resource "azurerm_postgresql_firewall_rule" "operator" {
   end_ip_address      = var.operator_ip
 }
 
-
-
-
-
 resource "azurerm_postgresql_database" "db" {
   name                = "${var.name}-atat-${var.environment}"
   resource_group_name = azurerm_resource_group.sql.name

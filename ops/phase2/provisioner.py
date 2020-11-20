@@ -35,12 +35,6 @@ logger = logging.getLogger(__name__)
 )
 @click.option("--tenant_id", help="tenant id - envvar: TENANT_ID", envvar="TENANT_ID")
 @click.option(
-    "--ops_registry",
-    help="Full URI of the container registry that after bootstrapping, should have rhel, rhel-py, and ops images - envvar: OPS_REGISTRY",
-    prompt="Domain of container registry eg:cloudzeroopsregistry${var.namespace}.azurecr.io",
-    envvar="OPS_REGISTRY",
-)
-@click.option(
     "--ops_resource_group",
     help="Resource group created to hold all the resources for operations only - envvar: OPS_RESOURCE_GROUP",
     prompt="Name of operations resource group",
@@ -51,12 +45,6 @@ logger = logging.getLogger(__name__)
     help="Name of Storage Account that holds the terraform state and inputs for this process - envvar: OPS_STORAGE_ACCOUNT",
     prompt="Name of Ops Storage Account",
     envvar="OPS_STORAGE_ACCOUNT",
-)
-@click.option(
-    "--ops_tf_bootstrap_container",
-    default="tf-bootstrap",
-    help="Name of the container (folder) in the ops_storage_account that holds the terraform state from bootstrap - envvar: OPS_TF_BOOTSTRAP_CONTAINER",
-    envvar="OPS_TF_BOOTSTRAP_CONTAINER",
 )
 @click.option(
     "--namespace",
@@ -80,10 +68,8 @@ def provision(
     sp_client_secret,
     subscription_id,
     tenant_id,
-    ops_registry,
     ops_resource_group,
     ops_storage_account,
-    ops_tf_bootstrap_container,
     namespace,
     ops_tf_application_container,
     ops_config_container,
@@ -105,16 +91,16 @@ def provision(
 
     pause_until_complete(ssl_process)
 
-    # terraform_application(
-    #     sp_client_id=sp_client_id,
-    #     sp_client_secret=sp_client_secret,
-    #     subscription_id=subscription_id,
-    #     tenant_id=tenant_id,
-    #     backend_resource_group_name=ops_resource_group,
-    #     backend_storage_account_name=ops_storage_account,
-    #     backend_container_name=ops_tf_application_container,
-    #     namespace=namespace,
-    # )
+    terraform_application(
+        sp_client_id=sp_client_id,
+        sp_client_secret=sp_client_secret,
+        subscription_id=subscription_id,
+        tenant_id=tenant_id,
+        backend_resource_group_name=ops_resource_group,
+        backend_storage_account_name=ops_storage_account,
+        backend_container_name=ops_tf_application_container,
+        namespace=namespace,
+    )
 
     tf_output_dict = collect_terraform_outputs()
 
@@ -264,6 +250,7 @@ def pause_until_complete(open_process: Optional[subprocess.Popen]):
 def ansible(tf_output_dict, addl_args):
     extra_vars = { **tf_output_dict, **addl_args}
     extra_vars["postgres_root_cert"] = "../deploy/azure/pgsslrootcert.yml"
+    extra_vars["src_dir"] = os.path.abspath(os.path.join(os.getcwd(), "../", "../"))
     cwd = path.join("../", "../", "ansible")
     print(extra_vars)
     cmd = ["ansible-playbook", "provision.yml", "-vvv", "--extra-vars", json.dumps(extra_vars)]
