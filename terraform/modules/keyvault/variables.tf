@@ -67,6 +67,3 @@ variable "workspace_id" {
   type        = string
 
 }
-
-variable "tls_cert_path" { default="" }
-variable "dhparam_path" { default="" }

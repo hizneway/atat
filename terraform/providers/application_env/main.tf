@@ -143,8 +143,6 @@ module "keyvault" {
   subnet_ids         = [module.vpc.subnet_list["aks"].id, local.deployment_subnet_id]
   whitelist          = { "operator" = local.operator_ip }
   workspace_id       = local.log_analytics_workspace_id
-  tls_cert_path      = var.tls_cert_path
-  dhparam_path       = var.dhparams_path
 }
 
 resource "azurerm_key_vault_secret" "secret" {
