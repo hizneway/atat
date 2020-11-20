@@ -127,6 +127,10 @@ def provision(
 
 
 def login(sp_client_id, sp_client_secret, subscription_id, tenant_id):
+    os.environ["ARM_CLIENT_ID"] = sp_client_id
+    os.environ["ARM_CLIENT_SECRET"] = sp_client_secret
+    os.environ["ARM_SUBSCRIPTION_ID"] = subscription_id
+    os.environ["ARM_TENANT_ID"] = tenant_id
     subprocess.run(
         f"az login --service-principal --username {sp_client_id} --password {sp_client_secret} --tenant {tenant_id}".split()
     ).check_returncode()
