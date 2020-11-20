@@ -3,7 +3,6 @@
 import base64
 import click
 import datetime
-import json
 import requests
 import time
 import uuid
@@ -114,7 +113,7 @@ def register_urls_with_service_principle(
     sp_object_id: str, hostname: str, access_token: str
 ):
     url = f"https://graph.microsoft.com/beta/servicePrincipals/{sp_object_id}"
-    data = {"loginUrl": "https://localhost:8000/login"}
+    data = {"loginUrl": f"https://{hostname}/login"}
     headers = {"Authorization": f"Bearer {access_token}"}
 
     response = requests.patch(url, json=data, headers=headers)
