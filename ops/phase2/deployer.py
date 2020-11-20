@@ -40,6 +40,11 @@ logger = logging.getLogger(__name__)
     envvar="OPS_REGISTRY",
 )
 @click.option(
+    "--namespace",
+    help="Namespacing of your environment - envvar: NAMESPACE",
+    envvar="NAMESPACE",
+)
+@click.option(
     "--atat_registry",
     help="Full URI of the container registry that k8s will have access to - envvar: ATAT_REGISTRY",
     prompt="Domain of atat container registry eg:cloudzeroregistry${var.namespace}.azurecr.io",
@@ -65,11 +70,13 @@ logger = logging.getLogger(__name__)
     default=True,
     help="Whether to try and run the az login w/ the service principle so we can install the aks plugins"
 )
+@click.option()
 def deploy(
     sp_client_id,
     sp_client_secret,
     subscription_id,
     tenant_id,
+    namespace,
     ops_registry,
     atat_registry,
     atat_image_tag,
@@ -78,12 +85,12 @@ def deploy(
     config_azcli,
     git_sha,
 ):
-    setup()
+    setup(sp_client_id, sp_client_secret, subscription_id, tenant_id, namespace)
     build_atat(ops_registry, atat_registry, git_sha, atat_image_tag)
     build_nginx(ops_registry, atat_registry, nginx_image_tag)
     deploy()
 
-def setup:
+def setup(sp_client_id, sp_client_secret, tenant_id, namespace):
     if config_azcli:
         configure_azcli(
             sp_client_id=sp_client_id,
@@ -103,7 +110,7 @@ def setup:
         # test if I can get it w/ git rev-parse HEAD
 
 
-def configure_azcli(sp_client_id, sp_client_secret, tenant_id):
+def configure_azcli(sp_client_id, sp_client_secret, tenant_id, namespace):
     cmd = [
         "az",
         "login",
@@ -125,7 +132,7 @@ def configure_azcli(sp_client_id, sp_client_secret, tenant_id):
     subprocess.run(
         "az provider register --namespace Microsoft.ContainerService".split()
     ).check_returncode()
-
+    subprocess.run(f"az aks get-credentials -g cloudzero-vpc-{namespace} -n cloudzero-private-k8s-{namespace}".split()).check_returncode()
 
 def build_atat(ops_registry, atat_registry, git_sha, atat_image_tag):
     cmd = [
