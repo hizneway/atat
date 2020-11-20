@@ -19,16 +19,6 @@ export TF_VAR_operator_client_id=$ARM_CLIENT_ID
 export TF_VAR_operator_client_secret=$ARM_CLIENT_SECRET
 export TF_VAR_operator_tenant_id=$ARM_TENANT_ID
 
-# echo "ARM_CLIENT_ID=$ARM_CLIENT_ID"
-# echo "ARM_CLIENT_SECRET=$ARM_CLIENT_SECRET"
-# echo "ARM_SUBSCRIPTION_ID=$ARM_SUBSCRIPTION_ID"
-# echo "ARM_TENANT_ID=$ARM_TENANT_ID"
-# echo "-----------"
-# echo $TF_VAR_operator_subscription_id
-# echo $TF_VAR_operator_client_id
-# echo $TF_VAR_operator_client_secret
-# echo $TF_VAR_operator_tenant_id
-
 echo "Terraform Bootstrap New Tenant"
 cd ../../terraform/providers/bootstrap
 terraform init
@@ -93,7 +83,7 @@ az container create \
 echo "============================="
 echo "============================="
 echo "============================="
-echo "You must put an app.tfvars.json and atatdev.pem file in the config container before running the next file"
+echo "You must put an app.tfvars.json and atatdev.pem file and ccpo_users.yml file in the config container before running the next file"
 echo "============================="
 echo "============================="
 echo "============================="
