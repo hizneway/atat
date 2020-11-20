@@ -75,11 +75,17 @@ def provision(
     ops_config_container,
 ):
     ssl_process = diffie_helman(encryption=4096)
+
+    login(sp_client_id, sp_client_secret, subscription_id, tenant_id)
+
     download_file(
         ops_storage_account, ops_config_container, "atatdev.pem", "/tmp/atatdev.pem"
     )
     download_file(
-        ops_storage_account, ops_config_container, "ccpo_users.yml", "/tmp/ccpo_users.yml"
+        ops_storage_account,
+        ops_config_container,
+        "ccpo_users.yml",
+        "/tmp/ccpo_users.yml",
     )
 
     download_file(
@@ -104,19 +110,30 @@ def provision(
 
     tf_output_dict = collect_terraform_outputs()
 
-    ansible(tf_output_dict=tf_output_dict, addl_args={"sp_client_id": sp_client_id,
-        "sp_client_secret": sp_client_secret,
-        "subscription_id": subscription_id,
-        "tenant_id": tenant_id,
-        "backend_resource_group_name": ops_resource_group,
-        "backend_storage_account_name": ops_storage_account,
-        "ops_config_container": ops_config_container})
+    ansible(
+        tf_output_dict=tf_output_dict,
+        addl_args={
+            "sp_client_id": sp_client_id,
+            "sp_client_secret": sp_client_secret,
+            "subscription_id": subscription_id,
+            "tenant_id": tenant_id,
+            "backend_resource_group_name": ops_resource_group,
+            "backend_storage_account_name": ops_storage_account,
+            "ops_config_container": ops_config_container,
+        },
+    )
 
     # deploy
 
 
+def login(sp_client_id, sp_client_secret, subscription_id, tenant_id):
+    subprocess.run(
+        f"az login --service-principal --username {sp_client_id} --password {sp_client_secret} --tenant {tenant_id}".split()
+    ).check_returncode()
+
+
 def collect_terraform_outputs():
-    '''Collects terraform output into name/value dict to pass as json to ansible'''
+    """Collects terraform output into name/value dict to pass as json to ansible"""
     logger.info("collect_terraform_outputs")
 
     cwd = path.join("../", "../", "terraform", "providers", "application_env")
@@ -127,7 +144,7 @@ def collect_terraform_outputs():
     result.check_returncode()
     output = json.loads(result.stdout.decode("utf-8"))
 
-    return {k: v["value"] for k, v in output.items() if type(v["value"]) is str }
+    return {k: v["value"] for k, v in output.items() if type(v["value"]) is str}
 
 
 def terraform_application(
@@ -248,12 +265,18 @@ def pause_until_complete(open_process: Optional[subprocess.Popen]):
 
 
 def ansible(tf_output_dict, addl_args):
-    extra_vars = { **tf_output_dict, **addl_args}
+    extra_vars = {**tf_output_dict, **addl_args}
     extra_vars["postgres_root_cert"] = "../deploy/azure/pgsslrootcert.yml"
     extra_vars["src_dir"] = os.path.abspath(os.path.join(os.getcwd(), "../", "../"))
     cwd = path.join("../", "../", "ansible")
     print(extra_vars)
-    cmd = ["ansible-playbook", "provision.yml", "-vvv", "--extra-vars", json.dumps(extra_vars)]
+    cmd = [
+        "ansible-playbook",
+        "provision.yml",
+        "-vvv",
+        "--extra-vars",
+        json.dumps(extra_vars),
+    ]
     subprocess.run(cmd, cwd=cwd).check_returncode()
 
 
