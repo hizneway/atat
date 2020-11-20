@@ -264,7 +264,6 @@ def pause_until_complete(open_process: Optional[subprocess.Popen]):
         return_code = open_process.poll()
         if return_code is not None:
             click.echo(f"Return Code {return_code}")
-            click.echo(open_process.stdout.read())
             return return_code == 0
 
 
