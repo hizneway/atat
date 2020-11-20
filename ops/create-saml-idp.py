@@ -46,18 +46,19 @@ def create_templated_app_registration(access_token: str):
         "Authorization": f"Bearer {access_token}",
     }
 
-    response = requests.post(url, data=data, headers=headers)
+    response = requests.post(url, json=data, headers=headers)
     response.raise_for_status()
 
-    sp_object_id = response.json()["servicePrincipal"]["objectId"]
-    application_object_id = response.json()["application"]["objectId"]
+    response_json = response.json()
+    sp_object_id = response_json["servicePrincipal"]["objectId"]
+    application_object_id = response_json["application"]["objectId"]
 
     return (sp_object_id, application_object_id)
 
 
 def wait_for_sp_creation(sp_object_id: str, access_token: str):
     attempts = 0
-    while attempts < 5:
+    while attempts < 10:
         print(f"Polling for {sp_object_id}...")
         headers = {"Authorization": f"Bearer {access_token}"}
         poll_response = requests.get(
@@ -87,35 +88,36 @@ def enable_saml(sp_object_id: str, access_token: str):
         "Authorization": f"Bearer {access_token}",
     }
 
-    requests.patch(url, data=data, headers=headers).raise_for_status()
+    requests.patch(url, json=data, headers=headers).raise_for_status()
 
 
 def register_urls_with_application(
-    application_object_id: str, base_uri: str, access_token: str
+    application_object_id: str, hostname: str, access_token: str
 ):
     url = f"https://graph.microsoft.com/v1.0/applications/{application_object_id}"
     data = {
         "web": {
-            "redirectUris": [f"{base_uri}/login?acs"],
-            "logoutUrl": f"{base_uri}/login?sls",
+            "redirectUris": [f"https://{hostname}/login?acs"],
+            "logoutUrl": f"https://{hostname}/login?sls",
         },
-        "identifierUris": [base_uri],
+        "identifierUris": [f"https://{hostname}"],
+    }
+    headers = {
+        "Authorization": f"Bearer {access_token}",
     }
 
-    headers = {"Authorization": f"Bearer {access_token}"}
-
-    response = requests.patch(url, data=data, headers=headers)
+    response = requests.patch(url, json=data, headers=headers)
     response.raise_for_status()
 
 
 def register_urls_with_service_principle(
-    sp_object_id: str, base_uri: str, access_token: str
+    sp_object_id: str, hostname: str, access_token: str
 ):
     url = f"https://graph.microsoft.com/beta/servicePrincipals/{sp_object_id}"
     data = {"loginUrl": "https://localhost:8000/login"}
     headers = {"Authorization": f"Bearer {access_token}"}
 
-    response = requests.patch(url, data=data, headers=headers)
+    response = requests.patch(url, json=data, headers=headers)
     response.raise_for_status()
 
 
@@ -227,7 +229,7 @@ def register_self_signed_certificate(sp_object_id: str, access_token: str):
         "Content-Type": "application/json",
     }
 
-    response = requests.patch(url, data=json.dumps(data), headers=headers)
+    response = requests.patch(url, json=data, headers=headers)
     response.raise_for_status()
 
 
@@ -244,7 +246,7 @@ def assign_user_to_saml_idp(user_object_id: str, sp_object_id: str, access_token
         "Content-Type": "application/json",
     }
 
-    response = requests.post(url, data=json.dumps(data), headers=headers)
+    response = requests.post(url, json=data, headers=headers)
 
     if response.status_code != 201:
         print(f"Failed to assign user {user_object_id}")
@@ -254,12 +256,9 @@ def assign_user_to_saml_idp(user_object_id: str, sp_object_id: str, access_token
 @click.command()
 @click.argument("tenant-id",)
 @click.argument("application-id")
-@click.argument("object-id")
 @click.argument("password")
-@click.argument("base-uri")
-def main(
-    tenant_id: str, application_id: str, object_id: str, password: str, base_uri: str
-) -> NoReturn:
+@click.argument("hostname")
+def main(tenant_id: str, application_id: str, password: str, hostname: str) -> NoReturn:
     access_token = authenticate(tenant_id, application_id, password)
 
     # Initialize templated app and service principle
@@ -270,8 +269,8 @@ def main(
 
     # Configure SAML SSO
     enable_saml(sp_object_id, access_token)
-    register_urls_with_application(application_object_id, base_uri, access_token)
-    register_urls_with_service_principle(sp_object_id, base_uri, access_token)
+    register_urls_with_application(application_object_id, hostname, access_token)
+    register_urls_with_service_principle(sp_object_id, hostname, access_token)
     register_self_signed_certificate(sp_object_id, access_token)
 
     # Register users
