@@ -20,7 +20,7 @@ module "private-k8s" {
   vnet_id                    = module.vpc.id
   vpc_name                   = module.vpc.vpc_name
   aks_ssh_pub_key_path       = var.aks_ssh_pub_key_path
-  aks_subnet_id              = module.vpc.subnet_list["aks-private-default-node-pool"].id
+  aks_subnet_id              = module.vpc.subnet_list["aks-private"].id
   vpc_address_space          = "10.1.0.0/16"
   subnet_name         = element(split(",",var.networks["aks-private"]),1)
   depends_on = [module.vpc, module.keyvault_reader_identity]

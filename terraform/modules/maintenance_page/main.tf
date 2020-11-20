@@ -42,7 +42,7 @@ resource "azurerm_container_group" "nginx_maintenance_page" {
 
     username = var.registry_username
     password = var.registry_password
-    server   = var.container_registry
+    server   = var.ops_container_registry
 
   }
 

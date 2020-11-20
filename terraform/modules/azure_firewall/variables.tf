@@ -12,3 +12,4 @@ variable "vnet_cidr" {}
 variable "subnets" {
 type = map
 }
+variable "maintenance_page_ip" {}

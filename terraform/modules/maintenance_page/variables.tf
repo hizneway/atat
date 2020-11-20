@@ -11,4 +11,3 @@ variable "nginx_container_image" {}
 
 variable "registry_username" {}
 variable "registry_password" {}
-variable "container_registry" {}

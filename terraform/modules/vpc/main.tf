@@ -40,16 +40,7 @@ resource "azurerm_subnet" "subnet" {
   address_prefixes     = [element(split(",", each.value), 0)]
   service_endpoints    = split(",", var.service_endpoints[each.key])
 
-  dynamic "delegation" {
-    for_each = each.key == "aks-private" ? [1] : []
-    content {
-      name = "aci-delegation"
-      service_delegation {
-        name = "Microsoft.ContainerInstance/containerGroups"
-        actions = ["Microsoft.Network/virtualNetworks/subnets/action"]
-      }
-    }
-  }
+  
 
 }
 

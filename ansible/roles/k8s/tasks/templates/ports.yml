@@ -4,7 +4,7 @@ kind: Service
 metadata:
   name: atst-main
   annotations:
-    service.beta.kubernetes.io/azure-load-balancer-internal-subnet: "cloudzero-{{ namespace }}-public"
+    service.beta.kubernetes.io/azure-load-balancer-internal-subnet: "cloudzero-aks-private-{{ namespace }}"
     service.beta.kubernetes.io/azure-load-balancer-internal: "true"
 spec:
   type: LoadBalancer

@@ -104,6 +104,19 @@ resource "azurerm_firewall_application_rule_collection" "fw_rule_collection" {
     }
   }
 
+
+
+
+
+  rule {
+    name             = "allow k8s"
+    source_addresses = ["*"]
+
+    fqdn_tags= ["AzureKubernetesService"]
+
+  }
+
+
   rule {
     name             = "allow k8s"
     source_addresses = ["*"]
@@ -153,6 +166,37 @@ resource "azurerm_firewall_nat_rule_collection" "tolb" {
 
 
   }
+
+
+  rule {
+    name = "maintenancepage"
+
+    source_addresses = [
+      "*",
+    ]
+
+    destination_ports = [
+      "443",
+    ]
+
+    destination_addresses = [
+      var.maintenance_page_ip
+    ]
+
+    translated_port = 443
+
+    translated_address = "${var.nat_rules_translated_ips}"
+
+    protocols = [
+      "TCP"
+
+    ]
+
+
+
+  }
+
+
   timeouts {
 
     create = "30h"
