@@ -65,16 +65,16 @@ variable "subnet_list" {
 }
 
 
-variable "ops_resource_group_name" {
-  type        = string
-  description = "The name of a prexisting resource group holding a container registry with a hardened base image."
-  default     = "cloudzero-ops"
-}
+# variable "ops_resource_group_name" {
+#   type        = string
+#   description = "The name of a prexisting resource group holding a container registry with a hardened base image."
+#   default     = "cloudzero-ops"
+# }
 
-variable "ops_container_registry_name" {
-  type        = string
-  description = "The name of a prexisting container registry with a hardened base image used to build our application images."
-  default     = "cloudzeroopsregistry"
-}
+# variable "ops_container_registry_name" {
+#   type        = string
+#   description = "The name of a prexisting container registry with a hardened base image used to build our application images."
+#   default     = "cloudzeroopsregistry"
+# }
 
 

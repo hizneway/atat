@@ -3,10 +3,10 @@ output "operations_container_registry_name" {
   description = "Global registry so that docker images can be reused across deployments."
 }
 
-output "operations_container_registry_login_server" {
-  value       = azurerm_container_registry.operations_container_registry.login_server
-  description = "The URL that can be used to log into the container registry."
-}
+# output "operations_container_registry_login_server" {
+#   value       = azurerm_container_registry.operations_container_registry.login_server
+#   description = "The URL that can be used to log into the container registry."
+# }
 
 output "operations_virtual_network" {
   value       = azurerm_virtual_network.operations_virtual_network.name
@@ -18,10 +18,10 @@ output "operations_deployment_subnet_id" {
   description = "ID of the subnet all subsequent resources are deployed into."
 }
 
-output "operations_resource_group_name" {
-  value       = azurerm_resource_group.operations_resource_group.name
-  description = "Resource group containing all operations resources."
-}
+# output "operations_resource_group_name" {
+#   value       = azurerm_resource_group.operations_resource_group.name
+#   description = "Resource group containing all operations resources."
+# }
 
 output "operations_tf_bootstrap_container_name" {
   value       = azurerm_storage_container.tf_bootstrap.name

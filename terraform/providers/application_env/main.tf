@@ -8,9 +8,8 @@ data "azurerm_client_config" "azure_client" {
 locals {
   private_aks_appliance_routes               = var.virtual_appliance_routes["aks-private"]
   deployment_subnet_id                       = data.terraform_remote_state.previous_stage.outputs.operations_deployment_subnet_id
-  operations_container_registry_name         = data.terraform_remote_state.previous_stage.outputs.operations_container_registry_name
-  operations_container_registry_login_server = data.terraform_remote_state.previous_stage.outputs.operations_container_registry_login_server
-  operations_resource_group_name             = data.terraform_remote_state.previous_stage.outputs.operations_resource_group_name
+  # operations_container_registry_login_server = data.terraform_remote_state.previous_stage.outputs.operations_container_registry_login_server
+  # operations_resource_group_name             = data.terraform_remote_state.previous_stage.outputs.operations_resource_group_name
   operator_ip                                = chomp(data.http.myip.body)
   log_analytics_workspace_id                 = data.terraform_remote_state.previous_stage.outputs.logging_workspace_id
 }
@@ -89,8 +88,8 @@ module "container_registry" {
   pet_name                    = var.deployment_namespace
   subnet_list                 = module.vpc.subnet_list
   depends_on                  = [module.vpc]
-  ops_container_registry_name = local.operations_container_registry_name
-  ops_resource_group_name     = local.operations_resource_group_name
+  # ops_container_registry_name = local.operations_container_registry_name
+  # ops_resource_group_name     = local.operations_resource_group_name
 }
 
 module "keyvault_reader_identity" {

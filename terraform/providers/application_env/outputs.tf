@@ -116,9 +116,9 @@ output "vnet_id" {
   value = module.vpc.id
 }
 
-output "ops_container_registry_name" {
-  value = module.container_registry.ops_container_registry_name
-}
+# output "ops_container_registry_name" {
+#   value = data.terraform_remote_state.previous_stage.outputs.operations_container_registry_name
+# }
 
 output "environment" {
   value = var.deployment_namespace
