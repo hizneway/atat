@@ -275,7 +275,7 @@ resource "azurerm_postgresql_server" "sql" {
   auto_grow_enabled            = true
 
 
-  administrator_login          = clouzero_pg_admin
+  administrator_login          = "clouzero_pg_admin"
   administrator_login_password = random_password.pg_root_password.result
   version                      = "10"
   ssl_enforcement_enabled      = true
