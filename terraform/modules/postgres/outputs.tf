@@ -1,10 +1,9 @@
 output "database_name" {
-
-  value = "${var.name}-sql-${var.environment}"
+  value = azurerm_postgresql_database.db.name
 }
 
 output "postgres_resource_group_name" {
-  value = "${var.name}-postgres-${var.environment}"
+  value = azurerm_resource_group.sql.name
 }
 
 output "admin_name" {
@@ -12,21 +11,15 @@ output "admin_name" {
 }
 
 output "pg_admin_user" {
-  value = "${var.administrator_login}@${var.name}-sql-${var.environment}"
+  value = azurerm_postgresql_server.sql.administrator_login
 }
 
 output "pgpassword" {
-  value = var.administrator_login_password
+  value = azurerm_postgresql_server.sql.administrator_login_password
 }
 
 output "fqdn" {
   value = azurerm_postgresql_server.sql.fqdn
-}
-
-output "pgdb_name" {
-
-  value = "${var.name}-staging-${var.environment}"
-
 }
 
 output "app_user" {

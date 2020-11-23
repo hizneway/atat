@@ -6,24 +6,24 @@ output "tenant_id" {
   value = data.azurerm_client_config.azure_client.tenant_id
 }
 
-output "atat_user_password" {
-  value = random_password.atat_user_password.result
-}
+# output "atat_user_password" {
+#   value = random_password.atat_user_password.result
+# }
 
-output "atat_user_name" {
-  value = module.sql.app_user
-}
+# output "atat_user_name" {
+#   value = module.sql.app_user
+# }
 
 output "atat_database_instance_name" {
-  value = "${var.name}-sql-${var.deployment_namespace}"
+  value = azurerm_postgresql_server.sql.name
 }
 
 output "atat_database_name" {
-  value = "${var.name}_${var.deployment_namespace}"
+  value = azurerm_postgresql_database.db.name
 }
 
 output "postgres_resource_group_name" {
-  value = module.sql.postgres_resource_group_name
+  value = azurerm_resource_group.sql.name
 }
 
 output "postgres_root_password" {
@@ -31,26 +31,26 @@ output "postgres_root_password" {
 }
 
 output "postgres_root_user_name" {
-  value = module.sql.pg_admin_user
+  value = azurerm_postgresql_server.sql.administrator_login
 }
 
-output pg_host {
-  value = module.sql.fqdn
+output "pg_host" {
+  value = azurerm_postgresql_server.sql.fqdn
 }
 
-output pg_server_name {
-  value = module.sql.database_name
+output "pg_server_name" {
+  value = azurerm_postgresql_server.sql.database_name
 }
 
-output aks_sp_id {
+output "aks_sp_id" {
   value = module.aks_sp.application_id
 }
 
-output aks_sp_oid {
+output "aks_sp_oid" {
   value = module.aks_sp.object_id
 }
 
-output aks_sp_secret {
+output "aks_sp_secret" {
   value = module.aks_sp.application_password
 }
 

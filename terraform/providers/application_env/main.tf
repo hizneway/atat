@@ -242,19 +242,79 @@ resource "random_password" "atat_user_password" {
   override_special = "!"
 }
 
-module "sql" {
-  source                       = "../../modules/postgres"
-  name                         = var.name
-  owner                        = var.owner
-  environment                  = var.deployment_namespace
-  region                       = var.deployment_location
-  subnet_id                    = module.vpc.subnet_list["aks"].id
-  administrator_login          = var.postgres_admin_login
-  administrator_login_password = random_password.pg_root_password.result
-  workspace_id                 = local.log_analytics_workspace_id
-  operator_ip                  = chomp(data.http.myip.body)
-  deployment_subnet_id         = local.deployment_subnet_id
+# module "sql" {
+#   source                       = "../../modules/postgres"
+#   name                         = var.name
+#   owner                        = var.owner
+#   environment                  = var.deployment_namespace
+#   region                       = var.deployment_location
+#   subnet_id                    = module.vpc.subnet_list["aks"].id
+#   administrator_login          = var.postgres_admin_login
+#   administrator_login_password = random_password.pg_root_password.result
+#   workspace_id                 = local.log_analytics_workspace_id
+#   operator_ip                  = chomp(data.http.myip.body)
+#   deployment_subnet_id         = local.deployment_subnet_id
+# }
+
+resource "azurerm_resource_group" "sql" {
+  name     = "${var.name}-postgres-${var.environment}"
+  location = var.region
 }
+
+resource "azurerm_postgresql_server" "sql" {
+  name                = "${var.deployment_namespace}-sql"
+  location            = azurerm_resource_group.sql.location
+  resource_group_name = azurerm_resource_group.sql.name
+
+  sku_name = var.sku_name
+
+
+  storage_mb                   = "5120"
+  backup_retention_days        = "7"
+  geo_redundant_backup_enabled = false
+  auto_grow_enabled            = true
+
+
+  administrator_login          = clouzero_pg_admin
+  administrator_login_password = random_password.pg_root_password.result
+  version                      = "10"
+  ssl_enforcement_enabled      = true
+
+}
+
+resource "azurerm_postgresql_virtual_network_rule" "sql" {
+  name                                 = "${var.deployment_namespace}-rule"
+  resource_group_name                  = azurerm_resource_group.sql.name
+  server_name                          = azurerm_postgresql_server.sql.name
+  subnet_id                            = module.vpc.subnet_list["aks"].id
+  ignore_missing_vnet_service_endpoint = true
+}
+
+resource "azurerm_postgresql_virtual_network_rule" "ops_deployment_subnet" {
+  name                                 = "deployment-subnet-${var.deployment_namespace}"
+  resource_group_name                  = azurerm_resource_group.sql.name
+  server_name                          = azurerm_postgresql_server.sql.name
+  subnet_id                            = local.deployment_subnet_id
+  ignore_missing_vnet_service_endpoint = true
+}
+
+resource "azurerm_postgresql_firewall_rule" "operator" {
+  name                = "operator"
+  resource_group_name = azurerm_resource_group.sql.name
+  server_name         = azurerm_postgresql_server.sql.name
+  start_ip_address    = chomp(data.http.myip.body)
+  end_ip_address      = chomp(data.http.myip.body)
+}
+
+resource "azurerm_postgresql_database" "db" {
+  name                = "${var.deployment_namespace}-atat"
+  resource_group_name = azurerm_resource_group.sql.name
+  server_name         = azurerm_postgresql_server.sql.name
+  charset             = "UTF8"
+  collation           = "en-US"
+}
+
+
 
 resource "azurerm_kubernetes_cluster" "k8s_private" {
   name                    = "${var.name}-private-k8s-${var.deployment_namespace}"

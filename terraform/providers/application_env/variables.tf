@@ -113,11 +113,11 @@ variable "aks_min_node_count" {
   default     = 3
 }
 
-variable "postgres_admin_login" {
-  type        = string
-  description = ""
-  default     = "clouzero_pg_admin"
-}
+# variable "postgres_admin_login" {
+#   type        = string
+#   description = ""
+#   default     = "clouzero_pg_admin"
+# }
 
 variable "task_order_bucket_storage_container_name" {
   type        = string
