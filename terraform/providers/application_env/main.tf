@@ -266,7 +266,7 @@ resource "azurerm_postgresql_server" "sql" {
   location            = azurerm_resource_group.sql.location
   resource_group_name = azurerm_resource_group.sql.name
 
-  sku_name = var.sku_name
+  sku_name = "GP_Gen5_2"
 
 
   storage_mb                   = "5120"
