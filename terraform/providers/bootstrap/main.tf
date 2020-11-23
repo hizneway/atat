@@ -54,7 +54,7 @@ resource "azurerm_container_registry" "operations_container_registry" {
 
 resource "azurerm_monitor_diagnostic_setting" "ops_acr_diagnostic" {
   name                       = "${var.namespace}-ops-acr-diag"
-  target_resource_id         = data.azurerm_container_registry.operations_container_registry.id
+  target_resource_id         = azurerm_container_registry.operations_container_registry.id
   log_analytics_workspace_id = module.logs.workspace_id
   log {
     category = "ContainerRegistryRepositoryEvents"
