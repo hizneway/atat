@@ -258,7 +258,7 @@ resource "random_password" "atat_user_password" {
 
 resource "azurerm_resource_group" "sql" {
   name     = "${var.name}-postgres-${var.environment}"
-  location = var.region
+  location = var.deployment_location
 }
 
 resource "azurerm_postgresql_server" "sql" {
