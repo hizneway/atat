@@ -85,6 +85,7 @@ resource "azurerm_key_vault_access_policy" "keyvault_admin_policy" {
     "list",
     "recover",
     "update",
+    "restore",
   ]
 
   secret_permissions = [
@@ -92,6 +93,8 @@ resource "azurerm_key_vault_access_policy" "keyvault_admin_policy" {
     "list",
     "set",
     "delete",
+    "recover",
+    "restore",
   ]
 
   # backup create delete deleteissuers get getissuers import list listissuers managecontacts manageissuers purge recover restore setissuers update
@@ -105,7 +108,9 @@ resource "azurerm_key_vault_access_policy" "keyvault_admin_policy" {
     "list",
     "listissuers",
     "manageissuers",
-    "update"
+    "update",
+    "recover",
+    "restore",
   ]
 }
 
