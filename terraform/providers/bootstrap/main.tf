@@ -52,29 +52,29 @@ resource "azurerm_container_registry" "operations_container_registry" {
   sku                 = "Premium"
 }
 
-resource "azurerm_monitor_diagnostic_setting" "ops_acr_diagnostic" {
-  name                       = "${var.namespace}-ops-acr-diag"
-  target_resource_id         = azurerm_container_registry.operations_container_registry.id
-  log_analytics_workspace_id = module.logs.workspace_id
-  log {
-    category = "ContainerRegistryRepositoryEvents"
-    retention_policy {
-      enabled = true
-    }
-  }
-  log {
-    category = "ContainerRegistryLoginEvents"
-    retention_policy {
-      enabled = true
-    }
-  }
-  metric {
-    category = "AllMetrics"
-    retention_policy {
-      enabled = true
-    }
-  }
-}
+# resource "azurerm_monitor_diagnostic_setting" "ops_acr_diagnostic" {
+#   name                       = "${var.namespace}-ops-acr-diag"
+#   target_resource_id         = azurerm_container_registry.operations_container_registry.id
+#   log_analytics_workspace_id = module.logs.workspace_id
+#   log {
+#     category = "ContainerRegistryRepositoryEvents"
+#     retention_policy {
+#       enabled = true
+#     }
+#   }
+#   log {
+#     category = "ContainerRegistryLoginEvents"
+#     retention_policy {
+#       enabled = true
+#     }
+#   }
+#   metric {
+#     category = "AllMetrics"
+#     retention_policy {
+#       enabled = true
+#     }
+#   }
+# }
 
 
 module "logs" {
