@@ -102,8 +102,6 @@ output "azure_storage_account_name" {
   value = module.task_order_bucket.storage_account_name
 }
 
-
-
 output "redis_hostname" {
   value = azurerm_redis_cache.redis.hostname
 }
