@@ -14,32 +14,26 @@ output "tenant_id" {
 #   value = module.sql.app_user
 # }
 
-output "atat_database_instance_name" {
-  value = azurerm_postgresql_server.sql.name
-}
 
-output "atat_database_name" {
+
+output "pg_database_name" {
   value = azurerm_postgresql_database.db.name
 }
 
-output "postgres_resource_group_name" {
+output "pg_resource_group_name" {
   value = azurerm_resource_group.sql.name
 }
 
-output "postgres_root_password" {
+output "pg_root_password" {
   value = random_password.pg_root_password.result
 }
 
-output "postgres_root_user_name" {
+output "pg_root_user_name" {
   value = azurerm_postgresql_server.sql.administrator_login
 }
 
 output "pg_host" {
   value = azurerm_postgresql_server.sql.fqdn
-}
-
-output "pg_server_name" {
-  value = azurerm_postgresql_server.sql.database_name
 }
 
 output "aks_sp_id" {
