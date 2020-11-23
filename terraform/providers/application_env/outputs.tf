@@ -29,11 +29,11 @@ output "pg_root_password" {
 }
 
 output "pg_root_user_name" {
-  value = azurerm_postgresql_server.sql.administrator_login
+  value = "${azurerm_postgresql_server.sql.administrator_login}@${azurerm_postgresql_server.sql.name}"
 }
 
 output "pg_atat_user_name" {
-  value = "atat@sql"
+  value = "atat@${azurerm_postgresql_server.sql.name}"
 }
 
 output "pg_atat_user_password" {
