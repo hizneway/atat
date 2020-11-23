@@ -32,6 +32,14 @@ output "pg_root_user_name" {
   value = azurerm_postgresql_server.sql.administrator_login
 }
 
+output "pg_atat_user_name" {
+  value = "atat@sql"
+}
+
+output "pg_atat_user_password" {
+  value = random_password.atat_user_password.result
+}
+
 output "pg_host" {
   value = azurerm_postgresql_server.sql.fqdn
 }

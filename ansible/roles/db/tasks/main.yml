@@ -12,14 +12,14 @@
 
 - name: Print values
   debug:
-    msg: resource_group-- "{{ postgres_resource_group_name }}" server_name-- "{{ atat_database_instance_name }}" name-- "{{ atat_database_name }}" secret-- "{{ sp_client_secret }}" client_id-- "{{ sp_client_id }}" subscription_id-- "{{ subscription_id }}" tenant-- "{{ tenant_id }}"
+    msg: resource_group-- "{{ pg_resource_group_name }}" server_name-- "{{ pg_host }}" name-- "{{ pg_database_name }}" secret-- "{{ sp_client_secret }}" client_id-- "{{ sp_client_id }}" subscription_id-- "{{ subscription_id }}" tenant-- "{{ tenant_id }}"
 
 - name: Adds uuid-ossp extension to the database
   postgresql_ext:
     name: uuid-ossp
-    db: "{{ atat_database_name }}"
-    login_user: "{{ postgres_root_user_name }}"
-    login_password: "{{  postgres_root_password }}"
+    db: "{{ pg_database_name }}"
+    login_user: "{{ pg_root_user_name }}"
+    login_password: "{{  pg_root_password }}"
     login_host: "{{ pg_host }}"
     cascade: yes
     ssl_mode: verify-full
@@ -29,12 +29,12 @@
 
 - name: Create database user
   postgresql_user:
-    db: "{{ atat_database_name }}"
-    login_user: "{{ postgres_root_user_name }}"
-    login_password: "{{  postgres_root_password }}"
+    db: "{{ pg_database_name }}"
+    login_user: "{{ pg_root_user_name }}"
+    login_password: "{{  pg_root_password }}"
     login_host: "{{ pg_host }}"
-    name: "{{ atat_user_name }}"
-    password: "{{ atat_user_password }}"
+    name: "{{ pg_atat_user_name }}"
+    password: "{{ pg_atat_user_password }}"
     priv: "CREATE/CONNECT/TEMPORARY"
     role_attr_flags: LOGIN,NOSUPERUSER,INHERIT,NOCREATEDB,NOCREATEROLE,NOREPLICATION
     ssl_mode: verify-full
@@ -44,12 +44,12 @@
 
 - name: Create database user
   postgresql_user:
-    db: "{{ atat_database_name }}"
-    login_user: "{{ postgres_root_user_name }}"
-    login_password: "{{  postgres_root_password }}"
+    db: "{{ pg_database_name }}"
+    login_user: "{{ pg_root_user_name }}"
+    login_password: "{{  pg_root_password }}"
     login_host: "{{ pg_host }}"
-    name: "{{ atat_user_name | regex_replace('@.*','') }}"
-    password: "{{ atat_user_password }}"
+    name: "{{ pg_atat_user_name | regex_replace('@.*','') }}"
+    password: "{{ pg_atat_user_password }}"
     priv: "CREATE/CONNECT/TEMPORARY"
     role_attr_flags: LOGIN,NOSUPERUSER,INHERIT,NOCREATEDB,NOCREATEROLE,NOREPLICATION
   environment:
@@ -59,73 +59,73 @@
 
 # - name: Create database user
 #   shell:
-#     cmd: python3.7 script/create_database_user.py "{{ atat_user_name }}" "{{  atat_user_password }}"
+#     cmd: python3.7 script/create_database_user.py "{{ pg_atat_user_name }}" "{{  pg_atat_user_password }}"
 #     chdir: "{{ src_dir }}"
 #   environment:
-#     ATAT_PGPASSWORD: "{{  atat_user_password }}"
-#     ATAT_PGUSER: "{{ atat_user_name }}"
-#     PGDATABASE: "{{ atat_database_name }}"
+#     ATAT_PGPASSWORD: "{{  pg_atat_user_password }}"
+#     ATAT_PGUSER: "{{ pg_atat_user_name }}"
+#     PGDATABASE: "{{ pg_database_name }}"
 #     PGHOST: "{{ pg_host }}"
-#     PGPASSWORD: "{{  postgres_root_password }}"
+#     PGPASSWORD: "{{  pg_root_password }}"
 #     PGSSLMODE: verify-full
 #     PGSSLROOTCERT: /tmp/pgcaroot/pgcaroot.cert
-#     PGUSER: "{{ postgres_root_user_name }}"
-#     POSTGRES_ROOT_PASS: "{{  postgres_root_password }}"
-#     POSTGRES_ROOT_USER: "{{ postgres_root_user_name }}"
-#     SERVER_ADMIN_NAME: "{{ postgres_root_user_name }}"
-#     SERVER_GROUP: "{{ postgres_resource_group_name }}"
-#     SERVER_NAME: "{{ atat_database_instance_name }}"
+#     PGUSER: "{{ pg_root_user_name }}"
+#     POSTGRES_ROOT_PASS: "{{  pg_root_password }}"
+#     POSTGRES_ROOT_USER: "{{ pg_root_user_name }}"
+#     SERVER_ADMIN_NAME: "{{ pg_root_user_name }}"
+#     SERVER_GROUP: "{{ pg_resource_group_name }}"
+#     SERVER_NAME: "{{ pg_host }}"
 
 # - name: Create database user
 #   shell:
-#     cmd: python3.7 script/create_database_user.py "{{ atat_user_name | regex_replace('@.*','') }}" "{{  atat_user_password }}"
+#     cmd: python3.7 script/create_database_user.py "{{ pg_atat_user_name | regex_replace('@.*','') }}" "{{  pg_atat_user_password }}"
 #     chdir: "{{ src_dir }}"
 #   environment:
-#     ATAT_PGPASSWORD: "{{  atat_user_password  }}"
-#     ATAT_PGUSER: "{{ atat_user_name }}"
-#     PGDATABASE: "{{ atat_database_name }}"
+#     ATAT_PGPASSWORD: "{{  pg_atat_user_password  }}"
+#     ATAT_PGUSER: "{{ pg_atat_user_name }}"
+#     PGDATABASE: "{{ pg_database_name }}"
 #     PGHOST: "{{ pg_host }}"
-#     PGPASSWORD: "{{  postgres_root_password  }}"
+#     PGPASSWORD: "{{  pg_root_password  }}"
 #     PGSSLMODE: verify-full
 #     PGSSLROOTCERT: /tmp/pgcaroot/pgcaroot.cert
-#     PGUSER: "{{ postgres_root_user_name  }}"
-#     POSTGRES_ROOT_PASS: "{{  postgres_root_password  }}"
-#     POSTGRES_ROOT_USER: "{{ postgres_root_user_name  }}"
-#     SERVER_ADMIN_NAME: "{{ postgres_root_user_name }}"
-#     SERVER_GROUP: "{{ postgres_resource_group_name }}"
-#     SERVER_NAME: "{{ atat_database_instance_name }}"
+#     PGUSER: "{{ pg_root_user_name  }}"
+#     POSTGRES_ROOT_PASS: "{{  pg_root_password  }}"
+#     POSTGRES_ROOT_USER: "{{ pg_root_user_name  }}"
+#     SERVER_ADMIN_NAME: "{{ pg_root_user_name }}"
+#     SERVER_GROUP: "{{ pg_resource_group_name }}"
+#     SERVER_NAME: "{{ pg_host }}"
 
 - name: Initialize database
   shell:
     cmd: python3.7 script/reset_database.py
     chdir: "{{ src_dir }}"
   environment:
-    ATAT_PGPASSWORD: "{{  atat_user_password  }}"
-    ATAT_PGUSER: "{{ atat_user_name }}"
-    PGDATABASE: "{{ atat_database_name }}"
+    ATAT_PGPASSWORD: "{{  pg_atat_user_password  }}"
+    ATAT_PGUSER: "{{ pg_atat_user_name }}"
+    PGDATABASE: "{{ pg_database_name }}"
     PGHOST: "{{ pg_host }}"
-    PGPASSWORD: "{{ atat_user_password }}"
+    PGPASSWORD: "{{ pg_atat_user_password }}"
     PGSSLMODE: verify-full
     PGSSLROOTCERT: /tmp/pgcaroot/pgcaroot.cert
-    PGUSER: "{{ atat_user_name }}"
-    POSTGRES_ROOT_PASS: "{{  postgres_root_password  }}"
-    POSTGRES_ROOT_USER: "{{ postgres_root_user_name  }}"
-    SERVER_ADMIN_NAME: "{{ postgres_root_user_name }}"
-    SERVER_GROUP: "{{ postgres_resource_group_name }}"
-    SERVER_NAME: "{{ atat_database_instance_name }}"
+    PGUSER: "{{ pg_atat_user_name }}"
+    POSTGRES_ROOT_PASS: "{{  pg_root_password  }}"
+    POSTGRES_ROOT_USER: "{{ pg_root_user_name  }}"
+    SERVER_ADMIN_NAME: "{{ pg_root_user_name }}"
+    SERVER_GROUP: "{{ pg_resource_group_name }}"
+    SERVER_NAME: "{{ pg_host }}"
 
 - name: Add CCPO users
   shell:
     cmd: python3.7 script/add_ccpo_users.py /tmp/ccpo_users.yml
     chdir: "{{ src_dir }}"
   environment:
-    PGDATABASE: "{{ atat_database_name }}"
+    PGDATABASE: "{{ pg_database_name }}"
     PGHOST: "{{ pg_host }}"
-    PGPASSWORD: "{{  atat_user_password  }}"
+    PGPASSWORD: "{{  pg_atat_user_password  }}"
     PGSSLMODE: verify-full
     PGSSLROOTCERT: /tmp/pgcaroot/pgcaroot.cert
-    PGUSER: "{{ atat_user_name  }}"
-    SERVER_ADMIN_NAME: "{{ postgres_root_user_name }}"
-    SERVER_GROUP: "{{ postgres_resource_group_name }}"
-    SERVER_NAME: "{{ atat_database_instance_name }}"
+    PGUSER: "{{ pg_atat_user_name  }}"
+    SERVER_ADMIN_NAME: "{{ pg_root_user_name }}"
+    SERVER_GROUP: "{{ pg_resource_group_name }}"
+    SERVER_NAME: "{{ pg_host }}"
 

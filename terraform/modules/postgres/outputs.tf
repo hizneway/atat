@@ -18,10 +18,19 @@ output "pgpassword" {
   value = azurerm_postgresql_server.sql.administrator_login_password
 }
 
+output "pg_atat_user_name" {
+  value = "atat@${var.name}-sql"
+}
+
+output "pg_atat_user_password" {
+  value = ""
+}
+
+
 output "fqdn" {
   value = azurerm_postgresql_server.sql.fqdn
 }
 
 output "app_user" {
-  value = "atat@${var.name}-sql-${var.environment}"
+  value = "atat@${var.name}-sql"
 }
