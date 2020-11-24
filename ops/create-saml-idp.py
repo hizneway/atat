@@ -58,6 +58,7 @@ def create_templated_app_registration(access_token: str):
 def wait_for_sp_creation(sp_object_id: str, access_token: str):
     attempts = 0
     while attempts < 10:
+        attempts = attempts + 1
         print(f"Polling for {sp_object_id}...")
         headers = {"Authorization": f"Bearer {access_token}"}
         poll_response = requests.get(
@@ -65,14 +66,18 @@ def wait_for_sp_creation(sp_object_id: str, access_token: str):
             headers=headers,
         )
 
-        try:
-            poll_response.raise_for_status()
+        if poll_response.ok:
             break
-        except requests.HTTPError:
-            print(poll_response.reason)
-            # add back-off style polling
-            time.sleep(1 + attempts)
-            attempts = attempts + 1
+        elif poll_response.status_code == 404:
+            wait_time = 1 + attempts
+            print(f"Not found, checking again in {wait_time} seconds")
+            time.sleep(wait_time)
+            continue
+        else:
+            raise Exception(
+                f"Recieved an unexpected status of {poll_response.status_code}"
+            )
+
     else:
         raise Exception(
             f"Failed to find service principle {sp_object_id} after {attempts} attempts"
