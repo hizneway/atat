@@ -46,7 +46,8 @@ az ad app permission add --id $appId --api 00000003-0000-0000-c000-000000000000 
 az ad app permission add --id $appId --api 00000003-0000-0000-c000-000000000000 --api-permissions e1fe6dd8-ba31-4d61-89e7-88639da4683d=Scope
 
 # Allow user impersonation of itself
-az ad app permission add --id $appId --api $appId --api-permissions 9fb74d30-bc3b-41d5-9dae-c7daf3034656=Scope
+self_delegation_id=$(az ad sp list --filter "appid eq '$appId'" --query "[].oauth2Permissions[].id" -o tsv)
+az ad app permission add --id $appId --api $appId --api-permissions $self_delegation_id=Scope
 
 # Grant all permissions
 az ad app permission admin-consent --id $appId
@@ -55,3 +56,4 @@ az role assignment create --assignee $appId --role "User Access Administrator" -
 
 echo $sp | jq '.'
 echo $sp  > service_principal.json
+
