@@ -11,7 +11,9 @@ set -e
 sp=$(az ad sp create-for-rbac)
 appId=$(echo $sp | jq .appId | tr -d '"')
 subscription_id=$(az account show --query id --output tsv)
-
+objectId=$(az ad sp show --id $appId --query "objectId" --output tsv)
+AzureADGraphID=$(az ad sp show --id 00000002-0000-0000-c000-000000000000 --query "objectId" --output tsv)
+MSGraphID=$(az ad sp show --id 00000003-0000-0000-c000-000000000000 --query "objectId" --output tsv)
 az role assignment create --assignee $appId --role "User Access Administrator" --subscription $subscription_id
 
 # Azure Active Directory
@@ -23,9 +25,30 @@ az role assignment create --assignee $appId --role "User Access Administrator" -
 
 
 ## Application Application.ReadWrite.All
-az ad app permission add --id $appId --api 00000002-0000-0000-c000-000000000000 --api-permissions 1cda74f2-2616-4834-b122-5cb1b07f8a59=Role
+az rest --method POST \
+        --uri https://graph.microsoft.com/v1.0/servicePrincipals/$objectId/appRoleAssignments \
+        --body "{
+          'principalId': '$objectId',
+          'resourceId': '$AzureADGraphID',
+          'appRoleId': '1cda74f2-2616-4834-b122-5cb1b07f8a59'
+        }"
+az rest --method POST \
+        --uri https://graph.microsoft.com/v1.0/servicePrincipals/$objectId/appRoleAssignments \
+        --body "{
+          'principalId': '$objectId',
+          'resourceId': '$AzureADGraphID',
+          'appRoleId': '824c81eb-e3f8-4ee6-8f6d-de7f50d565b7'
+        }"
+az rest --method POST \
+        --uri https://graph.microsoft.com/v1.0/servicePrincipals/$objectId/appRoleAssignments \
+        --body "{
+          'principalId': '$objectId',
+          'resourceId': '$AzureADGraphID',
+          'appRoleId': '78c8a3c8-a07e-4b9e-af1b-b5ccab50a175'
+        }"
+# az ad app permission add --id $appId --api 00000002-0000-0000-c000-000000000000 --api-permissions 1cda74f2-2616-4834-b122-5cb1b07f8a59=Role
 ## Application Application.ReadWrite.OwnedBy
-az ad app permission add --id $appId --api 00000002-0000-0000-c000-000000000000 --api-permissions 824c81eb-e3f8-4ee6-8f6d-de7f50d565b7=Role
+# az ad app permission add --id $appId --api 00000002-0000-0000-c000-000000000000 --api-permissions 824c81eb-e3f8-4ee6-8f6d-de7f50d565b7=Role
 # Delegated Directory.ReadWrite.All
 ### az ad app permission add --id $appId --api 00000002-0000-0000-c000-000000000000 --api-permissions 78c8a3c8-a07e-4b9e-af1b-b5ccab50a175=Scope
 
@@ -34,7 +57,7 @@ az ad app permission add --id $appId --api 00000002-0000-0000-c000-000000000000 
 # TODO: it says: `az ad app permission grant --id $appId --api 00000002-0000-0000-c000-000000000000` is needed to make the change effective
 
 # Application Directory.ReadWrite.All
-az ad app permission add --id $appId --api 00000002-0000-0000-c000-000000000000 --api-permissions 78c8a3c8-a07e-4b9e-af1b-b5ccab50a175=Role
+# az ad app permission add --id $appId --api 00000002-0000-0000-c000-000000000000 --api-permissions 78c8a3c8-a07e-4b9e-af1b-b5ccab50a175=Role
 ## Delegated User.Read
 ### az ad app permission grant --id $appId --api 00000002-0000-0000-c000-000000000000 --api-permissions 311a71cc-e848-46a1-bdf8-97ff7156d8e6=Scope
 ## Delegated User.Read.All
@@ -54,7 +77,14 @@ az ad app permission add --id $appId --api 00000002-0000-0000-c000-000000000000 
 
 # Azure Graph
 ## Application Application.ReadWrite.All
-az ad app permission add --id $appId --api 00000003-0000-0000-c000-000000000000 --api-permissions 1bfefb4e-e0b5-418b-a88f-73c46d2cc8e9=Role
+az rest --method POST \
+        --uri https://graph.microsoft.com/v1.0/servicePrincipals/$objectId/appRoleAssignments \
+        --body "{
+          'principalId': '$objectId',
+          'resourceId': '$MSGraphID',
+          'appRoleId': '1bfefb4e-e0b5-418b-a88f-73c46d2cc8e9'
+        }"
+# az ad app permission add --id $appId --api 00000003-0000-0000-c000-000000000000 --api-permissions 1bfefb4e-e0b5-418b-a88f-73c46d2cc8e9=Role
 
 ## Delegated
   # --api-permissions bdfbf15f-ee85-4955-8675-146e8e5296b5=Scope
@@ -71,7 +101,7 @@ az ad app permission add --id $appId --api 00000003-0000-0000-c000-000000000000 
 # az ad app permission add --id $appId --api $appId --api-permissions $self_delegation_id=Scope
 
 # Grant all permissions
-az ad app permission admin-consent --id $appId
+# az ad app permission admin-consent --id $appId
 
 sleep 10
 
