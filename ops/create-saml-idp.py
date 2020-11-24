@@ -61,7 +61,7 @@ def wait_for_sp_creation(sp_object_id: str, access_token: str):
         print(f"Polling for {sp_object_id}...")
         headers = {"Authorization": f"Bearer {access_token}"}
         poll_response = requests.get(
-            f"https://graph.microsoft.com/beta/servicePrincipals/{sp_object_id}",
+            f"https://graph.microsoft.com/v1.0/servicePrincipals/{sp_object_id}",
             headers=headers,
         )
 
@@ -80,7 +80,7 @@ def wait_for_sp_creation(sp_object_id: str, access_token: str):
 
 
 def enable_saml(sp_object_id: str, access_token: str):
-    url = f"https://graph.microsoft.com/beta/servicePrincipals/{sp_object_id}"
+    url = f"https://graph.microsoft.com/v1.0/servicePrincipals/{sp_object_id}"
     data = {"preferredSingleSignOnMode": "saml"}
 
     headers = {
