@@ -225,7 +225,6 @@ def register_self_signed_certificate(sp_object_id: str, access_token: str):
 
     headers = {
         "Authorization": f"Bearer {access_token}",
-        "Content-Type": "application/json",
     }
 
     response = requests.patch(url, json=data, headers=headers)
@@ -242,7 +241,6 @@ def assign_user_to_saml_idp(user_object_id: str, sp_object_id: str, access_token
     }
     headers = {
         "Authorization": f"Bearer {access_token}",
-        "Content-Type": "application/json",
     }
 
     response = requests.post(url, json=data, headers=headers)
