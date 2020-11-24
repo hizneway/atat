@@ -40,7 +40,7 @@ resource "azurerm_subnet" "subnet" {
   address_prefixes     = [element(split(",", each.value), 0)]
   service_endpoints    = split(",", var.service_endpoints[each.key])
 
-  
+
 
 }
 

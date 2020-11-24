@@ -1,7 +1,7 @@
 ---
 - name: create k8s overlays
   import_tasks: generate_overlays.yml
-  
+
 
 - name: push overlays to storage bucket
   import_tasks: push_overlays.yml
@@ -9,3 +9,4 @@
 
 - name: configure the private cluster
   import_tasks: configure_private_cluster.yml
+  when: private_cluster_deploy == "true"

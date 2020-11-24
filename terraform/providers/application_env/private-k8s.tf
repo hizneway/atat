@@ -23,7 +23,7 @@ module "private-k8s" {
   aks_subnet_id              = module.vpc.subnet_list["aks-private"].id
   vpc_address_space          = "10.1.0.0/16"
   subnet_name         = element(split(",",var.networks["aks-private"]),1)
-  depends_on = [module.vpc, module.keyvault_reader_identity]
+  depends_on = [module.vpc, module.keyvault_reader_identity,module.private-aks-firewall.rt_association_id]
 
 
 }
@@ -42,8 +42,8 @@ module "private-aks-firewall" {
   subnet_id           = module.vpc.subnet_list["AzureFirewallSubnet"].id
   az_fw_ip            = module.vpc.fw_ip_address
   az_fw_ip_id         = module.vpc.fw_ip_address_id
-  maintenance_page_ip = "10.1.5.254"
-  nat_rules_translated_ips  = cidrhost("${var.private_k8s_subnet_cidr}",254)
+  maintenance_page_ip = "10.1.5.199"
+  nat_rules_translated_ips  = cidrhost("${var.private_k8s_subnet_cidr}",201)
   virtual_appliance_routes       = var.virtual_appliance_routes
   virtual_appliance_route_tables = var.virtual_appliance_route_tables
   vnet_cidr           = var.virtual_network
