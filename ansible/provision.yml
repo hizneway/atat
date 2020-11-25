@@ -5,7 +5,3 @@
         db_init_details: "{{ tf_app_env_outputs.outputs }}"
         db_name: "{{ tf_bootstrap_backend_outputs.environment.value }}"
         postgresql: "true"
-    - role: k8s
-      vars:
-        namespace: "{{ tf_app_env_outputs.environment.value }}"
-        tf_app_env_outputs: "{{ tf_app_env_outputs }}"

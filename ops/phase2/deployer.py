@@ -88,7 +88,7 @@ def deploy(
     setup(sp_client_id, sp_client_secret, subscription_id, tenant_id, namespace)
     build_atat(ops_registry, atat_registry, git_sha, atat_image_tag)
     build_nginx(ops_registry, atat_registry, nginx_image_tag)
-    deploy()
+    _deploy()
 
 def setup(sp_client_id, sp_client_secret, tenant_id, namespace):
     if config_azcli:
@@ -167,8 +167,39 @@ def build_nginx(ops_registry, atat_registry, nginx_image_tag):
     # TODO: Make this async
     subprocess.run(cmd).check_returncode()
 
-def deploy():
-    pass
+
+def _deploy():
+
+    tf_output_dict = collect_terraform_outputs()
+
+    ansible(
+        tf_output_dict=tf_output_dict,
+        addl_args={
+            "sp_client_id": sp_client_id,
+            "sp_client_secret": sp_client_secret,
+            "subscription_id": subscription_id,
+            "tenant_id": tenant_id,
+            "backend_resource_group_name": ops_resource_group,
+            "backend_storage_account_name": ops_storage_account,
+            "ops_config_container": ops_config_container,
+        },
+    )
+
+
+def ansible(tf_output_dict, addl_args):
+    extra_vars = {**tf_output_dict, **addl_args}
+    extra_vars["postgres_root_cert"] = "../deploy/azure/pgsslrootcert.yml"
+    extra_vars["src_dir"] = os.path.abspath(os.path.join(os.getcwd(), "../", "../"))
+    cwd = path.join("../", "../", "ansible")
+    print(extra_vars)
+    cmd = [
+        "ansible-playbook",
+        "k8s.yml",
+        "-vvv",
+        "--extra-vars",
+        json.dumps(extra_vars),
+    ]
+    subprocess.run(cmd, cwd=cwd).check_returncode()
 
 
 if __name__ == "__main__":
