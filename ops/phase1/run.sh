@@ -9,6 +9,8 @@ set -e
 [ ! -f service_principal.json ] && ./create-service-principle.sh
 sp=$(cat service_principal.json)
 
+sleep 10
+
 echo "exporting terraform creds"
 export ARM_CLIENT_ID=$(echo $sp | jq -r '.appId')
 export ARM_CLIENT_SECRET=$(echo $sp | jq -r '.password')
