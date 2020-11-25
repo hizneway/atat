@@ -9,7 +9,7 @@ module "container_registry" {
   owner                       = var.owner
   backup_region               = var.backup_region
   policy                      = "Allow"
-  subnet_ids                  = [module.vpc.subnet_list["aks"].id]
+  subnet_ids                  = [module.vpc.subnet_list["aks-private"].id]
   whitelist                   = var.admin_user_whitelist
   workspace_id                = module.logs.workspace_id
   pet_name                    = random_pet.unique_id.id
