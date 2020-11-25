@@ -14,6 +14,7 @@ logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 
+@click.command()
 @click.option(
     "--sp_client_id",
     help="Client ID (Also called AppId) of the service principle created in phase1 - envvar: SP_CLIENT_ID",
@@ -70,7 +71,6 @@ logger = logging.getLogger(__name__)
     default=True,
     help="Whether to try and run the az login w/ the service principle so we can install the aks plugins"
 )
-@click.option()
 def deploy(
     sp_client_id,
     sp_client_secret,
@@ -85,7 +85,7 @@ def deploy(
     config_azcli,
     git_sha,
 ):
-    setup(sp_client_id, sp_client_secret, subscription_id, tenant_id, namespace)
+    setup(sp_client_id, sp_client_secret, subscription_id, tenant_id, namespace, config_azcli)
     build_atat(ops_registry, atat_registry, git_sha, atat_image_tag)
     build_nginx(ops_registry, atat_registry, nginx_image_tag)
 
@@ -104,15 +104,17 @@ def deploy(
     )
 
 
-def setup(sp_client_id, sp_client_secret, tenant_id, namespace):
+def setup(sp_client_id, sp_client_secret, subscription_id, tenant_id, namespace, config_azcli):
     if config_azcli:
         configure_azcli(
             sp_client_id=sp_client_id,
             sp_client_secret=sp_client_secret,
             tenant_id=tenant_id,
+            namespace=namespace
         )
 
     if atat_registry is None:
+        pass
         # load from terraform
 
     if ops_registry is None:
