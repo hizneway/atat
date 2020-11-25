@@ -11,7 +11,7 @@ resource "random_password" "password" {
 
 resource "azuread_application" "app" {
 
-  name = var.name
+  name = "${var.name}-${var.environment}"
 
 }
 
