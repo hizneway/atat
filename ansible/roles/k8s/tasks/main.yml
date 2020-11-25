@@ -3,11 +3,7 @@
   import_tasks: generate_overlays.yml
   when: private_cluster_deploy == false
 
-- name: push overlays to storage bucket
-  import_tasks: push_overlays.yml
-  when: private_cluster_deploy == false
-
-- name: configure the cluster ## eventuall will go away
+- name: configure the cluster # Eventually will go away
   import_tasks: configure_public_cluster.yml
   when: private_cluster_deploy == false
 

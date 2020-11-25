@@ -15,20 +15,20 @@
     dest: "{{ playbook_dir + '/.out' }}"
 
 # Provision
-- name: Connect to the {{ namespace }} kubernetes cluster
-  shell: "az aks get-credentials -g cloudzero-vpc-{{ namespace }} -n cloudzero-private-k8s-{{ namespace }}"
+- name: Connect to the {{ environment }} kubernetes cluster
+  shell: "az aks get-credentials -g cloudzero-vpc-{{ environment }} -n cloudzero-private-k8s-{{ environment }}"
 
 # Provision
-- name: Create {{ namespace }} namespace
+- name: Create {{ environment }} namespace
   k8s:
     kind: Namespace
     state: present
-    name: "{{ namespace }}"
+    name: "{{ environment }}"
 
 # Provision
 - name: "Attach the ACR to the K8s cluster"
   shell:
-    cmd: az aks update -n cloudzero-k8s-{{namespace}} -g cloudzero-vpc-{{namespace}} --attach-acr {{tf_app_env_outputs.container_registry_name.value}}
+    cmd: az aks update -n cloudzero-k8s-{{ environment }} -g cloudzero-vpc-{{ environment }} --attach-acr {{tf_app_env_outputs.container_registry_name.value}}
 
 # Provision
 - name: Assign Network Contributor role to the AKS Service Principal for the Virtual Network
@@ -119,15 +119,15 @@
   environment:
     CONTAINER_IMAGE: "{{ tf_app_env_outputs.container_registry_name.value }}.azurecr.io/atat:{{ latest_tag }}"
     NGINX_CONTAINER_IMAGE: "{{ tf_app_env_outputs.container_registry_name.value }}.azurecr.io/nginx:{{ latest_nginx_tag }}"
-    MAIN_DOMAIN: "{{ namespace }}.atat.dev"
-    AUTH_DOMAIN: "auth-{{ namespace }}.atat.dev"
+    MAIN_DOMAIN: "{{ environment }}.atat.dev"
+    AUTH_DOMAIN: "auth-{{ environment }}.atat.dev"
     VMSS_CLIENT_ID: "{{ tf_app_env_outputs.keyvault_reader_client_id.value }}"
-    KV_NAME: "cz-keyvault-{{ namespace }}"
+    KV_NAME: "cz-keyvault-{{ environment }}"
     TENANT_ID: "{{ tf_app_env_outputs.tenant_id.value }}"
     DEPLOY_TAG: "tf-{{ deploy_tag | regex_replace('\\.','-') }}"
 
 - name: Obtain IP addresses
-  shell: kubectl -n {{ namespace }} get services
+  shell: kubectl -n {{ environment }} get services
   register: ips
 
 - name: Show IP addresses

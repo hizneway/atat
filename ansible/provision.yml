@@ -8,3 +8,4 @@
     - role: k8s
       vars:
         namespace: "{{ tf_app_env_outputs.environment.value }}"
+        tf_app_env_outputs: "{{ tf_app_env_outputs }}"
