@@ -19,6 +19,17 @@ export TF_VAR_operator_client_id=$ARM_CLIENT_ID
 export TF_VAR_operator_client_secret=$ARM_CLIENT_SECRET
 export TF_VAR_operator_tenant_id=$ARM_TENANT_ID
 
+rm -rf ../../.envrc
+echo "ARM_CLIENT_ID=$(echo $sp | jq -r '.appId')" >> ../.envrc
+echo "ARM_CLIENT_SECRET=$(echo $sp | jq -r '.password')" >> ../.envrc
+echo "ARM_SUBSCRIPTION_ID=$(az account show --query id --output tsv)" >> ../.envrc
+echo "ARM_TENANT_ID=$(echo $sp | jq -r '.tenant')" >> ../.envrc
+echo "TF_VAR_operator_subscription_id=$ARM_SUBSCRIPTION_ID" >> ../.envrc
+echo "TF_VAR_operator_client_id=$ARM_CLIENT_ID" >> ../.envrc
+echo "TF_VAR_operator_client_secret=$ARM_CLIENT_SECRET" >> ../.envrc
+echo "TF_VAR_operator_tenant_id=$ARM_TENANT_ID" >> ../.envrc
+
+
 echo "Terraform Bootstrap New Tenant"
 cd ../../terraform/providers/bootstrap
 terraform init
@@ -79,6 +90,15 @@ az container create \
   --command-line "/bin/bash -c 'while true; do sleep 30; done'" \
   --log-analytics-workspace $LOGGING_WORKSPACE \
   --restart-policy Never
+
+echo "export OPS_RESOURCE_GROUP=$TF_VAR_resource_group_name" >> ../../.envrc
+echo "export OPS_STORAGE_ACCOUNT=$TF_VAR_storage_account_name" >> ../../.envrc
+echo "export SUBSCRIPTION_ID=$TF_VAR_operator_subscription_id" >> ../../.envrc
+echo "export SP_CLIENT_ID=$TF_VAR_operator_client_id" >> ../../.envrc
+echo "export SP_CLIENT_SECRET=$TF_VAR_operator_client_secret" >> ../../.envrc
+echo "export TENANT_ID=$TF_VAR_operator_tenant_id" >> ../../.envrc
+echo "export OPS_REGISTRY=$REGISTRY_NAME" >> ../../.envrc
+echo "export NAMESPACE=$1">> ../../.envrc
 
 echo "============================="
 echo "============================="
