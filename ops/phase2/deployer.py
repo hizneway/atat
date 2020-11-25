@@ -37,7 +37,7 @@ logger = logging.getLogger(__name__)
 @click.option(
     "--ops_registry",
     help="Full URI of the container registry that after bootstrapping, should have rhel, rhel-py, and ops images - envvar: OPS_REGISTRY",
-    prompt="Domain of container registry eg:cloudzeroopsregistry${var.namespace}.azurecr.io",
+    prompt="Full URI of container registry eg: cloudzeroopsregistry${var.namespace}.azurecr.io",
     envvar="OPS_REGISTRY",
 )
 @click.option(
@@ -113,18 +113,6 @@ def setup(sp_client_id, sp_client_secret, subscription_id, tenant_id, namespace,
             namespace=namespace
         )
 
-    if atat_registry is None:
-        pass
-        # load from terraform
-
-    if ops_registry is None:
-        pass
-        # load from terraform
-
-    if git_sha is None:
-        pass
-        # test if I can get it w/ git rev-parse HEAD
-
 
 def configure_azcli(sp_client_id, sp_client_secret, tenant_id, namespace):
     cmd = [
@@ -161,6 +149,8 @@ def build_atat(ops_registry, atat_registry, git_sha, atat_image_tag):
         f"IMAGE={ops_registry}/rhel-py:latest",
         "--image",
         f"atat:{atat_image_tag}",
+        "--file",
+        "Dockerfile",
         ".",
     ]
     # TODO: Make this async
