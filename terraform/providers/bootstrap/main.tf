@@ -22,6 +22,15 @@ resource "azurerm_subnet" "deployment_subnet" {
     "Microsoft.Sql",
     "Microsoft.Storage"
   ]
+
+  delegation {
+    name = "Microsoft.ContainerInstance.containerGroups"
+
+    service_delegation {
+      name    = "Microsoft.ContainerInstance/containerGroups"
+      actions = ["Microsoft.Network/virtualNetworks/subnets/action"]
+    }
+  }
 }
 
 resource "azurerm_storage_account" "operations_storage_account" {
