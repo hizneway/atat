@@ -27,6 +27,16 @@ resource "azurerm_key_vault" "keyvault" {
   }
 }
 
+resource "time_sleep" "wait_30_seconds" {
+  depends_on = [
+      azurerm_key_vault.keyvault,
+      azurerm_key_vault_access_policy.keyvault_tenant_policy,
+      azurerm_key_vault_access_policy.keyvault_admin_policy,
+    ]
+
+  create_duration = "30s"
+}
+
 resource "azurerm_key_vault_access_policy" "keyvault_k8s_policy" {
   count        = var.principal_id_count
   key_vault_id = azurerm_key_vault.keyvault.id
@@ -131,5 +141,5 @@ resource "azurerm_key_vault_key" "generated" {
     "wrapKey",
   ]
 
-  depends_on = [azurerm_key_vault_access_policy.keyvault_admin_policy]
+  depends_on = [time_sleep.wait_30_seconds]
 }

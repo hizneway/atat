@@ -14,8 +14,9 @@ RUN yum -y update && \
   cd /tmp && \
   curl --retry 10 -LO "https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl" && \
   chmod +x /tmp/kubectl && \
-  sudo mv /tmp/kubectl /usr/bin/kubectl && \
-  pip3 install --upgrade pip
+  sudo mv /tmp/kubectl /usr/bin/kubectl
+#  && \
+# pip3 install --upgrade pip
 
 COPY ./ops/requirements.txt /src/ops/requirements.txt
 

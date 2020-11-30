@@ -9,3 +9,8 @@ output "url" {
 output "keyvault_name" {
   value = "${var.name}-kv-${var.environment}"
 }
+
+output "keyvault_spun_up" {
+  value = { }
+  depends_on = [ time_sleep.wait_30_seconds ]
+}
