@@ -1,15 +1,4 @@
 ---
-- name: Create template output directory
-  file:
-    state: directory
-    path: "{{ playbook_dir }}/.out"
-
-- name: Interpolate the templates
-  template:
-    src: "{{ item }}"
-    dest: "{{ playbook_dir }}/.out/{{ item | basename }}"
-  with_fileglob: "{{ playbook_dir + '/roles/k8s/tasks/templates/*' }}"
-
 # Deploy
 - name: Download k8s overlays
   azure_rm_storageblob:
@@ -78,6 +67,17 @@
   k8s:
     state: present
     src: /src/deploy/azure/keyvault/kv-flex-vol-installer.yml
+
+- name: Create template output directory
+  file:
+    state: directory
+    path: "{{ playbook_dir }}/.out"
+
+- name: Interpolate the templates
+  template:
+    src: "{{ item }}"
+    dest: "{{ playbook_dir }}/.out/{{ item | basename }}"
+  with_fileglob: "{{ playbook_dir + '/roles/k8s/tasks/templates/*' }}"
 
 - name: Apply the rest of the Kubernetes config for the site
   shell: /src/script/k8s_config {{ playbook_dir + '/.out' }} | kubectl apply -f -
