@@ -27,7 +27,7 @@
 
 - name: Assign the Vault Reader identity to the AKS VMSS
   shell:
-    cmd: az vmss identity assign -g {{ aks_node_resource_group }} -n {{ (aks_vmss.stdout | from_json)[0].name }} --identities {{ keyvault_reader_id }}
+    cmd: az vmss identity assign -g {{ aks_node_resource_group }} -n {{ (aks_vmss.stdout | from_json)[0].name }} --identities {{ aks_keyvault_reader_id }}
 
 - name: Apply the storage class
   k8s:

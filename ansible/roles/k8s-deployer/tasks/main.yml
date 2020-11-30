@@ -30,7 +30,7 @@
     NGINX_CONTAINER_IMAGE: "{{ container_registry_name }}.azurecr.io/nginx:{{ nginx_image_tag }}"
     MAIN_DOMAIN: "{{ environment }}.atat.dev"
     AUTH_DOMAIN: "auth-{{ environment }}.atat.dev"
-    VMSS_CLIENT_ID: "{{ keyvault_reader_client_id }}"
+    VMSS_CLIENT_ID: "{{ aks_keyvault_reader_client_id }}"
     KV_NAME: "{{ application_keyvault_name }}"
     TENANT_ID: "{{ tenant_id }}"
     DEPLOY_TAG: "tf-{{ deploy_tag | regex_replace('\\.','-') }}"

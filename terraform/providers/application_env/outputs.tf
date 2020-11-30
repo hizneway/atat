@@ -68,6 +68,14 @@ output "aks_node_resource_group" {
   value = azurerm_kubernetes_cluster.k8s_private.node_resource_group
 }
 
+output "aks_keyvault_reader_client_id" {
+  value = module.keyvault_reader_identity.client_id
+}
+
+output "aks_keyvault_reader_id" {
+  value = module.keyvault_reader_identity.id
+}
+
 output "operator_keyvault_url" {
   value = module.operator_keyvault.url
 }
@@ -102,14 +110,6 @@ output "subnets" {
 
 output "container_registry_name" {
   value = module.container_registry.container_registry_name
-}
-
-output "keyvault_reader_client_id" {
-  value = module.keyvault_reader_identity.client_id
-}
-
-output "keyvault_reader_id" {
-  value = module.keyvault_reader_identity.id
 }
 
 output "azure_storage_account_name" {
