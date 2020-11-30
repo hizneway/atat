@@ -1,12 +1,100 @@
 ---
-- name: create k8s overlays
-  import_tasks: generate_overlays.yml
-  when: private_cluster_deploy == false
+- name: Create template output directory
+  file:
+    state: directory
+    path: "{{ playbook_dir }}/.out"
 
-- name: configure the cluster # Eventually will go away
-  import_tasks: configure_public_cluster.yml
-  when: private_cluster_deploy == false
+- name: Interpolate the templates
+  template:
+    src: "{{ item }}"
+    dest: "{{ playbook_dir }}/.out/{{ item | basename }}"
+  with_fileglob: "{{ playbook_dir + '/roles/k8s/tasks/templates/*' }}"
 
-- name: configure the private cluster
-  import_tasks: configure_private_cluster.yml
-  when: private_cluster_deploy == true
+# Deploy
+- name: Download k8s overlays
+  azure_rm_storageblob:
+    resource_group: "{{ b_end.resource_group_name }}"
+    storage_account_name: "{{ b_end.storage_account_name }}"
+    container: "{{ b_end.container_name }}"
+    blob: k8s.overlays
+    dest: /tmp/private_k8s_overlays.tgz
+
+# Deploy
+- name: Extract private cluster configs
+  unarchive:
+    src: /tmp/private_k8s_overlays.tgz
+    dest: "{{ playbook_dir + '/.out' }}"
+
+# Provision
+- name: Connect to the {{ environment }} kubernetes cluster
+  shell: "az aks get-credentials -g cloudzero-vpc-{{ environment }} -n cloudzero-private-k8s-{{ environment }}"
+
+# Provision
+- name: Create {{ environment }} namespace
+  k8s:
+    kind: Namespace
+    state: present
+    name: "{{ environment }}"
+
+# Provision
+- name: "Attach the ACR to the K8s cluster"
+  shell:
+    cmd: az aks update -n cloudzero-k8s-{{ environment }} -g cloudzero-vpc-{{ environment }} --attach-acr {{tf_app_env_outputs.container_registry_name.value}}
+
+# Provision
+- name: Assign Network Contributor role to the AKS Service Principal for the Virtual Network
+  shell:
+    cmd: az role assignment create --role "Network Contributor" --assignee {{ tf_app_env_outputs.aks_sp_id.value }} --scope {{tf_app_env_outputs.vnet_id.value }}
+
+# Provision I assume - what the hell is this?
+- name: Get vmss
+  shell:
+    cmd: az vmss list --resource-group {{ tf_app_env_outputs.private_k8s_node_group.value }}
+  register: k8s_vmss
+
+# Provision debugging
+- name: show vmss output
+  debug:
+    msg: "{{ k8s_vmss.stdout | from_json  }}"
+
+# Provision
+- name: Assign the Vault Reader identity to the AKS VMSS
+  shell:
+    cmd: az vmss identity assign -g {{ tf_app_env_outputs.private_k8s_node_group.value }} -n {{ (k8s_vmss.stdout | from_json)[0].name }} --identities {{ tf_app_env_outputs.keyvault_reader_id.value }}
+
+# Deploy - could be provision, but why are these things being done piecemeal?
+- name: Apply the storage class
+  k8s:
+    state: present
+    src: /src/deploy/azure/storage-class.yml
+
+- name: Create kv namespace
+  k8s:
+    kind: Namespace
+    state: present
+    name: "kv"
+
+- name: Apply flex vol installer
+  k8s:
+    state: present
+    src: /src/deploy/azure/keyvault/kv-flex-vol-installer.yml
+
+- name: Apply the rest of the Kubernetes config for the site
+  shell: /src/script/k8s_config {{ playbook_dir + '/.out' }} | kubectl apply -f -
+  environment:
+    CONTAINER_IMAGE: "{{ tf_app_env_outputs.container_registry_name.value }}.azurecr.io/atat:{{ atat_image_tag }}"
+    NGINX_CONTAINER_IMAGE: "{{ tf_app_env_outputs.container_registry_name.value }}.azurecr.io/nginx:{{ nginx_image_tag }}"
+    MAIN_DOMAIN: "{{ environment }}.atat.dev"
+    AUTH_DOMAIN: "auth-{{ environment }}.atat.dev"
+    VMSS_CLIENT_ID: "{{ tf_app_env_outputs.keyvault_reader_client_id.value }}"
+    KV_NAME: "cz-keyvault-{{ environment }}"
+    TENANT_ID: "{{ tf_app_env_outputs.tenant_id.value }}"
+    DEPLOY_TAG: "tf-{{ deploy_tag | regex_replace('\\.','-') }}"
+
+- name: Obtain IP addresses
+  shell: kubectl -n {{ environment }} get services
+  register: ips
+
+- name: Show IP addresses
+  debug:
+    msg: "{{ ips }}"
