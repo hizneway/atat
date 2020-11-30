@@ -109,7 +109,7 @@ resource "local_file" "self_remote_backend" {
 
 resource "azurerm_resource_group" "log_workspace" {
   name     = "${var.namespace}-log-workspace"
-  location = var.region
+  location = var.operations_location
 }
 
 resource "azurerm_log_analytics_workspace" "log_workspace" {
