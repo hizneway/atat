@@ -1,0 +1,44 @@
+---
+- name: Download k8s overlays
+  azure_rm_storageblob:
+    resource_group: "{{ b_end.resource_group_name }}"
+    storage_account_name: "{{ b_end.storage_account_name }}"
+    container: "{{ b_end.container_name }}"
+    blob: k8s.overlays
+    dest: /tmp/private_k8s_overlays.tgz
+
+- name: Extract private cluster configs
+  unarchive:
+    src: /tmp/private_k8s_overlays.tgz
+    dest: "{{ playbook_dir + '/.out' }}"
+
+- name: Create template output directory
+  file:
+    state: directory
+    path: "{{ playbook_dir }}/.out"
+
+- name: Interpolate the templates
+  template:
+    src: "{{ item }}"
+    dest: "{{ playbook_dir }}/.out/{{ item | basename }}"
+  with_fileglob: "{{ playbook_dir + '/roles/k8s/tasks/templates/*' }}"
+
+- name: Apply the rest of the Kubernetes config for the site
+  shell: /src/script/k8s_config {{ playbook_dir + '/.out' }} | kubectl apply -f -
+  environment:
+    CONTAINER_IMAGE: "{{ container_registry_name }}.azurecr.io/atat:{{ atat_image_tag }}"
+    NGINX_CONTAINER_IMAGE: "{{ container_registry_name }}.azurecr.io/nginx:{{ nginx_image_tag }}"
+    MAIN_DOMAIN: "{{ environment }}.atat.dev"
+    AUTH_DOMAIN: "auth-{{ environment }}.atat.dev"
+    VMSS_CLIENT_ID: "{{ keyvault_reader_client_id }}"
+    KV_NAME: "{{ application_keyvault_name }}"
+    TENANT_ID: "{{ tenant_id }}"
+    DEPLOY_TAG: "tf-{{ deploy_tag | regex_replace('\\.','-') }}"
+
+- name: Obtain IP addresses
+  shell: kubectl -n {{ environment }} get services
+  register: ips
+
+- name: Show IP addresses
+  debug:
+    msg: "{{ ips }}"
