@@ -113,7 +113,7 @@ resource "azurerm_resource_group" "log_workspace" {
 }
 
 resource "azurerm_log_analytics_workspace" "log_workspace" {
-  name                = "${var.namespace}-log-workspace"
+  name                = "cloudzero-${var.namespace}-log-workspace"
   location            = azurerm_resource_group.log_workspace.location
   resource_group_name = azurerm_resource_group.log_workspace.name
   sku                 = "Premium"
