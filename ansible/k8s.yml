@@ -1,5 +1,3 @@
 - hosts: localhost
   roles:
     - role: k8s-deployer
-      vars:
-        namespace: "{{ environment }}"
