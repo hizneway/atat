@@ -86,15 +86,6 @@ resource "azurerm_container_registry" "operations_container_registry" {
 # }
 
 
-# module "logs" {
-#   source            = "../../modules/log_analytics"
-#   owner             = var.operator_client_id
-#   environment       = var.namespace
-#   region            = var.operations_location
-#   name              = var.namespace
-#   retention_in_days = 365
-# }
-
 resource "local_file" "self_remote_backend" {
   content = templatefile("templates/versions.override.tf.tmpl", {
     backend_resource_group_name  = azurerm_resource_group.operations_resource_group.name
