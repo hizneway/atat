@@ -56,6 +56,18 @@ output "aks_sp_secret" {
   value = module.aks_sp.application_password
 }
 
+output "aks_cluster_name" {
+  value = azurerm_kubernetes_cluster.k8s_private.name
+}
+
+output "aks_resource_group" {
+  value = module.vpc.resource_group_name
+}
+
+output "aks_node_resource_group" {
+  value = azurerm_kubernetes_cluster.k8s_private.node_resource_group
+}
+
 output "operator_keyvault_url" {
   value = module.operator_keyvault.url
 }
