@@ -301,7 +301,7 @@ resource "azurerm_postgresql_virtual_network_rule" "allow_management_subnet" {
   name                                 = "allow-management-subnet-rule"
   resource_group_name                  = azurerm_resource_group.sql.name
   server_name                          = azurerm_postgresql_server.sql.name
-  subnet_id                            = azurerm_subnet.mgmt_subnet
+  subnet_id                            = azurerm_subnet.mgmt_subnet.name
   ignore_missing_vnet_service_endpoint = true
 }
 
