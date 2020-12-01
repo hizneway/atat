@@ -74,6 +74,8 @@ def provision(
     ops_tf_application_container,
     ops_config_container,
 ):
+    login(sp_client_id, sp_client_secret, subscription_id, tenant_id)
+
     terraform_application(
         backend_resource_group_name=ops_resource_group,
         backend_storage_account_name=ops_storage_account,
@@ -220,6 +222,16 @@ def ansible(tf_output_dict, addl_args):
         json.dumps(extra_vars),
     ]
     subprocess.run(cmd, cwd=cwd).check_returncode()
+
+
+def login(sp_client_id, sp_client_secret, subscription_id, tenant_id):
+    os.environ["ARM_CLIENT_ID"] = sp_client_id
+    os.environ["ARM_CLIENT_SECRET"] = sp_client_secret
+    os.environ["ARM_SUBSCRIPTION_ID"] = subscription_id
+    os.environ["ARM_TENANT_ID"] = tenant_id
+    subprocess.run(
+        f"az login --service-principal --username {sp_client_id} --password {sp_client_secret} --tenant {tenant_id}".split()
+    ).check_returncode()
 
 
 if __name__ == "__main__":
