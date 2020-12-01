@@ -13,12 +13,11 @@ output "id" {
 }
 
 output "vpc_name" {
-  value = "${var.name}-network-${var.environment}"
+  value = azurerm_virtual_network.vpc.name
 }
 
 output "resource_group_name" {
-
-  value = "${var.name}-vpc-${var.environment}"
+  value = azurerm_resource_group.vpc.name
 
 }
 
