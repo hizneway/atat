@@ -1,0 +1,573 @@
+{
+  "aks_sp_id": {
+    "sensitive": false,
+    "type": "string",
+    "value": "d777ac6b-4f80-42b8-9222-638b22f21631"
+  },
+  "aks_sp_oid": {
+    "sensitive": false,
+    "type": "string",
+    "value": "7db6d037-ae0f-4003-9c67-fc237e1430e0"
+  },
+  "aks_sp_secret": {
+    "sensitive": false,
+    "type": "string",
+    "value": "H\u00265xjdokLUQ{f7WFHt%]ma6fKQSHUxF\u003c"
+  },
+  "application_keyvault_name": {
+    "sensitive": false,
+    "type": "string",
+    "value": "cz-kv-jd3"
+  },
+  "application_keyvault_url": {
+    "sensitive": false,
+    "type": "string",
+    "value": "https://cz-kv-jd3.vault.azure.net/"
+  },
+  "atat_database_instance_name": {
+    "sensitive": false,
+    "type": "string",
+    "value": "cloudzero-sql-jd3"
+  },
+  "atat_database_name": {
+    "sensitive": false,
+    "type": "string",
+    "value": "cloudzero_jd3"
+  },
+  "atat_user_name": {
+    "sensitive": false,
+    "type": "string",
+    "value": "atat@cloudzero-sql-jd3"
+  },
+  "atat_user_password": {
+    "sensitive": false,
+    "type": "string",
+    "value": "3mvrk5xEJlAYw5g"
+  },
+  "azure_storage_account_name": {
+    "sensitive": false,
+    "type": "string",
+    "value": "jd3tasks"
+  },
+  "container_registry_name": {
+    "sensitive": false,
+    "type": "string",
+    "value": "cloudzerojd3registry"
+  },
+  "environment": {
+    "sensitive": false,
+    "type": "string",
+    "value": "jd3"
+  },
+  "keyvault_reader_client_id": {
+    "sensitive": false,
+    "type": "string",
+    "value": "8b9ccfe5-eebd-4966-b8ce-40182b519596"
+  },
+  "keyvault_reader_id": {
+    "sensitive": false,
+    "type": "string",
+    "value": "/subscriptions/5e191a9e-8f85-429b-8ae6-8ec240cf21e3/resourcegroups/cloudzero-cloudzero-jd3-vault-reader-jd3/providers/Microsoft.ManagedIdentity/userAssignedIdentities/cloudzero-cloudzero-jd3-vault-reader-jd3"
+  },
+  "operator_keyvault_name": {
+    "sensitive": false,
+    "type": "string",
+    "value": "ops-kv-jd3"
+  },
+  "operator_keyvault_url": {
+    "sensitive": false,
+    "type": "string",
+    "value": "https://ops-kv-jd3.vault.azure.net/"
+  },
+  "ops_container_registry_name": {
+    "sensitive": false,
+    "type": "string",
+    "value": "cloudzeroopsregistryjd3"
+  },
+  "ops_keyvault_sp_client_id": {
+    "sensitive": false,
+    "type": "string",
+    "value": "769a7cb1-b185-4dec-9ccd-b6ede799373f"
+  },
+  "ops_keyvault_sp_object_id": {
+    "sensitive": false,
+    "type": "string",
+    "value": "d53bc5fe-4e7c-429f-a243-c939cb602337"
+  },
+  "ops_keyvault_sp_secret": {
+    "sensitive": false,
+    "type": "string",
+    "value": "eO}M92:Bk%umEf\u0026}Ww:Nr(wx1FZMv7#i"
+  },
+  "pg_host": {
+    "sensitive": false,
+    "type": "string",
+    "value": "cloudzero-sql-jd3.postgres.database.azure.com"
+  },
+  "pg_server_name": {
+    "sensitive": false,
+    "type": "string",
+    "value": "cloudzero-sql-jd3"
+  },
+  "postgres_resource_group_name": {
+    "sensitive": false,
+    "type": "string",
+    "value": "cloudzero-postgres-jd3"
+  },
+  "postgres_root_password": {
+    "sensitive": false,
+    "type": "string",
+    "value": "d9j8odBL99goTFYW"
+  },
+  "postgres_root_user_name": {
+    "sensitive": false,
+    "type": "string",
+    "value": "clouzero_pg_admin@cloudzero-sql-jd3"
+  },
+  "redis_hostname": {
+    "sensitive": false,
+    "type": "string",
+    "value": "cloudzero-redis-jd3.redis.cache.windows.net"
+  },
+  "redis_ssl_port": {
+    "sensitive": false,
+    "type": "number",
+    "value": 6380
+  },
+  "subnets": {
+    "sensitive": false,
+    "type": [
+      "object",
+      {
+        "AzureFirewallSubnet": [
+          "object",
+          {
+            "address_prefix": "string",
+            "address_prefixes": [
+              "list",
+              "string"
+            ],
+            "delegation": [
+              "list",
+              [
+                "object",
+                {
+                  "name": "string",
+                  "service_delegation": [
+                    "list",
+                    [
+                      "object",
+                      {
+                        "actions": [
+                          "list",
+                          "string"
+                        ],
+                        "name": "string"
+                      }
+                    ]
+                  ]
+                }
+              ]
+            ],
+            "enforce_private_link_endpoint_network_policies": "bool",
+            "enforce_private_link_service_network_policies": "bool",
+            "id": "string",
+            "name": "string",
+            "resource_group_name": "string",
+            "service_endpoints": [
+              "list",
+              "string"
+            ],
+            "timeouts": [
+              "object",
+              {
+                "create": "string",
+                "delete": "string",
+                "read": "string",
+                "update": "string"
+              }
+            ],
+            "virtual_network_name": "string"
+          }
+        ],
+        "aks": [
+          "object",
+          {
+            "address_prefix": "string",
+            "address_prefixes": [
+              "list",
+              "string"
+            ],
+            "delegation": [
+              "list",
+              [
+                "object",
+                {
+                  "name": "string",
+                  "service_delegation": [
+                    "list",
+                    [
+                      "object",
+                      {
+                        "actions": [
+                          "list",
+                          "string"
+                        ],
+                        "name": "string"
+                      }
+                    ]
+                  ]
+                }
+              ]
+            ],
+            "enforce_private_link_endpoint_network_policies": "bool",
+            "enforce_private_link_service_network_policies": "bool",
+            "id": "string",
+            "name": "string",
+            "resource_group_name": "string",
+            "service_endpoints": [
+              "list",
+              "string"
+            ],
+            "timeouts": [
+              "object",
+              {
+                "create": "string",
+                "delete": "string",
+                "read": "string",
+                "update": "string"
+              }
+            ],
+            "virtual_network_name": "string"
+          }
+        ],
+        "aks-private": [
+          "object",
+          {
+            "address_prefix": "string",
+            "address_prefixes": [
+              "list",
+              "string"
+            ],
+            "delegation": [
+              "list",
+              [
+                "object",
+                {
+                  "name": "string",
+                  "service_delegation": [
+                    "list",
+                    [
+                      "object",
+                      {
+                        "actions": [
+                          "list",
+                          "string"
+                        ],
+                        "name": "string"
+                      }
+                    ]
+                  ]
+                }
+              ]
+            ],
+            "enforce_private_link_endpoint_network_policies": "bool",
+            "enforce_private_link_service_network_policies": "bool",
+            "id": "string",
+            "name": "string",
+            "resource_group_name": "string",
+            "service_endpoints": [
+              "list",
+              "string"
+            ],
+            "timeouts": [
+              "object",
+              {
+                "create": "string",
+                "delete": "string",
+                "read": "string",
+                "update": "string"
+              }
+            ],
+            "virtual_network_name": "string"
+          }
+        ],
+        "appgateway": [
+          "object",
+          {
+            "address_prefix": "string",
+            "address_prefixes": [
+              "list",
+              "string"
+            ],
+            "delegation": [
+              "list",
+              [
+                "object",
+                {
+                  "name": "string",
+                  "service_delegation": [
+                    "list",
+                    [
+                      "object",
+                      {
+                        "actions": [
+                          "list",
+                          "string"
+                        ],
+                        "name": "string"
+                      }
+                    ]
+                  ]
+                }
+              ]
+            ],
+            "enforce_private_link_endpoint_network_policies": "bool",
+            "enforce_private_link_service_network_policies": "bool",
+            "id": "string",
+            "name": "string",
+            "resource_group_name": "string",
+            "service_endpoints": [
+              "list",
+              "string"
+            ],
+            "timeouts": [
+              "object",
+              {
+                "create": "string",
+                "delete": "string",
+                "read": "string",
+                "update": "string"
+              }
+            ],
+            "virtual_network_name": "string"
+          }
+        ],
+        "edge": [
+          "object",
+          {
+            "address_prefix": "string",
+            "address_prefixes": [
+              "list",
+              "string"
+            ],
+            "delegation": [
+              "list",
+              [
+                "object",
+                {
+                  "name": "string",
+                  "service_delegation": [
+                    "list",
+                    [
+                      "object",
+                      {
+                        "actions": [
+                          "list",
+                          "string"
+                        ],
+                        "name": "string"
+                      }
+                    ]
+                  ]
+                }
+              ]
+            ],
+            "enforce_private_link_endpoint_network_policies": "bool",
+            "enforce_private_link_service_network_policies": "bool",
+            "id": "string",
+            "name": "string",
+            "resource_group_name": "string",
+            "service_endpoints": [
+              "list",
+              "string"
+            ],
+            "timeouts": [
+              "object",
+              {
+                "create": "string",
+                "delete": "string",
+                "read": "string",
+                "update": "string"
+              }
+            ],
+            "virtual_network_name": "string"
+          }
+        ],
+        "redis": [
+          "object",
+          {
+            "address_prefix": "string",
+            "address_prefixes": [
+              "list",
+              "string"
+            ],
+            "delegation": [
+              "list",
+              [
+                "object",
+                {
+                  "name": "string",
+                  "service_delegation": [
+                    "list",
+                    [
+                      "object",
+                      {
+                        "actions": [
+                          "list",
+                          "string"
+                        ],
+                        "name": "string"
+                      }
+                    ]
+                  ]
+                }
+              ]
+            ],
+            "enforce_private_link_endpoint_network_policies": "bool",
+            "enforce_private_link_service_network_policies": "bool",
+            "id": "string",
+            "name": "string",
+            "resource_group_name": "string",
+            "service_endpoints": [
+              "list",
+              "string"
+            ],
+            "timeouts": [
+              "object",
+              {
+                "create": "string",
+                "delete": "string",
+                "read": "string",
+                "update": "string"
+              }
+            ],
+            "virtual_network_name": "string"
+          }
+        ]
+      }
+    ],
+    "value": {
+      "AzureFirewallSubnet": {
+        "address_prefix": "10.1.4.0/24",
+        "address_prefixes": [
+          "10.1.4.0/24"
+        ],
+        "delegation": [],
+        "enforce_private_link_endpoint_network_policies": false,
+        "enforce_private_link_service_network_policies": false,
+        "id": "/subscriptions/5e191a9e-8f85-429b-8ae6-8ec240cf21e3/resourceGroups/cloudzero-vpc-jd3/providers/Microsoft.Network/virtualNetworks/cloudzero-network-jd3/subnets/AzureFirewallSubnet",
+        "name": "AzureFirewallSubnet",
+        "resource_group_name": "cloudzero-vpc-jd3",
+        "service_endpoints": [],
+        "timeouts": null,
+        "virtual_network_name": "cloudzero-network-jd3"
+      },
+      "aks": {
+        "address_prefix": "10.1.2.0/24",
+        "address_prefixes": [
+          "10.1.2.0/24"
+        ],
+        "delegation": [],
+        "enforce_private_link_endpoint_network_policies": false,
+        "enforce_private_link_service_network_policies": false,
+        "id": "/subscriptions/5e191a9e-8f85-429b-8ae6-8ec240cf21e3/resourceGroups/cloudzero-vpc-jd3/providers/Microsoft.Network/virtualNetworks/cloudzero-network-jd3/subnets/cloudzero-aks-jd3",
+        "name": "cloudzero-aks-jd3",
+        "resource_group_name": "cloudzero-vpc-jd3",
+        "service_endpoints": [
+          "Microsoft.Storage",
+          "Microsoft.KeyVault",
+          "Microsoft.ContainerRegistry",
+          "Microsoft.Sql"
+        ],
+        "timeouts": null,
+        "virtual_network_name": "cloudzero-network-jd3"
+      },
+      "aks-private": {
+        "address_prefix": "10.1.5.0/24",
+        "address_prefixes": [
+          "10.1.5.0/24"
+        ],
+        "delegation": [],
+        "enforce_private_link_endpoint_network_policies": false,
+        "enforce_private_link_service_network_policies": false,
+        "id": "/subscriptions/5e191a9e-8f85-429b-8ae6-8ec240cf21e3/resourceGroups/cloudzero-vpc-jd3/providers/Microsoft.Network/virtualNetworks/cloudzero-network-jd3/subnets/cloudzero-aks-private-jd3",
+        "name": "cloudzero-aks-private-jd3",
+        "resource_group_name": "cloudzero-vpc-jd3",
+        "service_endpoints": [
+          "Microsoft.Storage",
+          "Microsoft.KeyVault",
+          "Microsoft.ContainerRegistry",
+          "Microsoft.Sql"
+        ],
+        "timeouts": null,
+        "virtual_network_name": "cloudzero-network-jd3"
+      },
+      "appgateway": {
+        "address_prefix": "10.1.6.0/24",
+        "address_prefixes": [
+          "10.1.6.0/24"
+        ],
+        "delegation": [],
+        "enforce_private_link_endpoint_network_policies": false,
+        "enforce_private_link_service_network_policies": false,
+        "id": "/subscriptions/5e191a9e-8f85-429b-8ae6-8ec240cf21e3/resourceGroups/cloudzero-vpc-jd3/providers/Microsoft.Network/virtualNetworks/cloudzero-network-jd3/subnets/cloudzero-appgateway-jd3",
+        "name": "cloudzero-appgateway-jd3",
+        "resource_group_name": "cloudzero-vpc-jd3",
+        "service_endpoints": [],
+        "timeouts": null,
+        "virtual_network_name": "cloudzero-network-jd3"
+      },
+      "edge": {
+        "address_prefix": "10.1.1.0/24",
+        "address_prefixes": [
+          "10.1.1.0/24"
+        ],
+        "delegation": [],
+        "enforce_private_link_endpoint_network_policies": false,
+        "enforce_private_link_service_network_policies": false,
+        "id": "/subscriptions/5e191a9e-8f85-429b-8ae6-8ec240cf21e3/resourceGroups/cloudzero-vpc-jd3/providers/Microsoft.Network/virtualNetworks/cloudzero-network-jd3/subnets/cloudzero-edge-jd3",
+        "name": "cloudzero-edge-jd3",
+        "resource_group_name": "cloudzero-vpc-jd3",
+        "service_endpoints": [
+          "Microsoft.ContainerRegistry"
+        ],
+        "timeouts": null,
+        "virtual_network_name": "cloudzero-network-jd3"
+      },
+      "redis": {
+        "address_prefix": "10.1.3.0/24",
+        "address_prefixes": [
+          "10.1.3.0/24"
+        ],
+        "delegation": [],
+        "enforce_private_link_endpoint_network_policies": false,
+        "enforce_private_link_service_network_policies": false,
+        "id": "/subscriptions/5e191a9e-8f85-429b-8ae6-8ec240cf21e3/resourceGroups/cloudzero-vpc-jd3/providers/Microsoft.Network/virtualNetworks/cloudzero-network-jd3/subnets/cloudzero-redis-jd3",
+        "name": "cloudzero-redis-jd3",
+        "resource_group_name": "cloudzero-vpc-jd3",
+        "service_endpoints": [
+          "Microsoft.Storage",
+          "Microsoft.Sql"
+        ],
+        "timeouts": null,
+        "virtual_network_name": "cloudzero-network-jd3"
+      }
+    }
+  },
+  "subscription_id": {
+    "sensitive": false,
+    "type": "string",
+    "value": "5e191a9e-8f85-429b-8ae6-8ec240cf21e3"
+  },
+  "tenant_id": {
+    "sensitive": false,
+    "type": "string",
+    "value": "59b2f493-ee7d-45a5-990e-be2123c97648"
+  },
+  "vnet_id": {
+    "sensitive": false,
+    "type": "string",
+    "value": "/subscriptions/5e191a9e-8f85-429b-8ae6-8ec240cf21e3/resourceGroups/cloudzero-vpc-jd3/providers/Microsoft.Network/virtualNetworks/cloudzero-network-jd3"
+  }
+}

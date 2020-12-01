@@ -8,7 +8,7 @@ data "azurerm_client_config" "azure_client" {
 locals {
   private_aks_appliance_routes               = var.virtual_appliance_routes["aks-private"]
   deployment_subnet_id                       = data.terraform_remote_state.previous_stage.outputs.operations_deployment_subnet_id
-  operations_container_registry = data.terraform_remote_state.previous_stage.outputs.operations_container_registry
+  operations_container_registry = data.terraform_remote_state.previous_stage.outputs.operations_container_registry_login_server
   # operations_resource_group_name             = data.terraform_remote_state.previous_stage.outputs.operations_resource_group_name
   operator_ip                                = chomp(data.http.myip.body)
   log_analytics_workspace_id                 = data.terraform_remote_state.previous_stage.outputs.logging_workspace_id
@@ -465,7 +465,6 @@ resource "azurerm_resource_group" "jump" {
 # add mgmgt subnet
 
 resource "azurerm_subnet" "mgmt_subnet" {
-
   name                 = "mgr-subnet"
   resource_group_name  = module.vpc.resource_group_name
   virtual_network_name = module.vpc.vpc_name

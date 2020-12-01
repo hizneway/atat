@@ -1,0 +1,59 @@
+{
+  "appId": "f16c572a-6399-41ed-a748-b6b7f2250319",
+  "displayName": "azure-cli-2020-11-03-17-22-50",
+  "name": "http://azure-cli-2020-11-03-17-22-50",
+  "password": "PASSWORD",
+  "tenant": "59b2f493-ee7d-45a5-990e-be2123c97648",
+  "accountEnabled": "True",
+  "addIns": [],
+  "alternativeNames": [],
+  "appDisplayName": "azure-cli-2020-11-03-17-22-50",
+  "appOwnerTenantId": "59b2f493-ee7d-45a5-990e-be2123c97648",
+  "appRoleAssignmentRequired": false,
+  "appRoles": [],
+  "applicationTemplateId": null,
+  "deletionTimestamp": null,
+  "errorUrl": null,
+  "homepage": "https://azure-cli-2020-11-03-17-22-50",
+  "informationalUrls": {
+    "marketing": null,
+    "privacy": null,
+    "support": null,
+    "termsOfService": null
+  },
+  "keyCredentials": [],
+  "logoutUrl": null,
+  "notificationEmailAddresses": [],
+  "oauth2Permissions": [
+    {
+      "adminConsentDescription": "Allow the application to access azure-cli-2020-11-03-17-22-50 on behalf of the signed-in user.",
+      "adminConsentDisplayName": "Access azure-cli-2020-11-03-17-22-50",
+      "id": "9abfaac2-d6ee-4038-ace5-3b363afa71b1",
+      "isEnabled": true,
+      "type": "User",
+      "userConsentDescription": "Allow the application to access azure-cli-2020-11-03-17-22-50 on your behalf.",
+      "userConsentDisplayName": "Access azure-cli-2020-11-03-17-22-50",
+      "value": "user_impersonation"
+    }
+  ],
+  "objectId": "34652027-b570-4cef-aeb6-97ab8807e4a8",
+  "objectType": "ServicePrincipal",
+  "odata.metadata": "https://graph.windows.net/59b2f493-ee7d-45a5-990e-be2123c97648/$metadata#directoryObjects/@Element",
+  "odata.type": "Microsoft.DirectoryServices.ServicePrincipal",
+  "passwordCredentials": [],
+  "preferredSingleSignOnMode": null,
+  "preferredTokenSigningKeyEndDateTime": null,
+  "preferredTokenSigningKeyThumbprint": null,
+  "publisherName": "ATAT Development 2",
+  "replyUrls": [],
+  "samlMetadataUrl": null,
+  "samlSingleSignOnSettings": null,
+  "servicePrincipalNames": [
+    "http://azure-cli-2020-11-03-17-22-50",
+    "f16c572a-6399-41ed-a748-b6b7f2250319"
+  ],
+  "servicePrincipalType": "Application",
+  "signInAudience": "AzureADMyOrg",
+  "tags": [],
+  "tokenEncryptionKeyId": null
+}
