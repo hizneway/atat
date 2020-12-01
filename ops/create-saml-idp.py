@@ -52,6 +52,8 @@ def create_templated_app_registration(access_token: str):
     sp_object_id = response_json["servicePrincipal"]["objectId"]
     application_object_id = response_json["application"]["objectId"]
 
+    print(f"Created application ({application_object_id})")
+
     return (sp_object_id, application_object_id)
 
 
