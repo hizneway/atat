@@ -219,9 +219,11 @@ def build_nginx(ops_registry, atat_registry, nginx_image_tag):
         "--registry",
         ops_registry,
         "--build-arg",
-        f"IMAGE={ops_registry}/rhel-py:latest",
+        f"IMAGE={ops_registry}/rhel-py:latest", # TODO(jesse) Can be built off rhelubi
         "--image",
-        f"atat:{nginx_image_tag}",
+        f"nginx:{nginx_image_tag}",
+        "--file",
+        "nginx.Dockerfile",
         ".",
     ]
     # TODO: Make this async
