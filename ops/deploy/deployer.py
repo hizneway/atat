@@ -11,7 +11,7 @@ import click
 import sys
 
 from click.utils import echo
-from jinja2 import Environment
+from jinja2 import Environment, PackageLoader, select_autoescape
 
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
@@ -115,7 +115,7 @@ def deploy(
 
     # Create template output directory
     os.mkdir(".out")
-    env = Environment()
+    env = Environment(loader=PackageLoader('atat', 'templates'), autoescape=select_autoescape(['html', 'xml']))
 
     # Gather the template variables
     template_variables = {**tf_output_dict, **{
