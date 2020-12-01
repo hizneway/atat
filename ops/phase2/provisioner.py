@@ -231,9 +231,6 @@ def terraform_application(
         echo(err.stdout)
         echo("=" * 50)
         echo(err.stderr)
-        import pdb
-
-        pdb.set_trace()
         raise
 
 
@@ -299,56 +296,56 @@ def collect_terraform_outputs():
     return {k: v["value"] for k, v in output.items() if type(v["value"]) is str}
 
 
-def launch_in_bastion(
-    app_vnet,
-    bastion_resource_group,
-    commit_sha,
-    logging_workspace,
-    namespace,
-    ops_registry,
-    sp_client_id,
-    sp_client_secret,
-    tenant_id,
-    subscription_id,
-    bastion_subnet="bastion",
-):
-    cmd = [
-        "az",
-        "container",
-        "create",
-        "--resource-group",
-        bastion_resource_group,
-        "--name",
-        f"{namespace}-bastion-provisioner",
-        "--ip-address",
-        "Private",
-        "--vnet",
-        app_vnet,
-        "--subnet",
-        bastion_subnet,
-        "--image",
-        f"{ops_registry}/ops:{commit_sha}",
-        "--registry-password",
-        sp_client_secret,
-        "--registry-username",
-        sp_client_id,
-        "--memory",
-        "2",
-        "--cpu",
-        "1",
-        "--secure-environment-variables",
-        f"""\"SP_CLIENT_ID={sp_client_id}\" \\ \"SP_CLIENT_SECRET={sp_client_secret}\" \\ \"TENANT_ID={tenant_id}\" \\
-            \"SUBSCRIPTION_ID={subscription_id}\" \\
-            \"OPS_REGISTRY=$REGISTRY_NAME\" \\
-            \"NAMESPACE=$1\"""",
-        "--command-line",
-        "/bin/bash -c 'while true; do sleep 30; done'",
-        "--log-analytics-workspace",
-        logging_workspace,
-        "--restart-policy",
-        "Never",
-    ]
-    subprocess.run(cmd).check_returncode()
+# def launch_in_bastion(
+#     app_vnet,
+#     bastion_resource_group,
+#     commit_sha,
+#     logging_workspace,
+#     namespace,
+#     ops_registry,
+#     sp_client_id,
+#     sp_client_secret,
+#     tenant_id,
+#     subscription_id,
+#     bastion_subnet="bastion",
+# ):
+#     cmd = [
+#         "az",
+#         "container",
+#         "create",
+#         "--resource-group",
+#         bastion_resource_group,
+#         "--name",
+#         f"{namespace}-bastion-provisioner",
+#         "--ip-address",
+#         "Private",
+#         "--vnet",
+#         app_vnet,
+#         "--subnet",
+#         bastion_subnet,
+#         "--image",
+#         f"{ops_registry}/ops:{commit_sha}",
+#         "--registry-password",
+#         sp_client_secret,
+#         "--registry-username",
+#         sp_client_id,
+#         "--memory",
+#         "2",
+#         "--cpu",
+#         "1",
+#         "--secure-environment-variables",
+#         f"""\"SP_CLIENT_ID={sp_client_id}\" \\ \"SP_CLIENT_SECRET={sp_client_secret}\" \\ \"TENANT_ID={tenant_id}\" \\
+#             \"SUBSCRIPTION_ID={subscription_id}\" \\
+#             \"OPS_REGISTRY=$REGISTRY_NAME\" \\
+#             \"NAMESPACE=$1\"""",
+#         "--command-line",
+#         "/bin/bash -c 'while true; do sleep 30; done'",
+#         "--log-analytics-workspace",
+#         logging_workspace,
+#         "--restart-policy",
+#         "Never",
+#     ]
+#     subprocess.run(cmd).check_returncode()
 
 
 if __name__ == "__main__":
