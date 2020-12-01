@@ -76,6 +76,13 @@ def provision(
 ):
     login(sp_client_id, sp_client_secret, subscription_id, tenant_id)
 
+    download_file(
+        ops_storage_account,
+        ops_config_container,
+        "ccpo_users.yml",
+        "/tmp/ccpo_users.yml",
+    )
+
     terraform_application(
         backend_resource_group_name=ops_resource_group,
         backend_storage_account_name=ops_storage_account,

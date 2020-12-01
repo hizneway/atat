@@ -491,7 +491,7 @@ resource "azurerm_subnet" "mgmt_subnet" {
 }
 
 resource "azurerm_network_profile" "bastion" {
-  name                = "examplenetprofile"
+  name                = "bastion-net-profile"
   location            = azurerm_resource_group.jump.location
   resource_group_name = azurerm_resource_group.jump.name
 
