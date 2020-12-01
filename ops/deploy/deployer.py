@@ -93,6 +93,11 @@ def deploy(
     build_atat(ops_registry, atat_registry, git_sha, atat_image_tag)
     build_nginx(ops_registry, atat_registry, nginx_image_tag)
 
+    os.environ["ARM_CLIENT_ID"] = sp_client_id
+    os.environ["ARM_CLIENT_SECRET"] = sp_client_secret
+    os.environ["ARM_SUBSCRIPTION_ID"] = subscription_id
+    os.environ["ARM_TENANT_ID"] = tenant_id
+
     tf_output_dict = collect_terraform_outputs()
 
     # ansible(
