@@ -73,23 +73,24 @@ export COMMIT_SHA=$(git rev-parse HEAD)
 az acr build --registry ${REGISTRY_NAME} \
   --build-arg IMAGE=${REGISTRY_NAME}/rhel-py:latest \
   --image ops:${COMMIT_SHA} \
+  --image ops:latest \
   --file ops.Dockerfile \
   .
 
-#
+
 az container create \
   --resource-group ${TF_VAR_resource_group_name} \
   --name "$1-provisioner" \
   --ip-address Private \
   --vnet ${OPERATIONS_VIRTUAL_NETWORK} \
   --subnet deployment-subnet \
-  --image ${REGISTRY_NAME}/ops:${COMMIT_SHA} \
+  --image ${REGISTRY_NAME}/ops:latest \
   --registry-password ${TF_VAR_operator_client_secret} \
   --registry-username ${TF_VAR_operator_client_id} \
   --memory 4 \
   --cpu 4 \
-  --secure-environment-variables "OPS_RESOURCE_GROUP=$TF_VAR_resource_group_name" "OPS_STORAGE_ACCOUNT=$TF_VAR_storage_account_name" "SUBSCRIPTION_ID=$TF_VAR_operator_subscription_id" "SP_CLIENT_ID=$TF_VAR_operator_client_id" "SP_CLIENT_SECRET=$TF_VAR_operator_client_secret" "TENANT_ID=$TF_VAR_operator_tenant_id" "OPS_REGISTRY=$REGISTRY_NAME" "NAMESPACE=$1" \
-  --command-line "/bin/bash -c 'while true; do sleep 30; done'" \
+  --secure-environment-variables "OPS_RESOURCE_GROUP=$TF_VAR_resource_group_name" "OPS_STORAGE_ACCOUNT=$TF_VAR_storage_account_name" "SUBSCRIPTION_ID=$TF_VAR_operator_subscription_id" "SP_CLIENT_ID=$TF_VAR_operator_client_id" "SP_CLIENT_SECRET=$TF_VAR_operator_client_secret" "TENANT_ID=$TF_VAR_operator_tenant_id" "OPS_REGISTRY=$REGISTRY_NAME" "NAMESPACE=$1" "LOGGING_WORKSPACE=$LOGGING_WORKSPACE" \
+  --command-line "tail -f /dev/null" \
   --log-analytics-workspace $LOGGING_WORKSPACE \
   --restart-policy Never
 

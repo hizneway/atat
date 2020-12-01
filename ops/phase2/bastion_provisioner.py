@@ -63,21 +63,6 @@ logger = logging.getLogger(__name__)
     help="Name of the container (folder) in the ops_storage_account that holds the config that will be needed by the application - envvar: OPS_CONFIG_CONTAINER",
     envvar="OPS_CERTS_CONTAINER",
 )
-@click.option(
-    "--ops_registry",
-    help="Name of the registry that has the ops image - envvar: OPS_REGISTRY",
-    envvar="OPS_REGISTRY",
-)
-@click.option(
-    "--commit_sha",
-    help="Name of the registry that has the ops image - envvar: COMMIT_SHA",
-    envvar="COMMIT_SHA",
-)
-@click.option(
-    "--logging_workspace",
-    help="Name of the logging workspace - envvar: LOGGING_WORKSPACE",
-    envvar="LOGGING_WORKSPACE",
-)
 def provision(
     sp_client_id,
     sp_client_secret,
@@ -88,74 +73,29 @@ def provision(
     namespace,
     ops_tf_application_container,
     ops_config_container,
-    ops_registry,
-    commit_sha,
-    logging_workspace,
 ):
-    ssl_process = diffie_helman(encryption=4096)
-
-    login(sp_client_id, sp_client_secret, subscription_id, tenant_id)
-
-    download_file(
-        ops_storage_account, ops_config_container, "atatdev.pem", "/tmp/atatdev.pem"
-    )
-    download_file(
-        ops_storage_account,
-        ops_config_container,
-        "ccpo_users.yml",
-        "/tmp/ccpo_users.yml",
-    )
-
-    download_file(
-        ops_storage_account,
-        ops_config_container,
-        "app.tfvars.json",
-        "/tmp/app.tfvars.json",
-    )
-
-    pause_until_complete(ssl_process)
-
     terraform_application(
-        sp_client_id=sp_client_id,
-        sp_client_secret=sp_client_secret,
-        subscription_id=subscription_id,
-        tenant_id=tenant_id,
         backend_resource_group_name=ops_resource_group,
         backend_storage_account_name=ops_storage_account,
         backend_container_name=ops_tf_application_container,
-        namespace=namespace,
     )
 
     tf_output_dict = collect_terraform_outputs()
 
-    # launch_in_bastion(
-    #     app_vnet="UNKNOWN",
-    #     bastion_resource_group="UNKNOWN",
-    #     bastion_subnet="UNKNOWN",
-    #     commit_sha=commit_sha,
-    #     logging_workspace=logging_workspace,
-    #     namespace=namespace,
-    #     ops_registry=ops_registry,
-    #     sp_client_id=sp_client_id,
-    #     sp_client_secret=sp_client_secret,
-    #     subscription_id=subscription_id,
-    #     tenant_id=tenant_id,
-    # )
+    ansible(
+        tf_output_dict=tf_output_dict,
+        addl_args={
+            "sp_client_id": sp_client_id,
+            "sp_client_secret": sp_client_secret,
+            "subscription_id": subscription_id,
+            "tenant_id": tenant_id,
+            "backend_resource_group_name": ops_resource_group,
+            "backend_storage_account_name": ops_storage_account,
+            "ops_config_container": ops_config_container,
+        },
+    )
 
-    # ansible(
-    #     tf_output_dict=tf_output_dict,
-    #     addl_args={
-    #         "sp_client_id": sp_client_id,
-    #         "sp_client_secret": sp_client_secret,
-    #         "subscription_id": subscription_id,
-    #         "tenant_id": tenant_id,
-    #         "backend_resource_group_name": ops_resource_group,
-    #         "backend_storage_account_name": ops_storage_account,
-    #         "ops_config_container": ops_config_container,
-    #     },
-    # )
-
-    # # deploy
+    # deploy
 
 
 def login(sp_client_id, sp_client_secret, subscription_id, tenant_id):
@@ -168,17 +108,26 @@ def login(sp_client_id, sp_client_secret, subscription_id, tenant_id):
     ).check_returncode()
 
 
+def collect_terraform_outputs():
+    """Collects terraform output into name/value dict to pass as json to ansible"""
+    logger.info("collect_terraform_outputs")
+
+    cwd = path.join("../", "../", "terraform", "providers", "application_env")
+
+    result = subprocess.run(
+        "terraform output -json".split(), cwd=cwd, capture_output=True
+    )
+    result.check_returncode()
+    output = json.loads(result.stdout.decode("utf-8"))
+
+    return {k: v["value"] for k, v in output.items() if type(v["value"]) is str}
+
+
 def terraform_application(
-    sp_client_id,
-    sp_client_secret,
-    subscription_id,
-    tenant_id,
     backend_resource_group_name,
     backend_storage_account_name,
     backend_container_name,
-    namespace,
     backend_key="terraform.tfstate",
-    bootrap_container_name="tf-bootstrap",
 ):
 
     logger.info("terraform_application")
@@ -197,33 +146,6 @@ def terraform_application(
         init_cmd = ["terraform", "init", *backend_configs, "."]
         print(init_cmd)
         subprocess.run(init_cmd, **default_args).check_returncode()
-
-        tfvars = [
-            f"-var=operator_subscription_id={subscription_id}",
-            f"-var=operator_client_id={sp_client_id}",
-            f"-var=operator_client_secret={sp_client_secret}",
-            f"-var=operator_tenant_id={tenant_id}",
-            f"-var=ops_resource_group={backend_resource_group_name}",
-            f"-var=ops_storage_account={backend_storage_account_name}",
-            f"-var=tf_bootstrap_container={bootrap_container_name}",
-            f"-var=deployment_namespace={namespace}",
-        ]
-        cmd = [
-            "terraform",
-            "plan",
-            "-input=false",
-            "-out=plan.tfplan",
-            "-var-file=/tmp/app.tfvars.json",
-            *tfvars,
-            ".",
-        ]
-        print(cmd)
-        subprocess.run(cmd, **default_args).check_returncode()
-        print("terraform apply plan.tfplan")
-        subprocess.run(
-            "terraform apply plan.tfplan".split(), **default_args
-        ).check_returncode()
-
     except CalledProcessError as err:
         echo("=" * 50)
         echo(f"Failed running {err.cmd}")
@@ -284,71 +206,20 @@ def pause_until_complete(open_process: Optional[subprocess.Popen]):
             return return_code == 0
 
 
-def collect_terraform_outputs():
-    """Collects terraform output into name/value dict to pass as json to ansible"""
-    logger.info("collect_terraform_outputs")
-
-    cwd = path.join("../", "../", "terraform", "providers", "application_env")
-
-    result = subprocess.run(
-        "terraform output -json".split(), cwd=cwd, capture_output=True
-    )
-    result.check_returncode()
-    output = json.loads(result.stdout.decode("utf-8"))
-
-    return {k: v["value"] for k, v in output.items() if type(v["value"]) is str}
-
-
-def launch_in_bastion(
-    app_vnet,
-    bastion_resource_group,
-    commit_sha,
-    logging_workspace,
-    namespace,
-    ops_registry,
-    sp_client_id,
-    sp_client_secret,
-    tenant_id,
-    subscription_id,
-    bastion_subnet="bastion",
-):
+def ansible(tf_output_dict, addl_args):
+    extra_vars = {**tf_output_dict, **addl_args}
+    extra_vars["postgres_root_cert"] = "../deploy/azure/pgsslrootcert.yml"
+    extra_vars["src_dir"] = os.path.abspath(os.path.join(os.getcwd(), "../", "../"))
+    cwd = path.join("../", "../", "ansible")
+    print(extra_vars)
     cmd = [
-        "az",
-        "container",
-        "create",
-        "--resource-group",
-        bastion_resource_group,
-        "--name",
-        f"{namespace}-bastion-provisioner",
-        "--ip-address",
-        "Private",
-        "--vnet",
-        app_vnet,
-        "--subnet",
-        bastion_subnet,
-        "--image",
-        f"{ops_registry}/ops:{commit_sha}",
-        "--registry-password",
-        sp_client_secret,
-        "--registry-username",
-        sp_client_id,
-        "--memory",
-        "2",
-        "--cpu",
-        "1",
-        "--secure-environment-variables",
-        f"""\"SP_CLIENT_ID={sp_client_id}\" \\ \"SP_CLIENT_SECRET={sp_client_secret}\" \\ \"TENANT_ID={tenant_id}\" \\
-            \"SUBSCRIPTION_ID={subscription_id}\" \\
-            \"OPS_REGISTRY=$REGISTRY_NAME\" \\
-            \"NAMESPACE=$1\"""",
-        "--command-line",
-        "/bin/bash -c 'while true; do sleep 30; done'",
-        "--log-analytics-workspace",
-        logging_workspace,
-        "--restart-policy",
-        "Never",
+        "ansible-playbook",
+        "provision.yml",
+        "-vvv",
+        "--extra-vars",
+        json.dumps(extra_vars),
     ]
-    subprocess.run(cmd).check_returncode()
+    subprocess.run(cmd, cwd=cwd).check_returncode()
 
 
 if __name__ == "__main__":

@@ -8,7 +8,7 @@ data "azurerm_client_config" "azure_client" {
 locals {
   private_aks_appliance_routes               = var.virtual_appliance_routes["aks-private"]
   deployment_subnet_id                       = data.terraform_remote_state.previous_stage.outputs.operations_deployment_subnet_id
-  # operations_container_registry_login_server = data.terraform_remote_state.previous_stage.outputs.operations_container_registry_login_server
+  operations_container_registry = data.terraform_remote_state.previous_stage.outputs.operations_container_registry
   # operations_resource_group_name             = data.terraform_remote_state.previous_stage.outputs.operations_resource_group_name
   operator_ip                                = chomp(data.http.myip.body)
   log_analytics_workspace_id                 = data.terraform_remote_state.previous_stage.outputs.logging_workspace_id
@@ -54,7 +54,7 @@ module "ops_keyvault_app" {
 #   registry_password          = var.OPS_SEC
 #   registry_username          = var.OPS_CID
 #   depends_on                 = [module.vpc]
-#   container_registry         = local.operations_container_registry_login_server
+#   container_registry         = local.operations_container_registry
 # }
 
 # Task order bucket is required to be accessible publicly by the users.
@@ -453,4 +453,93 @@ module "vpc" {
   custom_routes                  = var.routes
   virtual_appliance_routes       = "${var.virtual_appliance_routes["aks-private"]},${module.private-aks-firewall.ip_config[0].private_ip_address}"
   virtual_appliance_route_tables = var.virtual_appliance_route_tables
+}
+
+
+resource "azurerm_resource_group" "jump" {
+  name     = "${var.name}-bastion-${var.deployment_namespace}"
+  location = var.deployment_location
+}
+
+
+# add mgmgt subnet
+
+resource "azurerm_subnet" "mgmt_subnet" {
+
+  name                 = "mgr-subnet"
+  resource_group_name  = module.vpc.resource_group_name
+  virtual_network_name = module.vpc.vpc_name
+  address_prefixes     = ["10.1.250.0/24"]
+
+  enforce_private_link_endpoint_network_policies = true
+
+  service_endpoints = ["Microsoft.KeyVault", "Microsoft.ContainerRegistry", "Microsoft.Sql"]
+
+  delegation {
+    name = "delegation"
+
+    service_delegation {
+      name    = "Microsoft.ContainerInstance/containerGroups"
+      actions = ["Microsoft.Network/virtualNetworks/subnets/action"]
+    }
+  }
+
+}
+
+
+resource "azurerm_network_profile" "bastion" {
+  name                = "examplenetprofile"
+  location            = azurerm_resource_group.jump.location
+  resource_group_name = azurerm_resource_group.jump.name
+
+  container_network_interface {
+    name = "bastionnic"
+
+    ip_configuration {
+      name      = "bastionipconfig"
+      subnet_id = azurerm_subnet.mgmt_subnet.id
+    }
+  }
+}
+
+# Bastion
+resource "azurerm_container_group" "bastion" {
+  name                = "bastion"
+  location            = azurerm_resource_group.jump.location
+  resource_group_name = azurerm_resource_group.jump.name
+  ip_address_type     = "private"
+  network_profile_id  = azurerm_network_profile.bastion.id
+  os_type             = "Linux"
+
+  container {
+    name     = "bastion"
+    image    = "${local.operations_container_registry}/ops:latest"
+    cpu      = "1"
+    memory   = "2"
+    commands = ["tail", "-f", "/dev/null"]
+
+    ports {
+      port     = 443
+      protocol = "TCP"
+    }
+
+    secure_environment_variables = {
+      "SP_CLIENT_ID" = var.operator_client_id
+      "SP_CLIENT_SECRET" = var.operator_client_secret
+      "TENANT_ID" = var.operator_tenant_id
+      "SUBSCRIPTION_ID" = var.operator_subscription_id
+      "OPS_REGISTRY" = local.operations_container_registry
+      "NAMESPACE" = var.deployment_namespace
+    }
+  }
+
+  image_registry_credential {
+    username = var.operator_client_id
+    password = var.operator_client_secret
+    server   = local.operations_container_registry
+  }
+
+  tags = {
+    environment = "testing"
+  }
 }
