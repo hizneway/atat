@@ -1,14 +1,18 @@
 import json
+import logging
 import os
 import subprocess
-import logging
+
 from os import path
 from subprocess import CalledProcessError, CompletedProcess
 from typing import Optional, Dict, NoReturn
 
 import click
-from click.utils import echo
 import sys
+
+from click.utils import echo
+from jinja2 import Environment
+
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -91,17 +95,67 @@ def deploy(
 
     tf_output_dict = collect_terraform_outputs()
 
-    ansible(
-        tf_output_dict=tf_output_dict,
-        addl_args={
-            "sp_client_id": sp_client_id,
-            "sp_client_secret": sp_client_secret,
-            "subscription_id": subscription_id,
-            "tenant_id": tenant_id,
-            "atat_image_tag": atat_image_tag,
-            "nginx_image_tag": nginx_image_tag
-        },
-    )
+    # ansible(
+    #     tf_output_dict=tf_output_dict,
+    #     addl_args={
+    #         "sp_client_id": sp_client_id,
+    #         "sp_client_secret": sp_client_secret,
+    #         "subscription_id": subscription_id,
+    #         "tenant_id": tenant_id,
+    #         "atat_image_tag": atat_image_tag,
+    #         "nginx_image_tag": nginx_image_tag
+    #     },
+    # )
+
+
+    # Create template output directory
+    os.mkdir(".out")
+    env = Environment()
+
+    # Gather the template variables
+    template_variables = {**tf_output_dict, **{
+        "sp_client_id": sp_client_id,
+        "sp_client_secret": sp_client_secret,
+        "subscription_id": subscription_id,
+        "tenant_id": tenant_id,
+        "atat_image_tag": atat_image_tag,
+        "nginx_image_tag": nginx_image_tag
+    }}
+
+    # Generate the output files
+    for path in os.walk('templates'):
+        template = env.get_template(path)
+        with open(f'.out/{path}') as output_file:
+            output_file.write(template.render(**template_variables)))
+    
+    subprocess.run(["kubectl", "apply", "-f", '--kustomize=".out"'])
+    subprocess.run(["kubectl", "-n", "-f", "get", "services"])
+
+# - name: Interpolate the templates
+#   template:
+#     src: "{{ item }}"
+#     dest: "{{ playbook_dir }}/.out/{{ item | basename }}"
+#   with_fileglob: "{{ playbook_dir + '/roles/k8s/tasks/templates/*' }}"
+
+# - name: Apply the rest of the Kubernetes config for the site
+#   shell: /src/script/k8s_config {{ playbook_dir + '/.out' }} | kubectl apply -f -
+#   environment:
+#     CONTAINER_IMAGE: "{{ container_registry_name }}.azurecr.io/atat:{{ atat_image_tag }}"
+#     NGINX_CONTAINER_IMAGE: "{{ container_registry_name }}.azurecr.io/nginx:{{ nginx_image_tag }}"
+#     MAIN_DOMAIN: "{{ environment }}.atat.dev"
+#     AUTH_DOMAIN: "auth-{{ environment }}.atat.dev"
+#     VMSS_CLIENT_ID: "{{ aks_keyvault_reader_client_id }}"
+#     KV_NAME: "{{ application_keyvault_name }}"
+#     TENANT_ID: "{{ tenant_id }}"
+#     DEPLOY_TAG: "tf-{{ deploy_tag | regex_replace('\\.','-') }}"
+
+# - name: Obtain IP addresses
+#   shell: kubectl -n {{ environment }} get services
+#   register: ips
+
+# - name: Show IP addresses
+#   debug:
+#     msg: "{{ ips }}"
 
 
 def setup(sp_client_id, sp_client_secret, subscription_id, tenant_id, namespace, config_azcli):
@@ -174,20 +228,20 @@ def build_nginx(ops_registry, atat_registry, nginx_image_tag):
     subprocess.run(cmd).check_returncode()
 
 
-def ansible(tf_output_dict, addl_args):
-    extra_vars = {**tf_output_dict, **addl_args}
-    extra_vars["postgres_root_cert"] = "../deploy/azure/pgsslrootcert.yml"
-    extra_vars["src_dir"] = os.path.abspath(os.path.join(os.getcwd(), "../", "../"))
-    cwd = path.join("../", "../", "ansible")
-    print(extra_vars)
-    cmd = [
-        "ansible-playbook",
-        "k8s.yml",
-        "-vvv",
-        "--extra-vars",
-        json.dumps(extra_vars),
-    ]
-    subprocess.run(cmd, cwd=cwd).check_returncode()
+# def ansible(tf_output_dict, addl_args):
+#     extra_vars = {**tf_output_dict, **addl_args}
+#     extra_vars["postgres_root_cert"] = "../deploy/azure/pgsslrootcert.yml"
+#     extra_vars["src_dir"] = os.path.abspath(os.path.join(os.getcwd(), "../", "../"))
+#     cwd = path.join("../", "../", "ansible")
+#     print(extra_vars)
+#     cmd = [
+#         "ansible-playbook",
+#         "k8s.yml",
+#         "-vvv",
+#         "--extra-vars",
+#         json.dumps(extra_vars),
+#     ]
+#     subprocess.run(cmd, cwd=cwd).check_returncode()
 
 
 if __name__ == "__main__":
