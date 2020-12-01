@@ -3,7 +3,7 @@ import os
 import subprocess
 import logging
 from os import path
-from subprocess import CalledProcessError, CompletedProcess
+from subprocess import CalledProcessError
 from typing import Optional, Dict, NoReturn
 
 import click
@@ -97,13 +97,10 @@ def provision(
     login(sp_client_id, sp_client_secret, subscription_id, tenant_id)
 
     download_file(
-        ops_storage_account, ops_config_container, "atatdev.pem", "/tmp/atatdev.pem"
-    )
-    download_file(
-        ops_storage_account,
-        ops_config_container,
-        "ccpo_users.yml",
-        "/tmp/ccpo_users.yml",
+        ops_storage_account, 
+        ops_config_container, 
+        "atatdev.pem", 
+        "/tmp/atatdev.pem"
     )
 
     download_file(
@@ -125,37 +122,6 @@ def provision(
         backend_container_name=ops_tf_application_container,
         namespace=namespace,
     )
-
-    tf_output_dict = collect_terraform_outputs()
-
-    # launch_in_bastion(
-    #     app_vnet="UNKNOWN",
-    #     bastion_resource_group="UNKNOWN",
-    #     bastion_subnet="UNKNOWN",
-    #     commit_sha=commit_sha,
-    #     logging_workspace=logging_workspace,
-    #     namespace=namespace,
-    #     ops_registry=ops_registry,
-    #     sp_client_id=sp_client_id,
-    #     sp_client_secret=sp_client_secret,
-    #     subscription_id=subscription_id,
-    #     tenant_id=tenant_id,
-    # )
-
-    # ansible(
-    #     tf_output_dict=tf_output_dict,
-    #     addl_args={
-    #         "sp_client_id": sp_client_id,
-    #         "sp_client_secret": sp_client_secret,
-    #         "subscription_id": subscription_id,
-    #         "tenant_id": tenant_id,
-    #         "backend_resource_group_name": ops_resource_group,
-    #         "backend_storage_account_name": ops_storage_account,
-    #         "ops_config_container": ops_config_container,
-    #     },
-    # )
-
-    # # deploy
 
 
 def login(sp_client_id, sp_client_secret, subscription_id, tenant_id):
@@ -262,9 +228,18 @@ def download_file(
         text=True,
         capture_output=True,
     )
+    
     if result.returncode != 0:
         echo(result.stdout)
         echo(result.stderr)
+        echo("Could not find the target file in the storage account.")
+        echo(f"You need to upload {file_name} manually to the storage account.")
+        raise FileNotFoundError(file_name)
+    
+    if not os.stat(dest_path).st_size:
+        echo("Could not find the target file in the storage account.")
+        echo(f"You need to upload {file_name} manually to the storage account.")
+        raise FileNotFoundError(dest_path)
 
     return result.returncode
 
@@ -279,73 +254,6 @@ def pause_until_complete(open_process: Optional[subprocess.Popen]):
         if return_code is not None:
             click.echo(f"Return Code {return_code}")
             return return_code == 0
-
-
-def collect_terraform_outputs():
-    """Collects terraform output into name/value dict to pass as json to ansible"""
-    logger.info("collect_terraform_outputs")
-
-    cwd = path.join("../", "../", "terraform", "providers", "application_env")
-
-    result = subprocess.run(
-        "terraform output -json".split(), cwd=cwd, capture_output=True
-    )
-    result.check_returncode()
-    output = json.loads(result.stdout.decode("utf-8"))
-
-    return {k: v["value"] for k, v in output.items() if type(v["value"]) is str}
-
-
-# def launch_in_bastion(
-#     app_vnet,
-#     bastion_resource_group,
-#     commit_sha,
-#     logging_workspace,
-#     namespace,
-#     ops_registry,
-#     sp_client_id,
-#     sp_client_secret,
-#     tenant_id,
-#     subscription_id,
-#     bastion_subnet="bastion",
-# ):
-#     cmd = [
-#         "az",
-#         "container",
-#         "create",
-#         "--resource-group",
-#         bastion_resource_group,
-#         "--name",
-#         f"{namespace}-bastion-provisioner",
-#         "--ip-address",
-#         "Private",
-#         "--vnet",
-#         app_vnet,
-#         "--subnet",
-#         bastion_subnet,
-#         "--image",
-#         f"{ops_registry}/ops:{commit_sha}",
-#         "--registry-password",
-#         sp_client_secret,
-#         "--registry-username",
-#         sp_client_id,
-#         "--memory",
-#         "2",
-#         "--cpu",
-#         "1",
-#         "--secure-environment-variables",
-#         f"""\"SP_CLIENT_ID={sp_client_id}\" \\ \"SP_CLIENT_SECRET={sp_client_secret}\" \\ \"TENANT_ID={tenant_id}\" \\
-#             \"SUBSCRIPTION_ID={subscription_id}\" \\
-#             \"OPS_REGISTRY=$REGISTRY_NAME\" \\
-#             \"NAMESPACE=$1\"""",
-#         "--command-line",
-#         "/bin/bash -c 'while true; do sleep 30; done'",
-#         "--log-analytics-workspace",
-#         logging_workspace,
-#         "--restart-policy",
-#         "Never",
-#     ]
-#     subprocess.run(cmd).check_returncode()
 
 
 if __name__ == "__main__":

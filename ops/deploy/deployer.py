@@ -126,7 +126,7 @@ def deploy(
     for path in os.walk('templates'):
         template = env.get_template(path)
         with open(f'.out/{path}') as output_file:
-            output_file.write(template.render(**template_variables)))
+            output_file.write(template.render(**template_variables))
     
     subprocess.run(["kubectl", "apply", "-f", '--kustomize=".out"'])
     subprocess.run(["kubectl", "-n", "-f", "get", "services"])
@@ -204,8 +204,8 @@ def build_atat(ops_registry, atat_registry, git_sha, atat_image_tag):
         "--image",
         f"atat:{atat_image_tag}",
         "--file",
-        "Dockerfile",
-        ".",
+        "../../Dockerfile",
+        "../..",
     ]
     # TODO: Make this async
     subprocess.run(cmd).check_returncode()
@@ -223,8 +223,8 @@ def build_nginx(ops_registry, atat_registry, nginx_image_tag):
         "--image",
         f"nginx:{nginx_image_tag}",
         "--file",
-        "nginx.Dockerfile",
-        ".",
+        "../../nginx.Dockerfile",
+        "../..",
     ]
     # TODO: Make this async
     subprocess.run(cmd).check_returncode()
