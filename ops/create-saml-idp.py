@@ -3,6 +3,7 @@
 import base64
 import click
 import datetime
+from os import path
 import requests
 import time
 import uuid
@@ -263,6 +264,13 @@ def assign_user_to_saml_idp(user_object_id: str, sp_object_id: str, access_token
 @click.argument("password")
 @click.argument("hostname")
 def main(tenant_id: str, application_id: str, password: str, hostname: str) -> NoReturn:
+    if not path.exists("user_service_principals.txt.txt"):
+        print("Could not locate user_service_principals.txt")
+        print(
+            "This file must exist and contain one user object id per line, each to be registered with the identity provider."
+        )
+        exit(1)
+
     access_token = authenticate(tenant_id, application_id, password)
 
     # Initialize templated app and service principle
