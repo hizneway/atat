@@ -39,8 +39,14 @@ resource "azuread_application_password" "app_password" {
   end_date              = "2099-01-01T01:02:03Z"
 }
 
-resource "azurerm_role_assignment" "main" {
+resource "azurerm_role_assignment" "contributor" {
   scope                = data.azurerm_subscription.main.id
   role_definition_name = "Contributor"
+  principal_id         = azuread_service_principal.principal.id
+}
+
+resource "azurerm_role_assignment" "network_contrib" {
+  scope                = data.azurerm_subscription.main.id
+  role_definition_name = "Network Contributor"
   principal_id         = azuread_service_principal.principal.id
 }
