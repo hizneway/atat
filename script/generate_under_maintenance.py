@@ -31,12 +31,6 @@ mime_types = {
 css_asset_whitelist = [
     "sourcesanspro-bold-webfont.*woff2",
     "sourcesanspro-regular-webfont.*woff2",
-    "sourcesanspro-light-webfont.*woff2",
-    "sourcesanspro-italic-webfont.*woff2",
-    "merriweather-light-webfont.*eot",
-    "merriweather-italic-webfont.*eot",
-    "merriweather-bold-webfont.*eot",
-    "merriweather-regular-webfont.*eot",
 ]
 
 
