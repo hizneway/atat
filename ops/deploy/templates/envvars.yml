@@ -17,7 +17,7 @@ data:
   PGSSLMODE: verify-full
   REDIS_HOST: {{ redis_hostname }}:{{ redis_ssl_port }}
   REDIS_SSLMODE: required
-  SERVER_NAME: {{ environment }}.atat.dev
+  SERVER_NAME: {{ environment }}.atat.dev"
 ---
 apiVersion: v1
 kind: ConfigMap

@@ -11,7 +11,8 @@ import click
 import sys
 
 from click.utils import echo
-from jinja2 import Environment, PackageLoader, select_autoescape
+from jinja2 import Environment, FileSystemLoader, select_autoescape
+from pprint import pprint
 
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
@@ -90,8 +91,8 @@ def deploy(
     git_sha,
 ):
     setup(sp_client_id, sp_client_secret, subscription_id, tenant_id, namespace, config_azcli)
-    build_atat(ops_registry, atat_registry, git_sha, atat_image_tag)
-    build_nginx(ops_registry, atat_registry, nginx_image_tag)
+    # build_atat(ops_registry, atat_registry, git_sha, atat_image_tag)
+    # build_nginx(ops_registry, atat_registry, nginx_image_tag)
 
     os.environ["ARM_CLIENT_ID"] = sp_client_id
     os.environ["ARM_CLIENT_SECRET"] = sp_client_secret
@@ -114,8 +115,9 @@ def deploy(
 
 
     # Create template output directory
-    os.mkdir(".out")
-    env = Environment(loader=PackageLoader('atat', 'templates'), autoescape=select_autoescape(['html', 'xml']))
+    if not os.path.exists('.out'):
+        os.mkdir(".out")
+    env = Environment(loader=FileSystemLoader('templates'), autoescape=select_autoescape(['html', 'xml']))
 
     # Gather the template variables
     template_variables = {**tf_output_dict, **{
@@ -127,14 +129,16 @@ def deploy(
         "nginx_image_tag": nginx_image_tag
     }}
 
+    pprint(template_variables)
+
     # Generate the output files
     for path in os.listdir('templates'):
         template = env.get_template(path)
-        with open(f'.out/{path}') as output_file:
+        with open(f'.out/{path}', "w") as output_file:
             output_file.write(template.render(**template_variables))
     
-    subprocess.run(["kubectl", "apply", "-f", '--kustomize=".out"'])
-    subprocess.run(["kubectl", "-n", "-f", "get", "services"])
+    subprocess.run(["kubectl", "apply", '--kustomize=.out/'])
+    subprocess.run(["kubectl", "-n", namespace, "get", "services"])
 
 # - name: Interpolate the templates
 #   template:
@@ -261,7 +265,7 @@ def collect_terraform_outputs():
     result.check_returncode()
     output = json.loads(result.stdout.decode("utf-8"))
 
-    return {k: v["value"] for k, v in output.items() if type(v["value"]) is str}
+    return {k: v["value"] for k, v in output.items() if type(v["value"]) in [str, int]}
 
 
 if __name__ == "__main__":

@@ -1,6 +1,6 @@
 namespace: "{{ environment }}"
 bases:
-  - ../../azure/
+  - ../../../deploy/azure/
 resources:
   - namespace.yml
 patchesStrategicMerge:
