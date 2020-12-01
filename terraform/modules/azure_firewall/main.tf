@@ -19,7 +19,7 @@ resource "azurerm_route" "firewall_routes_internet" {
   for_each               = var.virtual_appliance_routes
   name                   = "${var.name}-${element(split(",", each.value), 0)}-${var.environment}-public"
   resource_group_name    = var.resource_group_name
-  route_table_name       = azurerm_route_table.firewall_route_table["${var.name}-${each.key}-${var.environment}-fw"].name
+  route_table_name       = azurerm_route_table.firewall_route_table[each.key].name
   address_prefix         = "${var.az_fw_ip}/32"
   next_hop_type          = "Internet"
 
@@ -30,7 +30,7 @@ resource "azurerm_route" "fw_route_egress" {
   for_each               = var.virtual_appliance_route_tables
   name                   = "${var.name}-default-${var.environment}"
   resource_group_name    = var.resource_group_name
-  route_table_name       = azurerm_route_table.firewall_route_table["${var.name}-${each.key}-${var.environment}-fw"].name
+  route_table_name       = azurerm_route_table.firewall_route_table[each.key].name
   address_prefix         = "0.0.0.0/0"
   next_hop_type          = each.value
   next_hop_in_ip_address = azurerm_firewall.fw.ip_configuration[0].private_ip_address
@@ -40,7 +40,7 @@ resource "azurerm_route" "fw_route_egress" {
 
 resource "azurerm_subnet_route_table_association" "firewall_route_table" {
   for_each       = var.virtual_appliance_route_tables
-  subnet_id      = var.subnets["${var.name}-aks-private-${var.environment}"].id
+  subnet_id      = var.subnets[each.key].id
   route_table_id = azurerm_route_table.firewall_route_table[each.key].id
 }
 
@@ -59,8 +59,21 @@ resource "azurerm_firewall" "fw" {
     public_ip_address_id = var.az_fw_ip_id
   }
 
+  firewall_policy_id = azurerm_firewall_policy.enable_dns_proxy.id
 
 }
+
+
+resource "azurerm_firewall_policy" "enable_dns_proxy" {
+  name                = "az-firewall-${var.environment}-policy"
+  resource_group_name = var.resource_group_name
+  location            = var.location
+
+  dns {
+   proxy_enabled= true
+  }
+}
+
 
 resource "azurerm_firewall_application_rule_collection" "fw_rule_collection" {
   name                = "aksbasics"
@@ -105,24 +118,7 @@ resource "azurerm_firewall_application_rule_collection" "fw_rule_collection" {
 
 
 
-  rule {
-    name             = "allowk8s"
-    source_addresses = ["*"]
 
-    fqdn_tags= ["AzureKubernetesService"]
-
-
-    protocol {
-      port = "80"
-      type = "Http"
-    }
-
-    protocol {
-      port = "443"
-      type = "Https"
-    }
-
-  }
 
 
 
@@ -134,8 +130,32 @@ resource "azurerm_firewall_application_rule_collection" "fw_rule_collection" {
 }
 
 
+resource "azurerm_firewall_application_rule_collection" "fw_rule_collection_fqdns" {
+  name                = "aksfqdns"
+  azure_firewall_name = "az-firewall-${var.environment}"
+  resource_group_name = var.resource_group_name
+  priority            = 101
+  action              = "Allow"
+
+
+  rule {
+    name             = "allowk8s"
+    source_addresses = ["*"]
+
+    fqdn_tags= ["AzureKubernetesService"]
+
+
+  
+
+  }
+
+
+  }
+
+
 resource "azurerm_firewall_network_rule_collection" "api" {
 
+ azure_firewall_name = "az-firewall-${var.environment}"
  name = "${var.name}-network-rules-${var.environment}"
  resource_group_name = var.resource_group_name
  priority = 100
@@ -143,7 +163,7 @@ resource "azurerm_firewall_network_rule_collection" "api" {
 rule {
     name = "apiudp"
     source_addresses = ["*"]
-    destination_addresses = "AzureCloud.${var.location}"
+    destination_addresses = ["AzureCloud.${var.location}"]
 
     destination_ports = [1194]
     protocols = ["UDP"]
@@ -153,7 +173,7 @@ rule {
 rule {
     name = "apitcp"
     source_addresses = ["*"]
-    destination_addresses = "AzureCloud.${var.location}"
+    destination_addresses = ["AzureCloud.${var.location}"]
 
     destination_ports = [9000]
     protocols = ["TCP"]
@@ -161,17 +181,7 @@ rule {
 
 }
 
-rule {
 
-name = "time"
-source_addresses = ["*"]
-destination_fqdns = "ntp.ubuntu.com"
-
-destination_ports = [123]
-protocols = ["UDP"]
-
-
-}
 
 
   depends_on = [azurerm_firewall.fw]
