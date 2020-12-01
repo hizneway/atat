@@ -267,15 +267,12 @@ resource "azurerm_postgresql_server" "sql" {
   name                = "${var.deployment_namespace}-sql"
   location            = azurerm_resource_group.sql.location
   resource_group_name = azurerm_resource_group.sql.name
-
   sku_name = "GP_Gen5_2"
-
 
   storage_mb                   = "5120"
   backup_retention_days        = "7"
   geo_redundant_backup_enabled = false
   auto_grow_enabled            = true
-
 
   administrator_login          = "clouzero_pg_admin"
   administrator_login_password = random_password.pg_root_password.result
@@ -284,19 +281,27 @@ resource "azurerm_postgresql_server" "sql" {
 
 }
 
-resource "azurerm_postgresql_virtual_network_rule" "sql" {
-  name                                 = "${var.deployment_namespace}-rule"
+resource "azurerm_postgresql_virtual_network_rule" "allow_aks_subnet" {
+  name                                 = "allow-aks-subnet-rule"
   resource_group_name                  = azurerm_resource_group.sql.name
   server_name                          = azurerm_postgresql_server.sql.name
   subnet_id                            = module.vpc.subnet_list["aks"].id
   ignore_missing_vnet_service_endpoint = true
 }
 
-resource "azurerm_postgresql_virtual_network_rule" "ops_deployment_subnet" {
-  name                                 = "deployment-subnet-${var.deployment_namespace}"
+resource "azurerm_postgresql_virtual_network_rule" "allow_deployment_subnet" {
+  name                                 = "allow-deployment-subnet-rule"
   resource_group_name                  = azurerm_resource_group.sql.name
   server_name                          = azurerm_postgresql_server.sql.name
   subnet_id                            = local.deployment_subnet_id
+  ignore_missing_vnet_service_endpoint = true
+}
+
+resource "azurerm_postgresql_virtual_network_rule" "allow_management_subnet" {
+  name                                 = "allow-management-subnet-rule"
+  resource_group_name                  = azurerm_resource_group.sql.name
+  server_name                          = azurerm_postgresql_server.sql.name
+  subnet_id                            = azurerm_subnet.mgmt_subnet
   ignore_missing_vnet_service_endpoint = true
 }
 
@@ -466,7 +471,7 @@ resource "azurerm_resource_group" "jump" {
 # add mgmgt subnet
 
 resource "azurerm_subnet" "mgmt_subnet" {
-  name                 = "mgr-subnet"
+  name                 = "mgmt-subnet"
   resource_group_name  = module.vpc.resource_group_name
   virtual_network_name = module.vpc.vpc_name
   address_prefixes     = ["10.1.250.0/24"]
@@ -483,9 +488,7 @@ resource "azurerm_subnet" "mgmt_subnet" {
       actions = ["Microsoft.Network/virtualNetworks/subnets/action"]
     }
   }
-
 }
-
 
 resource "azurerm_network_profile" "bastion" {
   name                = "examplenetprofile"
