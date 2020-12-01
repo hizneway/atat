@@ -2,17 +2,55 @@
 
 {% block title %}Under Maintenance{% endblock %}
 {% block header %}{% endblock %}
+
+{% block style %}
+<style>
+  .um-card{
+    margin-top:33% !important;
+    text-align: center;
+    line-height: 25px;
+    width: 617px;
+    background: rgb(255, 255, 255);
+    box-shadow: 0px 1px 5px 0px rgba(208, 219, 231, 0.5);
+    padding:40px;
+  }
+
+  .um-card h1{
+    font-size: 24px;
+    line-height: 28px;
+    padding-bottom: 11px;
+  }
+
+  .um-card :last-child{
+    padding-top: 34px;
+  }
+
+  .um-card .icon--tools {
+    width: 56px;
+    height: 56px;
+  }
+
+  .um-card .icon--tools > svg {
+    width: 56px;
+    height: 56px;
+    -webkit-box-sizing: unset;
+    box-sizing: unset;
+    padding-top:0px;
+  }
+</style>
+{% endblock %}
+
 {% block body %}
-<div id='app-root'>
-  <div class='global-layout login-layout'>
-    <div class='global-panel-container login-container'>
-      <div class='col'>
-        <div class='login-banner'>
-            <h1>Under Maintenance</h1>
-        </div>
-      </div>
+<div class="usa-grid">
+  <div class="usa-width-one-whole">
+    <div class="um-card">
+      {{ Icon('tools') }}
+      <h1>ATAT is currently under maintenance</h1>
+      <div>We apologize for the inconvenience and we thank you for your patience.</div>
+      <div>We’ll be back online shortly!</div>
+      <div>If you have any questions, please contact <a href="mailto:info@cloud.mil">info@cloud.mil</a></div>
     </div>
-  </div>  
+  </div>
 </div>
 {% endblock %}
 {% block footer %}{% endblock %}
