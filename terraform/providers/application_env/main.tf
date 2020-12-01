@@ -9,7 +9,8 @@ locals {
   private_aks_appliance_routes               = var.virtual_appliance_routes["aks-private"]
   deployment_subnet_id                       = data.terraform_remote_state.previous_stage.outputs.operations_deployment_subnet_id
   operations_container_registry = data.terraform_remote_state.previous_stage.outputs.operations_container_registry_login_server
-  # operations_resource_group_name             = data.terraform_remote_state.previous_stage.outputs.operations_resource_group_name
+  operations_resource_group_name             = data.terraform_remote_state.previous_stage.outputs.operations_resource_group_name
+  operations_storage_account_name = data.terraform_remote_state.previous_stage.outputs.operations_storage_account_name
   operator_ip                                = chomp(data.http.myip.body)
   log_analytics_workspace_id                 = data.terraform_remote_state.previous_stage.outputs.logging_workspace_id
 }
@@ -529,6 +530,8 @@ resource "azurerm_container_group" "bastion" {
       "SUBSCRIPTION_ID" = var.operator_subscription_id
       "OPS_REGISTRY" = local.operations_container_registry
       "NAMESPACE" = var.deployment_namespace
+      "OPS_RESOURCE_GROUP" = local.operations_resource_group_name
+      "OPS_STORAGE_ACCOUNT" = local.operations_storage_account_name
     }
   }
 
