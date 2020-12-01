@@ -123,7 +123,7 @@ def deploy(
     }}
 
     # Generate the output files
-    for path in os.walk('templates'):
+    for path in os.listdir('templates'):
         template = env.get_template(path)
         with open(f'.out/{path}') as output_file:
             output_file.write(template.render(**template_variables))
@@ -244,6 +244,19 @@ def build_nginx(ops_registry, atat_registry, nginx_image_tag):
 #         json.dumps(extra_vars),
 #     ]
 #     subprocess.run(cmd, cwd=cwd).check_returncode()
+def collect_terraform_outputs():
+    """Collects terraform output into name/value dict to pass as json to ansible"""
+    logger.info("collect_terraform_outputs")
+
+    cwd = path.join("../", "../", "terraform", "providers", "application_env")
+
+    result = subprocess.run(
+        "terraform output -json".split(), cwd=cwd, capture_output=True
+    )
+    result.check_returncode()
+    output = json.loads(result.stdout.decode("utf-8"))
+
+    return {k: v["value"] for k, v in output.items() if type(v["value"]) is str}
 
 
 if __name__ == "__main__":
