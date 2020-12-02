@@ -485,7 +485,7 @@ resource "azurerm_subnet" "mgmt_subnet" {
 
     service_delegation {
       name    = "Microsoft.ContainerInstance/containerGroups"
-      actions = ["Microsoft.Network/virtualNetworks/subnets/"]
+      actions = ["Microsoft.Network/virtualNetworks/subnets/action"]
     }
   }
 }
@@ -503,7 +503,7 @@ resource "azurerm_network_profile" "bastion" {
       subnet_id = azurerm_subnet.mgmt_subnet.id
     }
   }
-  depends_on = azurerm_subnet.mgmt_subnet
+  depends_on = [azurerm_subnet.mgmt_subnet]
 }
 
 # Bastion
