@@ -14,6 +14,7 @@ import re
 from urllib.parse import urlparse
 import argparse
 from bs4 import BeautifulSoup
+import subprocess
 
 
 # how large the html file can be before showing a warning message
@@ -146,7 +147,16 @@ def file_is_too_large(html_file):
     return os.stat(html_file).st_size > HTML_FILE_SIZE_LIMIT
 
 
+def yarn_build():
+    process = subprocess.Popen(["yarn", "build"])
+    process.communicate()
+    if process.returncode:
+        exit(1)
+
+
 def main(output):
+    yarn_build()
+
     soup = render_template()
 
     encode_images(soup)
