@@ -105,6 +105,9 @@ def provision(
     )
 
     # deploy
+    subprocess.run("helm repo add csi-secrets-store-provider-azure https://raw.githubusercontent.com/Azure/secrets-store-csi-driver-provider-azure/master/charts".split()).check_returncode()
+    subprocess.run("helm install csi-secrets-store-provider-azure/csi-secrets-store-provider-azure --generate-name".split())
+
 
 
 def login(sp_client_id, sp_client_secret, subscription_id, tenant_id):
