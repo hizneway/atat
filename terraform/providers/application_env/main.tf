@@ -503,6 +503,7 @@ resource "azurerm_network_profile" "bastion" {
       subnet_id = azurerm_subnet.mgmt_subnet.id
     }
   }
+  depends_on = azurerm_subnet.mgmt_subnet
 }
 
 # Bastion
