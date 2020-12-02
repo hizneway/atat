@@ -10,6 +10,6 @@ variable "virtual_appliance_routes" {}
 variable "virtual_appliance_route_tables" {}
 variable "vnet_cidr" {}
 variable "subnets" {
-type = map
+  type = map
 }
 variable "maintenance_page_ip" {}
