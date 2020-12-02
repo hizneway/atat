@@ -120,7 +120,7 @@ spec:
             driver: secrets-store.csi.k8s.io
             readOnly: true
             volumeAttributes:
-              secretProviderClass: "nginx_secret_provider"
+              secretProviderClass: "nginx-secret-provider"
         - name: flask-secret
           csi:
             driver: secrets-store.csi.k8s.io
