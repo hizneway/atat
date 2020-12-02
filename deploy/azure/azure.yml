@@ -126,7 +126,7 @@ spec:
             driver: secrets-store.csi.k8s.io
             readOnly: true
             volumeAttributes:
-              secretProviderClass: "atat_secret_provider"
+              secretProviderClass: "atat-secret-provider"
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -195,7 +195,7 @@ spec:
             driver: secrets-store.csi.k8s.io
             readOnly: true
             volumeAttributes:
-              secretProviderClass: "atat_secret_provider"
+              secretProviderClass: "atat-secret-provider"
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -265,7 +265,7 @@ spec:
             driver: secrets-store.csi.k8s.io
             readOnly: true
             volumeAttributes:
-              secretProviderClass: "atat_secret_provider"
+              secretProviderClass: "atat-secret-provider"
 ---
 apiVersion: v1
 kind: Service
