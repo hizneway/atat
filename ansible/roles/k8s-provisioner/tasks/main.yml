@@ -40,7 +40,3 @@
     state: present
     name: "kv"
 
-- name: Apply flex vol installer
-  k8s:
-    state: present
-    src: /src/deploy/azure/keyvault/kv-flex-vol-installer.yml
