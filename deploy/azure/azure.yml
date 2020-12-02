@@ -121,32 +121,12 @@ spec:
             readOnly: true
             volumeAttributes:
               secretProviderClass: "nginx_secret_provider"
-        # - name: nginx-secret
-        #   flexVolume:
-        #     driver: "azure/kv"
-        #     options:
-        #       usepodidentity: "true"
-        #       keyvaultname: "atat-vault-test"
-        #       keyvaultobjectnames: "dhparam4096;master-cert;master-cert"
-        #       keyvaultobjectaliases: "dhparam.pem;atat.key;atat.crt"
-        #       keyvaultobjecttypes: "secret;secret;secret"
-        #       tenantid: $TENANT_ID
         - name: flask-secret
           csi:
             driver: secrets-store.csi.k8s.io
             readOnly: true
             volumeAttributes:
               secretProviderClass: "atat_secret_provider"
-        # - name: flask-secret
-        #   flexVolume:
-        #     driver: "azure/kv"
-        #     options:
-        #       usepodidentity: "true"
-        #       keyvaultname: "atat-vault-test"
-        #       keyvaultobjectnames: "master-AZURE-STORAGE-KEY;master-MAIL-PASSWORD;master-PGPASSWORD;master-REDIS-PASSWORD;master-SECRET-KEY"
-        #       keyvaultobjectaliases: "AZURE_STORAGE_KEY;MAIL_PASSWORD;PGPASSWORD;REDIS_PASSWORD;SECRET_KEY"
-        #       keyvaultobjecttypes: "secret;secret;secret;secret;key"
-        #       tenantid: $TENANT_ID
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -216,16 +196,6 @@ spec:
             readOnly: true
             volumeAttributes:
               secretProviderClass: "atat_secret_provider"
-        # - name: flask-secret
-        #   flexVolume:
-        #     driver: "azure/kv"
-        #     options:
-        #       usepodidentity: "true"
-        #       keyvaultname: "atat-vault-test"
-        #       keyvaultobjectnames: "master-AZURE-STORAGE-KEY;master-MAIL-PASSWORD;master-PGPASSWORD;master-REDIS-PASSWORD;master-SECRET-KEY"
-        #       keyvaultobjectaliases: "AZURE_STORAGE_KEY;MAIL_PASSWORD;PGPASSWORD;REDIS_PASSWORD;SECRET_KEY"
-        #       keyvaultobjecttypes: "secret;secret;secret;secret;key"
-        #       tenantid: $TENANT_ID
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -296,16 +266,6 @@ spec:
             readOnly: true
             volumeAttributes:
               secretProviderClass: "atat_secret_provider"
-        # - name: flask-secret
-        #   flexVolume:
-        #     driver: "azure/kv"
-        #     options:
-        #       usepodidentity: "true"
-        #       keyvaultname: "atat-vault-test"
-        #       keyvaultobjectnames: "master-AZURE-STORAGE-KEY;master-MAIL-PASSWORD;master-PGPASSWORD;master-REDIS-PASSWORD;master-SECRET-KEY"
-        #       keyvaultobjectaliases: "AZURE_STORAGE_KEY;MAIL_PASSWORD;PGPASSWORD;REDIS_PASSWORD;SECRET_KEY"
-        #       keyvaultobjecttypes: "secret;secret;secret;secret;key"
-        #       tenantid: $TENANT_ID
 ---
 apiVersion: v1
 kind: Service

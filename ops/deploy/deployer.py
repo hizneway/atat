@@ -115,8 +115,10 @@ def deploy(
 
 
     # Create template output directory
-    if not os.path.exists('.out'):
-        os.mkdir(".out")
+    if os.path.exists('.out'):
+        os.rmdir(".out")
+    os.mkdir(".out")
+
     env = Environment(loader=FileSystemLoader('templates'), autoescape=select_autoescape(['html', 'xml']))
 
     # Gather the template variables
@@ -136,7 +138,7 @@ def deploy(
         template = env.get_template(path)
         with open(f'.out/{path}', "w") as output_file:
             output_file.write(template.render(**template_variables))
-    
+
     subprocess.run(["kubectl", "apply", '--kustomize=.out/'])
     subprocess.run(["kubectl", "-n", namespace, "get", "services"])
 
