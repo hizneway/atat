@@ -21,6 +21,7 @@ spec:
       labels:
         app: keyvault-flexvolume
     spec:
+      tolerations:
       containers:
         - name: flexvol-driver-installer
           image: "mcr.microsoft.com/k8s/flexvolume/keyvault-flexvolume:v0.0.17"
@@ -48,3 +49,5 @@ spec:
             # below is Azure default
             path: "/etc/kubernetes/volumeplugins"
           name: volplugins
+      nodeSelector:
+        beta.kubernetes.io/os: linux
