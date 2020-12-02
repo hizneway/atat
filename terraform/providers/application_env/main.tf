@@ -363,7 +363,7 @@ resource "azurerm_kubernetes_cluster" "k8s_private" {
     vnet_subnet_id        = module.vpc.subnet_list["aks-private"].id
     enable_node_public_ip = false
     enable_auto_scaling   = false
-    node_count            = 1
+    node_count            = 3
   }
 
   lifecycle {
@@ -485,7 +485,7 @@ resource "azurerm_subnet" "mgmt_subnet" {
 
     service_delegation {
       name    = "Microsoft.ContainerInstance/containerGroups"
-      actions = ["Microsoft.Network/virtualNetworks/subnets/action"]
+      actions = ["Microsoft.Network/virtualNetworks/subnets/"]
     }
   }
 }
