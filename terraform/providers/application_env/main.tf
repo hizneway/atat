@@ -140,7 +140,7 @@ module "keyvault" {
   admin_principals   = { "operator" : data.azurerm_client_config.azure_client.object_id }
   tenant_principals  = {}
   policy             = "Deny"
-  subnet_ids         = [module.vpc.subnet_list["aks"].id, local.deployment_subnet_id]
+  subnet_ids         = [module.vpc.subnet_list["aks-private"].id, local.deployment_subnet_id]
   whitelist          = { "operator" = local.operator_ip }
   workspace_id       = local.log_analytics_workspace_id
 }
