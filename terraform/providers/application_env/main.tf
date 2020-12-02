@@ -507,7 +507,7 @@ resource "azurerm_network_profile" "bastion" {
 
 # Bastion
 resource "azurerm_container_group" "bastion" {
-  name                = "bastion"
+  name                = "${var.name}-bastion-${var.deployment_namespace}"
   location            = azurerm_resource_group.jump.location
   resource_group_name = azurerm_resource_group.jump.name
   ip_address_type     = "private"
