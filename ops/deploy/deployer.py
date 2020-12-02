@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import shutil
 import subprocess
 
 from os import path
@@ -116,7 +117,7 @@ def deploy(
 
     # Create template output directory
     if os.path.exists('.out'):
-        os.rmdir(".out")
+        shutil.rmtree(".out")
     os.mkdir(".out")
 
     env = Environment(loader=FileSystemLoader('templates'), autoescape=select_autoescape(['html', 'xml']))
