@@ -54,5 +54,5 @@ spec:
             driver: secrets-store.csi.k8s.io
             readOnly: true
             volumeAttributes:
-              secretProviderClass: "atat_secret_provider"
+              secretProviderClass: "atat-secret-provider"
       restartPolicy: Never
