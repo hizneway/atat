@@ -187,7 +187,7 @@ def build_atat(ops_registry, atat_registry, git_sha, atat_image_tag):
         "--registry",
         ops_registry,
         "--build-arg",
-        f"IMAGE={ops_registry}/rhel-py:latest",
+        f"IMAGE={ops_registry}.azurecr.io/rhel-py:latest",
         "--image",
         f"atat:{atat_image_tag}",
         "--file",
@@ -206,7 +206,7 @@ def build_nginx(ops_registry, atat_registry, nginx_image_tag):
         "--registry",
         ops_registry,
         "--build-arg",
-        f"IMAGE={ops_registry}/rhel-py:latest", # TODO(jesse) Can be built off rhelubi
+        f"IMAGE={ops_registry}.azurecr.io/rhel-py:latest", # TODO(jesse) Can be built off rhelubi
         "--image",
         f"nginx:{nginx_image_tag}",
         "--file",
