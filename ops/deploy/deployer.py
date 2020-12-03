@@ -102,19 +102,6 @@ def deploy(
 
     tf_output_dict = collect_terraform_outputs()
 
-    # ansible(
-    #     tf_output_dict=tf_output_dict,
-    #     addl_args={
-    #         "sp_client_id": sp_client_id,
-    #         "sp_client_secret": sp_client_secret,
-    #         "subscription_id": subscription_id,
-    #         "tenant_id": tenant_id,
-    #         "atat_image_tag": atat_image_tag,
-    #         "nginx_image_tag": nginx_image_tag
-    #     },
-    # )
-
-
     # Create template output directory
     if os.path.exists('.out'):
         shutil.rmtree(".out")
@@ -130,8 +117,8 @@ def deploy(
         "tenant_id": tenant_id,
         "atat_image_tag": atat_image_tag,
         "nginx_image_tag": nginx_image_tag,
-        "application_container_image": f"{container_registry_name}.azurecr.io/atat:{atat_image_tag}",
-        "nginx_container_image": f"{container_registry_name}.azurecr.io/nginx:{nginx_image_tag}"
+        "application_container_image": f"{atat_registry}.azurecr.io/atat:{atat_image_tag}",
+        "nginx_container_image": f"{atat_registry}.azurecr.io/nginx:{nginx_image_tag}"
     }}
 
     pprint(template_variables)
@@ -145,12 +132,6 @@ def deploy(
     subprocess.run(["kubectl", "apply", '--kustomize=.out/'])
     subprocess.run(["kubectl", "-n", namespace, "get", "services"])
 
-# - name: Interpolate the templates
-#   template:
-#     src: "{{ item }}"
-#     dest: "{{ playbook_dir }}/.out/{{ item | basename }}"
-#   with_fileglob: "{{ playbook_dir + '/roles/k8s/tasks/templates/*' }}"
-
 # - name: Apply the rest of the Kubernetes config for the site
 #   shell: /src/script/k8s_config {{ playbook_dir + '/.out' }} | kubectl apply -f -
 #   environment:
@@ -162,14 +143,6 @@ def deploy(
 #     KV_NAME: "{{ application_keyvault_name }}"
 #     TENANT_ID: "{{ tenant_id }}"
 #     DEPLOY_TAG: "tf-{{ deploy_tag | regex_replace('\\.','-') }}"
-
-# - name: Obtain IP addresses
-#   shell: kubectl -n {{ environment }} get services
-#   register: ips
-
-# - name: Show IP addresses
-#   debug:
-#     msg: "{{ ips }}"
 
 
 def setup(sp_client_id, sp_client_secret, subscription_id, tenant_id, namespace, config_azcli):
@@ -244,20 +217,6 @@ def build_nginx(ops_registry, atat_registry, nginx_image_tag):
     subprocess.run(cmd).check_returncode()
 
 
-# def ansible(tf_output_dict, addl_args):
-#     extra_vars = {**tf_output_dict, **addl_args}
-#     extra_vars["postgres_root_cert"] = "../deploy/azure/pgsslrootcert.yml"
-#     extra_vars["src_dir"] = os.path.abspath(os.path.join(os.getcwd(), "../", "../"))
-#     cwd = path.join("../", "../", "ansible")
-#     print(extra_vars)
-#     cmd = [
-#         "ansible-playbook",
-#         "k8s.yml",
-#         "-vvv",
-#         "--extra-vars",
-#         json.dumps(extra_vars),
-#     ]
-#     subprocess.run(cmd, cwd=cwd).check_returncode()
 def collect_terraform_outputs():
     """Collects terraform output into name/value dict to pass as json to ansible"""
     logger.info("collect_terraform_outputs")
