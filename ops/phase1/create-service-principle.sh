@@ -125,3 +125,4 @@ az ad app permission grant --id $appId \
 echo $sp | jq '.'
 echo $sp  > service_principal.json
 
+sleep 10
