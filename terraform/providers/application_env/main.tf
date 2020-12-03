@@ -6,13 +6,13 @@ data "azurerm_client_config" "azure_client" {
 }
 
 locals {
-  private_aks_appliance_routes               = var.virtual_appliance_routes["aks-private"]
-  deployment_subnet_id                       = data.terraform_remote_state.previous_stage.outputs.operations_deployment_subnet_id
-  operations_container_registry = data.terraform_remote_state.previous_stage.outputs.operations_container_registry_login_server
-  operations_resource_group_name             = data.terraform_remote_state.previous_stage.outputs.operations_resource_group_name
+  private_aks_appliance_routes    = var.virtual_appliance_routes["aks-private"]
+  deployment_subnet_id            = data.terraform_remote_state.previous_stage.outputs.operations_deployment_subnet_id
+  operations_container_registry   = data.terraform_remote_state.previous_stage.outputs.operations_container_registry_login_server
+  operations_resource_group_name  = data.terraform_remote_state.previous_stage.outputs.operations_resource_group_name
   operations_storage_account_name = data.terraform_remote_state.previous_stage.outputs.operations_storage_account_name
-  operator_ip                                = chomp(data.http.myip.body)
-  log_analytics_workspace_id                 = data.terraform_remote_state.previous_stage.outputs.logging_workspace_id
+  operator_ip                     = chomp(data.http.myip.body)
+  log_analytics_workspace_id      = data.terraform_remote_state.previous_stage.outputs.logging_workspace_id
 }
 
 module "tenant_keyvault_app" {
@@ -76,19 +76,19 @@ module "task_order_bucket" {
 }
 
 module "container_registry" {
-  source                      = "../../modules/container_registry"
-  name                        = var.name
-  region                      = var.deployment_location
-  environment                 = var.deployment_namespace
-  owner                       = var.owner
-  backup_region               = "" # TODO(jesse) Unused.
-  policy                      = "Allow"
-  subnet_ids                  = [module.vpc.subnet_list["aks"].id]
-  whitelist                   = { "operator" = local.operator_ip }
-  workspace_id                = local.log_analytics_workspace_id
-  pet_name                    = var.deployment_namespace
-  subnet_list                 = module.vpc.subnet_list
-  depends_on                  = [module.vpc]
+  source        = "../../modules/container_registry"
+  name          = var.name
+  region        = var.deployment_location
+  environment   = var.deployment_namespace
+  owner         = var.owner
+  backup_region = "" # TODO(jesse) Unused.
+  policy        = "Allow"
+  subnet_ids    = [module.vpc.subnet_list["aks"].id]
+  whitelist     = { "operator" = local.operator_ip }
+  workspace_id  = local.log_analytics_workspace_id
+  pet_name      = var.deployment_namespace
+  subnet_list   = module.vpc.subnet_list
+  depends_on    = [module.vpc]
   # ops_container_registry_name = local.operations_container_registry_name
   # ops_resource_group_name     = local.operations_resource_group_name
 }
@@ -147,21 +147,22 @@ module "keyvault" {
 
 resource "azurerm_key_vault_secret" "secret" {
   for_each = merge(var.keyvault_secrets, {
-    "AZURE-CLIENT-ID"   = module.tenant_keyvault_app.application_id
-    "AZURE-SECRET-KEY"  = module.tenant_keyvault_app.application_password
-    "AZURE-TENANT-ID"   = data.azurerm_client_config.azure_client.tenant_id
-    "AZURE-STORAGE-KEY" = module.task_order_bucket.primary_access_key
-    "REDIS-PASSWORD"    = azurerm_redis_cache.redis.primary_access_key
-    "SAML-IDP-CERT"     = ""
-    "PGPASSWORD"        = random_password.atat_user_password.result
-    "AZURE-VAULT-URL"   = module.tenant_keyvault.url
-    "DHPARAMS"          = filebase64(var.dhparams_path)
+    "AZURE-CLIENT-ID"      = module.tenant_keyvault_app.application_id
+    "AZURE-SECRET-KEY"     = module.tenant_keyvault_app.application_password
+    "AZURE-STORAGE-KEY"    = module.task_order_bucket.primary_access_key
+    "AZURE-TENANT-ID"      = data.azurerm_client_config.azure_client.tenant_id
+    "AZURE-USER-OBJECT-ID" = data.azurerm_client_config.azure_client.object_id
+    "AZURE-VAULT-URL"      = module.tenant_keyvault.url
+    "DHPARAMS"             = filebase64(var.dhparams_path)
+    "PGPASSWORD"           = random_password.atat_user_password.result
+    "REDIS-PASSWORD"       = azurerm_redis_cache.redis.primary_access_key
+    "SAML-IDP-CERT"        = ""
   })
 
   name         = each.key
   value        = each.value
   key_vault_id = module.keyvault.id
-  depends_on = [module.keyvault.keyvault_spun_up]
+  depends_on   = [module.keyvault.keyvault_spun_up]
 }
 
 resource "azurerm_key_vault_certificate" "atatdev" {
@@ -267,7 +268,7 @@ resource "azurerm_postgresql_server" "sql" {
   name                = "${var.deployment_namespace}-sql"
   location            = azurerm_resource_group.sql.location
   resource_group_name = azurerm_resource_group.sql.name
-  sku_name = "GP_Gen5_2"
+  sku_name            = "GP_Gen5_2"
 
   storage_mb                   = "5120"
   backup_retention_days        = "7"
@@ -528,13 +529,13 @@ resource "azurerm_container_group" "bastion" {
     }
 
     secure_environment_variables = {
-      "SP_CLIENT_ID" = var.operator_client_id
-      "SP_CLIENT_SECRET" = var.operator_client_secret
-      "TENANT_ID" = var.operator_tenant_id
-      "SUBSCRIPTION_ID" = var.operator_subscription_id
-      "OPS_REGISTRY" = local.operations_container_registry
-      "NAMESPACE" = var.deployment_namespace
-      "OPS_RESOURCE_GROUP" = local.operations_resource_group_name
+      "SP_CLIENT_ID"        = var.operator_client_id
+      "SP_CLIENT_SECRET"    = var.operator_client_secret
+      "TENANT_ID"           = var.operator_tenant_id
+      "SUBSCRIPTION_ID"     = var.operator_subscription_id
+      "OPS_REGISTRY"        = local.operations_container_registry
+      "NAMESPACE"           = var.deployment_namespace
+      "OPS_RESOURCE_GROUP"  = local.operations_resource_group_name
       "OPS_STORAGE_ACCOUNT" = local.operations_storage_account_name
     }
   }
