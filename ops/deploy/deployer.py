@@ -185,7 +185,7 @@ def build_atat(ops_registry, atat_registry, git_sha, atat_image_tag):
         "acr",
         "build",
         "--registry",
-        atat_registry,
+        ops_registry,
         "--build-arg",
         f"IMAGE={ops_registry}/rhel-py:latest",
         "--image",
@@ -204,7 +204,7 @@ def build_nginx(ops_registry, atat_registry, nginx_image_tag):
         "acr",
         "build",
         "--registry",
-        atat_registry,
+        ops_registry,
         "--build-arg",
         f"IMAGE={ops_registry}/rhel-py:latest", # TODO(jesse) Can be built off rhelubi
         "--image",

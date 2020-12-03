@@ -534,6 +534,7 @@ resource "azurerm_container_group" "bastion" {
       "TENANT_ID"           = var.operator_tenant_id
       "SUBSCRIPTION_ID"     = var.operator_subscription_id
       "OPS_REGISTRY"        = local.operations_container_registry
+      # "ATAT_REGISTRY"       = container_registry.login_server
       "NAMESPACE"           = var.deployment_namespace
       "OPS_RESOURCE_GROUP"  = local.operations_resource_group_name
       "OPS_STORAGE_ACCOUNT" = local.operations_storage_account_name
