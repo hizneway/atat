@@ -68,7 +68,7 @@ module "task_order_bucket" {
   environment            = var.deployment_namespace
   region                 = var.deployment_location
   policy                 = "Allow"
-  subnet_ids             = [module.vpc.subnet_list["aks"].id]
+  subnet_ids             = [module.vpc.subnet_list["aks-private"].id]
   whitelist              = { "operator" = local.operator_ip }
   bucket_cors_properties = var.bucket_cors_properties
   storage_container_name = var.task_order_bucket_storage_container_name
@@ -83,7 +83,7 @@ module "container_registry" {
   owner         = var.owner
   backup_region = "" # TODO(jesse) Unused.
   policy        = "Allow"
-  subnet_ids    = [module.vpc.subnet_list["aks"].id]
+  subnet_ids    = [module.vpc.subnet_list["aks-private"].id]
   whitelist     = { "operator" = local.operator_ip }
   workspace_id  = local.log_analytics_workspace_id
   pet_name      = var.deployment_namespace
@@ -111,7 +111,7 @@ module "keyvault_reader_identity" {
 #   owner                    = var.owner
 #   k8s_dns_prefix           = var.k8s_dns_prefix
 #   k8s_node_size            = "Standard_D2_v3"
-#   vnet_subnet_id           = module.vpc.subnet_list["aks"].id
+#   vnet_subnet_id           = module.vpc.subnet_list["aks-private"].id
 #   enable_auto_scaling      = true
 #   max_count                = var.aks_max_node_count
 #   min_count                = var.aks_min_node_count
@@ -123,7 +123,7 @@ module "keyvault_reader_identity" {
 #   node_resource_group      = "${var.name}-node-rg-${var.deployment_namespace}"
 #   virtual_network          = var.virtual_network
 #   vnet_resource_group_name = module.vpc.resource_group_name
-#   aks_subnet_id            = module.vpc.subnet_list["aks"].id
+#   aks_subnet_id            = module.vpc.subnet_list["aks-private"].id
 #   aks_route_table          = "${var.name}-aks-${var.deployment_namespace}"
 #   depends_on               = [module.aks_sp, module.keyvault_reader_identity]
 # }
@@ -201,7 +201,7 @@ module "tenant_keyvault" {
   tenant_principals = { "${module.tenant_keyvault_app.name}" = "${module.tenant_keyvault_app.sp_object_id}" }
   admin_principals  = {}
   policy            = "Deny"
-  subnet_ids        = [module.vpc.subnet_list["aks"].id]
+  subnet_ids        = [module.vpc.subnet_list["aks-private"].id]
   whitelist         = { "operator" = local.operator_ip }
   workspace_id      = local.log_analytics_workspace_id
 }
@@ -217,7 +217,7 @@ module "operator_keyvault" {
   admin_principals  = { "operator" : data.azurerm_client_config.azure_client.object_id }
   tenant_principals = { (module.ops_keyvault_app.name) = "${module.ops_keyvault_app.sp_object_id}" }
   policy            = "Deny"
-  subnet_ids        = [module.vpc.subnet_list["aks"].id, local.deployment_subnet_id]
+  subnet_ids        = [module.vpc.subnet_list["aks-private"].id, local.deployment_subnet_id]
   whitelist         = { "operator" = local.operator_ip }
   workspace_id      = local.log_analytics_workspace_id
 }
@@ -251,7 +251,7 @@ resource "random_password" "atat_user_password" {
 #   owner                        = var.owner
 #   environment                  = var.deployment_namespace
 #   region                       = var.deployment_location
-#   subnet_id                    = module.vpc.subnet_list["aks"].id
+#   subnet_id                    = module.vpc.subnet_list["aks-private"].id
 #   administrator_login          = var.postgres_admin_login
 #   administrator_login_password = random_password.pg_root_password.result
 #   workspace_id                 = local.log_analytics_workspace_id
@@ -286,7 +286,7 @@ resource "azurerm_postgresql_virtual_network_rule" "allow_aks_subnet" {
   name                                 = "allow-aks-subnet-rule"
   resource_group_name                  = azurerm_resource_group.sql.name
   server_name                          = azurerm_postgresql_server.sql.name
-  subnet_id                            = module.vpc.subnet_list["aks"].id
+  subnet_id                            = module.vpc.subnet_list["aks-private"].id
   ignore_missing_vnet_service_endpoint = true
 }
 
