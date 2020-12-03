@@ -8,3 +8,4 @@ patchesStrategicMerge:
   - ports.yml
   - autoscaling.yml
   - secret_provider.yml
+  - azure.yml

@@ -129,7 +129,9 @@ def deploy(
         "subscription_id": subscription_id,
         "tenant_id": tenant_id,
         "atat_image_tag": atat_image_tag,
-        "nginx_image_tag": nginx_image_tag
+        "nginx_image_tag": nginx_image_tag,
+        "application_container_image": f"{container_registry_name}.azurecr.io/atat:{atat_image_tag}",
+        "nginx_container_image": f"{container_registry_name}.azurecr.io/nginx:{nginx_image_tag}"
     }}
 
     pprint(template_variables)
