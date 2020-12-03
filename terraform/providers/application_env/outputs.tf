@@ -129,7 +129,7 @@ output "vnet_id" {
 }
 
 output "ops_container_registry_name" {
-  value = data.terraform_remote_state.previous_stage.outputs.ops_container_registry_login_server
+  value = data.terraform_remote_state.previous_stage.outputs.operations_container_registry_login_server
 }
 
 output "environment" {
