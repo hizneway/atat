@@ -10,7 +10,7 @@
 
 - name: "Attach the ACR to the K8s cluster"
   shell:
-    cmd: az aks update -n {{ aks_cluster_name }} -g {{ aks_resource_group }} --attach-acr {{ container_registry_name }}
+    cmd: az aks update -n {{ aks_cluster_name }} -g {{ aks_resource_group }} --attach-acr {{ ops_container_registry_name }}
 
 - name: Assign Network Contributor role to the AKS Service Principal for the Virtual Network
   shell:
