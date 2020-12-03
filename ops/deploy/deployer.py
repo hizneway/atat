@@ -92,8 +92,8 @@ def deploy(
     git_sha,
 ):
     setup(sp_client_id, sp_client_secret, subscription_id, tenant_id, namespace, config_azcli)
-    # build_atat(ops_registry, atat_registry, git_sha, atat_image_tag)
-    # build_nginx(ops_registry, atat_registry, nginx_image_tag)
+    build_atat(ops_registry, atat_registry, git_sha, atat_image_tag)
+    build_nginx(ops_registry, atat_registry, nginx_image_tag)
 
     os.environ["ARM_CLIENT_ID"] = sp_client_id
     os.environ["ARM_CLIENT_SECRET"] = sp_client_secret
@@ -185,7 +185,7 @@ def build_atat(ops_registry, atat_registry, git_sha, atat_image_tag):
         "acr",
         "build",
         "--registry",
-        ops_registry,
+        atat_registry,
         "--build-arg",
         f"IMAGE={ops_registry}/rhel-py:latest",
         "--image",
@@ -204,7 +204,7 @@ def build_nginx(ops_registry, atat_registry, nginx_image_tag):
         "acr",
         "build",
         "--registry",
-        ops_registry,
+        atat_registry,
         "--build-arg",
         f"IMAGE={ops_registry}/rhel-py:latest", # TODO(jesse) Can be built off rhelubi
         "--image",
