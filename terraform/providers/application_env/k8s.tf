@@ -15,7 +15,7 @@ module "k8s" {
   client_id                = module.aks_sp.application_id
   client_secret            = module.aks_sp.application_password
   client_object_id         = module.aks_sp.object_id
-  workspace_id             = module.logs.workspace_id
+  workspace_id             = module.logs.workspace_resource_id
   vnet_id                  = module.vpc.id
   node_resource_group      = "${var.name}-node-rg-${local.environment}"
   virtual_network          = var.virtual_network

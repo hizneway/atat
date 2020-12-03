@@ -7,6 +7,6 @@ module "redis" {
   subnet_id    = module.vpc.subnet_list["redis"].id
   sku_name     = "Premium"
   family       = "P"
-  workspace_id = module.logs.workspace_id
+  workspace_id = module.logs.workspace_resource_id
   pet_name     = random_pet.unique_id.id
 }
