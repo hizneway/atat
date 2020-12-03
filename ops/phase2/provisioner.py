@@ -97,9 +97,9 @@ def provision(
     login(sp_client_id, sp_client_secret, subscription_id, tenant_id)
 
     download_file(
-        ops_storage_account, 
-        ops_config_container, 
-        "atatdev.pem", 
+        ops_storage_account,
+        ops_config_container,
+        "atatdev.pem",
         "/tmp/atatdev.pem"
     )
 
@@ -220,22 +220,19 @@ def diffie_helman(encryption: int = 4096) -> Optional[subprocess.Popen]:
 def download_file(
     storage_account: str, container_name: str, file_name: str, dest_path: str
 ) -> int:
-    if path.exists(dest_path):
-        return 0
-
     result = subprocess.run(
         f"az storage blob download --account-name {storage_account} --container-name {container_name} --name {file_name} -f {dest_path} --no-progress".split(),
         text=True,
         capture_output=True,
     )
-    
+
     if result.returncode != 0:
         echo(result.stdout)
         echo(result.stderr)
         echo("Could not find the target file in the storage account.")
         echo(f"You need to upload {file_name} manually to the storage account.")
         raise FileNotFoundError(file_name)
-    
+
     if not os.stat(dest_path).st_size:
         echo("Could not find the target file in the storage account.")
         echo(f"You need to upload {file_name} manually to the storage account.")
