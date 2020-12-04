@@ -86,7 +86,6 @@ module "container_registry" {
   subnet_ids    = [module.vpc.aks_subnet_id]
   whitelist     = { "operator" = local.operator_ip }
   workspace_id  = local.log_analytics_workspace_id
-  pet_name      = var.deployment_namespace
   subnet_list   = [
     module.vpc.aks_subnet_id,
     module.vpc.edge_subnet_id,

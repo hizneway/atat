@@ -58,11 +58,6 @@ variable "workspace_id" {
   type        = string
 }
 
-variable "pet_name" {}
-
-variable "subnet_list" {
-  type = map
-}
 
 
 # variable "ops_resource_group_name" {
