@@ -67,7 +67,7 @@ resource "azurerm_route" "aks_to_internet" {
   next_hop_type       = "Internet"
 }
 resource "azurerm_route" "aks_to_vnet" {
-  name = "${var.name}-vnet-${var.deployment_namespace}}"
+  name = "${var.name}-vnet-${var.deployment_namespace}"
   resource_group_name = azurerm_resource_group.vpc.name
   route_table_name = azurerm_route_table.aks.name
   address_prefix = "10.1.0.0/16"
@@ -100,7 +100,7 @@ resource "azurerm_route" "edge_to_internet" {
   next_hop_type       = "Internet"
 }
 resource "azurerm_route" "edge_to_vnet" {
-  name = "${var.name}-vnet-${var.deployment_namespace}}"
+  name = "${var.name}-vnet-${var.deployment_namespace}"
   resource_group_name = azurerm_resource_group.vpc.name
   route_table_name = azurerm_route_table.edge.name
   address_prefix = "10.1.0.0/16"
@@ -137,7 +137,7 @@ resource "azurerm_route" "redis_to_internet" {
   next_hop_type       = "Internet"
 }
 resource "azurerm_route" "redis_to_vnet" {
-  name = "${var.name}-vnet-${var.deployment_namespace}}"
+  name = "${var.name}-vnet-${var.deployment_namespace}"
   resource_group_name = azurerm_resource_group.vpc.name
   route_table_name = azurerm_route_table.redis.name
   address_prefix = "10.1.0.0/16"
@@ -170,7 +170,7 @@ resource "azurerm_route" "AzureFirewallSubnet_to_internet" {
   next_hop_type       = "Internet"
 }
 resource "azurerm_route" "AzureFirewallSubnet_to_vnet" {
-  name = "${var.name}-vnet-${var.deployment_namespace}}"
+  name = "${var.name}-vnet-${var.deployment_namespace}"
   resource_group_name = azurerm_resource_group.vpc.name
   route_table_name = azurerm_route_table.AzureFirewallSubnet.name
   address_prefix = "10.1.0.0/16"
@@ -203,7 +203,7 @@ resource "azurerm_route" "appgateway_to_internet" {
   next_hop_type       = "Internet"
 }
 resource "azurerm_route" "appgateway_to_vnet" {
-  name = "${var.name}-vnet-${var.deployment_namespace}}"
+  name = "${var.name}-vnet-${var.deployment_namespace}"
   resource_group_name = azurerm_resource_group.vpc.name
   route_table_name = azurerm_route_table.appgateway.name
   address_prefix = "10.1.0.0/16"
