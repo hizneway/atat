@@ -6,7 +6,6 @@ data "azurerm_client_config" "azure_client" {
 }
 
 locals {
-  private_aks_appliance_routes    = var.virtual_appliance_routes["aks"]
   deployment_subnet_id            = data.terraform_remote_state.previous_stage.outputs.operations_deployment_subnet_id
   operations_container_registry   = data.terraform_remote_state.previous_stage.outputs.operations_container_registry_login_server
   operations_resource_group_name  = data.terraform_remote_state.previous_stage.outputs.operations_resource_group_name
