@@ -8,8 +8,6 @@ resource "azurerm_firewall" "fw" {
     subnet_id            = var.subnet_id
     public_ip_address_id = var.az_fw_ip
   }
-
-
 }
 
 resource "azurerm_firewall_application_rule_collection" "fw_rule_collection" {

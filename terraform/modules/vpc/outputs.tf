@@ -1,8 +1,8 @@
-output "subnet_list" {
-  value = {
-    for k, id in azurerm_subnet.subnet : k => id
-  }
-}
+# output "subnet_list" {
+#   value = {
+#     for k, id in azurerm_subnet.subnet : k => id
+#   }
+# }
 
 output "subnet_id_list" {
   value = azurerm_subnet.subnet.*
@@ -18,7 +18,6 @@ output "vpc_name" {
 
 output "resource_group_name" {
   value = azurerm_resource_group.vpc.name
-
 }
 
 output "fw_ip_address_id" {
