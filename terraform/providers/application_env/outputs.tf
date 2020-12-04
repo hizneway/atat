@@ -104,10 +104,6 @@ output "operator_keyvault_name" {
   value = module.operator_keyvault.keyvault_name
 }
 
-# output "subnets" {
-#   value = module.vpc.subnet_list
-# }
-
 output "container_registry_name" {
   value = module.container_registry.container_registry_name
 }

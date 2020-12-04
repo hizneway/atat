@@ -56,7 +56,7 @@ resource "azurerm_route_table" "aks" {
   resource_group_name = azurerm_resource_group.vpc.name
 }
 resource "azurerm_subnet_route_table_association" "aks" {
-  subnet_id = azurerm_subnet.aks.route_table_id
+  subnet_id = azurerm_subnet.aks.id
   route_table_id = azurerm_route_table.aks.id
 }
 resource "azurerm_route" "aks_to_internet" {
@@ -89,7 +89,7 @@ resource "azurerm_route_table" "edge" {
   resource_group_name = azurerm_resource_group.vpc.name
 }
 resource "azurerm_subnet_route_table_association" "edge" {
-  subnet_id = azurerm_subnet.edge.route_table_id
+  subnet_id = azurerm_subnet.edge.id
   route_table_id = azurerm_route_table.edge.id
 }
 resource "azurerm_route" "edge_to_internet" {
@@ -126,7 +126,7 @@ resource "azurerm_route_table" "redis" {
   resource_group_name = azurerm_resource_group.vpc.name
 }
 resource "azurerm_subnet_route_table_association" "redis" {
-  subnet_id = azurerm_subnet.redis.route_table_id
+  subnet_id = azurerm_subnet.redis.id
   route_table_id = azurerm_route_table.redis.id
 }
 resource "azurerm_route" "redis_to_internet" {
@@ -159,7 +159,7 @@ resource "azurerm_route_table" "AzureFirewallSubnet" {
   resource_group_name = azurerm_resource_group.vpc.name
 }
 resource "azurerm_subnet_route_table_association" "AzureFirewallSubnet" {
-  subnet_id = azurerm_subnet.AzureFirewallSubnet.route_table_id
+  subnet_id = azurerm_subnet.AzureFirewallSubnet.id
   route_table_id = azurerm_route_table.AzureFirewallSubnet.id
 }
 resource "azurerm_route" "AzureFirewallSubnet_to_internet" {
@@ -192,7 +192,7 @@ resource "azurerm_route_table" "appgateway" {
   resource_group_name = azurerm_resource_group.vpc.name
 }
 resource "azurerm_subnet_route_table_association" "appgateway" {
-  subnet_id = azurerm_subnet.appgateway.route_table_id
+  subnet_id = azurerm_subnet.appgateway.id
   route_table_id = azurerm_route_table.appgateway.id
 }
 resource "azurerm_route" "appgateway_to_internet" {
@@ -256,11 +256,11 @@ resource "azurerm_route" "aks_firewall_routes" {
   route_table_name       = azurerm_route_table.aks_firewall_route_table.name
   address_prefix         = "10.1.0.0/16"
   next_hop_type          = VirtualAppliance
-  next_hop_in_ip_address = azurerm_firewall.fw.ip_config[0].private_ip_address
+  next_hop_in_ip_address = azurerm_firewall.fw.ip_configuration[0].private_ip_address
 }
 
 resource "azurerm_subnet_route_table_association" "aks_firewall_route_table" {
-  for_each       = var.virtual_appliance_route_tables
+  # for_each       = var.virtual_appliance_route_tables
   subnet_id      = azurerm_subnet.aks.id
   route_table_id = azurerm_route_table.aks_firewall_route_table.id
 }
@@ -272,7 +272,7 @@ resource "azurerm_route" "fw_route" {
   route_table_name       = azurerm_route_table.aks_firewall_route_table.name
   address_prefix         = "0.0.0.0/0"
   next_hop_type          = "VirtualAppliance"
-  next_hop_in_ip_address = azurerm_firewall.fw.ip_config[0].private_ip_address
+  next_hop_in_ip_address = azurerm_firewall.fw.ip_configuration[0].private_ip_address
 }
 
 resource "azurerm_public_ip" "az_fw_ip" {
