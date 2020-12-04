@@ -92,9 +92,18 @@ def provision(
     commit_sha,
     logging_workspace,
 ):
-    ssl_process = diffie_helman(encryption=4096)
-
     login(sp_client_id, sp_client_secret, subscription_id, tenant_id)
+
+    try:
+        download_file(
+            ops_storage_account,
+            ops_config_container,
+            "dhparams.pem",
+            "/tmp/dhparams.pem"
+        )
+        ssl_process = None
+    except FileNotFoundError:
+        ssl_process = diffie_helman(encryption=4096)
 
     download_file(
         ops_storage_account,
@@ -205,6 +214,10 @@ def diffie_helman(encryption: int = 4096) -> Optional[subprocess.Popen]:
     if path.exists("/tmp/dhparams.pem"):
         return
 
+
+
+
+
     return subprocess.Popen(
         [
             "openssl",
@@ -220,6 +233,12 @@ def diffie_helman(encryption: int = 4096) -> Optional[subprocess.Popen]:
 def download_file(
     storage_account: str, container_name: str, file_name: str, dest_path: str
 ) -> int:
+
+    result = subprocess.run("az storage blob exists --account-name {storage_account} --container-name {container_name} --name {file_name} -o tsv".split(), capture_output=True)
+    if result.stdout == "False":
+        echo(f"{file_name} not found")
+        raise FileNotFoundError(file_name)
+
     result = subprocess.run(
         f"az storage blob download --account-name {storage_account} --container-name {container_name} --name {file_name} -f {dest_path} --no-progress".split(),
         text=True,

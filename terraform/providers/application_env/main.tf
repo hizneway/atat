@@ -6,7 +6,7 @@ data "azurerm_client_config" "azure_client" {
 }
 
 locals {
-  private_aks_appliance_routes    = var.virtual_appliance_routes["aks-private"]
+  private_aks_appliance_routes    = var.virtual_appliance_routes["aks"]
   deployment_subnet_id            = data.terraform_remote_state.previous_stage.outputs.operations_deployment_subnet_id
   operations_container_registry   = data.terraform_remote_state.previous_stage.outputs.operations_container_registry_login_server
   operations_resource_group_name  = data.terraform_remote_state.previous_stage.outputs.operations_resource_group_name
@@ -68,7 +68,7 @@ module "task_order_bucket" {
   environment            = var.deployment_namespace
   region                 = var.deployment_location
   policy                 = "Allow"
-  subnet_ids             = [module.vpc.subnet_list["aks-private"].id]
+  subnet_ids             = [module.vpc.subnet_list["aks"].id]
   whitelist              = { "operator" = local.operator_ip }
   bucket_cors_properties = var.bucket_cors_properties
   storage_container_name = var.task_order_bucket_storage_container_name
@@ -83,7 +83,7 @@ module "container_registry" {
   owner         = var.owner
   backup_region = "" # TODO(jesse) Unused.
   policy        = "Allow"
-  subnet_ids    = [module.vpc.subnet_list["aks-private"].id]
+  subnet_ids    = [module.vpc.subnet_list["aks"].id]
   whitelist     = { "operator" = local.operator_ip }
   workspace_id  = local.log_analytics_workspace_id
   pet_name      = var.deployment_namespace
@@ -111,7 +111,7 @@ module "keyvault_reader_identity" {
 #   owner                    = var.owner
 #   k8s_dns_prefix           = var.k8s_dns_prefix
 #   k8s_node_size            = "Standard_D2_v3"
-#   vnet_subnet_id           = module.vpc.subnet_list["aks-private"].id
+#   vnet_subnet_id           = module.vpc.subnet_list["aks"].id
 #   enable_auto_scaling      = true
 #   max_count                = var.aks_max_node_count
 #   min_count                = var.aks_min_node_count
@@ -123,7 +123,7 @@ module "keyvault_reader_identity" {
 #   node_resource_group      = "${var.name}-node-rg-${var.deployment_namespace}"
 #   virtual_network          = var.virtual_network
 #   vnet_resource_group_name = module.vpc.resource_group_name
-#   aks_subnet_id            = module.vpc.subnet_list["aks-private"].id
+#   aks_subnet_id            = module.vpc.subnet_list["aks"].id
 #   aks_route_table          = "${var.name}-aks-${var.deployment_namespace}"
 #   depends_on               = [module.aks_sp, module.keyvault_reader_identity]
 # }
@@ -140,7 +140,7 @@ module "keyvault" {
   admin_principals   = { "operator" : data.azurerm_client_config.azure_client.object_id }
   tenant_principals  = {}
   policy             = "Deny"
-  subnet_ids         = [module.vpc.subnet_list["aks-private"].id, local.deployment_subnet_id]
+  subnet_ids         = [module.vpc.subnet_list["aks"].id, local.deployment_subnet_id]
   whitelist          = { "operator" = local.operator_ip }
   workspace_id       = local.log_analytics_workspace_id
 }
@@ -201,7 +201,7 @@ module "tenant_keyvault" {
   tenant_principals = { "${module.tenant_keyvault_app.name}" = "${module.tenant_keyvault_app.sp_object_id}" }
   admin_principals  = {}
   policy            = "Deny"
-  subnet_ids        = [module.vpc.subnet_list["aks-private"].id]
+  subnet_ids        = [module.vpc.subnet_list["aks"].id]
   whitelist         = { "operator" = local.operator_ip }
   workspace_id      = local.log_analytics_workspace_id
 }
@@ -217,19 +217,10 @@ module "operator_keyvault" {
   admin_principals  = { "operator" : data.azurerm_client_config.azure_client.object_id }
   tenant_principals = { (module.ops_keyvault_app.name) = "${module.ops_keyvault_app.sp_object_id}" }
   policy            = "Deny"
-  subnet_ids        = [module.vpc.subnet_list["aks-private"].id, local.deployment_subnet_id]
+  subnet_ids        = [module.vpc.subnet_list["aks"].id, local.deployment_subnet_id]
   whitelist         = { "operator" = local.operator_ip }
   workspace_id      = local.log_analytics_workspace_id
 }
-
-# module "logs" {
-#   source            = "../../modules/log_analytics"
-#   owner             = var.owner
-#   environment       = var.deployment_namespace
-#   region            = var.deployment_location
-#   name              = var.name
-#   retention_in_days = 365
-# }
 
 resource "random_password" "pg_root_password" {
   length           = 16
@@ -245,20 +236,7 @@ resource "random_password" "atat_user_password" {
   override_special = "!"
 }
 
-# module "sql" {
-#   source                       = "../../modules/postgres"
-#   name                         = var.name
-#   owner                        = var.owner
-#   environment                  = var.deployment_namespace
-#   region                       = var.deployment_location
-#   subnet_id                    = module.vpc.subnet_list["aks-private"].id
-#   administrator_login          = var.postgres_admin_login
-#   administrator_login_password = random_password.pg_root_password.result
-#   workspace_id                 = local.log_analytics_workspace_id
-#   operator_ip                  = chomp(data.http.myip.body)
-#   deployment_subnet_id         = local.deployment_subnet_id
-# }
-
+# Postgres
 resource "azurerm_resource_group" "sql" {
   name     = "${var.deployment_namespace}-postgres"
   location = var.deployment_location
@@ -286,7 +264,7 @@ resource "azurerm_postgresql_virtual_network_rule" "allow_aks_subnet" {
   name                                 = "allow-aks-subnet-rule"
   resource_group_name                  = azurerm_resource_group.sql.name
   server_name                          = azurerm_postgresql_server.sql.name
-  subnet_id                            = module.vpc.subnet_list["aks-private"].id
+  subnet_id                            = module.vpc.subnet_list["aks"].id
   ignore_missing_vnet_service_endpoint = true
 }
 
@@ -328,7 +306,7 @@ resource "azurerm_kubernetes_cluster" "k8s_private" {
   name                    = "${var.name}-private-k8s-${var.deployment_namespace}"
   location                = var.deployment_location
   resource_group_name     = module.vpc.resource_group_name
-  dns_prefix              = "atat-aks-private"
+  dns_prefix              = "atat-aks"
   private_cluster_enabled = true
   node_resource_group     = "${module.vpc.resource_group_name}-private-aks-node-rgs"
   addon_profile {
@@ -361,7 +339,7 @@ resource "azurerm_kubernetes_cluster" "k8s_private" {
     name                  = "default"
     vm_size               = "Standard_B2s"
     os_disk_size_gb       = 30
-    vnet_subnet_id        = module.vpc.subnet_list["aks-private"].id
+    vnet_subnet_id        = module.vpc.subnet_list["aks"].id
     enable_node_public_ip = false
     enable_auto_scaling   = false
     node_count            = 3
@@ -381,35 +359,7 @@ resource "azurerm_kubernetes_cluster" "k8s_private" {
   depends_on = [module.vpc, module.keyvault_reader_identity]
 }
 
-# module "private-k8s" {
-#   source                     = "../../modules/k8s-private"
-#   rg                         = module.vpc.resource_group_name
-#   region                     = var.deployment_location
-#   name                       = var.name
-#   environment                = var.deployment_namespace
-#   owner                      = var.owner
-#   k8s_dns_prefix             = var.k8s_dns_prefix
-#   k8s_node_size              = "Standard_D2_v3"
-#   enable_auto_scaling        = true
-#   max_count                  = 3
-#   min_count                  = 3
-#   private_aks_sp_id          = var.private_aks_sp_id
-#   private_aks_sp_secret      = var.private_aks_sp_secret
-#   log_analytics_workspace_id = local.log_analytics_workspace_id
-#   service_dns                = var.private_aks_service_dns
-#   docker_bridge_cidr         = var.private_aks_docker_bridge_cidr
-#   service_cidr               = var.private_aks_service_cidr
-#   subnet_cidr                = var.private_k8s_subnet_cidr
-#   vnet_id                    = module.vpc.id
-#   vpc_name                   = module.vpc.vpc_name
-#   aks_subnet_id              = module.vpc.subnet_list["aks-private"].id
-#   vpc_address_space          = "10.1.0.0/16"
-
-#   depends_on = [module.vpc, module.keyvault_reader_identity]
-# }
-
 module "private-aks-firewall" {
-
   source              = "../../modules/azure_firewall"
   resource_group_name = module.vpc.resource_group_name
   location            = var.deployment_location
@@ -448,8 +398,8 @@ resource "azurerm_redis_cache" "redis" {
 
 module "vpc" {
   source                         = "../../modules/vpc/"
-  environment                    = var.deployment_namespace
-  region                         = var.deployment_location
+  deployment_namespace           = var.deployment_namespace
+  deployment_location            = var.deployment_location
   virtual_network                = var.virtual_network
   networks                       = var.networks
   route_tables                   = var.route_tables
@@ -457,8 +407,8 @@ module "vpc" {
   name                           = var.name
   dns_servers                    = []
   service_endpoints              = var.service_endpoints
-  custom_routes                  = var.routes
-  virtual_appliance_routes       = "${var.virtual_appliance_routes["aks-private"]},${module.private-aks-firewall.ip_config[0].private_ip_address}"
+  routes                         = var.routes
+  virtual_appliance_routes       = "${var.virtual_appliance_routes["aks"]},${module.private-aks-firewall.ip_config[0].private_ip_address}"
   virtual_appliance_route_tables = var.virtual_appliance_route_tables
 }
 

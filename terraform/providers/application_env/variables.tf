@@ -11,11 +11,13 @@ variable "deployment_namespace" {
 
 variable "owner" {
   type        = string
+  default     = "promptworks"
   description = "TODO(jesse) Is this a required property in all those modules?"
 }
 
 variable "name" {
   type        = string
+  default     = "cloudzero"
   description = "TODO(jesse) Is this a required property in all those modules?"
 }
 
@@ -82,15 +84,15 @@ variable "private_k8s_subnet_cidr" {
 }
 
 variable "private_aks_service_dns" {
-  default = ""
+  default = "10.254.253.10"
 }
 
 variable "private_aks_service_cidr" {
-  default = ""
+  default = "10.254.253.0/24"
 }
 
 variable "private_aks_docker_bridge_cidr" {
-  default = ""
+  default = "172.17.0.1/16"
 }
 
 variable "private_aks_sp_secret" {
@@ -142,7 +144,7 @@ variable "virtual_appliance_route_tables" {
   type        = map
   description = ""
   default = {
-    "aks-private" = "VirtualAppliance"
+    "aks" = "VirtualAppliance"
   }
 }
 

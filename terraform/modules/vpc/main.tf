@@ -1,115 +1,275 @@
 resource "azurerm_resource_group" "vpc" {
-  name     = "${var.name}-vpc-${var.environment}"
-  location = var.region
+  name     = "${var.name}-vpc-${var.deployment_namespace}"
+  location = var.deployment_location
 
   tags = {
-    environment = var.environment
+    environment = var.deployment_namespace
     owner       = var.owner
   }
 }
 
 resource "azurerm_network_ddos_protection_plan" "vpc" {
   count               = var.ddos_enabled
-  name                = "${var.name}-ddos-${var.environment}"
+  name                = "${var.name}-ddos-${var.deployment_namespace}"
   location            = azurerm_resource_group.vpc.location
   resource_group_name = azurerm_resource_group.vpc.name
 }
 
 resource "azurerm_virtual_network" "vpc" {
-  name                = "${var.name}-network-${var.environment}"
+  name                = "${var.name}-network-${var.deployment_namespace}"
   location            = azurerm_resource_group.vpc.location
   resource_group_name = azurerm_resource_group.vpc.name
   address_space       = ["${var.virtual_network}"] # TODO(jesse) Can this be wired up dynamically?
   dns_servers         = var.dns_servers
 
   tags = {
-    environment = var.environment
+    environment = var.deployment_namespace
     owner       = var.owner
   }
 }
 
-resource "azurerm_subnet" "subnet" {
-  for_each             = var.networks
-  name                 = "${each.key == "AzureFirewallSubnet" ? "AzureFirewallSubnet" : "${var.name}-${each.key}-${var.environment}"}"
-  resource_group_name  = azurerm_resource_group.vpc.name
-  virtual_network_name = azurerm_virtual_network.vpc.name
-  address_prefixes     = [element(split(",", each.value), 0)]
-  service_endpoints    = split(",", var.service_endpoints[each.key])
-}
+# resource "azurerm_subnet" "subnet" {
+#   for_each             = var.networks
+#   name                 = "${each.key == "AzureFirewallSubnet" ? "AzureFirewallSubnet" : "${var.name}-${each.key}-${var.deployment_namespace}"}"
+#   resource_group_name  = azurerm_resource_group.vpc.name
+#   virtual_network_name = azurerm_virtual_network.vpc.name
+#   address_prefixes     = [element(split(",", each.value), 0)]
+#   service_endpoints    = split(",", var.service_endpoints[each.key])
+# }
 
-resource "azurerm_route_table" "route_table" {
-  for_each            = var.route_tables
-  name                = "${var.name}-${each.key}-${var.environment}"
-  location            = azurerm_resource_group.vpc.location
+# aks subnet
+resource "azurerm_subnet" "aks" {
+  name = "${var.name}-aks-${var.deployment_namespace}"
+  resource_group_name = azurerm_resource_group.vpc.name
+  virtual_network_name = azurerm_virtual_network.vpc.name
+  addresses_prefixes = "10.1.2.0/24"
+  service_endpoints = "Microsoft.Storage,Microsoft.KeyVault,Microsoft.ContainerRegistry,Microsoft.Sql"
+}
+resource "azurerm_route_table" "aks" {
+  name = "${var.name}-aks-${var.deployment_namespace}"
+  location = azurerm_resource_group.vpc.location
   resource_group_name = azurerm_resource_group.vpc.name
 }
-
-resource "azurerm_subnet_route_table_association" "route_table" {
-  for_each       = var.route_tables
-  subnet_id      = azurerm_subnet.subnet[each.key].id
-  route_table_id = azurerm_route_table.route_table[each.key].id
+resource "azurerm_subnet_route_table_association" "aks" {
+  subnet_id = azurerm_subnet.aks.route_table_id
+  route_table_id = azurerm_route_table.aks.id
 }
+resource "azurerm_route" "aks_to_internet" {
+  name                = "${var.name}-default-${var.deployment_namespace}"
+  resource_group_name = azurerm_resource_group.vpc.name
+  route_table_name    = azurerm_route_table.aks.name
+  address_prefix      = "0.0.0.0/0"
+  next_hop_type       = "Internet"
+}
+resource "azurerm_route" "aks_to_vnet" {
+  name = "${var.name}-vnet-${var.deployment_namespace}}"
+  resource_group_name = azurerm_resource_group.vpc.name
+  route_table_name = azurerm_route_table.aks.name
+  address_prefix = "10.1.0.0/16"
+  next_hop_type = "vnetlocal"
+}
+
+# edge subnet
+resource "azurerm_subnet" "edge" {
+  name = "${var.name}-edge-${var.deployment_namespace}"
+  resource_group_name = azurerm_resource_group.vpc.name
+  virtual_network_name = azurerm_virtual_network.vpc.name
+  addresses_prefixes = "10.1.1.0/24"
+  service_endpoints = "Microsoft.ContainerRegistry"
+}
+
+resource "azurerm_route_table" "edge" {
+  name = "${var.name}-edge-${var.deployment_namespace}"
+  location = azurerm_resource_group.vpc.location
+  resource_group_name = azurerm_resource_group.vpc.name
+}
+resource "azurerm_subnet_route_table_association" "edge" {
+  subnet_id = azurerm_subnet.edge.route_table_id
+  route_table_id = azurerm_route_table.edge.id
+}
+resource "azurerm_route" "edge_to_internet" {
+  name                = "${var.name}-default-${var.deployment_namespace}"
+  resource_group_name = azurerm_resource_group.vpc.name
+  route_table_name    = azurerm_route_table.edge.name
+  address_prefix      = "0.0.0.0/0"
+  next_hop_type       = "Internet"
+}
+resource "azurerm_route" "edge_to_vnet" {
+  name = "${var.name}-vnet-${var.deployment_namespace}}"
+  resource_group_name = azurerm_resource_group.vpc.name
+  route_table_name = azurerm_route_table.edge.name
+  address_prefix = "10.1.0.0/16"
+  next_hop_type = "vnetlocal"
+}
+
+
+# redis subnet
+resource "azurerm_subnet" "redis" {
+  name = "${var.name}-redis-${var.deployment_namespace}"
+  resource_group_name = azurerm_resource_group.vpc.name
+  virtual_network_name = azurerm_virtual_network.vpc.name
+  addresses_prefixes = "10.1.3.0/24"
+  service_endpoints = "Microsoft.Storage,Microsoft.Sql"
+}
+
+resource "azurerm_route_table" "redis" {
+  name = "${var.name}-redis-${var.deployment_namespace}"
+  location = azurerm_resource_group.vpc.location
+  resource_group_name = azurerm_resource_group.vpc.name
+}
+resource "azurerm_subnet_route_table_association" "redis" {
+  subnet_id = azurerm_subnet.redis.route_table_id
+  route_table_id = azurerm_route_table.redis.id
+}
+resource "azurerm_route" "redis_to_internet" {
+  name                = "${var.name}-default-${var.deployment_namespace}"
+  resource_group_name = azurerm_resource_group.vpc.name
+  route_table_name    = azurerm_route_table.redis.name
+  address_prefix      = "0.0.0.0/0"
+  next_hop_type       = "Internet"
+}
+resource "azurerm_route" "redis_to_vnet" {
+  name = "${var.name}-vnet-${var.deployment_namespace}}"
+  resource_group_name = azurerm_resource_group.vpc.name
+  route_table_name = azurerm_route_table.redis.name
+  address_prefix = "10.1.0.0/16"
+  next_hop_type = "vnetlocal"
+}
+
+# AzureFirewallSubnet
+resource "azurerm_subnet" "AzureFirewallSubnet" {
+  name = "AzureFirewallSubnet"
+  resource_group_name = azurerm_resource_group.vpc.name
+  virtual_network_name = azurerm_virtual_network.vpc.name
+  addresses_prefixes = "10.1.4.0/24"
+  service_endpoints = ""
+}
+
+resource "azurerm_route_table" "AzureFirewallSubnet" {
+  name = "${var.name}-AzureFirewallSubnet-${var.deployment_namespace}"
+  location = azurerm_resource_group.vpc.location
+  resource_group_name = azurerm_resource_group.vpc.name
+}
+resource "azurerm_subnet_route_table_association" "AzureFirewallSubnet" {
+  subnet_id = azurerm_subnet.AzureFirewallSubnet.route_table_id
+  route_table_id = azurerm_route_table.AzureFirewallSubnet.id
+}
+resource "azurerm_route" "AzureFirewallSubnet_to_internet" {
+  name                = "${var.name}-default-${var.deployment_namespace}"
+  resource_group_name = azurerm_resource_group.vpc.name
+  route_table_name    = azurerm_route_table.AzureFirewallSubnet.name
+  address_prefix      = "0.0.0.0/0"
+  next_hop_type       = "Internet"
+}
+resource "azurerm_route" "AzureFirewallSubnet_to_vnet" {
+  name = "${var.name}-vnet-${var.deployment_namespace}}"
+  resource_group_name = azurerm_resource_group.vpc.name
+  route_table_name = azurerm_route_table.AzureFirewallSubnet.name
+  address_prefix = "10.1.0.0/16"
+  next_hop_type = "vnetlocal"
+}
+
+# appgateway
+resource "azurerm_subnet" "appgateway" {
+  name = "${var.name}-appgateway-${var.deployment_namespace}"
+  resource_group_name = azurerm_resource_group.vpc.name
+  virtual_network_name = azurerm_virtual_network.vpc.name
+  addresses_prefixes = "10.1.6.0/24"
+  service_endpoints = ""
+}
+
+resource "azurerm_route_table" "appgateway" {
+  name = "${var.name}-appgateway-${var.deployment_namespace}"
+  location = azurerm_resource_group.vpc.location
+  resource_group_name = azurerm_resource_group.vpc.name
+}
+resource "azurerm_subnet_route_table_association" "appgateway" {
+  subnet_id = azurerm_subnet.appgateway.route_table_id
+  route_table_id = azurerm_route_table.appgateway.id
+}
+resource "azurerm_route" "appgateway_to_internet" {
+  name                = "${var.name}-default-${var.deployment_namespace}"
+  resource_group_name = azurerm_resource_group.vpc.name
+  route_table_name    = azurerm_route_table.appgateway.name
+  address_prefix      = "0.0.0.0/0"
+  next_hop_type       = "Internet"
+}
+resource "azurerm_route" "appgateway_to_vnet" {
+  name = "${var.name}-vnet-${var.deployment_namespace}}"
+  resource_group_name = azurerm_resource_group.vpc.name
+  route_table_name = azurerm_route_table.appgateway.name
+  address_prefix = "10.1.0.0/16"
+  next_hop_type = "vnetlocal"
+}
+
+
+# resource "azurerm_route_table" "route_table" {
+#   for_each            = var.route_tables
+#   name                = "${var.name}-${each.key}-${var.deployment_namespace}"
+#   location            = azurerm_resource_group.vpc.location
+#   resource_group_name = azurerm_resource_group.vpc.name
+# }
+# resource "azurerm_subnet_route_table_association" "route_table" {
+#   for_each       = var.route_tables
+#   subnet_id      = azurerm_subnet.subnet[each.key].id
+#   route_table_id = azurerm_route_table.route_table[each.key].id
+# }
 
 # Default Routes
-resource "azurerm_route" "route" {
-  for_each            = var.route_tables
-  name                = "${var.name}-default-${var.environment}"
-  resource_group_name = azurerm_resource_group.vpc.name
-  route_table_name    = azurerm_route_table.route_table[each.key].name
-  address_prefix      = "0.0.0.0/0"
-  next_hop_type       = each.value
-}
+# resource "azurerm_route" "route" {
+#   for_each            = var.route_tables
+#   name                = "${var.name}-default-${var.deployment_namespace}"
+#   resource_group_name = azurerm_resource_group.vpc.name
+#   route_table_name    = azurerm_route_table.route_table[each.key].name
+#   address_prefix      = "0.0.0.0/0"
+#   next_hop_type       = each.value
+# }
 
 # Custom Routes
-resource "azurerm_route" "custom_routes" {
-  for_each            = var.custom_routes
-  name                = "${var.name}-${element(split(",", each.value), 1)}-${var.environment}"
-  resource_group_name = azurerm_resource_group.vpc.name
-  route_table_name    = azurerm_route_table.route_table[each.key].name
-  address_prefix      = element(split(",", each.value), 2)
-  next_hop_type       = element(split(",", each.value), 3)
-}
+# resource "azurerm_route" "custom_routes" {
+#   for_each            = var.routes
+#   name                = "${var.name}-${element(split(",", each.value), 1)}-${var.deployment_namespace}"
+#   resource_group_name = azurerm_resource_group.vpc.name
+#   route_table_name    = azurerm_route_table.route_table[each.key].name
+#   address_prefix      = element(split(",", each.value), 2)
+#   next_hop_type       = element(split(",", each.value), 3)
+# }
 
-resource "azurerm_route_table" "firewall_route_table" {
-  for_each            = var.virtual_appliance_route_tables
-  name                = "${var.name}-${each.key}-${var.environment}"
+resource "azurerm_route_table" "aks_firewall_route_table" {
+  name                = "${var.name}-aks-${var.deployment_namespace}"
   location            = azurerm_resource_group.vpc.location
   resource_group_name = azurerm_resource_group.vpc.name
 }
 
+resource "azurerm_route" "aks_firewall_routes" {
 
-
-resource "azurerm_route" "firewall_routes" {
-
-  name                   = "${var.name}-${element(split(",", var.virtual_appliance_routes), 0)}-${var.environment}"
+  name                   = "${var.name}-aks-${var.deployment_namespace}"
   resource_group_name    = azurerm_resource_group.vpc.name
-  route_table_name       = azurerm_route_table.firewall_route_table[element(split(",", var.virtual_appliance_routes), 0)].name
-  address_prefix         = chomp(element(split(",", var.virtual_appliance_routes), 2))
-  next_hop_type          = chomp(element(split(",", var.virtual_appliance_routes), 3))
-  next_hop_in_ip_address = chomp(element(split(",", var.virtual_appliance_routes), 4))
+  route_table_name       = azurerm_route_table.aks_firewall_route_table.name
+  address_prefix         = "10.1.0.0/16"
+  next_hop_type          = VirtualAppliance
+  # next_hop_in_ip_address = chomp(element(split(",", var.virtual_appliance_routes), 4))
 }
 
-resource "azurerm_subnet_route_table_association" "firewall_route_table" {
+resource "azurerm_subnet_route_table_association" "aks_firewall_route_table" {
   for_each       = var.virtual_appliance_route_tables
-  subnet_id      = azurerm_subnet.subnet[each.key].id
-  route_table_id = azurerm_route_table.firewall_route_table[each.key].id
+  subnet_id      = azurerm_subnet.aks.id
+  route_table_id = azurerm_route_table.aks_firewall_route_table.id
 }
 
 # Default Routes
 resource "azurerm_route" "fw_route" {
-  for_each               = var.virtual_appliance_route_tables
-  name                   = "${var.name}-default-${var.environment}"
+  name                   = "${var.name}-default-${var.deployment_namespace}"
   resource_group_name    = azurerm_resource_group.vpc.name
-  route_table_name       = azurerm_route_table.firewall_route_table[each.key].name
+  route_table_name       = azurerm_route_table.aks_firewall_route_table.name
   address_prefix         = "0.0.0.0/0"
-  next_hop_type          = each.value
-  next_hop_in_ip_address = chomp(element(split(",", var.virtual_appliance_routes), 4))
+  next_hop_type          = "VirtualAppliance"
+  # next_hop_in_ip_address = chomp(element(split(",", var.virtual_appliance_routes), 4))
 }
 
-
 resource "azurerm_public_ip" "az_fw_ip" {
-  name                = "az-firewall-${var.environment}"
-  location            = var.region
+  name                = "az-firewall-${var.deployment_namespace}"
+  location            = var.deployment_location
   resource_group_name = azurerm_resource_group.vpc.name
   allocation_method   = "Static"
   sku                 = "Standard"

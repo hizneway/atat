@@ -42,7 +42,7 @@ resource "azurerm_container_registry" "acr" {
         subnet_id = sub_map.id
 
       }
-      if sub_name == "aks-private"
+      if sub_name == "aks"
 
     ]
 
