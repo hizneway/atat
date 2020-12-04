@@ -101,10 +101,12 @@ echo "export TENANT_ID=$TF_VAR_operator_tenant_id" >> ../../.envrc
 echo "export OPS_REGISTRY=$REGISTRY_NAME" >> ../../.envrc
 echo "export NAMESPACE=$1">> ../../.envrc
 
-echo "============================="
-echo "============================="
-echo "============================="
+echo "==============REMEMBER==============="
 echo "You must put an app.tfvars.json and atatdev.pem file and ccpo_users.yml file in the config container before running the next file"
-echo "============================="
-echo "============================="
-echo "============================="
+
+echo "=============Suggestion================"
+echo "You can connect directly to your container by running"
+echo "az container exec \
+  --resource-group ${TF_VAR_resource_group_name} \
+  --name "$1-provisioner" \
+  --exec-command \"/bin/bash\""
