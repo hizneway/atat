@@ -13,13 +13,9 @@ resource "azurerm_container_registry" "acr" {
   location            = azurerm_resource_group.acr.location
   sku                 = var.sku
   admin_enabled       = var.admin_enabled
-  #georeplication_locations = [azurerm_resource_group.acr.location, var.backup_region]
-
-
 
   network_rule_set {
     default_action = var.policy
-
     ip_rule = [
       for cidr in values(var.whitelist) : {
         action   = "Allow"
@@ -35,21 +31,14 @@ resource "azurerm_container_registry" "acr" {
     #  }
     #}
 
-    virtual_network = var.subnet_list
-    # [
-
-    #   for sub_name, sub_map in var.subnet_list : {
-
-    #     action    = "Allow"
-    #     subnet_id = sub_map.id
-
-    #   }
-    #   if sub_name == "aks"
-
-    # ]
-
+    # virtual_network = var.subnet_list
+    virtual_network = [
+      for subnet_id in var.subnet_list : {
+        action    = "Allow"
+        subnet_id = subnet_id
+      }
+    ]
   }
-
 }
 
 resource "azurerm_monitor_diagnostic_setting" "acr_diagnostic" {
