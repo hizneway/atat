@@ -24,6 +24,7 @@ variable "ddos_enabled" {
 variable "virtual_network" {
   description = "The supernet used for this VPC a.k.a Virtual Network"
   type        = string
+  default     = "10.1.0.0/16"
 }
 
 # variable "networks" {
@@ -52,6 +53,6 @@ variable "dns_servers" {
 #   description = "A map of custom routes"
 # }
 
-variable "virtual_appliance_routes" {}
+# variable "virtual_appliance_routes" {}
 
-variable "virtual_appliance_route_tables" {}
+# variable "virtual_appliance_route_tables" {}

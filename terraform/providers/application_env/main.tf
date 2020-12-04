@@ -369,10 +369,10 @@ module "vpc" {
   owner                          = var.owner
   name                           = var.name
   dns_servers                    = []
-  service_endpoints              = var.service_endpoints
+  # service_endpoints              = var.service_endpoints
   # routes                         = var.routes
-  virtual_appliance_routes       = "${var.virtual_appliance_routes["aks"]},${module.private-aks-firewall.ip_config[0].private_ip_address}"
-  virtual_appliance_route_tables = var.virtual_appliance_route_tables
+  # virtual_appliance_routes       = "${var.virtual_appliance_routes["aks"]},${module.private-aks-firewall.ip_config[0].private_ip_address}"
+  # virtual_appliance_route_tables = var.virtual_appliance_route_tables
 }
 
 # module "private-aks-firewall" {
