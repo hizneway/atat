@@ -34,7 +34,7 @@ resource "time_sleep" "wait_30_seconds" {
       azurerm_key_vault_access_policy.keyvault_admin_policy,
     ]
 
-  create_duration = "30s"
+  create_duration = "300s"
 }
 
 resource "azurerm_key_vault_access_policy" "keyvault_k8s_policy" {
