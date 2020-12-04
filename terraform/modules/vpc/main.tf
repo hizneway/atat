@@ -71,7 +71,7 @@ resource "azurerm_route" "aks_to_vnet" {
   resource_group_name = azurerm_resource_group.vpc.name
   route_table_name = azurerm_route_table.aks.name
   address_prefix = "10.1.0.0/16"
-  next_hop_type = "vnetlocal"
+  next_hop_type = "VnetLocal"
 }
 
 # edge subnet
@@ -104,7 +104,7 @@ resource "azurerm_route" "edge_to_vnet" {
   resource_group_name = azurerm_resource_group.vpc.name
   route_table_name = azurerm_route_table.edge.name
   address_prefix = "10.1.0.0/16"
-  next_hop_type = "vnetlocal"
+  next_hop_type = "VnetLocal"
 }
 
 
@@ -141,7 +141,7 @@ resource "azurerm_route" "redis_to_vnet" {
   resource_group_name = azurerm_resource_group.vpc.name
   route_table_name = azurerm_route_table.redis.name
   address_prefix = "10.1.0.0/16"
-  next_hop_type = "vnetlocal"
+  next_hop_type = "VnetLocal"
 }
 
 # AzureFirewallSubnet
@@ -174,7 +174,7 @@ resource "azurerm_route" "AzureFirewallSubnet_to_vnet" {
   resource_group_name = azurerm_resource_group.vpc.name
   route_table_name = azurerm_route_table.AzureFirewallSubnet.name
   address_prefix = "10.1.0.0/16"
-  next_hop_type = "vnetlocal"
+  next_hop_type = "VnetLocal"
 }
 
 # appgateway
@@ -207,7 +207,7 @@ resource "azurerm_route" "appgateway_to_vnet" {
   resource_group_name = azurerm_resource_group.vpc.name
   route_table_name = azurerm_route_table.appgateway.name
   address_prefix = "10.1.0.0/16"
-  next_hop_type = "vnetlocal"
+  next_hop_type = "VnetLocal"
 }
 
 
