@@ -255,7 +255,7 @@ resource "azurerm_route" "aks_firewall_routes" {
   resource_group_name    = azurerm_resource_group.vpc.name
   route_table_name       = azurerm_route_table.aks_firewall_route_table.name
   address_prefix         = "10.1.0.0/16"
-  next_hop_type          = VirtualAppliance
+  next_hop_type          = "VirtualAppliance"
   next_hop_in_ip_address = azurerm_firewall.fw.ip_configuration[0].private_ip_address
 }
 
