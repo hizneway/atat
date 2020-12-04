@@ -83,7 +83,6 @@ module "container_registry" {
   owner         = var.owner
   backup_region = "" # TODO(jesse) Unused.
   policy        = "Allow"
-  subnet_ids    = [module.vpc.aks_subnet_id]
   whitelist     = { "operator" = local.operator_ip }
   workspace_id  = local.log_analytics_workspace_id
   subnet_list   = [
