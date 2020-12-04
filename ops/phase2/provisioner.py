@@ -189,6 +189,7 @@ def terraform_application(
             "-input=false",
             "-out=plan.tfplan",
             "-var-file=/tmp/app.tfvars.json",
+            "-no-color",
             *tfvars,
             ".",
         ]
