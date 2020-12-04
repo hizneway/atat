@@ -36,7 +36,7 @@ variable "admin_enabled" {
 
 }
 
-variable "subnet_ids" {
+variable "subnet_list" {
   description = "List of subnet_ids that will have access to this service"
   type        = list
 }
