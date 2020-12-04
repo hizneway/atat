@@ -35,16 +35,18 @@ resource "azurerm_container_registry" "acr" {
     #  }
     #}
 
-    virtual_network = [
-      for sub_name, sub_map in var.subnet_list : {
+    virtual_network = var.subnet_list
+    # [
 
-        action    = "Allow"
-        subnet_id = sub_map.id
+    #   for sub_name, sub_map in var.subnet_list : {
 
-      }
-      if sub_name == "aks"
+    #     action    = "Allow"
+    #     subnet_id = sub_map.id
 
-    ]
+    #   }
+    #   if sub_name == "aks"
+
+    # ]
 
   }
 
