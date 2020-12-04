@@ -1,7 +1,3 @@
-
-
-
-
 resource "azurerm_firewall" "fw" {
   name                = "az-firewall-${var.environment}"
   location            = var.location

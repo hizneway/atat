@@ -1,8 +1,8 @@
-variable "environment" {
+variable "deployment_namespace" {
   description = "Environment (Prod,Dev,etc)"
 }
 
-variable "region" {
+variable "deployment_location" {
   description = "Region (useast2, etc)"
 
 }
@@ -47,7 +47,7 @@ variable "service_endpoints" {
 
 }
 
-variable "custom_routes" {
+variable "routes" {
   type        = map
   description = "A map of custom routes"
 }
