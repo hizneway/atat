@@ -26,31 +26,31 @@ variable "virtual_network" {
   type        = string
 }
 
-variable "networks" {
-  description = "A map of lists describing the network topology"
-  type        = map
-}
+# variable "networks" {
+#   description = "A map of lists describing the network topology"
+#   type        = map
+# }
 
 variable "dns_servers" {
   description = "DNS Server IPs for internal and public DNS lookups (must be on a defined subnet)"
   type        = list
 }
 
-variable "route_tables" {
-  type        = map
-  description = "A map with the route tables to create"
-}
+# variable "route_tables" {
+#   type        = map
+#   description = "A map with the route tables to create"
+# }
 
-variable "service_endpoints" {
-  type        = map
-  description = "A map of the service endpoints and its mapping to subnets"
+# variable "service_endpoints" {
+#   type        = map
+#   description = "A map of the service endpoints and its mapping to subnets"
 
-}
+# }
 
-variable "routes" {
-  type        = map
-  description = "A map of custom routes"
-}
+# variable "routes" {
+#   type        = map
+#   description = "A map of custom routes"
+# }
 
 variable "virtual_appliance_routes" {}
 
