@@ -190,7 +190,8 @@ def import_images(ops_registry, atat_registry):
         "--source",
         f"{ops_registry}/rhel-py:latest"
     ]
-    subprocess.run(cmd).check_returncode()
+    # TODO: Not checking the return code, because it fails if already imported.
+    subprocess.run(cmd)
 
 def build_atat(ops_registry, atat_registry, git_sha, atat_image_tag):
     cmd = [
