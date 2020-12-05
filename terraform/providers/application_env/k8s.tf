@@ -27,7 +27,7 @@
 
 # azure_firewall_subnet
 resource "azurerm_subnet" "azure_firewall" {
-  name = "azure_firewall"
+  name = "AzureFirewallSubnet"
   resource_group_name = azurerm_resource_group.vpc.name
   virtual_network_name = azurerm_virtual_network.vpc.name
   address_prefixes = ["10.1.4.0/24"]
