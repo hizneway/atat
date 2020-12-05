@@ -67,9 +67,7 @@ module "container_registry" {
   subnet_list   = [
     azurerm_subnet.aks.id,
     azurerm_subnet.edge.id,
-    azurerm_subnet.redis.id,
-    azurerm_subnet.AzureFirewallSubnet.id,
-    azurerm_subnet.appgateway.id,
+    azurerm_subnet.mgmt_subnet.id,
   ]
   # depends_on    = [module.vpc]
   # ops_container_registry_name = local.operations_container_registry_name
