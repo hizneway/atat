@@ -40,12 +40,12 @@ resource "azurerm_route_table" "azure_firewall" {
   resource_group_name = azurerm_resource_group.vpc.name
 }
 
-resource "azurerm_subnet_route_table_association" "aks" {
+resource "azurerm_subnet_route_table_association" "azure_firewall" {
   subnet_id = azurerm_subnet.azure_firewall.id
   route_table_id = azurerm_route_table.azure_firewall.id
 }
 
-resource "azurerm_route" "to_internet" {
+resource "azurerm_route" "azure_firewall_to_internet" {
   name = "default"
   resource_group_name = azurerm_resource_group.vpc.name
   route_table_name = azurerm_route_table.azure_firewall.name
@@ -53,7 +53,7 @@ resource "azurerm_route" "to_internet" {
   next_hop_type = "Internet"
 }
 
-resource "azurerm_public_ip" "az_fw_ip" {
+resource "azurerm_public_ip" "azure_firewall_ip" {
   name                = "az-firewall-${var.deployment_namespace}"
   location            = var.deployment_location
   resource_group_name = azurerm_resource_group.vpc.name
@@ -68,7 +68,7 @@ resource "azurerm_firewall" "fw" {
   ip_configuration {
     name                 = "configuration"
     subnet_id            = azurerm_subnet.azure_firewall.id
-    public_ip_address_id = azurerm_public_ip.az_fw_ip.id
+    public_ip_address_id = azurerm_public_ip.azure_firewall_ip.id
   }
   tags = ["AzureKubernetesService"]
 }
