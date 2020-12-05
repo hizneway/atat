@@ -93,8 +93,8 @@ def deploy(
 ):
     setup(sp_client_id, sp_client_secret, subscription_id, tenant_id, namespace, config_azcli)
     import_images(ops_registry, atat_registry)
-    build_atat(ops_registry, atat_registry, git_sha, atat_image_tag)
-    build_nginx(ops_registry, atat_registry, nginx_image_tag)
+    build_atat(atat_registry, git_sha, atat_image_tag)
+    build_nginx(atat_registry, nginx_image_tag)
 
     os.environ["ARM_CLIENT_ID"] = sp_client_id
     os.environ["ARM_CLIENT_SECRET"] = sp_client_secret
@@ -193,13 +193,13 @@ def import_images(ops_registry, atat_registry):
     # TODO: Not checking the return code, because it fails if already imported.
     subprocess.run(cmd)
 
-def build_atat(ops_registry, atat_registry, git_sha, atat_image_tag):
+def build_atat(atat_registry, git_sha, atat_image_tag):
     cmd = [
         "az",
         "acr",
         "build",
         "--registry",
-        ops_registry,
+        atat_registry,
         "--build-arg",
         f"IMAGE={atat_registry}.azurecr.io/rhel-py:latest",
         "--image",
@@ -212,13 +212,13 @@ def build_atat(ops_registry, atat_registry, git_sha, atat_image_tag):
     subprocess.run(cmd).check_returncode()
 
 
-def build_nginx(ops_registry, atat_registry, nginx_image_tag):
+def build_nginx(atat_registry, nginx_image_tag):
     cmd = [
         "az",
         "acr",
         "build",
         "--registry",
-        ops_registry,
+        atat_registry,
         "--build-arg",
         f"IMAGE={atat_registry}.azurecr.io/rhel-py:latest", # TODO(jesse) Can be built off rhelubi
         "--image",
