@@ -243,93 +243,99 @@ resource "azurerm_route" "appgateway_to_vnet" {
 #   next_hop_type       = element(split(",", each.value), 3)
 # }
 
-resource "azurerm_route_table" "aks_firewall_route_table" {
-  name                = "${var.name}-aks-fw-${var.deployment_namespace}"
-  location            = azurerm_resource_group.vpc.location
-  resource_group_name = azurerm_resource_group.vpc.name
-}
 
-resource "azurerm_route" "aks_firewall_routes" {
 
-  name                   = "${var.name}-aksfw-${var.deployment_namespace}"
-  resource_group_name    = azurerm_resource_group.vpc.name
-  route_table_name       = azurerm_route_table.aks_firewall_route_table.name
-  address_prefix         = "10.1.0.0/16"
-  next_hop_type          = "VirtualAppliance"
-  next_hop_in_ip_address = azurerm_firewall.fw.ip_configuration[0].private_ip_address
-}
+# ===================================================================
+# BRING THIS BACK - Just testing to see if this is my subnet problem
+# ===================================================================
 
-resource "azurerm_subnet_route_table_association" "aks_firewall_route_table" {
-  # for_each       = var.virtual_appliance_route_tables
-  subnet_id      = azurerm_subnet.aks.id
-  route_table_id = azurerm_route_table.aks_firewall_route_table.id
-}
+# resource "azurerm_route_table" "aks_firewall_route_table" {
+#   name                = "${var.name}-aks-fw-${var.deployment_namespace}"
+#   location            = azurerm_resource_group.vpc.location
+#   resource_group_name = azurerm_resource_group.vpc.name
+# }
 
-# Default Routes
-resource "azurerm_route" "fw_route" {
-  name                   = "${var.name}-default-${var.deployment_namespace}"
-  resource_group_name    = azurerm_resource_group.vpc.name
-  route_table_name       = azurerm_route_table.aks_firewall_route_table.name
-  address_prefix         = "0.0.0.0/0"
-  next_hop_type          = "VirtualAppliance"
-  next_hop_in_ip_address = azurerm_firewall.fw.ip_configuration[0].private_ip_address
-}
+# resource "azurerm_route" "aks_firewall_routes" {
 
-resource "azurerm_public_ip" "az_fw_ip" {
-  name                = "az-firewall-${var.deployment_namespace}"
-  location            = var.deployment_location
-  resource_group_name = azurerm_resource_group.vpc.name
-  allocation_method   = "Static"
-  sku                 = "Standard"
-}
+#   name                   = "${var.name}-aksfw-${var.deployment_namespace}"
+#   resource_group_name    = azurerm_resource_group.vpc.name
+#   route_table_name       = azurerm_route_table.aks_firewall_route_table.name
+#   address_prefix         = "10.1.0.0/16"
+#   next_hop_type          = "VirtualAppliance"
+#   next_hop_in_ip_address = azurerm_firewall.fw.ip_configuration[0].private_ip_address
+# }
 
-resource "azurerm_firewall" "fw" {
-  name                = "az-firewall-${var.deployment_namespace}"
-  location            = var.deployment_location
-  resource_group_name = azurerm_resource_group.vpc.name
-  ip_configuration {
-    name                 = "configuration"
-    subnet_id            = azurerm_subnet.AzureFirewallSubnet.id
-    public_ip_address_id = azurerm_public_ip.az_fw_ip.id
-  }
-}
+# resource "azurerm_subnet_route_table_association" "aks_firewall_route_table" {
+#   # for_each       = var.virtual_appliance_route_tables
+#   subnet_id      = azurerm_subnet.aks.id
+#   route_table_id = azurerm_route_table.aks_firewall_route_table.id
+# }
 
-resource "azurerm_firewall_application_rule_collection" "fw_rule_collection" {
-  name                = "aksbasics"
-  azure_firewall_name = "az-firewall-${var.deployment_namespace}"
-  resource_group_name = azurerm_resource_group.vpc.name
-  priority            = 101
-  action              = "Allow"
+# # Default Routes
+# resource "azurerm_route" "fw_route" {
+#   name                   = "${var.name}-default-${var.deployment_namespace}"
+#   resource_group_name    = azurerm_resource_group.vpc.name
+#   route_table_name       = azurerm_route_table.aks_firewall_route_table.name
+#   address_prefix         = "0.0.0.0/0"
+#   next_hop_type          = "VirtualAppliance"
+#   next_hop_in_ip_address = azurerm_firewall.fw.ip_configuration[0].private_ip_address
+# }
 
-  rule {
-    name             = "allow network"
-    source_addresses = ["*"]
+# resource "azurerm_public_ip" "az_fw_ip" {
+#   name                = "az-firewall-${var.deployment_namespace}"
+#   location            = var.deployment_location
+#   resource_group_name = azurerm_resource_group.vpc.name
+#   allocation_method   = "Static"
+#   sku                 = "Standard"
+# }
 
-    target_fqdns = [
-      "*.cdn.mscr.io",
-      "mcr.microsoft.com",
-      "*.data.mcr.microsoft.com",
-      "management.azure.com",
-      "login.microsoftonline.com",
-      "acs-mirror.azureedge.net",
-      "dc.services.visualstudio.com",
-      "*.opinsights.azure.com",
-      "*.oms.opinsights.azure.com",
-      "*.microsoftonline.com",
-      "*.monitoring.azure.com",
-    ]
+# resource "azurerm_firewall" "fw" {
+#   name                = "az-firewall-${var.deployment_namespace}"
+#   location            = var.deployment_location
+#   resource_group_name = azurerm_resource_group.vpc.name
+#   ip_configuration {
+#     name                 = "configuration"
+#     subnet_id            = azurerm_subnet.AzureFirewallSubnet.id
+#     public_ip_address_id = azurerm_public_ip.az_fw_ip.id
+#   }
+# }
 
-    protocol {
-      port = "80"
-      type = "Http"
-    }
+# resource "azurerm_firewall_application_rule_collection" "fw_rule_collection" {
+#   name                = "aksbasics"
+#   azure_firewall_name = "az-firewall-${var.deployment_namespace}"
+#   resource_group_name = azurerm_resource_group.vpc.name
+#   priority            = 101
+#   action              = "Allow"
 
-    protocol {
-      port = "443"
-      type = "Https"
-    }
-  }
+#   rule {
+#     name             = "allow network"
+#     source_addresses = ["*"]
 
-  depends_on = [azurerm_firewall.fw]
+#     target_fqdns = [
+#       "*.cdn.mscr.io",
+#       "mcr.microsoft.com",
+#       "*.data.mcr.microsoft.com",
+#       "management.azure.com",
+#       "login.microsoftonline.com",
+#       "acs-mirror.azureedge.net",
+#       "dc.services.visualstudio.com",
+#       "*.opinsights.azure.com",
+#       "*.oms.opinsights.azure.com",
+#       "*.microsoftonline.com",
+#       "*.monitoring.azure.com",
+#     ]
 
-}
+#     protocol {
+#       port = "80"
+#       type = "Http"
+#     }
+
+#     protocol {
+#       port = "443"
+#       type = "Https"
+#     }
+#   }
+
+#   depends_on = [azurerm_firewall.fw]
+
+# }
