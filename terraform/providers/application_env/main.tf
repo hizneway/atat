@@ -51,7 +51,7 @@ module "task_order_bucket" {
   whitelist              = { "operator" = local.operator_ip }
   bucket_cors_properties = var.bucket_cors_properties
   storage_container_name = var.task_order_bucket_storage_container_name
-  depends_on             = [module.vpc]
+  # depends_on             = [module.vpc]
 }
 
 module "container_registry" {
@@ -71,7 +71,7 @@ module "container_registry" {
     azurerm_subnet.AzureFirewallSubnet.id,
     azurerm_subnet.appgateway.id,
   ]
-  depends_on    = [module.vpc]
+  # depends_on    = [module.vpc]
   # ops_container_registry_name = local.operations_container_registry_name
   # ops_resource_group_name     = local.operations_resource_group_name
 }
@@ -140,7 +140,8 @@ resource "azurerm_kubernetes_cluster" "k8s_private" {
     environment = var.deployment_namespace
     owner       = var.owner
   }
-  depends_on = [module.vpc, module.keyvault_reader_identity]
+  depends_on = [module.keyvault_reader_identity]
+  # depends_on = [module.vpc, module.keyvault_reader_identity]
 }
 
 # module "vpc" {
