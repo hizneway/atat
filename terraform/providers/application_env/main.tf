@@ -4,8 +4,7 @@ data "http" "myip" {
 
 data "azurerm_client_config" "current" {}
 
-data "azurerm_client_config" "azure_client" {
-}
+data "azurerm_client_config" "azure_client" { }
 
 locals {
   deployment_subnet_id            = data.terraform_remote_state.previous_stage.outputs.operations_deployment_subnet_id
@@ -20,22 +19,6 @@ module "tenant_keyvault_app" {
   source = "../../modules/azure_ad"
   name   = "tenant-keyvault"
 }
-
-module "aks_sp" {
-  source = "../../modules/azure_ad"
-  name   = "aks-service-principal"
-}
-
-module "bastion_sp" {
-  source = "../../modules/azure_ad"
-  name   = "bastion-service-principal"
-}
-
-# module "ops_keyvault_app" {
-#   source = "../../modules/azure_ad"
-#   name   = "ops-keyvault-sp"
-# }
-
 
 # Task order bucket is required to be accessible publicly by the users.
 # which is why the policy here is "Allow"
@@ -72,74 +55,6 @@ module "container_registry" {
   # depends_on    = [module.vpc]
   # ops_container_registry_name = local.operations_container_registry_name
   # ops_resource_group_name     = local.operations_resource_group_name
-}
-
-module "keyvault_reader_identity" {
-  source      = "../../modules/managed_identity"
-  name        = var.name
-  owner       = var.owner
-  environment = var.deployment_namespace
-  region      = var.deployment_location
-  identity    = "${var.name}-${var.deployment_namespace}-vault-reader"
-  roles       = ["Reader", "Managed Identity Operator"]
-}
-
-resource "azurerm_kubernetes_cluster" "k8s_private" {
-  name                    = "${var.name}-private-k8s-${var.deployment_namespace}"
-  location                = var.deployment_location
-  resource_group_name     = azurerm_resource_group.vpc.name
-  dns_prefix              = "atat-aks"
-  private_cluster_enabled = true
-  node_resource_group     = "${azurerm_resource_group.vpc.name}-private-aks-node-rgs"
-  addon_profile {
-    azure_policy {
-      enabled = true
-    }
-    oms_agent {
-      enabled                    = true
-      log_analytics_workspace_id = local.log_analytics_workspace_id
-    }
-  }
-  network_profile {
-
-    network_plugin     = "azure"
-    dns_service_ip     = var.private_aks_service_dns
-    docker_bridge_cidr = var.private_aks_docker_bridge_cidr
-    outbound_type      = "userDefinedRouting"
-    service_cidr       = var.private_aks_service_cidr
-    load_balancer_sku  = "Standard"
-  }
-  identity {
-    type = "SystemAssigned"
-  }
-  # service_principal {
-  #   client_id     = var.private_aks_sp_id
-  #   client_secret = var.private_aks_sp_secret
-  # }
-
-  default_node_pool {
-    name                  = "default"
-    vm_size               = "Standard_B2s"
-    os_disk_size_gb       = 30
-    vnet_subnet_id        = azurerm_subnet.aks.id
-    enable_node_public_ip = false
-    enable_auto_scaling   = false
-    node_count            = 3
-  }
-
-  lifecycle {
-    ignore_changes = [
-      default_node_pool.0.node_count
-    ]
-  }
-
-  tags = {
-    Name        = "private-aks-atat"
-    environment = var.deployment_namespace
-    owner       = var.owner
-  }
-  depends_on = [module.keyvault_reader_identity]
-  # depends_on = [module.vpc, module.keyvault_reader_identity]
 }
 
 # module "vpc" {
@@ -265,4 +180,9 @@ resource "azurerm_kubernetes_cluster" "k8s_private" {
 #   registry_username          = var.OPS_CID
 #   depends_on                 = [module.vpc]
 #   container_registry         = local.operations_container_registry
+# }
+
+# module "ops_keyvault_app" {
+#   source = "../../modules/azure_ad"
+#   name   = "ops-keyvault-sp"
 # }
