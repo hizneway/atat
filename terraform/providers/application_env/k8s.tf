@@ -70,7 +70,6 @@ resource "azurerm_firewall" "fw" {
     subnet_id            = azurerm_subnet.azure_firewall.id
     public_ip_address_id = azurerm_public_ip.azure_firewall_ip.id
   }
-  tags = ["AzureKubernetesService"]
 }
 
 resource "azurerm_firewall_application_rule_collection" "fw_rule_collection" {
