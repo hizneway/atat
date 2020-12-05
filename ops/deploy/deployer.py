@@ -53,8 +53,8 @@ logger = logging.getLogger(__name__)
 )
 @click.option(
     "--atat_registry",
-    help="Full URI of the container registry that k8s will have access to - envvar: ATAT_REGISTRY",
-    prompt="Domain of atat container registry eg:cloudzeroregistry${var.namespace}.azurecr.io",
+    help="Short name of the container registry that k8s will have access to - envvar: ATAT_REGISTRY",
+    prompt="Short name of the atat container registry eg:cloudzeroregistry",
     envvar="ATAT_REGISTRY",
 )
 @click.option(
@@ -117,8 +117,8 @@ def deploy(
         "tenant_id": tenant_id,
         "atat_image_tag": atat_image_tag,
         "nginx_image_tag": nginx_image_tag,
-        "application_container_image": f"{atat_registry}/atat:{atat_image_tag}",
-        "nginx_container_image": f"{atat_registry}/nginx:{nginx_image_tag}"
+        "application_container_image": f"{atat_registry}.azurecr.io/atat:{atat_image_tag}",
+        "nginx_container_image": f"{atat_registry}.azurecr.io/nginx:{nginx_image_tag}"
     }}
 
     pprint(template_variables)
@@ -187,7 +187,7 @@ def build_atat(ops_registry, atat_registry, git_sha, atat_image_tag):
         "--registry",
         ops_registry,
         "--build-arg",
-        f"IMAGE={ops_registry}/rhel-py:latest",
+        f"IMAGE={atat_registry}azurecr.io/rhel-py:latest",
         "--image",
         f"atat:{atat_image_tag}",
         "--file",
@@ -206,7 +206,7 @@ def build_nginx(ops_registry, atat_registry, nginx_image_tag):
         "--registry",
         ops_registry,
         "--build-arg",
-        f"IMAGE={ops_registry}/rhel-py:latest", # TODO(jesse) Can be built off rhelubi
+        f"IMAGE={atat_registry}azurecr.io/rhel-py:latest", # TODO(jesse) Can be built off rhelubi
         "--image",
         f"nginx:{nginx_image_tag}",
         "--file",
