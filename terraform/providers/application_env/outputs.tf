@@ -78,7 +78,7 @@ output "aks_keyvault_reader_id" {
 
 # output "operator_keyvault_url" {
 #   value = module.operator_keyvault.url
-}
+# }
 
 # output "ops_keyvault_sp_client_id" {
 #   value = module.ops_keyvault_app.application_id
