@@ -47,7 +47,7 @@ module "task_order_bucket" {
   environment            = var.deployment_namespace
   region                 = var.deployment_location
   policy                 = "Allow"
-  subnet_ids             = [module.vpc.aks_subnet_id]
+  subnet_ids             = [azurerm_subnet.aks.id]
   whitelist              = { "operator" = local.operator_ip }
   bucket_cors_properties = var.bucket_cors_properties
   storage_container_name = var.task_order_bucket_storage_container_name
@@ -65,11 +65,11 @@ module "container_registry" {
   whitelist     = { "operator" = local.operator_ip }
   workspace_id  = local.log_analytics_workspace_id
   subnet_list   = [
-    module.vpc.aks_subnet_id,
-    module.vpc.edge_subnet_id,
-    module.vpc.redis_subnet_id,
-    module.vpc.AzureFirewallSubnet_subnet_id,
-    module.vpc.appgateway_subnet_id,
+    azurerm_subnet.aks.id,
+    azurerm_subnet.edge.id,
+    azurerm_subnet.redis.id,
+    azurerm_subnet.AzureFirewallSubnet.id,
+    azurerm_subnet.appgateway.id,
   ]
   depends_on    = [module.vpc]
   # ops_container_registry_name = local.operations_container_registry_name
@@ -89,10 +89,10 @@ module "keyvault_reader_identity" {
 resource "azurerm_kubernetes_cluster" "k8s_private" {
   name                    = "${var.name}-private-k8s-${var.deployment_namespace}"
   location                = var.deployment_location
-  resource_group_name     = module.vpc.resource_group_name
+  resource_group_name     = azurerm_resource_group.vpc.name
   dns_prefix              = "atat-aks"
   private_cluster_enabled = true
-  node_resource_group     = "${module.vpc.resource_group_name}-private-aks-node-rgs"
+  node_resource_group     = "${azurerm_resource_group.vpc.name}-private-aks-node-rgs"
   addon_profile {
     azure_policy {
       enabled = true
@@ -123,7 +123,7 @@ resource "azurerm_kubernetes_cluster" "k8s_private" {
     name                  = "default"
     vm_size               = "Standard_B2s"
     os_disk_size_gb       = 30
-    vnet_subnet_id        = module.vpc.aks_subnet_id
+    vnet_subnet_id        = azurerm_subnet.aks.id
     enable_node_public_ip = false
     enable_auto_scaling   = false
     node_count            = 3
@@ -161,12 +161,12 @@ resource "azurerm_kubernetes_cluster" "k8s_private" {
 
 # module "private-aks-firewall" {
 #   source              = "../../modules/azure_firewall"
-#   resource_group_name = module.vpc.resource_group_name
+#   resource_group_name = azurerm_resource_group.vpc.name
 #   location            = var.deployment_location
 #   name                = var.name
 #   environment         = var.deployment_namespace
-#   subnet_id           = module.vpc.AzureFirewallSubnet_subnet_id
-#   az_fw_ip            = module.vpc.fw_ip_address_id
+#   subnet_id           = azurerm_subnet.AzureFirewallSubnet.id
+#   az_fw_ip            = azurerm_public_ip.az_fw_ip.id
 # }
 
 # module "k8s" {
@@ -177,7 +177,7 @@ resource "azurerm_kubernetes_cluster" "k8s_private" {
 #   owner                    = var.owner
 #   k8s_dns_prefix           = var.k8s_dns_prefix
 #   k8s_node_size            = "Standard_D2_v3"
-#   vnet_subnet_id           = module.vpc.aks_subnet_id
+#   vnet_subnet_id           = azurerm_subnet.aks.id
 #   enable_auto_scaling      = true
 #   max_count                = var.aks_max_node_count
 #   min_count                = var.aks_min_node_count
@@ -185,11 +185,11 @@ resource "azurerm_kubernetes_cluster" "k8s_private" {
 #   client_secret            = module.aks_sp.application_password
 #   client_object_id         = module.aks_sp.object_id
 #   workspace_id             = local.log_analytics_workspace_id
-#   vnet_id                  = module.vpc.id
+#   vnet_id                  = azurerm_virtual_network.vpc.id
 #   node_resource_group      = "${var.name}-node-rg-${var.deployment_namespace}"
 #   virtual_network          = var.virtual_network
-#   vnet_resource_group_name = module.vpc.resource_group_name
-#   aks_subnet_id            = module.vpc.aks_subnet_id
+#   vnet_resource_group_name = azurerm_resource_group.vpc.name
+#   aks_subnet_id            = azurerm_subnet.aks.id
 #   aks_route_table          = "${var.name}-aks-${var.deployment_namespace}"
 #   depends_on               = [module.aks_sp, module.keyvault_reader_identity]
 # }
@@ -206,7 +206,7 @@ resource "azurerm_kubernetes_cluster" "k8s_private" {
 #   admin_principals   = { "operator" : data.azurerm_client_config.azure_client.object_id }
 #   tenant_principals  = {}
 #   policy             = "Deny"
-#   subnet_ids         = [module.vpc.aks_subnet_id, local.deployment_subnet_id]
+#   subnet_ids         = [azurerm_subnet.aks.id, local.deployment_subnet_id]
 #   whitelist          = { "operator" = local.operator_ip }
 #   workspace_id       = local.log_analytics_workspace_id
 # }
@@ -222,7 +222,7 @@ resource "azurerm_kubernetes_cluster" "k8s_private" {
 #   tenant_principals = { "${module.tenant_keyvault_app.name}" = "${module.tenant_keyvault_app.sp_object_id}" }
 #   admin_principals  = {}
 #   policy            = "Deny"
-#   subnet_ids        = [module.vpc.aks_subnet_id]
+#   subnet_ids        = [azurerm_subnet.aks.id]
 #   whitelist         = { "operator" = local.operator_ip }
 #   workspace_id      = local.log_analytics_workspace_id
 # }
@@ -240,7 +240,7 @@ resource "azurerm_kubernetes_cluster" "k8s_private" {
 #   admin_principals  = { "operator" : data.azurerm_client_config.azure_client.object_id }
 #   tenant_principals = { (module.ops_keyvault_app.name) = "${module.ops_keyvault_app.sp_object_id}" }
 #   policy            = "Deny"
-#   subnet_ids        = [module.vpc.aks_subnet_id, local.deployment_subnet_id]
+#   subnet_ids        = [azurerm_subnet.aks.id, local.deployment_subnet_id]
 #   whitelist         = { "operator" = local.operator_ip }
 #   workspace_id      = local.log_analytics_workspace_id
 # }
@@ -249,10 +249,10 @@ resource "azurerm_kubernetes_cluster" "k8s_private" {
 #   source                     = "../../modules/bastion"
 #   rg                         = "${var.deployment_namespace}-bastion-jump"
 #   region                     = var.deployment_location
-#   mgmt_subnet_rg             = module.vpc.resource_group_name
-#   mgmt_subnet_vpc_name       = module.vpc.vpc_name
-#   bastion_subnet_rg          = module.vpc.resource_group_name
-#   bastion_subnet_vpc_name    = module.vpc.vpc_name
+#   mgmt_subnet_rg             = azurerm_resource_group.vpc.name
+#   mgmt_subnet_vpc_name       = azurerm_virtual_network.vpc.name
+#   bastion_subnet_rg          = azurerm_resource_group.vpc.name
+#   bastion_subnet_vpc_name    = azurerm_virtual_network.vpc.name
 #   mgmt_subnet_cidr           = "10.1.250.0/24"
 #   bastion_subnet_cidr        = "10.1.4.0/24"
 #   bastion_aks_sp_secret      = module.bastion_sp.application_password

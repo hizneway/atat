@@ -13,7 +13,7 @@ resource "azurerm_redis_cache" "redis" {
   sku_name            = "Premium"
   enable_non_ssl_port = false
   minimum_tls_version = "1.2"
-  subnet_id           = module.vpc.redis_subnet_id
+  subnet_id           = azurerm_subnet.redis.id
 
   redis_configuration {
     enable_authentication = true

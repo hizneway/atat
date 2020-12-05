@@ -6,8 +6,8 @@ resource "azurerm_resource_group" "bastion" {
 # add mgmgt subnet
 resource "azurerm_subnet" "mgmt_subnet" {
   name                 = "mgmt-subnet"
-  resource_group_name  = module.vpc.resource_group_name
-  virtual_network_name = module.vpc.vpc_name
+  resource_group_name  = azurerm_resource_group.vpc.name
+  virtual_network_name = azurerm_virtual_network.vpc.name
   address_prefixes     = ["10.1.250.0/24"]
 
   enforce_private_link_endpoint_network_policies = true

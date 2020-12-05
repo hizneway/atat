@@ -33,7 +33,7 @@ resource "azurerm_postgresql_virtual_network_rule" "allow_aks_subnet" {
   name                                 = "allow-aks-subnet-rule"
   resource_group_name                  = azurerm_resource_group.sql.name
   server_name                          = azurerm_postgresql_server.sql.name
-  subnet_id                            = module.vpc.aks_subnet_id
+  subnet_id                            = azurerm_subnet.aks.id
   ignore_missing_vnet_service_endpoint = true
 }
 

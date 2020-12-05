@@ -61,7 +61,7 @@ output "aks_cluster_name" {
 }
 
 output "aks_resource_group" {
-  value = module.vpc.resource_group_name
+  value = azurerm_resource_group.vpc.name
 }
 
 output "aks_node_resource_group" {
@@ -123,7 +123,7 @@ output "redis_ssl_port" {
 }
 
 output "vnet_id" {
-  value = module.vpc.id
+  value = azurerm_virtual_network.vpc.id
 }
 
 output "ops_container_registry_name" {
