@@ -2,6 +2,8 @@ data "http" "myip" {
   url = "http://ipinfo.io/ip"
 }
 
+data "azurerm_client_config" "current" {}
+
 data "azurerm_client_config" "azure_client" {
 }
 

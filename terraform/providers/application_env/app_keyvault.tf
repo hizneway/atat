@@ -1,5 +1,3 @@
-data "azurerm_client_config" "current" {}
-
 resource "azurerm_resource_group" "app_keyvault" {
   name     = "cz-keyvault-${var.deployment_namespace}"
   location = var.deployment_location
