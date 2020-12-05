@@ -86,7 +86,7 @@ output "aks_keyvault_reader_id" {
 
 # output "ops_keyvault_sp_object_id" {
 #   value = module.ops_keyvault_app.sp_object_id
-}
+# }
 
 # output "ops_keyvault_sp_secret" {
 #   value = module.ops_keyvault_app.service_principal_password
