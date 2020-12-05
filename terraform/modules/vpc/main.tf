@@ -244,14 +244,14 @@ resource "azurerm_route" "appgateway_to_vnet" {
 # }
 
 resource "azurerm_route_table" "aks_firewall_route_table" {
-  name                = "${var.name}-aks-${var.deployment_namespace}"
+  name                = "${var.name}-aksfw-${var.deployment_namespace}"
   location            = azurerm_resource_group.vpc.location
   resource_group_name = azurerm_resource_group.vpc.name
 }
 
 resource "azurerm_route" "aks_firewall_routes" {
 
-  name                   = "${var.name}-aks-${var.deployment_namespace}"
+  name                   = "${var.name}-aksfw-${var.deployment_namespace}"
   resource_group_name    = azurerm_resource_group.vpc.name
   route_table_name       = azurerm_route_table.aks_firewall_route_table.name
   address_prefix         = "10.1.0.0/16"
