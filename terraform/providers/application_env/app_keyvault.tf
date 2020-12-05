@@ -147,7 +147,7 @@ resource "azurerm_key_vault_secret" "secret" {
     "AZURE-STORAGE-KEY"    = module.task_order_bucket.primary_access_key
     "AZURE-TENANT-ID"      = data.azurerm_client_config.azure_client.tenant_id
     "AZURE-USER-OBJECT-ID" = data.azurerm_client_config.azure_client.object_id
-    "AZURE-VAULT-URL"      = azurerm_key_vault.tenant_keyvault.url
+    "AZURE-VAULT-URL"      = azurerm_key_vault.tenant_keyvault.vault_uri
     "DHPARAMS"             = filebase64(var.dhparams_path)
     "PGPASSWORD"           = random_password.atat_user_password.result
     "REDIS-PASSWORD"       = azurerm_redis_cache.redis.primary_access_key
