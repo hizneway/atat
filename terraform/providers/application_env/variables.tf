@@ -146,3 +146,5 @@ variable "AZURE_HYBRID_REPORTING_SECRET" {}
 variable "tls_cert_path" {}
 variable "circle_ci_api_key" {}
 variable "deployment_subnet_id" {}
+
+variable "bastion_container_image_tag" {}

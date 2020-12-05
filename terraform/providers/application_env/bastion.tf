@@ -19,4 +19,5 @@ module "bastion" {
   registry_username          = var.OPS_CID
   depends_on                 = [module.vpc]
   container_registry         = "${var.name}opscontainerregistry${local.environment}.azurecr.io"
+  container_image            = var.bastion_container_image_tag
 }

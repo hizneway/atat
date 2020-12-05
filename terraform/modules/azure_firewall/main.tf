@@ -59,7 +59,7 @@ resource "azurerm_firewall" "fw" {
     public_ip_address_id = var.az_fw_ip_id
   }
 
-  firewall_policy_id = azurerm_firewall_policy.enable_dns_proxy.id
+  #firewall_policy_id = azurerm_firewall_policy.enable_dns_proxy.id
 
 }
 
@@ -77,7 +77,7 @@ resource "azurerm_firewall_policy" "enable_dns_proxy" {
 
 resource "azurerm_firewall_application_rule_collection" "fw_rule_collection" {
   name                = "aksbasics"
-  azure_firewall_name = "az-firewall-${var.environment}"
+  azure_firewall_name = azurerm_firewall.fw.name
   resource_group_name = var.resource_group_name
   priority            = 100
   action              = "Allow"
@@ -116,15 +116,6 @@ resource "azurerm_firewall_application_rule_collection" "fw_rule_collection" {
 
 
 
-
-
-
-
-
-
-
-
-
   depends_on = [azurerm_firewall.fw]
 
 }
@@ -132,7 +123,7 @@ resource "azurerm_firewall_application_rule_collection" "fw_rule_collection" {
 
 resource "azurerm_firewall_application_rule_collection" "fw_rule_collection_fqdns" {
   name                = "aksfqdns"
-  azure_firewall_name = "az-firewall-${var.environment}"
+  azure_firewall_name = azurerm_firewall.fw.name
   resource_group_name = var.resource_group_name
   priority            = 101
   action              = "Allow"
@@ -145,21 +136,22 @@ resource "azurerm_firewall_application_rule_collection" "fw_rule_collection_fqdn
     fqdn_tags= ["AzureKubernetesService"]
 
 
-  
+
 
   }
 
-
+  depends_on = [azurerm_firewall.fw]
   }
 
 
 resource "azurerm_firewall_network_rule_collection" "api" {
 
- azure_firewall_name = "az-firewall-${var.environment}"
+ azure_firewall_name = azurerm_firewall.fw.name
  name = "${var.name}-network-rules-${var.environment}"
  resource_group_name = var.resource_group_name
  priority = 100
  action   = "Allow"
+
 rule {
     name = "apiudp"
     source_addresses = ["*"]

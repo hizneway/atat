@@ -10,8 +10,8 @@ module "private-k8s" {
   enable_auto_scaling        = true
   max_count                  = 3
   min_count                  = 3
-  private_aks_sp_id          = var.private_aks_sp_id
-  private_aks_sp_secret      = var.private_aks_sp_secret
+  private_aks_sp_id          = module.aks_sp.sp_client_id
+  private_aks_sp_secret      = module.aks_sp.service_principal_password
   log_analytics_workspace_id = module.logs.workspace_id
   service_dns                = var.private_aks_service_dns
   docker_bridge_cidr         = var.private_aks_docker_bridge_cidr
