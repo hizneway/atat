@@ -147,7 +147,7 @@ resource "azurerm_key_vault_secret" "secret" {
     "AZURE-STORAGE-KEY"    = module.task_order_bucket.primary_access_key
     "AZURE-TENANT-ID"      = data.azurerm_client_config.azure_client.tenant_id
     "AZURE-USER-OBJECT-ID" = data.azurerm_client_config.azure_client.object_id
-    "AZURE-VAULT-URL"      = module.tenant_keyvault.url
+    "AZURE-VAULT-URL"      = azurerm_key_vault.tenant_keyvault.url
     "DHPARAMS"             = filebase64(var.dhparams_path)
     "PGPASSWORD"           = random_password.atat_user_password.result
     "REDIS-PASSWORD"       = azurerm_redis_cache.redis.primary_access_key
@@ -156,7 +156,7 @@ resource "azurerm_key_vault_secret" "secret" {
 
   name         = each.key
   value        = each.value
-  key_vault_id = module.keyvault.id
+  key_vault_id = azurerm_key_vault.app_keyvault.id
   depends_on   = [time_sleep.app_keyvault_wait_5]
 }
 
@@ -169,7 +169,7 @@ resource "random_password" "atat_user_password" {
 
 resource "azurerm_key_vault_certificate" "atatdev" {
   name         = "atatdev"
-  key_vault_id = module.keyvault.id
+  key_vault_id = azurerm_key_vault.app_keyvault.id
   certificate {
     contents = filebase64(var.tls_cert_path)
     password = ""
