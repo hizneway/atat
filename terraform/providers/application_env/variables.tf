@@ -207,3 +207,7 @@ variable "ops_storage_account" {
 variable "tf_bootstrap_container" {
   type = string
 }
+variable "ddos_enabled" {
+  description = "Enable or disable DDoS Protection (1,0)"
+  default     = "0"
+}

@@ -16,10 +16,6 @@ variable "owner" {
 
 }
 
-variable "ddos_enabled" {
-  description = "Enable or disable DDoS Protection (1,0)"
-  default     = "0"
-}
 
 variable "virtual_network" {
   description = "The supernet used for this VPC a.k.a Virtual Network"
