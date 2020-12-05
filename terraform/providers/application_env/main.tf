@@ -143,21 +143,21 @@ resource "azurerm_kubernetes_cluster" "k8s_private" {
   depends_on = [module.vpc, module.keyvault_reader_identity]
 }
 
-module "vpc" {
-  source                         = "../../modules/vpc/"
-  deployment_namespace           = var.deployment_namespace
-  deployment_location            = var.deployment_location
-  virtual_network                = var.virtual_network
-  # networks                       = var.networks
-  # route_tables                   = var.route_tables
-  owner                          = var.owner
-  name                           = var.name
-  dns_servers                    = []
-  # service_endpoints              = var.service_endpoints
-  # routes                         = var.routes
-  # virtual_appliance_routes       = "${var.virtual_appliance_routes["aks"]},${module.private-aks-firewall.ip_config[0].private_ip_address}"
-  # virtual_appliance_route_tables = var.virtual_appliance_route_tables
-}
+# module "vpc" {
+#   source                         = "../../modules/vpc/"
+#   deployment_namespace           = var.deployment_namespace
+#   deployment_location            = var.deployment_location
+#   virtual_network                = var.virtual_network
+#   # networks                       = var.networks
+#   # route_tables                   = var.route_tables
+#   owner                          = var.owner
+#   name                           = var.name
+#   dns_servers                    = []
+#   # service_endpoints              = var.service_endpoints
+#   # routes                         = var.routes
+#   # virtual_appliance_routes       = "${var.virtual_appliance_routes["aks"]},${module.private-aks-firewall.ip_config[0].private_ip_address}"
+#   # virtual_appliance_route_tables = var.virtual_appliance_route_tables
+# }
 
 # module "private-aks-firewall" {
 #   source              = "../../modules/azure_firewall"

@@ -20,7 +20,7 @@ resource "azurerm_virtual_network" "vpc" {
   location            = azurerm_resource_group.vpc.location
   resource_group_name = azurerm_resource_group.vpc.name
   address_space       = ["${var.virtual_network}"] # TODO(jesse) Can this be wired up dynamically?
-  dns_servers         = var.dns_servers
+  dns_servers         = []
 
   tags = {
     environment = var.deployment_namespace
@@ -244,7 +244,7 @@ resource "azurerm_route" "appgateway_to_vnet" {
 # }
 
 resource "azurerm_route_table" "aks_firewall_route_table" {
-  name                = "${var.name}-aksfw-${var.deployment_namespace}"
+  name                = "${var.name}-aks-fw-${var.deployment_namespace}"
   location            = azurerm_resource_group.vpc.location
   resource_group_name = azurerm_resource_group.vpc.name
 }
