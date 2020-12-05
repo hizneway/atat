@@ -92,6 +92,7 @@ def deploy(
     git_sha,
 ):
     setup(sp_client_id, sp_client_secret, subscription_id, tenant_id, namespace, config_azcli)
+    import_images(ops_registry, atat_registry)
     build_atat(ops_registry, atat_registry, git_sha, atat_image_tag)
     build_nginx(ops_registry, atat_registry, nginx_image_tag)
 
@@ -178,6 +179,18 @@ def configure_azcli(sp_client_id, sp_client_secret, tenant_id, namespace):
         "az provider register --namespace Microsoft.ContainerService".split()
     ).check_returncode()
     subprocess.run(f"az aks get-credentials -g cloudzero-vpc-{namespace} -n cloudzero-private-k8s-{namespace}".split()).check_returncode()
+
+def import_images(ops_registry, atat_registry):
+    cmd = [
+        "az",
+        "acr",
+        "import",
+        "--name",
+        atat_registry,
+        "--source",
+        f"{ops_registry}/rhel-py:latest"
+    ]
+    subprocess.run(cmd).check_returncode()
 
 def build_atat(ops_registry, atat_registry, git_sha, atat_image_tag):
     cmd = [
