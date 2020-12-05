@@ -157,7 +157,7 @@ resource "azurerm_key_vault_secret" "secret" {
   name         = each.key
   value        = each.value
   key_vault_id = module.keyvault.id
-  depends_on   = [module.keyvault.keyvault_spun_up]
+  depends_on   = [time_sleep.app_keyvault_wait_5]
 }
 
 resource "random_password" "atat_user_password" {
@@ -189,5 +189,5 @@ resource "azurerm_key_vault_certificate" "atatdev" {
       content_type = "application/x-pem-file"
     }
   }
-  depends_on = [module.keyvault.keyvault_spun_up]
+  depends_on = [time_sleep.app_keyvault_wait_5]
 }

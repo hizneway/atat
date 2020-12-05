@@ -31,10 +31,10 @@ module "bastion_sp" {
   name   = "bastion-service-principal"
 }
 
-module "ops_keyvault_app" {
-  source = "../../modules/azure_ad"
-  name   = "ops-keyvault-sp"
-}
+# module "ops_keyvault_app" {
+#   source = "../../modules/azure_ad"
+#   name   = "ops-keyvault-sp"
+# }
 
 
 # Task order bucket is required to be accessible publicly by the users.

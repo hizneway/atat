@@ -76,33 +76,35 @@ output "aks_keyvault_reader_id" {
   value = module.keyvault_reader_identity.id
 }
 
-output "operator_keyvault_url" {
-  value = module.operator_keyvault.url
+# output "operator_keyvault_url" {
+#   value = module.operator_keyvault.url
 }
 
-output "ops_keyvault_sp_client_id" {
-  value = module.ops_keyvault_app.application_id
+# output "ops_keyvault_sp_client_id" {
+#   value = module.ops_keyvault_app.application_id
+# }
+
+# output "ops_keyvault_sp_object_id" {
+#   value = module.ops_keyvault_app.sp_object_id
 }
 
-output "ops_keyvault_sp_object_id" {
-  value = module.ops_keyvault_app.sp_object_id
-}
-
-output "ops_keyvault_sp_secret" {
-  value = module.ops_keyvault_app.service_principal_password
-}
+# output "ops_keyvault_sp_secret" {
+#   value = module.ops_keyvault_app.service_principal_password
+# }
 
 output "application_keyvault_name" {
-  value = module.keyvault.keyvault_name
+  value = azurerm_key_vault.app_keyvault.name
+  # value = module.keyvault.keyvault_name
 }
 
 output "application_keyvault_url" {
-  value = module.keyvault.url
+  value = azurerm_key_vault.app_keyvault.vault_uri
+  # value = module.keyvault.url
 }
 
-output "operator_keyvault_name" {
-  value = module.operator_keyvault.keyvault_name
-}
+# output "operator_keyvault_name" {
+#   value = module.operator_keyvault.keyvault_name
+# }
 
 output "container_registry_name" {
   value = module.container_registry.container_registry_name
