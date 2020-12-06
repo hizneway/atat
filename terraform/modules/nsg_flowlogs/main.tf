@@ -8,9 +8,9 @@ resource "azurerm_network_watcher" "vpc" {
 
 
 resource "azurerm_storage_account" "flowlogs_storage" {
-  name                     = "nsgflowlogs"
-  resource_group_name      = var.resource_group_name
-  location                 = var.location
+  name                      = "nsgflowlogs"
+  resource_group_name       = var.resource_group_name
+  location                  = var.location
   account_tier              = "Standard"
   account_kind              = "StorageV2"
   account_replication_type  = "LRS"
