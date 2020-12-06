@@ -8,7 +8,7 @@ resource "azurerm_network_watcher" "vpc" {
 
 
 resource "azurerm_storage_account" "flowlogs_storage" {
-  name                      = "nsgflowlogs"
+  name                      = "nsgflowlogs${var.environment}"
   resource_group_name       = var.resource_group_name
   location                  = var.location
   account_tier              = "Standard"
@@ -23,11 +23,11 @@ resource "azurerm_storage_account" "flowlogs_storage" {
 
 resource "azurerm_network_watcher_flow_log" "vpc" {
 
-  for_each             = var.security_group_ids
-  network_watcher_name = var.vpc_name
+
+  network_watcher_name = "${var.name}-network-watcher-${var.environment}"
   resource_group_name  = var.resource_group_name
 
-  network_security_group_id = each.value
+  network_security_group_id = var.security_group_id
   storage_account_id        = azurerm_storage_account.flowlogs_storage.id
   enabled                   = true
 
@@ -40,7 +40,7 @@ resource "azurerm_network_watcher_flow_log" "vpc" {
     enabled               = true
     workspace_id          = var.log_workspace_id
     workspace_region      = var.location
-    workspace_resource_id = var.workspace_id
+    workspace_resource_id = var.workspace_resource_id
     interval_in_minutes   = 10
   }
 }

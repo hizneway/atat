@@ -178,3 +178,8 @@ output "environment" {
 output "fw_nat_ips" {
   value = module.private-aks-firewall.nat_rule_ips
 }
+
+output "nsgs_ids" {
+
+ value = module.vpc.logging_nsg_id
+}

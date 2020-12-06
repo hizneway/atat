@@ -12,7 +12,7 @@ module "private-k8s" {
   min_count                  = 3
   private_aks_sp_id          = module.aks_sp.sp_client_id
   private_aks_sp_secret      = module.aks_sp.service_principal_password
-  log_analytics_workspace_id = module.logs.workspace_id
+  log_analytics_workspace_id = module.logs.workspace_resource_id
   service_dns                = var.private_aks_service_dns
   docker_bridge_cidr         = var.private_aks_docker_bridge_cidr
   service_cidr               = var.private_aks_service_cidr

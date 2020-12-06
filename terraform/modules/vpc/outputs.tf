@@ -29,3 +29,8 @@ output "fw_ip_address_id" {
 output "fw_ip_address" {
   value = azurerm_public_ip.az_fw_ip.ip_address
 }
+
+output "logging_nsg_id" {
+
+   value = azurerm_network_security_group.logging_nsg.id
+}

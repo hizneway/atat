@@ -76,7 +76,7 @@ resource "azurerm_firewall_application_rule_collection" "fw_rule_collection" {
   resource_group_name = var.resource_group_name
   priority            = 100
   action              = "Allow"
-  depends_on          = [azurerm_firewall.fw]
+  
 
   rule {
     name             = "allow azure"
