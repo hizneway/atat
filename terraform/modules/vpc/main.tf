@@ -88,3 +88,29 @@ resource "azurerm_public_ip" "az_fw_ip" {
   allocation_method   = "Static"
   sku                 = "Standard"
 }
+
+# security groups w/ default rules:
+
+resource "azurerm_network_security_group" "example" {
+  for_each            = var.networks
+  name                = "${var.name}-${each.key}-${var.environment}-nsg"
+  location            = var.region
+  resource_group_name = azurerm_resource_group.vpc.name
+
+  security_rule {
+    name                       = "allowATAT"
+    priority                   = 100
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "*"
+    source_address_prefix      = "*"
+    destination_address_prefix = "*"
+  }
+
+  tags = {
+    environment = var.environment
+    owner       = var.owner
+  }
+}
