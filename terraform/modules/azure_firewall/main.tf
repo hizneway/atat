@@ -1,8 +1,3 @@
-
-
-
-
-
 resource "azurerm_route_table" "firewall_route_table" {
   for_each            = var.virtual_appliance_route_tables
   name                = "${var.name}-${each.key}-${var.environment}-fw"
@@ -81,11 +76,11 @@ resource "azurerm_firewall_application_rule_collection" "fw_rule_collection" {
   resource_group_name = var.resource_group_name
   priority            = 100
   action              = "Allow"
+  depends_on          = [azurerm_firewall.fw]
 
   rule {
     name             = "allow azure"
     source_addresses = ["*"]
-
     target_fqdns = [
       "*.cdn.mscr.io",
       "mcr.microsoft.com",
@@ -99,12 +94,10 @@ resource "azurerm_firewall_application_rule_collection" "fw_rule_collection" {
       "*.microsoftonline.com",
       "*.monitoring.azure.com",
     ]
-
     protocol {
       port = "80"
       type = "Http"
     }
-
     protocol {
       port = "443"
       type = "Https"
@@ -189,67 +182,44 @@ resource "azurerm_firewall_nat_rule_collection" "tolb" {
 
   rule {
     name = "tok8slb"
-
     source_addresses = [
       "*",
     ]
-
     destination_ports = [
       "443",
     ]
-
     destination_addresses = [
       var.az_fw_ip
     ]
-
-    translated_port = 443
-
+    translated_port    = 443
     translated_address = "${var.nat_rules_translated_ips}"
-
     protocols = [
       "TCP"
-
     ]
-
-
-
   }
-
 
   rule {
     name = "maintenancepage"
-
     source_addresses = [
       "*",
     ]
-
     destination_ports = [
       "443",
     ]
-
     destination_addresses = [
       var.az_fw_ip
     ]
-
-    translated_port = 443
-
+    translated_port    = 443
     translated_address = "${var.maintenance_page_ip}"
-
     protocols = [
       "TCP"
-
     ]
-
-
-
   }
 
-
   timeouts {
-
     create = "30h"
     update = "30h"
-    read = "30h"
+    read   = "30h"
     delete = "30h"
   }
 
