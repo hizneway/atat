@@ -28,7 +28,7 @@ module "sql" {
   subnet_id                    = module.vpc.subnet_list["aks-private"].id
   administrator_login          = var.postgres_admin_login
   administrator_login_password = random_password.pg_root_password.result
-  workspace_id                 = module.logs.workspace_id
+  workspace_id                 = module.logs.workspace_resource_id
   operator_ip                  = chomp(data.http.myip.body)
   deployment_subnet_id         = var.deployment_subnet_id
 }

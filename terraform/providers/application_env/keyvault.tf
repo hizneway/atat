@@ -16,7 +16,7 @@ module "keyvault" {
   policy             = "Deny"
   subnet_ids         = [module.vpc.subnet_list["aks-private"].id, module.bastion.mgmt_subnet_id, var.deployment_subnet_id]
   whitelist          = var.admin_user_whitelist
-  workspace_id       = module.logs.workspace_id
+  workspace_id       = module.logs.workspace_resource_id
   tls_cert_path      = var.tls_cert_path
 }
 
@@ -33,6 +33,6 @@ module "tenant_keyvault" {
   policy            = "Deny"
   subnet_ids        = [module.vpc.subnet_list["aks-private"].id]
   whitelist         = var.admin_user_whitelist
-  workspace_id      = module.logs.workspace_id
+  workspace_id      = module.logs.workspace_resource_id
 
 }

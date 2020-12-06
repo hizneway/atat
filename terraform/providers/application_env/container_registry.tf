@@ -11,7 +11,7 @@ module "container_registry" {
   policy                      = "Allow"
   subnet_ids                  = [module.vpc.subnet_list["aks-private"].id]
   whitelist                   = var.admin_user_whitelist
-  workspace_id                = module.logs.workspace_id
+  workspace_id                = module.logs.workspace_resource_id
   pet_name                    = random_pet.unique_id.id
   subnet_list                 = module.vpc.subnet_list
   depends_on                  = [module.vpc]
