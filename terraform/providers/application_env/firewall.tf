@@ -21,32 +21,33 @@ resource "azurerm_subnet_route_table_association" "azure_firewall" {
 # ============================================
 # Previous Version
 # ============================================
-# resource "azurerm_route" "firewall_to_internet" {
-#   name = "default"
-#   resource_group_name = azurerm_resource_group.vpc.name
-#   route_table_name = azurerm_route_table.azure_firewall.name
-#   address_prefix = "0.0.0.0/0"
-#   next_hop_type = "Internet"
-# }
+resource "azurerm_route" "firewall_to_internet" {
+  name = "default"
+  resource_group_name = azurerm_resource_group.vpc.name
+  route_table_name = azurerm_route_table.azure_firewall.name
+  address_prefix = "0.0.0.0/0"
+  next_hop_type = "Internet"
+}
 
 # ============================================
 # New Version
 # ============================================
-resource "azurerm_route" "firewall_to_internet" {
-  name = "to_internet"
-  resource_group_name = azurerm_resource_group.vpc.name
-  route_table_name = azurerm_route_table.azure_firewall.name
-  address_prefix = "${azurerm_public_ip.firewall_ip.ip_address}/32"
-  next_hop_type = "Internet"
-}
+# resource "azurerm_route" "firewall_to_internet" {
+#   name = "to_internet"
+#   resource_group_name = azurerm_resource_group.vpc.name
+#   route_table_name = azurerm_route_table.azure_firewall.name
+#   address_prefix = "${azurerm_public_ip.firewall_ip.ip_address}/32"
+#   next_hop_type = "Internet"
+# }
 
 resource "azurerm_route" "fw_route_egress" {
    name                   = "default"
    resource_group_name    = azurerm_resource_group.vpc.name
    route_table_name       = azurerm_route_table.azure_firewall.name
-   address_prefix         = "0.0.0.0/0"
+   address_prefix         = "10.1.0.0/16"
    next_hop_type          = "VirtualAppliance"
-   next_hop_in_ip_address = azurerm_firewall.fw.ip_configuration[0].private_ip_address
+   next_hop_in_ip_address = VnetLocal
+
  }
 
 resource "azurerm_public_ip" "firewall_ip" {
