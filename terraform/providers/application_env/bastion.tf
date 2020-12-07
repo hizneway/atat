@@ -1,6 +1,7 @@
 module "bastion_sp" {
   source = "../../modules/azure_ad"
   name   = "bastion-service-principal"
+  deployment_namespace = var.deployment_namespace
 }
 resource "azurerm_resource_group" "bastion" {
   name     = "${var.name}-bastion-${var.deployment_namespace}"

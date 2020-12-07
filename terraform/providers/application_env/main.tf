@@ -18,6 +18,7 @@ locals {
 module "tenant_keyvault_app" {
   source = "../../modules/azure_ad"
   name   = "tenant-keyvault"
+  deployment_namespace = var.deployment_namespace
 }
 
 # Task order bucket is required to be accessible publicly by the users.
@@ -185,4 +186,5 @@ module "container_registry" {
 # module "ops_keyvault_app" {
 #   source = "../../modules/azure_ad"
 #   name   = "ops-keyvault-sp"
+#   deployment_namespace = var.deployment_namespace
 # }

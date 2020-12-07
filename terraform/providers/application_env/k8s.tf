@@ -25,91 +25,11 @@
 #   next_hop_type = "VnetLocal"
 # }
 
-# azure_firewall_subnet
-resource "azurerm_subnet" "azure_firewall" {
-  name = "AzureFirewallSubnet"
-  resource_group_name = azurerm_resource_group.vpc.name
-  virtual_network_name = azurerm_virtual_network.vpc.name
-  address_prefixes = ["10.1.4.0/24"]
-  service_endpoints = []
-}
-
-resource "azurerm_route_table" "azure_firewall" {
-  name = "${var.name}-fw-${var.deployment_namespace}"
-  location = azurerm_resource_group.vpc.location
-  resource_group_name = azurerm_resource_group.vpc.name
-}
-
-resource "azurerm_subnet_route_table_association" "azure_firewall" {
-  subnet_id = azurerm_subnet.azure_firewall.id
-  route_table_id = azurerm_route_table.azure_firewall.id
-}
-
-resource "azurerm_route" "azure_firewall_to_internet" {
-  name = "default"
-  resource_group_name = azurerm_resource_group.vpc.name
-  route_table_name = azurerm_route_table.azure_firewall.name
-  address_prefix = "0.0.0.0/0"
-  next_hop_type = "Internet"
-}
-
-resource "azurerm_public_ip" "azure_firewall_ip" {
-  name                = "az-firewall-${var.deployment_namespace}"
-  location            = var.deployment_location
-  resource_group_name = azurerm_resource_group.vpc.name
-  allocation_method   = "Static"
-  sku                 = "Standard"
-}
-
-resource "azurerm_firewall" "fw" {
-  name                = "az-firewall-${var.deployment_namespace}"
-  location            = var.deployment_location
-  resource_group_name = azurerm_resource_group.vpc.name
-  ip_configuration {
-    name                 = "configuration"
-    subnet_id            = azurerm_subnet.azure_firewall.id
-    public_ip_address_id = azurerm_public_ip.azure_firewall_ip.id
-  }
-}
-
-resource "azurerm_firewall_application_rule_collection" "fw_rule_collection" {
-  name                = "aksbasics"
-  azure_firewall_name = azurerm_firewall.fw.name
-  resource_group_name = azurerm_resource_group.vpc.name
-  priority            = 101
-  action              = "Allow"
-  rule {
-    name             = "allow network"
-    source_addresses = ["*"]
-    target_fqdns = [
-      "*.cdn.mscr.io",
-      "mcr.microsoft.com",
-      "*.data.mcr.microsoft.com",
-      "management.azure.com",
-      "login.microsoftonline.com",
-      "acs-mirror.azureedge.net",
-      "dc.services.visualstudio.com",
-      "*.opinsights.azure.com",
-      "*.oms.opinsights.azure.com",
-      "*.microsoftonline.com",
-      "*.monitoring.azure.com",
-    ]
-    protocol {
-      port = "80"
-      type = "Http"
-    }
-    protocol {
-      port = "443"
-      type = "Https"
-    }
-  }
-  # depends_on = [azurerm_firewall.fw]
-}
-
 # aks
 module "aks_sp" {
   source = "../../modules/azure_ad"
   name   = "aks-service-principal"
+  deployment_namespace = var.deployment_namespace
 }
 
 resource "azurerm_subnet" "aks" {
@@ -134,7 +54,7 @@ resource "azurerm_subnet_route_table_association" "aks" {
   subnet_id = azurerm_subnet.aks.id
   route_table_id = azurerm_route_table.aks.id
 }
-# resource "azurerm_route" "azure_firewall_to_internet" {
+# resource "azurerm_route" "firewall_to_internet" {
 #   name                = "${var.name}-default-${var.deployment_namespace}"
 #   resource_group_name = azurerm_resource_group.vpc.name
 #   route_table_name    = azurerm_route_table.aks.name
@@ -217,10 +137,10 @@ resource "azurerm_kubernetes_cluster" "k8s_private" {
   identity {
     type = "SystemAssigned"
   }
-  # service_principal {
-  #   client_id     = var.private_aks_sp_id
-  #   client_secret = var.private_aks_sp_secret
-  # }
+  service_principal {
+    client_id          = module.aks_sp.sp_client_id
+    client_secret      = module.aks_sp.service_principal_password
+  }
 
   default_node_pool {
     name                  = "default"
@@ -243,8 +163,11 @@ resource "azurerm_kubernetes_cluster" "k8s_private" {
     environment = var.deployment_namespace
     owner       = var.owner
   }
-  depends_on = [module.keyvault_reader_identity]
-  # depends_on = [module.vpc, module.keyvault_reader_identity]
+  depends_on = [
+    module.keyvault_reader_identity,
+    azurerm_subnet_route_table_association.azure_firewall,
+    module.keyvault_reader_identity
+  ]
 }
 
 module "keyvault_reader_identity" {
