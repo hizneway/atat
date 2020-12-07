@@ -69,7 +69,7 @@ resource "azurerm_firewall" "fw" {
 }
 
 resource "azurerm_firewall_policy" "enable_dns_proxy" {
-  name = "fw-policy-${var.deployment-namespace}"
+  name = "fw-policy-${var.deployment_namespace}"
   resource_group_name = azurerm_resource_group.vpc.name
   location            = var.deployment_location
   dns {
