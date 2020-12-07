@@ -122,27 +122,27 @@ resource "azurerm_firewall_application_rule_collection" "fqdns" {
   }
 }
 
-resource "azurerm_firewall_network_rule_collection" "api" {
- name = "api-${var.deployment_namespace}"
- azure_firewall_name = azurerm_firewall.fw.name
- resource_group_name = azurerm_resource_group.vpc.name
- priority = 100
- action   = "Allow"
-  rule {
-      name = "apiudp"
-      source_addresses = ["*"]
-      destination_addresses = ["AzureCloud.${var.deployment_location}"]
-      destination_ports = [1194]
-      protocols = ["UDP"]
-  }
-  rule {
-      name = "apitcp"
-      source_addresses = ["*"]
-      destination_addresses = ["AzureCloud.${var.deployment_location}"]
-      destination_ports = [9000]
-      protocols = ["TCP"]
-  }
-}
+# resource "azurerm_firewall_network_rule_collection" "api" {
+#  name = "api-${var.deployment_namespace}"
+#  azure_firewall_name = azurerm_firewall.fw.name
+#  resource_group_name = azurerm_resource_group.vpc.name
+#  priority = 100
+#  action   = "Allow"
+#   rule {
+#       name = "apiudp"
+#       source_addresses = ["*"]
+#       destination_addresses = ["AzureCloud.${var.deployment_location}"]
+#       destination_ports = [1194]
+#       protocols = ["UDP"]
+#   }
+#   rule {
+#       name = "apitcp"
+#       source_addresses = ["*"]
+#       destination_addresses = ["AzureCloud.${var.deployment_location}"]
+#       destination_ports = [9000]
+#       protocols = ["TCP"]
+#   }
+# }
 
 resource "azurerm_firewall_nat_rule_collection" "tolb" {
   name                = "tolb"
