@@ -46,8 +46,6 @@ resource "azurerm_route" "fw_route_egress" {
    route_table_name       = azurerm_route_table.azure_firewall.name
    address_prefix         = "10.1.0.0/16"
    next_hop_type          = "VnetLocal"
-  #  next_hop_in_ip_address = VnetLocal
-
  }
 
 resource "azurerm_public_ip" "firewall_ip" {
