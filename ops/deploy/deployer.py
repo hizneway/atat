@@ -92,9 +92,9 @@ def deploy(
     git_sha,
 ):
     setup(sp_client_id, sp_client_secret, subscription_id, tenant_id, namespace, config_azcli)
-    # import_images(ops_registry, atat_registry)
-    # build_atat(atat_registry, git_sha, atat_image_tag)
-    # build_nginx(atat_registry, nginx_image_tag)
+    import_images(ops_registry, atat_registry)
+    build_atat(atat_registry, git_sha, atat_image_tag)
+    build_nginx(atat_registry, nginx_image_tag)
 
     os.environ["ARM_CLIENT_ID"] = sp_client_id
     os.environ["ARM_CLIENT_SECRET"] = sp_client_secret
