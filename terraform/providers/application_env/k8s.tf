@@ -134,9 +134,9 @@ resource "azurerm_kubernetes_cluster" "k8s_private" {
     service_cidr       = var.private_aks_service_cidr
     load_balancer_sku  = "Standard"
   }
-  identity {
-    type = "SystemAssigned"
-  }
+  # identity {
+  #   type = "SystemAssigned"
+  # }
   service_principal {
     client_id          = module.aks_sp.sp_client_id
     client_secret      = module.aks_sp.service_principal_password
