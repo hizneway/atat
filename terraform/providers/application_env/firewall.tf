@@ -41,7 +41,7 @@ resource "azurerm_route" "firewall_to_internet" {
 # }
 
 resource "azurerm_route" "fw_route_egress" {
-   name                   = "default"
+   name                   = "vnetlocal"
    resource_group_name    = azurerm_resource_group.vpc.name
    route_table_name       = azurerm_route_table.azure_firewall.name
    address_prefix         = "10.1.0.0/16"
