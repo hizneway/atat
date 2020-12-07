@@ -62,7 +62,7 @@ resource "azurerm_subnet_route_table_association" "aks" {
 #   next_hop_type       = "Internet"
 # }
 
-resource "azurerm_route" "firewall_to_internet" {
+resource "azurerm_route" "aks_firewall_to_internet" {
   name = "to-internet"
   resource_group_name = azurerm_resource_group.vpc.name
   route_table_name = azurerm_route_table.aks.name
