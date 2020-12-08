@@ -76,88 +76,7 @@ resource "azurerm_firewall_policy" "enable_dns_proxy" {
   }
 }
 
-resource "azurerm_firewall_application_rule_collection" "azure" {
-  name                = "azure"
-  azure_firewall_name = azurerm_firewall.fw.name
-  resource_group_name = azurerm_resource_group.vpc.name
-  priority            = 100
-  action              = "Allow"
-  rule {
-    name             = "allow azure"
-    source_addresses = ["*"]
-    target_fqdns = [
-      "*.cdn.mscr.io",
-      "mcr.microsoft.com",
-      "*.data.mcr.microsoft.com",
-      "management.azure.com",
-      "login.microsoftonline.com",
-      "acs-mirror.azureedge.net",
-      "dc.services.visualstudio.com",
-      "*.opinsights.azure.com",
-      "*.oms.opinsights.azure.com",
-      "*.microsoftonline.com",
-      "*.monitoring.azure.com",
-    ]
-    protocol {
-      port = "80"
-      type = "Http"
-    }
-    protocol {
-      port = "443"
-      type = "Https"
-    }
-  }
-}
-
-resource "azurerm_firewall_application_rule_collection" "sourcedest" {
-  name                = "vnetall"
-  azure_firewall_name = azurerm_firewall.fw.name
-  resource_group_name = azurerm_resource_group.vpc.name
-  priority            = 102
-  action              = "Allow"
-  rule {
-    name             = "vnetall"
-    source_addresses = ["*"]
-    destination_addresses = ["*"]
-  }
-}
-
-resource "azurerm_firewall_application_rule_collection" "fqdns" {
-  name                = "aksfqdns"
-  azure_firewall_name = azurerm_firewall.fw.name
-  resource_group_name = azurerm_resource_group.vpc.name
-  priority            = 101
-  action              = "Allow"
-  rule {
-    name             = "allowk8s"
-    source_addresses = ["*"]
-    fqdn_tags= ["AzureKubernetesService"]
-  }
-}
-
-resource "azurerm_firewall_network_rule_collection" "api" {
- name = "api-${var.deployment_namespace}"
- azure_firewall_name = azurerm_firewall.fw.name
- resource_group_name = azurerm_resource_group.vpc.name
- priority = 100
- action   = "Allow"
-  rule {
-      name = "apiudp"
-      source_addresses = ["*"]
-      destination_addresses = ["AzureCloud.${var.region}"]
-      destination_ports = [1194]
-      protocols = ["UDP"]
-  }
-  rule {
-      name = "apitcp"
-      source_addresses = ["*"]
-      destination_addresses = ["AzureCloud.${var.region}"]
-      destination_ports = [9000]
-      protocols = ["TCP"]
-  }
-}
-
-resource "azurerm_firewall_nat_rule_collection" "tolb" {
+resource "azurerm_firewall_nat_rule_collection" "dnat_tolb" {
   name                = "tolb"
   azure_firewall_name = azurerm_firewall.fw.name
   resource_group_name = azurerm_resource_group.vpc.name
@@ -180,7 +99,7 @@ resource "azurerm_firewall_nat_rule_collection" "tolb" {
     # TODO: Don't really understand how this value is arrived at,
     # or what it's significance is.
     # =================================================
-    translated_address = "10.1.2.201"
+    translated_address = var.aks_internal_lb_ip
     protocols = [
       "TCP"
     ]
@@ -213,3 +132,90 @@ resource "azurerm_firewall_nat_rule_collection" "tolb" {
     delete = "30h"
   }
 }
+
+resource "azurerm_firewall_network_rule_collection" "natsourcedest" {
+  name                = "vnetall"
+  azure_firewall_name = azurerm_firewall.fw.name
+  resource_group_name = azurerm_resource_group.vpc.name
+  priority            = 102
+  action              = "Allow"
+  rule {
+    name             = "vnetall"
+    protocols = [ "Any" ]
+    source_addresses = ["*"]
+    destination_addresses = ["*"]
+    destination_ports = [ "*" ]
+  }
+}
+
+resource "azurerm_firewall_network_rule_collection" "api" {
+ name = "api-${var.deployment_namespace}"
+ azure_firewall_name = azurerm_firewall.fw.name
+ resource_group_name = azurerm_resource_group.vpc.name
+ priority = 100
+ action   = "Allow"
+  rule {
+      name = "apiudp"
+      source_addresses = ["*"]
+      destination_addresses = ["AzureCloud.${var.region}"]
+      destination_ports = [1194]
+      protocols = ["UDP"]
+  }
+  rule {
+      name = "apitcp"
+      source_addresses = ["*"]
+      destination_addresses = ["AzureCloud.${var.region}"]
+      destination_ports = [9000]
+      protocols = ["TCP"]
+  }
+}
+
+
+
+resource "azurerm_firewall_application_rule_collection" "azure" {
+  name                = "aksbasics"
+  azure_firewall_name = azurerm_firewall.fw.name
+  resource_group_name = azurerm_resource_group.vpc.name
+  priority            = 100
+  action              = "Allow"
+  rule {
+    name             = "allow azure"
+    source_addresses = ["*"]
+    target_fqdns = [
+      "*.cdn.mscr.io",
+      "mcr.microsoft.com",
+      "*.data.mcr.microsoft.com",
+      "management.azure.com",
+      "login.microsoftonline.com",
+      "acs-mirror.azureedge.net",
+      "dc.services.visualstudio.com",
+      "*.opinsights.azure.com",
+      "*.oms.opinsights.azure.com",
+      "*.microsoftonline.com",
+      "*.monitoring.azure.com",
+    ]
+    protocol {
+      port = "80"
+      type = "Http"
+    }
+    protocol {
+      port = "443"
+      type = "Https"
+    }
+  }
+}
+
+
+resource "azurerm_firewall_application_rule_collection" "fqdns" {
+  name                = "aksfqdns"
+  azure_firewall_name = azurerm_firewall.fw.name
+  resource_group_name = azurerm_resource_group.vpc.name
+  priority            = 101
+  action              = "Allow"
+  rule {
+    name             = "allowk8s"
+    source_addresses = ["*"]
+    fqdn_tags= ["AzureKubernetesService"]
+  }
+}
+

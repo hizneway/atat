@@ -138,6 +138,6 @@ output "aks_subnet" {
   value = azurerm_subnet.aks.name
 }
 
-# output "k8s_internal_lb_ip" {
-#   value = azurerm_firewall.fw.nat_rule_ips
-# }
+output "aks_internal_lb_ip" {
+  value = var.aks_internal_lb_ip
+}

@@ -217,3 +217,8 @@ variable "ddos_enabled" {
   description = "Enable or disable DDoS Protection (1,0)"
   default     = "0"
 }
+variable "aks_internal_lb_ip" {
+  type = string
+  description = "The IP of the loadbalancer that will be created by k8s"
+  default = "10.1.2.201"
+}
