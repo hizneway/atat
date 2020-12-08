@@ -20,7 +20,7 @@ resource "azurerm_subnet_route_table_association" "azure_firewall" {
 
 # ============================================
 # Previous Version
-# ============================================
+# ==”==========================================
 resource "azurerm_route" "firewall_to_internet" {
   name = "default"
   resource_group_name = azurerm_resource_group.vpc.name
@@ -125,7 +125,7 @@ resource "azurerm_firewall_network_rule_collection" "api" {
  name = "api-${var.deployment_namespace}"
  azure_firewall_name = azurerm_firewall.fw.name
  resource_group_name = azurerm_resource_group.vpc.name
- priority = 100
+ priority = 102
  action   = "Allow"
   rule {
       name = "apiudp"
