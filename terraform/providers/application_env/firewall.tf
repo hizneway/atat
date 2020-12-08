@@ -77,7 +77,7 @@ resource "azurerm_firewall_policy" "enable_dns_proxy" {
 }
 
 resource "azurerm_firewall_nat_rule_collection" "dnat_tolb" {
-  name                = "tolb"
+  name                = "to_aks"
   azure_firewall_name = azurerm_firewall.fw.name
   resource_group_name = azurerm_resource_group.vpc.name
   priority            = 100
@@ -109,7 +109,7 @@ resource "azurerm_firewall_nat_rule_collection" "dnat_tolb" {
 }
 
 resource "azurerm_firewall_nat_rule_collection" "dnat_to_maint_page" {
-  name                = "tolb"
+  name                = "to_maint_page"
   azure_firewall_name = azurerm_firewall.fw.name
   resource_group_name = azurerm_resource_group.vpc.name
   priority            = 110
@@ -153,7 +153,7 @@ resource "azurerm_firewall_network_rule_collection" "natsourcedest" {
 }
 
 resource "azurerm_firewall_network_rule_collection" "api" {
- name = "api-${var.deployment_namespace}"
+ name = "api"
  azure_firewall_name = azurerm_firewall.fw.name
  resource_group_name = azurerm_resource_group.vpc.name
  priority = 100
