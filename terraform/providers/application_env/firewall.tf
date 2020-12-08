@@ -108,6 +108,20 @@ resource "azurerm_firewall_application_rule_collection" "azure" {
     }
   }
 }
+
+resource "azurerm_firewall_application_rule_collection" "sourcedest" {
+  name                = "vnetall"
+  azure_firewall_name = azurerm_firewall.fw.name
+  resource_group_name = azurerm_resource_group.vpc.name
+  priority            = 102
+  action              = "Allow"
+  rule {
+    name             = "vnetall"
+    source_addresses = ["*"]
+    destination_addresses = ["*"]
+  }
+}
+
 resource "azurerm_firewall_application_rule_collection" "fqdns" {
   name                = "aksfqdns"
   azure_firewall_name = azurerm_firewall.fw.name
@@ -125,19 +139,19 @@ resource "azurerm_firewall_network_rule_collection" "api" {
  name = "api-${var.deployment_namespace}"
  azure_firewall_name = azurerm_firewall.fw.name
  resource_group_name = azurerm_resource_group.vpc.name
- priority = 102
+ priority = 100
  action   = "Allow"
   rule {
       name = "apiudp"
       source_addresses = ["*"]
-      destination_addresses = ["AzureCloud.eastus"]
+      destination_addresses = ["AzureCloud.${var.region}"]
       destination_ports = [1194]
       protocols = ["UDP"]
   }
   rule {
       name = "apitcp"
       source_addresses = ["*"]
-      destination_addresses = ["AzureCloud.eastus"]
+      destination_addresses = ["AzureCloud.${var.region}"]
       destination_ports = [9000]
       protocols = ["TCP"]
   }

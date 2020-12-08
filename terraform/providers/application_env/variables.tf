@@ -4,6 +4,12 @@ variable "deployment_location" {
   default     = "East US"
 }
 
+variable "region" {
+  type = string
+  description = "Azure region in which deployment resources are provisioned - short name"
+  default = "eastus"
+}
+
 variable "deployment_namespace" {
   type        = string
   description = "Namespace of provisioned deployment resources."
