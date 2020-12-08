@@ -48,9 +48,9 @@ variable "policy" {
 }
 
 variable "whitelist" {
-  type        = map
-  description = "A map of whitelisted IPs and CIDR ranges. For single IPs, Azure expects just the IP, NOT a /32."
-  default     = {}
+  type        = list
+  description = "A list of whitelisted IPs and CIDR ranges. For single IPs, Azure expects just the IP, NOT a /32."
+  default     = []
 }
 
 variable "workspace_id" {
