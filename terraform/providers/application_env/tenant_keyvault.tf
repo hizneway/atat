@@ -16,7 +16,7 @@ resource "azurerm_key_vault" "tenant_keyvault" {
     default_action             = "Deny"
     bypass                     = "AzureServices"
     virtual_network_subnet_ids = [azurerm_subnet.aks.id]
-    ip_rules                   = values({ "operator" = local.operator_ip })
+    ip_rules                   = "${local.operator_ip}/32"
   }
 
   tags = {

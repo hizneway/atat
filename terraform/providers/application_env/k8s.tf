@@ -37,6 +37,7 @@ resource "azurerm_subnet" "aks" {
   resource_group_name = azurerm_resource_group.vpc.name
   virtual_network_name = azurerm_virtual_network.vpc.name
   address_prefixes = ["10.1.2.0/24"]
+  enforce_private_link_endpoint_network_policies = false
   service_endpoints = [
     "Microsoft.Storage",
     "Microsoft.KeyVault",
@@ -122,6 +123,9 @@ resource "azurerm_kubernetes_cluster" "k8s_private" {
   addon_profile {
     azure_policy {
       enabled = true
+    }
+    kube_dashboard {
+      enabled = false
     }
     oms_agent {
       enabled                    = true
