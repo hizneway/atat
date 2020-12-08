@@ -127,7 +127,7 @@ resource "azurerm_firewall_nat_rule_collection" "dnat_to_maint_page" {
       "443",
     ]
     destination_addresses = [
-      var.az_fw_ip
+      azurerm_public_ip.firewall_ip.ip_address
     ]
     translated_port    = 443
     translated_address = "${var.maintenance_page_ip}"
