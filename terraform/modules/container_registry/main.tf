@@ -17,7 +17,7 @@ resource "azurerm_container_registry" "acr" {
   network_rule_set {
     default_action = var.policy
     ip_rule = [
-      for cidr in values(var.whitelist) : {
+      for cidr in var.whitelist : {
         action   = "Allow"
         ip_range = cidr
       }

@@ -46,7 +46,7 @@ module "container_registry" {
   owner         = var.owner
   backup_region = "" # TODO(jesse) Unused.
   policy        = "Allow"
-  whitelist     = { "operator" = local.operator_ip }
+  whitelist     = ["${local.operator_ip}/32"]
   workspace_id  = local.log_analytics_workspace_id
   subnet_list   = [
     azurerm_subnet.aks.id,
