@@ -56,46 +56,7 @@
     PGSSLROOTCERT: /tmp/pgcaroot/pgcaroot.cert
     PGSSLMODE: verify-full
 
-
-# - name: Create database user
-#   shell:
-#     cmd: python3.7 script/create_database_user.py "{{ pg_atat_user_name }}" "{{  pg_atat_user_password }}"
-#     chdir: "{{ src_dir }}"
-#   environment:
-#     ATAT_PGPASSWORD: "{{  pg_atat_user_password }}"
-#     ATAT_PGUSER: "{{ pg_atat_user_name }}"
-#     PGDATABASE: "{{ pg_database_name }}"
-#     PGHOST: "{{ pg_host }}"
-#     PGPASSWORD: "{{  pg_root_password }}"
-#     PGSSLMODE: verify-full
-#     PGSSLROOTCERT: /tmp/pgcaroot/pgcaroot.cert
-#     PGUSER: "{{ pg_root_user_name }}"
-#     POSTGRES_ROOT_PASS: "{{  pg_root_password }}"
-#     POSTGRES_ROOT_USER: "{{ pg_root_user_name }}"
-#     SERVER_ADMIN_NAME: "{{ pg_root_user_name }}"
-#     SERVER_GROUP: "{{ pg_resource_group_name }}"
-#     SERVER_NAME: "{{ pg_host }}"
-
-# - name: Create database user
-#   shell:
-#     cmd: python3.7 script/create_database_user.py "{{ pg_atat_user_name | regex_replace('@.*','') }}" "{{  pg_atat_user_password }}"
-#     chdir: "{{ src_dir }}"
-#   environment:
-#     ATAT_PGPASSWORD: "{{  pg_atat_user_password  }}"
-#     ATAT_PGUSER: "{{ pg_atat_user_name }}"
-#     PGDATABASE: "{{ pg_database_name }}"
-#     PGHOST: "{{ pg_host }}"
-#     PGPASSWORD: "{{  pg_root_password  }}"
-#     PGSSLMODE: verify-full
-#     PGSSLROOTCERT: /tmp/pgcaroot/pgcaroot.cert
-#     PGUSER: "{{ pg_root_user_name  }}"
-#     POSTGRES_ROOT_PASS: "{{  pg_root_password  }}"
-#     POSTGRES_ROOT_USER: "{{ pg_root_user_name  }}"
-#     SERVER_ADMIN_NAME: "{{ pg_root_user_name }}"
-#     SERVER_GROUP: "{{ pg_resource_group_name }}"
-#     SERVER_NAME: "{{ pg_host }}"
-
-- name: Initialize database
+    - name: Initialize database
   shell:
     cmd: python3.7 script/reset_database.py
     chdir: "{{ src_dir }}"
