@@ -6,9 +6,9 @@ metadata:
   annotations:
     service.beta.kubernetes.io/azure-load-balancer-internal-subnet: "{{ aks_subnet }}"
     service.beta.kubernetes.io/azure-load-balancer-internal: "true"
- spec:
-   type: LoadBalancer
-   loadBalancerIP: "{{ aks_internal_lb_ip }}"
-   ports:
-   - port: 443
-   - port: 80
+spec:
+  type: LoadBalancer
+  loadBalancerIP: "{{ aks_internal_lb_ip }}"
+  ports:
+    - port: 443
+    - port: 80
