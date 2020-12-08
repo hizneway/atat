@@ -222,3 +222,9 @@ variable "aks_internal_lb_ip" {
   description = "The IP of the loadbalancer that will be created by k8s"
   default = "10.1.2.201"
 }
+
+variable "maintenance_page_ip" {
+  type = string
+  description = "The IP of the loadbalancer that will be created by k8s"
+  default = "10.1.2.203"
+}
