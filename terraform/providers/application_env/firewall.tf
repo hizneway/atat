@@ -95,41 +95,45 @@ resource "azurerm_firewall_nat_rule_collection" "dnat_tolb" {
       azurerm_public_ip.firewall_ip.ip_address
     ]
     translated_port    = 443
-    # =================================================
-    # TODO: Don't really understand how this value is arrived at,
-    # or what it's significance is.
-    # =================================================
     translated_address = var.aks_internal_lb_ip
     protocols = [
       "TCP"
     ]
   }
-
-  # =============================================
-  # TODO: Re-enable once maint page is ready
-  # =============================================
-  # rule {
-  #   name = "maintenancepage"
-  #   source_addresses = [
-  #     "*",
-  #   ]
-  #   destination_ports = [
-  #     "443",
-  #   ]
-  #   destination_addresses = [
-  #     var.az_fw_ip
-  #   ]
-  #   translated_port    = 443
-  #   translated_address = "${var.maintenance_page_ip}"
-  #   protocols = [
-  #     "TCP"
-  #   ]
-  # }
   timeouts {
     create = "30h"
     update = "30h"
     read   = "30h"
     delete = "30h"
+  }
+}
+
+resource "azurerm_firewall_nat_rule_collection" "dnat_to_maint_page" {
+  name                = "tolb"
+  azure_firewall_name = azurerm_firewall.fw.name
+  resource_group_name = azurerm_resource_group.vpc.name
+  priority            = 110
+  action              = "Dnat"
+
+  # =============================================
+  # TODO: Re-enable once maint page is ready
+  # =============================================
+  rule {
+    name = "maintenancepage"
+    source_addresses = [
+      "*",
+    ]
+    destination_ports = [
+      "443",
+    ]
+    destination_addresses = [
+      var.az_fw_ip
+    ]
+    translated_port    = 443
+    translated_address = "${var.maintenance_page_ip}"
+    protocols = [
+      "TCP"
+    ]
   }
 }
 
