@@ -28,7 +28,8 @@ AGENCY_CODES = {
     "A": "army",
 }
 
-
+# The SAML attributes happen to have names in a URL format
+# This does not mean that there is communication via HTTP
 class EIFSAttributes:
     GIVEN_NAME = "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname"
     LAST_NAME = "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/surname"
