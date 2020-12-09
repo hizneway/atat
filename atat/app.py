@@ -112,6 +112,7 @@ def make_flask_callbacks(app):
         g.modal = request.args.get("modal", None)
         g.Authorization = Authorization
         g.Permissions = Permissions
+        g.support_link = app.config.get("SUPPORT_LINK")
 
     @app.context_processor
     def _portfolios():

@@ -9,6 +9,12 @@
       </span>
     </a>
     <div class="topbar__context">
+      {% if g.support_link %}
+      <a href="{{g.support_link}}" class="topbar__link">
+        {{ "navigation.topbar.support_link_text" | translate }}
+      </a>
+      {% endif %}
+
       {% if g.current_user %}
       <a href="{{ url_for('users.user') }}" class="topbar__link">
         {{ Icon('user', classes='topbar__link-icon') }}

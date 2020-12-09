@@ -367,6 +367,7 @@ navigation:
   topbar:
     jedi_cloud_link_text: JEDI
     logout_link_title: Log out of JEDI cloud
+    support_link_text: Support
 portfolios:
   admin:
     activity_log_title: Activity log
