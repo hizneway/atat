@@ -483,28 +483,27 @@ Also note that if the line number of a previously whitelisted secret changes, th
 
 ## How to build the RHEL Python base image
 
-First create two files, containing a RedHat username and password respectively.
+First create two files, containing a RedHat username and password respectively. A free RedHat account is needed to access certain required package repositories.
 
 - redhat_username.secret
 - redhat_password.secret
 
-Then run the build script.
 
-```
-env CONTAINER_REGISTRY=cloudzerodryrunregistry.azurecr.io ./script/build-docker-image-python-base.sh
-```
-
-Then publish the image. Start by tagging it with the appropriate registry. In
-this example we use the dry run registry.
-
-```
-docker tag atst:rhel-py cloudzerodryrunregistry.azurecr.io/rhel-py
-```
-
-Make sure you're logged into said registry.
+Make sure you're logged into the appropriate container registry. We're using `cloudzerodryrunregistry` as the example here.
 
 ```
 az acr login -n cloudzerodryrunregistry
+```
+
+Then run the build script:
+
+```
+env CONTAINER_REGISTRY=cloudzerodryrunregistry.azurecr.io ./ops/build-docker-image-python-base.sh
+```
+
+Then publish the image. Start by tagging it with the appropriate registry.
+```
+docker tag atst:rhel-py cloudzerodryrunregistry.azurecr.io/rhel-py:latest
 ```
 
 Then push!
