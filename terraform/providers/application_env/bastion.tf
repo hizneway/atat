@@ -69,6 +69,7 @@ resource "azurerm_container_group" "bastion" {
     cpu      = "1"
     memory   = "2"
     commands = ["tail", "-f", "/dev/null"]
+    commands = ["python3", "bastion_provisioner.py"]
 
     ports {
       port     = 443
