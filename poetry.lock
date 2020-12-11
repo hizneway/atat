@@ -198,7 +198,7 @@ python-versions = "*"
 
 [[package]]
 name = "cachetools"
-version = "4.1.1"
+version = "4.2.0"
 description = "Extensible memoizing collections and decorators"
 category = "main"
 optional = false
@@ -1509,7 +1509,7 @@ testing = ["pytest (>=3.5,!=3.7.3)", "pytest-checkdocs (>=1.2.3)", "pytest-flake
 [metadata]
 lock-version = "1.1"
 python-versions = "3.7.3"
-content-hash = "b22cc587991cf6e480b802b13ef5dae79af1288706be6072fde5897413748437"
+content-hash = "ece50a45d43697e58d70b0e8a0d608f02b8d49822e020977c58357168f003c59"
 
 [metadata.files]
 adal = [
@@ -1581,8 +1581,8 @@ cachelib = [
     {file = "cachelib-0.1.1.tar.gz", hash = "sha256:47e95a67d68c729cbad63285a790a06f0e0d27d71624c6e44c1ec3456bb4476f"},
 ]
 cachetools = [
-    {file = "cachetools-4.1.1-py3-none-any.whl", hash = "sha256:513d4ff98dd27f85743a8dc0e92f55ddb1b49e060c2d5961512855cda2c01a98"},
-    {file = "cachetools-4.1.1.tar.gz", hash = "sha256:bbaa39c3dede00175df2dc2b03d0cf18dd2d32a7de7beb68072d13043c9edb20"},
+    {file = "cachetools-4.2.0-py3-none-any.whl", hash = "sha256:c6b07a6ded8c78bf36730b3dc452dfff7d95f2a12a2fed856b1a0cb13ca78c61"},
+    {file = "cachetools-4.2.0.tar.gz", hash = "sha256:3796e1de094f0eaca982441c92ce96c68c89cced4cd97721ab297ea4b16db90e"},
 ]
 celery = [
     {file = "celery-4.4.7-py2.py3-none-any.whl", hash = "sha256:a92e1d56e650781fb747032a3997d16236d037c8199eacd5217d1a72893bca45"},
