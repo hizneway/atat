@@ -168,9 +168,6 @@ def terraform_application(
         echo(err.stdout)
         echo("=" * 50)
         echo(err.stderr)
-        import pdb
-
-        pdb.set_trace()
         raise
 
 
