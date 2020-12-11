@@ -2,10 +2,6 @@
 set -x
 set -e
 
-# if [ -z ${$1+x} ]; then echo "var is unset"; exit 1; else echo "var is set to '$1'"; fi
-# wget https://releases.hashicorp.com/terraform/0.13.5/terraform_0.13.5_linux_amd64.zip
-# unzip terraform_0.13.5_linux_amd64.zip
-# mv -f terraform /usr/local/bin
 [ ! -f service_principal.json ] && ./create-service-principle.sh
 sp=$(cat service_principal.json)
 
