@@ -69,37 +69,37 @@ variable "keyvault_secrets" {
 }
 
 variable "operator_subscription_id" {
-  type = string
+  type        = string
   description = "Subscription ID of the service principle performing the deployment."
 }
 
 variable "operator_client_id" {
-  type = string
+  type        = string
   description = "Application ID of the service principle performing the deployment."
 }
 
 variable "operator_client_secret" {
-  type = string
+  type        = string
   description = "Password of the service principle performing the deployment."
 }
 
 variable "operator_tenant_id" {
-  type = string
+  type        = string
   description = "Tenant ID of the service principle performing the deployment."
 }
 
 variable "ops_resource_group" {
-  type = string
+  type        = string
   description = "Name of resource group containing resources spun up in the previous bootstrapping stage."
 }
 
 variable "ops_storage_account" {
-  type = string
+  type        = string
   description = "Name of storage account the containing the terraform state of the previous bootstrapping stage."
 }
 
 variable "tf_bootstrap_container" {
-  type = string
+  type        = string
   description = "Name of container in the `ops_storage_account` containing the previous stage's terraform state."
 }
 
