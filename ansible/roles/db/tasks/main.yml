@@ -89,4 +89,3 @@
     SERVER_ADMIN_NAME: "{{ pg_root_user_name }}"
     SERVER_GROUP: "{{ pg_resource_group_name }}"
     SERVER_NAME: "{{ pg_host }}"
-
