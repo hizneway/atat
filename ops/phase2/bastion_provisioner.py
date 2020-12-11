@@ -171,17 +171,6 @@ def terraform_application(
         raise
 
 
-def diffie_helman(encryption: int = 4096) -> Optional[subprocess.Popen]:
-    logger.info("diffie_helman")
-    if path.exists("/tmp/dhparams.pem"):
-        return
-
-    return subprocess.Popen(
-        ["openssl", "dhparam", "-out", "/tmp/dhparams.pem", "4096",],
-        stdout=subprocess.DEVNULL,
-    )
-
-
 def download_file(
     storage_account: str, container_name: str, file_name: str, dest_path: str
 ) -> int:
