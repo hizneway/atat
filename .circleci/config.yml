@@ -192,17 +192,16 @@ commands:
           docker_layer_caching: true
           version: 19.03.13
       - install_azure_cli
-      - log_into_ops_registry
+      - log_into_app_registry
       - restore_docker_image
       - run:
           name: Build nginx image
-          command: docker build -t nginx:latest --build-arg IMAGE=<< pipeline.parameters.ops_registry >>.azurecr.io/rhelubi:8.2 - < nginx.Dockerfile
+          command: docker build -t nginx:latest --build-arg IMAGE=<< pipeline.parameters.app_registry >>.azurecr.io/rhelubi:8.2 - < nginx.Dockerfile
       - run:
           name: Tag images
           command: |
             docker tag atat:latest << parameters.atat_image_tag >>
             docker tag nginx:latest << parameters.nginx_image_tag >>
-      - log_into_app_registry
       - run:
           name: Push images
           command: |

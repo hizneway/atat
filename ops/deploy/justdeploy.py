@@ -116,6 +116,20 @@ def deploy(
         with open(f".out/{path}", "w") as output_file:
             output_file.write(template.render(**template_variables))
 
+    for path in os.listdir("migration_templates"):
+        template = env.get_template(path)
+        with open(f".migration.out/{path}", "w") as output_file:
+            output_file.write(template.render(**template_variables))
+
+# echo "Creating job..."
+# envsubst < deploy/shared/migration.yaml | $K8S_CMD -n ${K8S_NAMESPACE} apply -f -
+
+# echo "Wait for job to finish or timeout..."
+# JOB_SUCCESS=$(${K8S_CMD} -n ${K8S_NAMESPACE} wait --for=condition=complete --timeout=${MIGRATION_TIMEOUT} job/migration)
+    
+    subprocess.run(["kubectl", "apply", "-f", "-"], env={
+
+    })
     subprocess.run(["kubectl", "apply", "--kustomize=.out/"])
     subprocess.run(["kubectl", "-n", namespace, "get", "services"])
 
