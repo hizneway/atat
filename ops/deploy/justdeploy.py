@@ -59,7 +59,8 @@ logger = logging.getLogger(__name__)
 )
 @click.option(
     "--image-tag",
-    help="The tag"
+    help="The tag for the update images (atat & nginx) - envvar: IMAGE_TAG",
+    envvar="IMAGE_TAG"
 )
 def deploy(
     sp_client_id,
