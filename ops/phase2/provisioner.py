@@ -117,6 +117,13 @@ def provision(
         "/tmp/app.tfvars.json",
     )
 
+    download_file(
+        ops_storage_account,
+        ops_config_container,
+        "user_service_principals.txt",
+        "/tmp/user_service_principals.txt",
+    )
+
     application_object_id = create_saml_idp.main(tenant_id, sp_client_id, sp_client_secret, namespace)
     saml_dev_idp_uri = f"https://login.microsoftonline.com/{tenant_id}/federationmetadata/2007-06/federationmetadata.xml?={application_object_id}"
 

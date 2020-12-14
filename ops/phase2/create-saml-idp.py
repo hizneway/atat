@@ -286,7 +286,7 @@ def main(tenant_id: str, application_id: str, password: str, hostname: str) -> N
     register_self_signed_certificate(sp_object_id, access_token)
 
     # Register users
-    with open("user_service_principals.txt", "r") as user_service_principals:
+    with open("/tmp/user_service_principals.txt", "r") as user_service_principals:
         for line in user_service_principals.readlines():
             user_object_id = line.strip()
             assign_user_to_saml_idp(user_object_id, sp_object_id, access_token)
