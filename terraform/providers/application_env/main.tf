@@ -48,7 +48,6 @@ module "container_registry" {
   workspace_id  = local.log_analytics_workspace_id
   subnet_list = [
     azurerm_subnet.aks.id,
-    azurerm_subnet.edge.id,
     azurerm_subnet.mgmt_subnet.id,
   ]
 }
