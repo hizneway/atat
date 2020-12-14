@@ -1,0 +1,11 @@
+namespace: "{{ environment }}"
+bases:
+  - ../../../deploy/azure/
+resources:
+  - namespace.yml
+patchesStrategicMerge:
+  - envvars.yml
+  - service.yml
+  - autoscaling.yml
+  - secret_provider.yml
+  - azure.yml
