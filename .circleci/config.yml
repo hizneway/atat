@@ -543,14 +543,14 @@ workflows:
             branches:
               only:
                 - AT-5800-deployment
-      - deploy-master:
-          requires:
-            - test
-            - integration-tests
-          filters:
-            branches:
-              only:
-                - master
+      # - deploy-master:
+      #     requires:
+      #       - test
+      #       - integration-tests
+      #     filters:
+      #       branches:
+      #         only:
+      #           - master
 
   push-app-images:
     when: << pipeline.parameters.build_and_push_app_images >>
