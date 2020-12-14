@@ -220,6 +220,7 @@ commands:
             --registry-password ${SP_CLIENT_SECRET} \
             --registry-username ${SP_CLIENT_ID} \
             --secure-environment-variables "SP_CLIENT_ID=${SP_CLIENT_ID}" "SP_CLIENT_SECRET=${SP_CLIENT_SECRET}" "SUBSCRIPTION_ID=${SUBSCRIPTION_ID}" "OPS_REGISTRY=${OPS_REGISTRY}" "NAMESPACE=${NAMESPACE}" "ATAT_REGISTRY=${ATAT_REGISTRY}" "IMAGE_TAG=${CIRCLE_SHA1}"
+            --command-line "cd ../deploy/; python3 justdeploy.py"
       # - run:
       #     name: Install kubectl
       #     command: |
