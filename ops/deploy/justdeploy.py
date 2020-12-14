@@ -121,15 +121,12 @@ def deploy(
         with open(f".migration.out/{path}", "w") as output_file:
             output_file.write(template.render(**template_variables))
 
-# echo "Creating job..."
-# envsubst < deploy/shared/migration.yaml | $K8S_CMD -n ${K8S_NAMESPACE} apply -f -
+    subprocess.run(["kubectl", "apply", "-f", f".migration.out/{path}"])
+    result = subprocess.run(f"kubectl -n {namespace} wait --for=condition=complete --timeout=120s job/migration".split(), capture_output=True)
+    if b"condition met" not in result.stdout:
+        logger.error("Failed to run migrations")
+        raise RuntimeError("Failed to run migrations")
 
-# echo "Wait for job to finish or timeout..."
-# JOB_SUCCESS=$(${K8S_CMD} -n ${K8S_NAMESPACE} wait --for=condition=complete --timeout=${MIGRATION_TIMEOUT} job/migration)
-    
-    subprocess.run(["kubectl", "apply", "-f", "-"], env={
-
-    })
     subprocess.run(["kubectl", "apply", "--kustomize=.out/"])
     subprocess.run(["kubectl", "-n", namespace, "get", "services"])
 
