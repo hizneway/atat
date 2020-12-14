@@ -20,6 +20,13 @@ parameters:
       It does not include the "azurecr.io" suffix.
     type: string
     default: ${AZURE_REGISTRY}
+  app_registry:
+    description: |
+      Container registry for base operations images.
+      This is where we pull the rhelubi and rhel-py images from.
+      It does not include the "azurecr.io" suffix.
+    type: string
+    default: ${ATAT_REGISTRY}
   ops_registry:
     description: |
       Container registry for base operations images.
