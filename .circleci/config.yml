@@ -211,15 +211,15 @@ commands:
           name: Bastion Deploy
           command: |
             az container create \
-            --resource-group ${ATAT_resource_group_name} \
+            --resource-group ${ATAT_RESOURCE_GROUP_NAME} \
             --name "<< parameters.atat_image_tag >>-provisioner" \
             --ip-address Private \
             --vnet ${ATAT_VIRTUAL_NETWORK} \
             --subnet mgmt-subnet \
-            --image ${REGISTRY_NAME}/ops:latest \
+            --image ${OPS_REGISTRY}/ops:latest \
             --registry-password ${SP_CLIENT_SECRET} \
             --registry-username ${SP_CLIENT_ID} \
-            --secure-environment-variables "SP_CLIENT_ID=${}" "SP_CLIENT_SECRET=${AZURE_SP_PASSWORD}" "SUBSCRIPTION_ID=${}" "OPS_REGISTRY=${}" "NAMESPACE=${}" "ATAT_REGISTRY=${}" "IMAGE_TAG=${}"
+            --secure-environment-variables "SP_CLIENT_ID=${SP_CLIENT_ID}" "SP_CLIENT_SECRET=${SP_CLIENT_SECRET}" "SUBSCRIPTION_ID=${SUBSCRIPTION_ID}" "OPS_REGISTRY=${OPS_REGISTRY}" "NAMESPACE=${NAMESPACE}" "ATAT_REGISTRY=${ATAT_REGISTRY}" "IMAGE_TAG=${CIRCLE_SHA1}"
       # - run:
       #     name: Install kubectl
       #     command: |
@@ -524,13 +524,13 @@ workflows:
                 - staging
                 - master
       - deploy-staging:
-          requires:
-            - test
-            - integration-tests
+          # requires:
+            # - test
+            # - integration-tests
           filters:
             branches:
               only:
-                - staging
+                - AT-5800-deployment
       - deploy-master:
           requires:
             - test
