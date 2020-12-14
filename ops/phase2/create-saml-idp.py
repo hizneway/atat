@@ -293,5 +293,6 @@ def main(tenant_id: str, application_id: str, password: str, hostname: str) -> N
 
     return application_object_id
 
+
 if __name__ == "__main__":
     main()
