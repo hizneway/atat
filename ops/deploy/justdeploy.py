@@ -111,6 +111,11 @@ def deploy(
         shutil.rmtree(".out")
     os.mkdir(".out")
 
+    # Create template output directory
+    if os.path.exists(".migration.out"):
+        shutil.rmtree(".migration.out")
+    os.mkdir(".migration.out")
+
     env = Environment(
         loader=FileSystemLoader("templates"),
         autoescape=select_autoescape(["html", "xml"]),
