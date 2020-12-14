@@ -200,20 +200,24 @@ commands:
           version: 19.03.13
       - install_azure_cli
       - log_into_app_registry
-      - restore_docker_image
+      - run:
+          name: Build atat image
+          command: |
+            az acr build \
+              --registry ${ATAT_REGISTRY} \
+              --build-arg "IMAGE=${ATAT_REGISTRY}.azurecr.io/rhel-py:latest" \
+              --image "atat:<< parameters.atat_image_tag >>" \
+              --file Dockerfile \
+              .
       - run:
           name: Build nginx image
-          command: docker build -t nginx:latest --build-arg IMAGE=<< pipeline.parameters.app_registry >>.azurecr.io/rhelubi:8.2 - < nginx.Dockerfile
-      - run:
-          name: Tag images
           command: |
-            docker tag atat:latest << parameters.atat_image_tag >>
-            docker tag nginx:latest << parameters.nginx_image_tag >>
-      - run:
-          name: Push images
-          command: |
-            docker push << parameters.atat_image_tag >>
-            docker push << parameters.nginx_image_tag >>
+            az acr build \
+              --registry ${ATAT_REGISTRY} \
+              --build-arg "IMAGE=${ATAT_REGISTRY}.azurecr.io/rhel-py:latest" \
+              --image "nginx:<< parameters.atat_image_tag >>" \
+              --file nginx.Dockerfile \
+              .
       - run:
           name: Bastion Deploy
           command: |
