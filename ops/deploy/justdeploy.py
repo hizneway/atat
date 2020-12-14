@@ -144,8 +144,13 @@ def deploy(
         with open(f".out/{path}", "w") as output_file:
             output_file.write(template.render(**template_variables))
 
+    env2 = Environment(
+        loader=FileSystemLoader("templates"),
+        autoescape=select_autoescape(["html", "xml"]),
+    )
+
     for path in os.listdir("migration_templates"):
-        template = env.get_template(path)
+        template = env2.get_template(path)
         with open(f".migration.out/{path}", "w") as output_file:
             output_file.write(template.render(**template_variables))
 
