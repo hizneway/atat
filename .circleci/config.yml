@@ -114,7 +114,7 @@ commands:
               --username ${SP_CLIENT_ID}
             az account set -s ${SUBSCRIPTION_ID}
             echo "Successfully logged in to Azure CLI."
-            az acr login --name << pipeline.parameters.container_registry >> | grep "Succeeded"
+            az acr login --name ${ATAT_REGISTRY} | grep "Succeeded"
   log_into_ops_registry:
     steps:
       - run:
@@ -128,7 +128,7 @@ commands:
               --username ${AZURE_SP}
             az account set -s ${AZURE_SUBSCRIPTION_OPS}
             echo "Successfully logged in to Azure CLI."
-            az acr login --name << pipeline.parameters.ops_registry >> | grep "Succeeded"
+            az acr login --name ${OPS_REGISTRY} | grep "Succeeded"
   cache_docker_images:
     steps:
       - run:
