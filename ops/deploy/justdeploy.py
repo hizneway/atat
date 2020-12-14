@@ -56,6 +56,24 @@ logger = logging.getLogger(__name__)
     help="The tag for the update images (atat & nginx) - envvar: IMAGE_TAG",
     envvar="IMAGE_TAG"
 )
+@click.option(
+    "--ops_resource_group",
+    help="Resource group created to hold all the resources for operations only - envvar: OPS_RESOURCE_GROUP",
+    prompt="Name of operations resource group",
+    envvar="OPS_RESOURCE_GROUP",
+)
+@click.option(
+    "--ops_storage_account",
+    help="Name of Storage Account that holds the terraform state and inputs for this process - envvar: OPS_STORAGE_ACCOUNT",
+    prompt="Name of Ops Storage Account",
+    envvar="OPS_STORAGE_ACCOUNT",
+)
+@click.option(
+    "--ops_tf_application_container",
+    default="tf-application",
+    help="Name of the container (folder) in the ops_storage_account that holds the terraform state from application - envvar: OPS_TF_APPLICATION_CONTAINER",
+    envvar="OPS_TF_APPLICATION_CONTAINER",
+)
 def deploy(
     sp_client_id,
     sp_client_secret,
@@ -64,6 +82,9 @@ def deploy(
     namespace,
     atat_registry,
     image_tag,
+    ops_resource_group,
+    ops_storage_account,
+    ops_tf_application_container
 ):
     setup(
         sp_client_id,
@@ -71,10 +92,17 @@ def deploy(
         tenant_id,
         namespace,
     )
+
     os.environ["ARM_CLIENT_ID"] = sp_client_id
     os.environ["ARM_CLIENT_SECRET"] = sp_client_secret
     os.environ["ARM_SUBSCRIPTION_ID"] = subscription_id
     os.environ["ARM_TENANT_ID"] = tenant_id
+
+    terraform_application(
+        backend_resource_group_name=ops_resource_group,
+        backend_storage_account_name=ops_storage_account,
+        backend_container_name=ops_tf_application_container,
+    )
 
     tf_output_dict = collect_terraform_outputs()
 
@@ -124,6 +152,41 @@ def deploy(
 
     subprocess.run(["kubectl", "apply", "--kustomize=.out/"])
     subprocess.run(["kubectl", "-n", namespace, "get", "services"])
+
+
+def terraform_application(
+    backend_resource_group_name,
+    backend_storage_account_name,
+    backend_container_name,
+    backend_key="terraform.tfstate",
+):
+
+    logger.info("terraform_application")
+
+    cwd = path.join("../", "../", "terraform", "providers", "application_env")
+
+    default_args = {"cwd": cwd}
+
+    backend_configs = [
+        f"-backend-config=resource_group_name={backend_resource_group_name}",
+        f"-backend-config=storage_account_name={backend_storage_account_name}",
+        f"-backend-config=container_name={backend_container_name}",
+        f"-backend-config=key={backend_key}",
+    ]
+    try:
+        init_cmd = ["terraform", "init", *backend_configs, "."]
+        print(init_cmd)
+        subprocess.run(init_cmd, **default_args).check_returncode()
+    except CalledProcessError as err:
+        echo("=" * 50)
+        echo(f"Failed running {err.cmd}")
+        echo("=" * 50)
+        echo(err.stdout)
+        echo("=" * 50)
+        echo(err.stderr)
+        raise
+
+
 
 
 def setup(
