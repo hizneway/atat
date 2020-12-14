@@ -109,10 +109,10 @@ commands:
           command: |
             az login \
               --service-principal \
-              --tenant ${AZURE_SP_TENANT} \
-              --password ${AZURE_SP_PASSWORD} \
-              --username ${AZURE_SP}
-            az account set -s ${AZURE_SUBSCRIPTION}
+              --tenant ${TENANT_ID} \
+              --password ${SP_CLIENT_SECRET} \
+              --username ${SP_CLIENT_ID}
+            az account set -s ${SUBSCRIPTION_ID}
             echo "Successfully logged in to Azure CLI."
             az acr login --name << pipeline.parameters.container_registry >> | grep "Succeeded"
   log_into_ops_registry:
