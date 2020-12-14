@@ -3,7 +3,7 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: migration
-  namespace: $K8S_NAMESPACE
+  namespace: {{ environment }}
 spec:
   ttlSecondsAfterFinished: 100
   backoffLimit: 2
@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: migration
-        image: $CONTAINER_IMAGE
+        image: {{ application_container_image }}
         securityContext:
           allowPrivilegeEscalation: false
         command: [
