@@ -41,12 +41,6 @@ logger = logging.getLogger(__name__)
 )
 @click.option("--tenant_id", help="tenant id - envvar: TENANT_ID", envvar="TENANT_ID")
 @click.option(
-    "--ops_registry",
-    help="Full URI of the container registry that after bootstrapping, should have rhel, rhel-py, and ops images - envvar: OPS_REGISTRY",
-    prompt="Full URI of container registry eg: cloudzeroopsregistry${var.namespace}.azurecr.io",
-    envvar="OPS_REGISTRY",
-)
-@click.option(
     "--namespace",
     help="Namespacing of your environment - envvar: NAMESPACE",
     envvar="NAMESPACE",
@@ -168,58 +162,6 @@ def configure_azcli(sp_client_id, sp_client_secret, tenant_id, namespace):
     subprocess.run(
         f"az aks get-credentials -g cloudzero-vpc-{namespace} -n cloudzero-private-k8s-{namespace}".split()
     ).check_returncode()
-
-
-def import_images(ops_registry, atat_registry):
-    cmd = [
-        "az",
-        "acr",
-        "import",
-        "--name",
-        atat_registry,
-        "--source",
-        f"{ops_registry}/rhel-py:latest",
-    ]
-    # TODO: Not checking the return code, because it fails if already imported.
-    subprocess.run(cmd)
-
-
-def build_atat(atat_registry, git_sha, atat_image_tag):
-    cmd = [
-        "az",
-        "acr",
-        "build",
-        "--registry",
-        atat_registry,
-        "--build-arg",
-        f"IMAGE={atat_registry}.azurecr.io/rhel-py:latest",
-        "--image",
-        f"atat:{atat_image_tag}",
-        "--file",
-        "../../Dockerfile",
-        "../..",
-    ]
-    # TODO: Make this async
-    subprocess.run(cmd).check_returncode()
-
-
-def build_nginx(atat_registry, nginx_image_tag):
-    cmd = [
-        "az",
-        "acr",
-        "build",
-        "--registry",
-        atat_registry,
-        "--build-arg",
-        f"IMAGE={atat_registry}.azurecr.io/rhel-py:latest",  # TODO(jesse) Can be built off rhelubi
-        "--image",
-        f"nginx:{nginx_image_tag}",
-        "--file",
-        "../../nginx.Dockerfile",
-        "../..",
-    ]
-    # TODO: Make this async
-    subprocess.run(cmd).check_returncode()
 
 
 def collect_terraform_outputs():
