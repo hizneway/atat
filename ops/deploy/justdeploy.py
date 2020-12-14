@@ -145,7 +145,7 @@ def deploy(
             output_file.write(template.render(**template_variables))
 
     env2 = Environment(
-        loader=FileSystemLoader("templates"),
+        loader=FileSystemLoader("migration_templates"),
         autoescape=select_autoescape(["html", "xml"]),
     )
 
