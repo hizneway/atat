@@ -193,6 +193,8 @@ commands:
       nginx_image_tag:
         type: string
         default: << pipeline.parameters.nginx_image_tag >>
+      ops_image_tag:
+        type: string
     steps:
       - checkout
       - setup_remote_docker:
