@@ -240,8 +240,8 @@ commands:
             --image << parameters.ops_image_tag >> \
             --registry-password ${SP_CLIENT_SECRET} \
             --registry-username ${SP_CLIENT_ID} \
-            --secure-environment-variables "SP_CLIENT_ID=${SP_CLIENT_ID}" "SP_CLIENT_SECRET=${SP_CLIENT_SECRET}" "SUBSCRIPTION_ID=${SUBSCRIPTION_ID}" "OPS_REGISTRY=${OPS_REGISTRY}" "NAMESPACE=${NAMESPACE}" "ATAT_REGISTRY=${ATAT_REGISTRY}" "IMAGE_TAG=${CIRCLE_SHA1}" \
-            --command-line "cd ../deploy/; python3 justdeploy.py" \
+            --secure-environment-variables "SP_CLIENT_ID=${SP_CLIENT_ID}" "SP_CLIENT_SECRET=${SP_CLIENT_SECRET}" "SUBSCRIPTION_ID=${SUBSCRIPTION_ID}" "OPS_REGISTRY=${OPS_REGISTRY}" "NAMESPACE=${NAMESPACE}" "ATAT_REGISTRY=${ATAT_REGISTRY}" "IMAGE_TAG=${CIRCLE_SHA1}" "OPS_RESOURCE_GROUP=${OPS_RESOURCE_GROUP}" "OPS_STORAGE_ACCOUNT=${OPS_STORAGE_ACCOUNT}" "TENANT_ID=${TENANT_ID}" \
+            --command-line '/bin/bash -c "cd ../deploy && python3 justdeploy.py"' \
             --restart-policy Never
 jobs:
   docker-build:
