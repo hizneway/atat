@@ -4,7 +4,6 @@ import os
 import shutil
 import subprocess
 
-from os import path
 from subprocess import CalledProcessError, CompletedProcess
 from typing import Optional, Dict, NoReturn
 
@@ -133,7 +132,7 @@ def deploy(
         template_variables=template_variables
     )
 
-    subprocess.run(["kubectl", "apply", "-f", f".migration.out/{path}"])
+    subprocess.run(["kubectl", "apply", "-f", f".migration.out/migration.yml"])
     result = subprocess.run(f"kubectl -n {namespace} wait --for=condition=complete --timeout=120s job/migration".split(), capture_output=True)
     if b"condition met" not in result.stdout:
         logger.error("Failed to run migrations")
@@ -168,7 +167,7 @@ def terraform_application(
 
     logger.info("terraform_application")
 
-    cwd = path.join("../", "../", "terraform", "providers", "application_env")
+    cwd = os.path.join("../", "../", "terraform", "providers", "application_env")
 
     default_args = {"cwd": cwd}
 
@@ -236,7 +235,7 @@ def collect_terraform_outputs():
     """Collects terraform output into name/value dict to pass as json to ansible"""
     logger.info("collect_terraform_outputs")
 
-    cwd = path.join("../", "../", "terraform", "providers", "application_env")
+    cwd = os.path.join("../", "../", "terraform", "providers", "application_env")
 
     result = subprocess.run(
         "terraform output -json".split(), cwd=cwd, capture_output=True
