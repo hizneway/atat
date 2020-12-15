@@ -133,7 +133,7 @@ def deploy(
     )
 
     subprocess.run(["kubectl", "apply", "-f", f".migration.out/migration.yml"])
-    result = subprocess.run(f"kubectl -n {namespace} wait --for=condition=complete --timeout=120s job/migration".split(), capture_output=True)
+    result = subprocess.run(f"kubectl -n {namespace} wait --for=condition=complete --timeout=120s job/migration-{image_tag}".split(), capture_output=True)
     if b"condition met" not in result.stdout:
         logger.error("Failed to run migrations")
         raise RuntimeError("Failed to run migrations")
