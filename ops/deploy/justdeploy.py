@@ -106,21 +106,6 @@ def deploy(
 
     tf_output_dict = collect_terraform_outputs()
 
-    # Create template output directory
-    if os.path.exists(".out"):
-        shutil.rmtree(".out")
-    os.mkdir(".out")
-
-    # Create template output directory
-    if os.path.exists(".migration.out"):
-        shutil.rmtree(".migration.out")
-    os.mkdir(".migration.out")
-
-    env = Environment(
-        loader=FileSystemLoader("templates"),
-        autoescape=select_autoescape(["html", "xml"]),
-    )
-
     # Gather the template variables
     template_variables = {
         **tf_output_dict,
@@ -136,32 +121,42 @@ def deploy(
         },
     }
 
-    pprint(template_variables)
-
-    # Generate the output files
-    for path in os.listdir("templates"):
-        template = env.get_template(path)
-        with open(f".out/{path}", "w") as output_file:
-            output_file.write(template.render(**template_variables))
-
-    env2 = Environment(
-        loader=FileSystemLoader("migration_templates"),
-        autoescape=select_autoescape(["html", "xml"]),
+    interpolate_templates(
+        template_dir="deployment_templates",
+        output_dir=".deployment.out",
+        template_variables=template_variables
     )
 
-    for path in os.listdir("migration_templates"):
-        template = env2.get_template(path)
-        with open(f".migration.out/{path}", "w") as output_file:
-            output_file.write(template.render(**template_variables))
+    interpolate_templates(
+        template_dir="migration_templates",
+        output_dir=".migration.out",
+        template_variables=template_variables
+    )
 
     subprocess.run(["kubectl", "apply", "-f", f".migration.out/{path}"])
     result = subprocess.run(f"kubectl -n {namespace} wait --for=condition=complete --timeout=120s job/migration".split(), capture_output=True)
     if b"condition met" not in result.stdout:
         logger.error("Failed to run migrations")
-        # raise RuntimeError("Failed to run migrations")
+        raise RuntimeError("Failed to run migrations")
 
-    subprocess.run(["kubectl", "apply", "--kustomize=.out/"])
+    subprocess.run(["kubectl", "apply", "--kustomize=.deployment.out/"])
     subprocess.run(["kubectl", "-n", namespace, "get", "services"])
+
+
+def interpolate_templates(template_dir: str, output_dir: str, template_variables: Dict) -> NoReturn:
+    env = Environment(
+        loader=FileSystemLoader(template_dir),
+        autoescape=select_autoescape(["html", "xml"]),
+    )
+
+    if os.path.exists(output_dir):
+        shutil.rmtree(output_dir)
+    os.mkdir(output_dir)
+
+    for path in os.listdir(template_dir):
+        template = env.get_template(path)
+        with open(f"{output_dir}/{path}", "w") as output_file:
+            output_file.write(template.render(**template_variables))
 
 
 def terraform_application(
