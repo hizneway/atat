@@ -206,7 +206,7 @@ commands:
             az acr build \
               --registry ${ATAT_REGISTRY} \
               --build-arg "IMAGE=${ATAT_REGISTRY}.azurecr.io/rhel-py:latest" \
-              --image "atat:<< parameters.atat_image_tag >>" \
+              --image "<< parameters.atat_image_tag >>" \
               --file Dockerfile \
               .
       - run:
@@ -215,7 +215,7 @@ commands:
             az acr build \
               --registry ${ATAT_REGISTRY} \
               --build-arg "IMAGE=${ATAT_REGISTRY}.azurecr.io/rhel-py:latest" \
-              --image "nginx:<< parameters.atat_image_tag >>" \
+              --image "<< parameters.nginx_image_tag >>" \
               --file nginx.Dockerfile \
               .
       - run:
@@ -383,8 +383,8 @@ jobs:
     steps:
       - deploy:
           namespace: staging
-          atat_image_tag: << pipeline.parameters.container_registry >>.azurecr.io/atat:staging-${CIRCLE_SHA1}
-          nginx_image_tag: << pipeline.parameters.container_registry >>.azurecr.io/nginx:staging-${CIRCLE_SHA1}
+          atat_image_tag: << pipeline.parameters.container_registry >>.azurecr.io/atat:${CIRCLE_SHA1}
+          nginx_image_tag: << pipeline.parameters.container_registry >>.azurecr.io/nginx:${CIRCLE_SHA1}
 
   deploy-master:
     parameters:
