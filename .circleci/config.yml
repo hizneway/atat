@@ -223,7 +223,7 @@ commands:
           command: |
             az container create \
             --resource-group ${ATAT_RESOURCE_GROUP_NAME} \
-            --name "<< parameters.atat_image_tag >>-provisioner" \
+            --name "${CIRCLE_SHA1}-provisioner" \
             --ip-address Private \
             --vnet ${ATAT_VIRTUAL_NETWORK} \
             --subnet mgmt-subnet \
