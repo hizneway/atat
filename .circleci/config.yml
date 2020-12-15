@@ -241,7 +241,8 @@ commands:
             --registry-password ${SP_CLIENT_SECRET} \
             --registry-username ${SP_CLIENT_ID} \
             --secure-environment-variables "SP_CLIENT_ID=${SP_CLIENT_ID}" "SP_CLIENT_SECRET=${SP_CLIENT_SECRET}" "SUBSCRIPTION_ID=${SUBSCRIPTION_ID}" "OPS_REGISTRY=${OPS_REGISTRY}" "NAMESPACE=${NAMESPACE}" "ATAT_REGISTRY=${ATAT_REGISTRY}" "IMAGE_TAG=${CIRCLE_SHA1}" \
-            --command-line "cd ../deploy/; python3 justdeploy.py"
+            --command-line "cd ../deploy/; python3 justdeploy.py" \
+            --restart-policy Never
 jobs:
   docker-build:
     docker:
@@ -478,12 +479,13 @@ workflows:
       #           - master
       - deploy-staging:
           # requires:
-            # - test
-            # - integration-tests
+          #   - test
+          #   - integration-tests
           filters:
             branches:
               only:
                 - AT-5800-deployment
+                - staging
       # - deploy-master:
       #     requires:
       #       - test
