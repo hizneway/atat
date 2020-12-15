@@ -219,6 +219,15 @@ commands:
               --file nginx.Dockerfile \
               .
       - run:
+          name: Build ops image
+          command: |
+            az acr build \
+              --registry ${ATAT_REGISTRY} \
+              --build-arg "IMAGE=${ATAT_REGISTRY}.azurecr.io/rhel-py:latest" \
+              --image "<< parameters.ops_image_tag >>" \
+              --file ops.Dockerfile \
+              .
+      - run:
           name: Bastion Deploy
           command: |
             az container create \
@@ -227,7 +236,7 @@ commands:
             --ip-address Private \
             --vnet ${ATAT_VIRTUAL_NETWORK} \
             --subnet mgmt-subnet \
-            --image ${OPS_REGISTRY}/ops:latest \
+            --image << parameters.ops_image_tag >> \
             --registry-password ${SP_CLIENT_SECRET} \
             --registry-username ${SP_CLIENT_ID} \
             --secure-environment-variables "SP_CLIENT_ID=${SP_CLIENT_ID}" "SP_CLIENT_SECRET=${SP_CLIENT_SECRET}" "SUBSCRIPTION_ID=${SUBSCRIPTION_ID}" "OPS_REGISTRY=${OPS_REGISTRY}" "NAMESPACE=${NAMESPACE}" "ATAT_REGISTRY=${ATAT_REGISTRY}" "IMAGE_TAG=${CIRCLE_SHA1}" \
@@ -359,6 +368,7 @@ jobs:
           namespace: staging
           atat_image_tag: << pipeline.parameters.container_registry >>.azurecr.io/atat:${CIRCLE_SHA1}
           nginx_image_tag: << pipeline.parameters.container_registry >>.azurecr.io/nginx:${CIRCLE_SHA1}
+          ops_image_tag: << pipeline.parameters.container_registry >>.azurecr.io/ops:${CIRCLE_SHA1}
 
   deploy-master:
     parameters:
