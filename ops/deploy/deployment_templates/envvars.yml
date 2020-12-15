@@ -11,9 +11,9 @@ data:
   CELERY_DEFAULT_QUEUE: celery-{{ environment }}
   CSP: hybrid
   FLASK_ENV: {{ environment }}
-  PGDATABASE: {{ atat_database_name }}
+  PGDATABASE: {{ pg_atat_database_name }}
   PGHOST: {{ pg_host }}
-  PGUSER: {{ atat_user_name }}
+  PGUSER: {{ pg_atat_user_name }}
   PGSSLMODE: verify-full
   REDIS_HOST: {{ redis_hostname }}:{{ redis_ssl_port }}
   REDIS_SSLMODE: required
@@ -34,9 +34,9 @@ data:
   CELERY_DEFAULT_QUEUE: celery-{{ environment }}
   CSP: hybrid
   FLASK_ENV: {{ environment }}
-  PGDATABASE: {{ atat_database_name }}
+  PGDATABASE: {{ pg_database_name }}
   PGHOST: {{ pg_host }}
-  PGUSER: {{ atat_user_name }}
+  PGUSER: {{ pg_atat_user_name }}
   PGSSLMODE: verify-full
   REDIS_HOST: {{ redis_hostname }}:{{ redis_ssl_port }}
   REDIS_SSLMODE: required
