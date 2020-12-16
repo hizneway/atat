@@ -53,7 +53,7 @@ logger = logging.getLogger(__name__)
 @click.option(
     "--image-tag",
     help="The tag for the update images (atat & nginx) - envvar: IMAGE_TAG",
-    envvar="IMAGE_TAG"
+    envvar="IMAGE_TAG",
 )
 @click.option(
     "--ops_resource_group",
@@ -83,13 +83,10 @@ def deploy(
     image_tag,
     ops_resource_group,
     ops_storage_account,
-    ops_tf_application_container
+    ops_tf_application_container,
 ):
     setup(
-        sp_client_id,
-        sp_client_secret,
-        tenant_id,
-        namespace,
+        sp_client_id, sp_client_secret, tenant_id, namespace,
     )
 
     os.environ["ARM_CLIENT_ID"] = sp_client_id
@@ -123,17 +120,20 @@ def deploy(
     interpolate_templates(
         template_dir="deployment_templates",
         output_dir=".deployment.out",
-        template_variables=template_variables
+        template_variables=template_variables,
     )
 
     interpolate_templates(
         template_dir="migration_templates",
         output_dir=".migration.out",
-        template_variables=template_variables
+        template_variables=template_variables,
     )
 
     subprocess.run(["kubectl", "apply", "-f", f".migration.out/migration.yml"])
-    result = subprocess.run(f"kubectl -n {namespace} wait --for=condition=complete --timeout=120s job/migration-{image_tag}".split(), capture_output=True)
+    result = subprocess.run(
+        f"kubectl -n {namespace} wait --for=condition=complete --timeout=120s job/migration-{image_tag}".split(),
+        capture_output=True,
+    )
     if b"condition met" not in result.stdout:
         logger.error("Failed to run migrations")
         raise RuntimeError("Failed to run migrations")
@@ -142,7 +142,9 @@ def deploy(
     subprocess.run(["kubectl", "-n", namespace, "get", "services"])
 
 
-def interpolate_templates(template_dir: str, output_dir: str, template_variables: Dict) -> NoReturn:
+def interpolate_templates(
+    template_dir: str, output_dir: str, template_variables: Dict
+) -> NoReturn:
     env = Environment(
         loader=FileSystemLoader(template_dir),
         autoescape=select_autoescape(["html", "xml"]),
@@ -191,9 +193,7 @@ def terraform_application(
         raise
 
 
-def setup(
-    sp_client_id, sp_client_secret, tenant_id, namespace
-):
+def setup(sp_client_id, sp_client_secret, tenant_id, namespace):
     configure_azcli(
         sp_client_id=sp_client_id,
         sp_client_secret=sp_client_secret,
