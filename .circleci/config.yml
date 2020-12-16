@@ -465,22 +465,22 @@ workflows:
           - << pipeline.parameters.build_and_push_app_images >>
           - << pipeline.parameters.build_and_push_ops_image >>
     jobs:
-      # - docker-build
-      # - test:
-      #     requires:
-      #       - docker-build
-      # - integration-tests:
-      #     requires:
-      #       - docker-build
-      #     filters:
-      #       branches:
-      #         only:
-      #           - staging
-      #           - master
+      - docker-build
+      - test:
+          requires:
+            - docker-build
+      - integration-tests:
+          requires:
+            - docker-build
+          filters:
+            branches:
+              only:
+                - staging
+                - master
       - deploy-staging:
-          # requires:
-          #   - test
-          #   - integration-tests
+          requires:
+            - test
+            - integration-tests
           filters:
             branches:
               only:
@@ -504,8 +504,3 @@ workflows:
     when: << pipeline.parameters.build_and_push_ops_image >>
     jobs:
       - push-ops-image
-  # Doesn't work anymore
-  # deploy-atat:
-  #   when: << pipeline.parameters.deploy_atat >>
-  #   jobs:
-  #     - deploy-atat
