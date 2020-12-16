@@ -191,8 +191,6 @@ def terraform_application(
         raise
 
 
-
-
 def setup(
     sp_client_id, sp_client_secret, tenant_id, namespace
 ):
