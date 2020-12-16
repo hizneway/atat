@@ -9,6 +9,7 @@ resources:
   - nginx-snippets.yml
   - autoscaling.yml
   - pod-security.yml
+  - secret_provider.yml
 configMapGenerator:
 - name: uwsgi-config
   namespace: atat
