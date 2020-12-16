@@ -27,7 +27,7 @@ RUN  yum remove python3 && \
     yum updateinfo && \
     # Upgrade all packages with their latest security updates.
     # http://man7.org/linux/man-pages/man8/yum.8.html
-    yum upgrade --security && \
+    yum upgrade --security -y && \
     # Necessary for building python.
     yum install -y gcc libffi-devel make wget zlib-devel && \
     # Causes python to be built with SSL capabilitiy, allowing pip to function.

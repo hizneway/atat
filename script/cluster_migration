@@ -1,7 +1,5 @@
 #!/bin/sh
 
-# TODO: update this to rely on overlays for flexvol configuration
-
 if [ -z "${K8S_CONTEXT+is_set}" ]; then
   K8S_CMD="kubectl"
 else

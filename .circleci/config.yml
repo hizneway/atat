@@ -20,13 +20,19 @@ parameters:
       It does not include the "azurecr.io" suffix.
     type: string
     default: ${AZURE_REGISTRY}
+  app_registry:
+    description: |
+      Container registry for application and nginx images.
+      This is where we store our built images.
+    type: string
+    default: ${ATAT_REGISTRY}
   ops_registry:
     description: |
       Container registry for base operations images.
       This is where we pull the rhelubi and rhel-py images from.
       It does not include the "azurecr.io" suffix.
     type: string
-    default: ${AZURE_REGISTRY_OPS}
+    default: ${OPS_REGISTRY}
   tenant_id:
     type: string
     default: ${AZURE_SP_TENANT}
@@ -102,12 +108,12 @@ commands:
           command: |
             az login \
               --service-principal \
-              --tenant ${AZURE_SP_TENANT} \
-              --password ${AZURE_SP_PASSWORD} \
-              --username ${AZURE_SP}
-            az account set -s ${AZURE_SUBSCRIPTION}
+              --tenant ${TENANT_ID} \
+              --password ${SP_CLIENT_SECRET} \
+              --username ${SP_CLIENT_ID}
+            az account set -s ${SUBSCRIPTION_ID}
             echo "Successfully logged in to Azure CLI."
-            az acr login --name << pipeline.parameters.container_registry >> | grep "Succeeded"
+            az acr login --name ${ATAT_REGISTRY} | grep "Succeeded"
   log_into_ops_registry:
     steps:
       - run:
@@ -116,12 +122,12 @@ commands:
           command: |
             az login \
               --service-principal \
-              --tenant ${AZURE_SP_TENANT} \
-              --password ${AZURE_SP_PASSWORD} \
-              --username ${AZURE_SP}
+              --tenant ${TENANT_ID} \
+              --password ${SP_CLIENT_SECRET} \
+              --username ${SP_CLIENT_ID}
             az account set -s ${AZURE_SUBSCRIPTION_OPS}
             echo "Successfully logged in to Azure CLI."
-            az acr login --name << pipeline.parameters.ops_registry >> | grep "Succeeded"
+            az acr login --name ${OPS_REGISTRY} | grep "Succeeded"
   cache_docker_images:
     steps:
       - run:
@@ -186,54 +192,57 @@ commands:
       nginx_image_tag:
         type: string
         default: << pipeline.parameters.nginx_image_tag >>
+      ops_image_tag:
+        type: string
     steps:
       - checkout
       - setup_remote_docker:
           docker_layer_caching: true
           version: 19.03.13
       - install_azure_cli
-      - log_into_ops_registry
-      - restore_docker_image
-      - run:
-          name: Build nginx image
-          command: docker build -t nginx:latest --build-arg IMAGE=<< pipeline.parameters.ops_registry >>.azurecr.io/rhelubi:8.2 - < nginx.Dockerfile
-      - run:
-          name: Tag images
-          command: |
-            docker tag atat:latest << parameters.atat_image_tag >>
-            docker tag nginx:latest << parameters.nginx_image_tag >>
       - log_into_app_registry
       - run:
-          name: Push images
+          name: Build atat image
           command: |
-            docker push << parameters.atat_image_tag >>
-            docker push << parameters.nginx_image_tag >>
+            az acr build \
+              --registry ${ATAT_REGISTRY} \
+              --build-arg "IMAGE=${ATAT_REGISTRY}.azurecr.io/rhel-py:latest" \
+              --image "<< parameters.atat_image_tag >>" \
+              --file Dockerfile \
+              .
       - run:
-          name: Install kubectl
+          name: Build nginx image
           command: |
-            apk add curl
-            export KUBECTL_VERSION=$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)
-            curl -LO https://storage.googleapis.com/kubernetes-release/release/$KUBECTL_VERSION/bin/linux/amd64/kubectl
-            chmod +x ./kubectl
-            mv ./kubectl /usr/local/bin
+            az acr build \
+              --registry ${ATAT_REGISTRY} \
+              --build-arg "IMAGE=${ATAT_REGISTRY}.azurecr.io/rhel-py:latest" \
+              --image "<< parameters.nginx_image_tag >>" \
+              --file nginx.Dockerfile \
+              .
       - run:
-          name: Configure kubectl
+          name: Build ops image
           command: |
-            apk add libssl1.1
-            az aks get-credentials --name << pipeline.parameters.cluster_name >>  --resource-group << pipeline.parameters.resource_group >>
+            az acr build \
+              --registry ${ATAT_REGISTRY} \
+              --build-arg "IMAGE=${ATAT_REGISTRY}.azurecr.io/rhel-py:latest" \
+              --image "<< parameters.ops_image_tag >>" \
+              --file ops.Dockerfile \
+              .
       - run:
-          name: Add gettext package
-          command: apk add gettext
-      - run:
-          command: K8S_NAMESPACE=<< parameters.namespace >> CONTAINER_IMAGE=<< parameters.atat_image_tag >> /bin/sh ./script/cluster_migration
-          name: Apply Migrations and Seed Roles
-      - run:
-          name: Update Kubernetes cluster
+          name: Bastion Deploy
           command: |
-            kubectl set image deployment.apps/atst atst=<< parameters.atat_image_tag >> nginx=<< parameters.nginx_image_tag >> --namespace=<< parameters.namespace >>
-            kubectl set image deployment.apps/atst-worker atst-worker=<< parameters.atat_image_tag >> --namespace=<< parameters.namespace >>
-            kubectl set image deployment.apps/atst-beat atst-beat=<< parameters.atat_image_tag >> --namespace=<< parameters.namespace >>
-
+            az container create \
+            --resource-group ${ATAT_RESOURCE_GROUP_NAME} \
+            --name "${CIRCLE_SHA1}-provisioner" \
+            --ip-address Private \
+            --vnet ${ATAT_VIRTUAL_NETWORK} \
+            --subnet mgmt-subnet \
+            --image << parameters.ops_image_tag >> \
+            --registry-password ${SP_CLIENT_SECRET} \
+            --registry-username ${SP_CLIENT_ID} \
+            --secure-environment-variables "SP_CLIENT_ID=${SP_CLIENT_ID}" "SP_CLIENT_SECRET=${SP_CLIENT_SECRET}" "SUBSCRIPTION_ID=${SUBSCRIPTION_ID}" "OPS_REGISTRY=${OPS_REGISTRY}" "NAMESPACE=${NAMESPACE}" "ATAT_REGISTRY=${ATAT_REGISTRY}" "IMAGE_TAG=${CIRCLE_SHA1}" "OPS_RESOURCE_GROUP=${OPS_RESOURCE_GROUP}" "OPS_STORAGE_ACCOUNT=${OPS_STORAGE_ACCOUNT}" "TENANT_ID=${TENANT_ID}" \
+            --command-line '/bin/bash -c "cd ../deploy && python3 justdeploy.py"' \
+            --restart-policy Never
 jobs:
   docker-build:
     docker:
@@ -251,8 +260,8 @@ jobs:
       - run:
           name: Build images
           command: |
-            docker build . --build-arg GIT_SHA=${CIRCLE_SHA1} --build-arg IMAGE=<< pipeline.parameters.ops_registry >>.azurecr.io/rhel-py -f ./Dockerfile -t atat:builder --target builder
-            docker build . --build-arg GIT_SHA=${CIRCLE_SHA1} --build-arg IMAGE=<< pipeline.parameters.ops_registry >>.azurecr.io/rhel-py -f ./Dockerfile -t atat:latest
+            docker build . --build-arg GIT_SHA=${CIRCLE_SHA1} --build-arg IMAGE=${OPS_REGISTRY}/rhel-py -f ./Dockerfile -t atat:builder --target builder
+            docker build . --build-arg GIT_SHA=${CIRCLE_SHA1} --build-arg IMAGE=${OPS_REGISTRY}/rhel-py -f ./Dockerfile -t atat:latest
       - cache_docker_images
 
   test:
@@ -359,8 +368,9 @@ jobs:
     steps:
       - deploy:
           namespace: staging
-          atat_image_tag: << pipeline.parameters.container_registry >>.azurecr.io/atat:staging-${CIRCLE_SHA1}
-          nginx_image_tag: << pipeline.parameters.container_registry >>.azurecr.io/nginx:staging-${CIRCLE_SHA1}
+          atat_image_tag: << pipeline.parameters.app_registry >>.azurecr.io/atat:${CIRCLE_SHA1}
+          nginx_image_tag: << pipeline.parameters.app_registry >>.azurecr.io/nginx:${CIRCLE_SHA1}
+          ops_image_tag: << pipeline.parameters.app_registry >>.azurecr.io/ops:${CIRCLE_SHA1}
 
   deploy-master:
     parameters:
@@ -446,50 +456,6 @@ jobs:
       - run:
           name: Push ops image
           command: docker push << pipeline.parameters.container_registry >>.azurecr.io/ops:latest
-
-  deploy-atat:
-    docker:
-      - image: docker:19
-        auth:
-          username: $DOCKERHUB_USERNAME
-          password: $DOCKERHUB_PASSWORD
-    environment:
-      DOCKER_BUILDKIT: 1
-    steps:
-      - checkout
-      - setup_remote_docker:
-          docker_layer_caching: false
-          version: 19.03.13
-      - install_azure_cli
-      - log_into_ops_registry
-      - run:
-          name: Build ops deployment image and deploy to container instances
-          command: |
-            docker build \
-            --cache-from <<pipeline.parameters.ops_registry >>.azurecr.io/ops-cache:latest \
-            -t ops:latest \
-            --build-arg operator_sp_client_id=${AZURE_SP} \
-            --build-arg operator_sp_object_id=${OPERATOR_SP_OBJECT_ID} \
-            --build-arg operator_sp_secret=${AZURE_SP_PASSWORD} \
-            --build-arg azure_tenant=${AZURE_SP_TENANT} \
-            --build-arg azure_subscription_id=${AZURE_SUBSCRIPTION} \
-            --build-arg operator_sp_url=${OPERATOR_SP_URL} \
-            --build-arg circle_api_token=${CIRCLE_API_TOKEN} \
-            --build-arg build_branch=<< pipeline.parameters.build_branch >> \
-            --build-arg az_environment=<< pipeline.parameters.az_environment >> \
-             -f ops.Dockerfile .
-      - run:
-          name: Tag ops image
-          command: docker tag ops:latest <<pipeline.parameters.ops_registry >>.azurecr.io/ops:${CIRCLE_BUILD_NUM}
-      - run:
-          name: Push ops image
-          command: docker push  <<pipeline.parameters.ops_registry >>.azurecr.io/ops:${CIRCLE_BUILD_NUM}
-      - run:
-          name: run container image
-          command: |
-            az account set -s ${AZURE_SUBSCRIPTION}
-            az container create -g cloudzero-ops --name deploy-build-${CIRCLE_BUILD_NUM} --ip-address Private --vnet cloudzero-ops-network --subnet deployment-subnet --image  <<pipeline.parameters.ops_registry >>.azurecr.io/ops:${CIRCLE_BUILD_NUM}  --registry-password ${AZURE_SP_PASSWORD} --registry-username ${AZURE_SP} --command-line "ansible-playbook site.yml --extra-vars deploy_tag=v0.1.0" --cpu 4 --memory 4 --restart-policy Never
-
 workflows:
   version: 2
   run-tests:
@@ -518,15 +484,16 @@ workflows:
           filters:
             branches:
               only:
+                - AT-5800-deployment
                 - staging
-      - deploy-master:
-          requires:
-            - test
-            - integration-tests
-          filters:
-            branches:
-              only:
-                - master
+      # - deploy-master:
+      #     requires:
+      #       - test
+      #       - integration-tests
+      #     filters:
+      #       branches:
+      #         only:
+      #           - master
 
   push-app-images:
     when: << pipeline.parameters.build_and_push_app_images >>
@@ -537,7 +504,3 @@ workflows:
     when: << pipeline.parameters.build_and_push_ops_image >>
     jobs:
       - push-ops-image
-  deploy-atat:
-    when: << pipeline.parameters.deploy_atat >>
-    jobs:
-      - deploy-atat
