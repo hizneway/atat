@@ -245,13 +245,7 @@ def diffie_helman(encryption: int = 4096) -> Optional[subprocess.Popen]:
     if path.exists("/tmp/dhparams.pem"):
         return
     return subprocess.Popen(
-        [
-            "openssl",
-            "dhparam",
-            "-out",
-            "/tmp/dhparams.pem",
-            "4096",
-        ],
+        ["openssl", "dhparam", "-out", "/tmp/dhparams.pem", "4096",],
         stdout=subprocess.DEVNULL,
     )
 
