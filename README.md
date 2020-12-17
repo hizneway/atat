@@ -275,16 +275,16 @@ All config settings must be declared in "config/base.ini", even if they are null
 - `ASSETS_URL`: URL to host which serves static assets (such as a CDN).
 - `APP_SSL_CERT_PATH`: Path to the self-signed SSL certificate for running the app in secure mode.
 - `APP_SSL_KEY_PATH`: Path to the self-signed SSL certificate key for running the app in secure mode.
-- `AZURE_STORAGE_ACCOUNT_NAME`: The name for the Azure blob storage account
-- `AZURE_BILLING_ACCOUNT_NAME`: The name for the root Azure billing account
+- `AZURE_STORAGE_ACCOUNT_NAME`: The name for the Azure blob storage account.
+- `AZURE_BILLING_ACCOUNT_NAME`: The ID for the root Azure billing account. This can be found by going to the properties panel of the root invoice section within the Azure portal.
 - `AZURE_CALC_CLIENT_ID`: The client id used to generate a token for the Azure pricing calculator
 - `AZURE_CALC_RESOURCE`: The resource URL used to generate a token for the Azure pricing calculator
 - `AZURE_CALC_SECRET`: The secret key used to generate a token for the Azure pricing calculator
-- `AZURE_CALC_URL`: The redirect URL for the Azure pricing calculator
+- `AZURE_CALC_URL`: The redirect URL for the Azure pricing calculator.
 - `AZURE_LOGIN_URL`: The URL used to login for an Azure instance.
 - `AZURE_POWERSHELL_CLIENT_ID`: This client id is set to a value [hardcoded by Microsoft](https://docs.microsoft.com/en-us/azure-stack/user/azure-stack-rest-api-use?view=azs-2008#example) for making API calls
-- `AZURE_STORAGE_KEY`: A valid secret key for the Azure blob storage account
-- `AZURE_TO_BUCKET_NAME`: The Azure blob storage container name for task order uploads
+- `AZURE_STORAGE_KEY`: A valid secret key for the Azure blob storage account.
+- `AZURE_TO_BUCKET_NAME`: The Azure blob storage container name for task order uploads.
 - `BLOB_STORAGE_URL`: URL to Azure blob storage container.
 - `CA_CHAIN`: Path to the CA chain file.
 - `CDN_ORIGIN`: URL for the origin host for asset files.
