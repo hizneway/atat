@@ -129,6 +129,7 @@ def deploy(
         template_variables=template_variables,
     )
 
+    subprocess.run(f"kubectl -n {namespace} delete jobs --all".split())
     subprocess.run(["kubectl", "apply", "-f", f".migration.out/migration.yml"])
     result = subprocess.run(
         f"kubectl -n {namespace} wait --for=condition=complete --timeout=120s job/migration-{image_tag}".split(),
