@@ -169,3 +169,14 @@ resource "azurerm_key_vault_certificate" "atatdev" {
   }
   depends_on = [time_sleep.app_keyvault_wait_5]
 }
+
+resource "azurerm_key_vault_access_policy" "allow_tenant_keyvault_application_access_to_app_keyvault" {
+  key_vault_id = azurerm_key_vault.app_keyvault.id
+  tenant_id    = data.azurerm_client_config.current.tenant_id
+  object_id    = module.tenant_keyvault_app.sp_object_id
+
+  secret_permissions = [
+    "get",
+    "set",
+  ]
+}
