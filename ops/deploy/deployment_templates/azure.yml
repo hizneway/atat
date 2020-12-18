@@ -9,9 +9,6 @@ metadata:
 spec:
   template:
     spec:
-      initContainers:
-        - name: change-file-access
-          image: {{ nginx_container_image }}
       containers:
         - name: atst
           image: {{ application_container_image }}
