@@ -12,7 +12,7 @@ resource "random_password" "pg_root_password" {
 }
 
 resource "azurerm_postgresql_server" "sql" {
-  name                = "${var.deployment_namespace}-sql"
+  name                = "cz-${var.deployment_namespace}-sql"
   location            = azurerm_resource_group.sql.location
   resource_group_name = azurerm_resource_group.sql.name
   sku_name            = "GP_Gen5_2"
