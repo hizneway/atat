@@ -23,7 +23,7 @@ def _create_connection(config, db):
         config.get("PGPORT"),
         db,
     )
-    engine = sqlalchemy.create_engine(database_uri)
+    engine = sqlalchemy.create_engine(database_uri, pool_pre_ping=True)
     return engine.connect()
 
 

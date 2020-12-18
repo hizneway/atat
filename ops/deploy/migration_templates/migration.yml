@@ -1,0 +1,58 @@
+# TODO: change this to use overlays
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: migration-{{ atat_image_tag }}
+  namespace: {{ environment }}
+spec:
+  ttlSecondsAfterFinished: 100
+  backoffLimit: 2
+  template:
+    metadata:
+      labels:
+        app: atst
+        role: migration
+        aadpodidbinding: atat-kv-id-binding
+    spec:
+      containers:
+      - name: migration
+        image: {{ application_container_image }}
+        securityContext:
+          allowPrivilegeEscalation: false
+        command: [
+          "/bin/sh", "-c"
+        ]
+        args:
+          - |
+              /opt/atat/atst/.venv/bin/python \
+              /opt/atat/atst/.venv/bin/alembic \
+              upgrade head \
+              && \
+              /opt/atat/atst/.venv/bin/python \
+              /opt/atat/atst/script/seed_roles.py
+        envFrom:
+        - configMapRef:
+            name: atst-envvars
+        - configMapRef:
+            name: atst-worker-envvars
+        volumeMounts:
+          - name: pgsslrootcert
+            mountPath: "/opt/atat/atst/ssl/pgsslrootcert.crt"
+            subPath: pgsslrootcert.crt
+          - name: flask-secret
+            mountPath: "/config"
+      volumes:
+        - name: pgsslrootcert
+          configMap:
+            name: pgsslrootcert
+            items:
+            - key: cert
+              path: pgsslrootcert.crt
+              mode: 0666
+        - name: flask-secret
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: "atat-secret-provider"
+      restartPolicy: Never

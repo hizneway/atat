@@ -275,15 +275,16 @@ All config settings must be declared in "config/base.ini", even if they are null
 - `ASSETS_URL`: URL to host which serves static assets (such as a CDN).
 - `APP_SSL_CERT_PATH`: Path to the self-signed SSL certificate for running the app in secure mode.
 - `APP_SSL_KEY_PATH`: Path to the self-signed SSL certificate key for running the app in secure mode.
-- `AZURE_STORAGE_ACCOUNT_NAME`: The name for the Azure blob storage account
-- `AZURE_BILLING_ACCOUNT_NAME`: The name for the root Azure billing account
+- `AZURE_STORAGE_ACCOUNT_NAME`: The name for the Azure blob storage account.
+- `AZURE_BILLING_ACCOUNT_NAME`: The ID for the root Azure billing account. This can be found by going to the properties panel of the root invoice section within the Azure portal.
 - `AZURE_CALC_CLIENT_ID`: The client id used to generate a token for the Azure pricing calculator
 - `AZURE_CALC_RESOURCE`: The resource URL used to generate a token for the Azure pricing calculator
 - `AZURE_CALC_SECRET`: The secret key used to generate a token for the Azure pricing calculator
-- `AZURE_CALC_URL`: The redirect URL for the Azure pricing calculator
+- `AZURE_CALC_URL`: The redirect URL for the Azure pricing calculator.
 - `AZURE_LOGIN_URL`: The URL used to login for an Azure instance.
-- `AZURE_STORAGE_KEY`: A valid secret key for the Azure blob storage account
-- `AZURE_TO_BUCKET_NAME`: The Azure blob storage container name for task order uploads
+- `AZURE_POWERSHELL_CLIENT_ID`: This client id is set to a value [hardcoded by Microsoft](https://docs.microsoft.com/en-us/azure-stack/user/azure-stack-rest-api-use?view=azs-2008#example) for making API calls
+- `AZURE_STORAGE_KEY`: A valid secret key for the Azure blob storage account.
+- `AZURE_TO_BUCKET_NAME`: The Azure blob storage container name for task order uploads.
 - `BLOB_STORAGE_URL`: URL to Azure blob storage container.
 - `CA_CHAIN`: Path to the CA chain file.
 - `CDN_ORIGIN`: URL for the origin host for asset files.
@@ -291,7 +292,7 @@ All config settings must be declared in "config/base.ini", even if they are null
 - `CELERYBEAT_SCHEDULE_VALUE`: Integer specifying a default value of how many seconds wait between scheduled celery beat tasks. All celery beat tasks use this value.
 - `CONTRACT_END_DATE`: String specifying the end date of the JEDI contract. Used for task order validation. Example: 2019-09-14
 - `CONTRACT_START_DATE`: String specifying the start date of the JEDI contract. Used for task order validation. Example: 2019-09-14.
-- `CSP`: String specifying the cloud service provider to use. Acceptable values: "azure", "mock", "mock-csp".
+- `CSP`: String specifying the cloud service provider to use. Acceptable values: "azure", "mock", "mock-csp" and "hybrid". If using the hybrid provider due to the injunction, set it to "hybrid".
 - `DEBUG`: Boolean. A truthy value enables Flask's debug mode. https://flask.palletsprojects.com/en/1.1.x/config/#DEBUG
 - `DEBUG_SMTP`: [0,1,2]. Use to determine the debug logging level of the mailer SMTP connection. `0` is the default, meaning no extra logs are generated. `1` or `2` will enable debug logging. See [official docs](https://docs.python.org/3/library/smtplib.html#smtplib.SMTP.set_debuglevel) for more info.
 - `ENVIRONMENT`: String specifying the current environment. Acceptable values: "dev", "prod".
@@ -394,16 +395,6 @@ regularly and archive them with the AT-AT codebase in the `uitests` directory.
 For further information about Ghost Inspector and its use in AT-AT, check out [its README](./uitests/README.md)
 in the `uitests` directory.
 
-## SonarQube
-
-To run SonarScanner
-
-```
-script/sonarqube <SonarQube user> <SonarQube password>
-```
-
-Both user and password are in 1Password.  It is possible that the hostname for SonarQube will change from time to time.  In this case the value for the key `sonar.host.url` will have to be updated in the The `sonar-qube.properties` file.
-
 ## Notes
 
 Jinja templates are like mustache templates -- add the
@@ -493,28 +484,27 @@ Also note that if the line number of a previously whitelisted secret changes, th
 
 ## How to build the RHEL Python base image
 
-First create two files, containing a RedHat username and password respectively.
+First create two files, containing a RedHat username and password respectively. A free RedHat account is needed to access certain required package repositories.
 
 - redhat_username.secret
 - redhat_password.secret
 
-Then run the build script.
 
-```
-env CONTAINER_REGISTRY=cloudzerodryrunregistry.azurecr.io ./script/build-docker-image-python-base.sh
-```
-
-Then publish the image. Start by tagging it with the appropriate registry. In
-this example we use the dry run registry.
-
-```
-docker tag atst:rhel-py cloudzerodryrunregistry.azurecr.io/rhel-py
-```
-
-Make sure you're logged into said registry.
+Make sure you're logged into the appropriate container registry. We're using `cloudzerodryrunregistry` as the example here.
 
 ```
 az acr login -n cloudzerodryrunregistry
+```
+
+Then run the build script:
+
+```
+env CONTAINER_REGISTRY=cloudzerodryrunregistry.azurecr.io ./ops/build-docker-image-python-base.sh
+```
+
+Then publish the image. Start by tagging it with the appropriate registry.
+```
+docker tag atst:rhel-py cloudzerodryrunregistry.azurecr.io/rhel-py:latest
 ```
 
 Then push!
@@ -533,3 +523,19 @@ General usage for the UM script would include a location for the output.
 ```
 poetry run python script/generate_under_maintenance.py --output ./
 ```
+
+## SonarCloud
+
+To manually run sonar-scanner you will need a token.  On [The SonarCloud Account Security](https://sonarcloud.io/account/security/) page create a token and export it to the environment variable `SONAR_TOKEN`.  
+
+```
+export SONAR_TOKEN=< sonar token >
+```
+
+Now you will be able to run the scanner script.
+
+```
+script/sonar_scanner
+````
+
+The sonar-scanner script will generate a coverage report for Python and JavaScript files.  Any value that might need to be updated (i.e. code exception or coverage exceptions) can be done in the `sonar-project.properties` file
