@@ -135,7 +135,7 @@ def deploy(
     pprint(template_variables)
 
     # Generate the output files
-    for path in os.listdir("deploy_templates"):
+    for path in os.listdir("deployment_templates"):
         template = env.get_template(path)
         with open(f".out/{path}", "w") as output_file:
             output_file.write(template.render(**template_variables))
