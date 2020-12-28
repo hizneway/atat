@@ -1372,7 +1372,7 @@ test = ["pytest"]
 
 [[package]]
 name = "transitions"
-version = "0.8.5"
+version = "0.8.6"
 description = "A lightweight, object-oriented Python state machine implementation with many extensions."
 category = "main"
 optional = false
@@ -2271,8 +2271,8 @@ traitlets = [
     {file = "traitlets-5.0.4.tar.gz", hash = "sha256:86c9351f94f95de9db8a04ad8e892da299a088a64fd283f9f6f18770ae5eae1b"},
 ]
 transitions = [
-    {file = "transitions-0.8.5-py2.py3-none-any.whl", hash = "sha256:bb05d3283c91e091046ed5484da2e4f8b489eb5f1bca1a5c76d47d19d703b3ff"},
-    {file = "transitions-0.8.5.tar.gz", hash = "sha256:e441c66a0c753d56c01c3e5e547f21dbe4a5569c939f12477475c5e81d79769b"},
+    {file = "transitions-0.8.6-py2.py3-none-any.whl", hash = "sha256:188f83a5b194c8b7b65e04a54bdde3e1bac8bfe223190d54b2084d166028ba1b"},
+    {file = "transitions-0.8.6.tar.gz", hash = "sha256:032e10113139852ffb3ecfa4c2a5138f87441d85c3d6ad9122bb4b0978180a8d"},
 ]
 typed-ast = [
     {file = "typed_ast-1.4.1-cp35-cp35m-manylinux1_i686.whl", hash = "sha256:73d785a950fc82dd2a25897d525d003f6378d1cb23ab305578394694202a58c3"},
